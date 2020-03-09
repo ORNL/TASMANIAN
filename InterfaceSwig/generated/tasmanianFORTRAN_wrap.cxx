@@ -949,40 +949,43 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_makeFourierGrid__SWIG_4(SwigClassWrapp
 
 SWIGEXPORT void _wrap_TasmanianSparseGrid_copyGrid__SWIG_0(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3, int const *farg4) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TasGrid::TasmanianSparseGrid *arg2 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  TasGrid::TasmanianSparseGrid *arg2 = 0 ;
   int arg3 ;
   int arg4 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::copyGrid(TasGrid::TasmanianSparseGrid const *,int,int)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::copyGrid(TasGrid::TasmanianSparseGrid const &,int,int)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  SWIG_check_nonnull(farg2->cptr, "TasGrid::TasmanianSparseGrid const &", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::copyGrid(TasGrid::TasmanianSparseGrid const &,int,int)", return );
   arg2 = (TasGrid::TasmanianSparseGrid *)farg2->cptr;
   arg3 = (int)(*farg3);
   arg4 = (int)(*farg4);
-  (arg1)->copyGrid((TasGrid::TasmanianSparseGrid const *)arg2,arg3,arg4);
+  (arg1)->copyGrid((TasGrid::TasmanianSparseGrid const &)*arg2,arg3,arg4);
 }
 
 
 SWIGEXPORT void _wrap_TasmanianSparseGrid_copyGrid__SWIG_1(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TasGrid::TasmanianSparseGrid *arg2 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  TasGrid::TasmanianSparseGrid *arg2 = 0 ;
   int arg3 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::copyGrid(TasGrid::TasmanianSparseGrid const *,int)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::copyGrid(TasGrid::TasmanianSparseGrid const &,int)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  SWIG_check_nonnull(farg2->cptr, "TasGrid::TasmanianSparseGrid const &", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::copyGrid(TasGrid::TasmanianSparseGrid const &,int)", return );
   arg2 = (TasGrid::TasmanianSparseGrid *)farg2->cptr;
   arg3 = (int)(*farg3);
-  (arg1)->copyGrid((TasGrid::TasmanianSparseGrid const *)arg2,arg3);
+  (arg1)->copyGrid((TasGrid::TasmanianSparseGrid const &)*arg2,arg3);
 }
 
 
 SWIGEXPORT void _wrap_TasmanianSparseGrid_copyGrid__SWIG_2(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TasGrid::TasmanianSparseGrid *arg2 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  TasGrid::TasmanianSparseGrid *arg2 = 0 ;
   
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::copyGrid(TasGrid::TasmanianSparseGrid const *)", return );
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::copyGrid(TasGrid::TasmanianSparseGrid const &)", return );
   arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  SWIG_check_nonnull(farg2->cptr, "TasGrid::TasmanianSparseGrid const &", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::copyGrid(TasGrid::TasmanianSparseGrid const &)", return );
   arg2 = (TasGrid::TasmanianSparseGrid *)farg2->cptr;
-  (arg1)->copyGrid((TasGrid::TasmanianSparseGrid const *)arg2);
+  (arg1)->copyGrid((TasGrid::TasmanianSparseGrid const &)*arg2);
 }
 
 
@@ -2003,7 +2006,7 @@ SWIGEXPORT SwigClassWrapper _wrap_makeEmpty() {
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_5(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianGlobalGrid__SWIG_5(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
@@ -2024,7 +2027,7 @@ SWIGEXPORT SwigClassWrapper _wrap_makeGlobalGrid__SWIG_5(int const *farg1, int c
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianSequenceGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
@@ -2045,7 +2048,7 @@ SWIGEXPORT SwigClassWrapper _wrap_makeSequenceGrid__SWIG_2(int const *farg1, int
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianLocalPolynomialGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, int const *farg4, int const *farg5) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
@@ -2066,7 +2069,7 @@ SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_1(int const *far
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, int const *farg4) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianLocalPolynomialGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, int const *farg4) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
@@ -2085,7 +2088,7 @@ SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_2(int const *far
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_3(int const *farg1, int const *farg2, int const *farg3) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianLocalPolynomialGrid__SWIG_3(int const *farg1, int const *farg2, int const *farg3) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
@@ -2102,7 +2105,7 @@ SWIGEXPORT SwigClassWrapper _wrap_makeLocalPolynomialGrid__SWIG_3(int const *far
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeWaveletGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, int const *farg4) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianWaveletGrid__SWIG_1(int const *farg1, int const *farg2, int const *farg3, int const *farg4) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
@@ -2121,7 +2124,7 @@ SWIGEXPORT SwigClassWrapper _wrap_makeWaveletGrid__SWIG_1(int const *farg1, int 
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeWaveletGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianWaveletGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
@@ -2138,7 +2141,7 @@ SWIGEXPORT SwigClassWrapper _wrap_makeWaveletGrid__SWIG_2(int const *farg1, int 
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, int const *farg4) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianFourierGrid__SWIG_2(int const *farg1, int const *farg2, int const *farg3, int const *farg4) {
   SwigClassWrapper fresult ;
   int arg1 ;
   int arg2 ;
@@ -2157,7 +2160,7 @@ SWIGEXPORT SwigClassWrapper _wrap_makeFourierGrid__SWIG_2(int const *farg1, int 
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_readGrid(SwigArrayWrapper *farg1) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianReadGrid(SwigArrayWrapper *farg1) {
   SwigClassWrapper fresult ;
   char *arg1 = (char *) 0 ;
   TasGrid::TasmanianSparseGrid result;
@@ -2170,7 +2173,7 @@ SWIGEXPORT SwigClassWrapper _wrap_readGrid(SwigArrayWrapper *farg1) {
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_copyGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianCopyGrid__SWIG_0(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = 0 ;
   int arg2 ;
@@ -2188,7 +2191,7 @@ SWIGEXPORT SwigClassWrapper _wrap_copyGrid__SWIG_0(SwigClassWrapper *farg1, int 
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_copyGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianCopyGrid__SWIG_1(SwigClassWrapper *farg1, int const *farg2) {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = 0 ;
   int arg2 ;
@@ -2204,7 +2207,7 @@ SWIGEXPORT SwigClassWrapper _wrap_copyGrid__SWIG_1(SwigClassWrapper *farg1, int 
 }
 
 
-SWIGEXPORT SwigClassWrapper _wrap_copyGrid__SWIG_2(SwigClassWrapper *farg1) {
+SWIGEXPORT SwigClassWrapper _wrap_TasmanianCopyGrid__SWIG_2(SwigClassWrapper *farg1) {
   SwigClassWrapper fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = 0 ;
   TasGrid::TasmanianSparseGrid result;
