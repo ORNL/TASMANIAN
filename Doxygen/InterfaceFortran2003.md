@@ -64,3 +64,33 @@ while the Python and Matlab equivalents would be:
  1  0
 ```
 
+### Factory and Helper Methods and Namespaces
+
+Fortran 2003 does not support namespaces and the wrapper API works directly with user allocated matrices. The `make***Grid()` factory methods have been replaced with:
+```
+    TasGrid::makeGlobalGrid          => TasmanianGlobalGrid
+    TasGrid::makeSequenceGrid        => TasmanianSequenceGrid
+    TasGrid::makeLocalPolynomialGrid => TasmanianLocalPolynomialGrid
+    TasGrid::makeFourierGrid         => TasmanianFourierGrid
+    TasGrid::makeWaveletGrid         => TasmanianWaveletGrid
+    TasGrid::readGrid                => TasmanianReadGrid
+    TasGrid::copyGrid                => TasmanianCopyGrid
+```
+Although the methods do not support array API and hence anisotropic weights and level limits still require the use of the member functions, e.g., `grid%makeGlobalGrid()`.
+
+The static array API works with allocatable variables but requires user allocation of memory and is not very expressive. Helper methods are provided that return ready allocated pointer variables:
+```
+    real(C_DOUBLE), dimension(:,:), pointer :: points
+    ...
+    points => tsgGetPoints(grid)
+    ...
+    deallocate(points)
+```
+The helper function are:
+```
+    points => tsgGetLoadedPoints(grid) ->  grid%getLoadedPoints(points)
+    points => tsgGetNeededPoints(grid) ->  grid%getNeededPoints(points)
+    points => tsgGetLoaded(grid)       ->  grid%getPoints(points)
+
+    weights => tsgGetQuadratureWeights(grid) -> grid%getQuadratureWeights(weights)
+```

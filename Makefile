@@ -170,18 +170,23 @@ python3: TasmanianSG.py testTSG.py example_sparse_grids.py
 	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' testTSG.py
 
 # Fortran
+#fortran: example_sparse_grids_f90 libtasmanianfortran90.a libtasmanianfortran90.so
 .PHONY: fortran
-fortran: example_sparse_grids_f90 libtasmanianfortran90.a libtasmanianfortran90.so
-	./fortester90
+fortran: ./include/tasmaniansg.mod forswigtester example_sparse_grids_fortran
+	./forswigtester
 
-example_sparse_grids_f90: libtasmanianfortran90.so
-	cp ./InterfaceFortran/Examples/example_sparse_grids.f90 .
-	$(FF) $(OPTF) $(IADD) -c example_sparse_grids.f90 -o example_sparse_grids_f90.o
-	$(FF) $(OPTLFF) $(LADD) example_sparse_grids_f90.o -o example_sparse_grids_f90 $(FFLIBS90) -lstdc++
+./include/tasmaniansg.mod: libtasmaniancaddons.so libtasmaniandream.a
+	$(CC) $(OPTC) $(IADD) -I./include/ -c InterfaceSwig/generated/tasmanianFORTRAN_wrap.cxx -o InterfaceSwig/tasmanianFORTRAN_wrap.o
+	$(FF) $(OPTF) $(IADD) -c InterfaceSwig/generated/tasmanian.f90 -o InterfaceSwig/tasmanian.o
+	ar rcs libtasmanianfortran.a InterfaceSwig/tasmanianFORTRAN_wrap.o InterfaceSwig/tasmanian.o
+	$(FF) $(OPTLFF) $(LADD) InterfaceSwig/tasmanianFORTRAN_wrap.o InterfaceSwig/tasmanian.o -shared -o libtasmanianfortran.so ./libtasmaniandream.so ./libtasmaniansparsegrid.so $(LIBS) -lstdc++
+	mv tasmanian.mod ./include/
 
-libtasmanianfortran90.so: libtasmaniancaddons.so
-	cd InterfaceFortran/; make
-	cp InterfaceFortran/tasmaniansg.mod ./include/
+forswigtester: ./include/tasmaniansg.mod
+	$(FF) $(OPTLFF) $(LADD) InterfaceSwig/FortranTests/*.f90 -o forswigtester -I./include/ libtasmanianfortran.a $(LIBS) -lstdc++
+
+example_sparse_grids_fortran: ./include/tasmaniansg.mod
+	$(FF) $(OPTLFF) $(LADD) InterfaceSwig/FortranExamples/*.f90 -o example_sparse_grids_fortran -I./include/ libtasmanianfortran.a $(LIBS) -lstdc++
 
 
 # Testing and examples
@@ -214,10 +219,11 @@ clean:
 	rm -fr libtasmaniandream.so
 	rm -fr libtasmaniandream.a
 	rm -fr libtasmaniancaddons.so
-	rm -fr libtasmanianfortran90.so
-	rm -fr libtasmanianfortran90.a
-	rm -fr tasmaniansg.mod
-	rm -fr fortester*
+	rm -fr libtasmanianfortran.so
+	rm -fr libtasmanianfortran.a
+	rm -fr InterfaceSwig/*.o
+	rm -fr forswigtester
+	rm -fr f03_test_file
 	rm -fr tasgrid
 	rm -fr gridtest
 	rm -fr dreamtest
@@ -232,8 +238,7 @@ clean:
 	rm -fr ./InterfacePython/__pycache__
 	rm -fr example_sparse_grids*
 	rm -fr example_dream*
-	rm -fr example_sparse_grids_f90
-	rm -fr example_sparse_grids_f90.o
+	rm -fr example_sparse_grids_fortran
 	rm -fr refTestFlename.grid
 	rm -fr fortranio.test
 	rm -fr testSave
