@@ -123,6 +123,11 @@ module tasmanian
  public :: tsg_accel_none, tsg_accel_cpu_blas, tsg_accel_gpu_default, tsg_accel_gpu_cublas, tsg_accel_gpu_cuda, &
     tsg_accel_gpu_magma
 
+    public :: TasmanianGlobalGrid
+    public :: TasmanianSequenceGrid
+    public :: TasmanianFourierGrid
+    public :: TasmanianLocalPolynomialGrid
+    public :: TasmanianWaveletGrid
     public :: tsgGetLoadedPoints
     public :: tsgGetNeededPoints
     public :: tsgGetPoints
@@ -305,36 +310,14 @@ module tasmanian
     swigf_TasmanianSparseGrid_enableAcceleration__SWIG_1, swigf_TasmanianSparseGrid_enableAcceleration__SWIG_2, &
     swigf_TasmanianSparseGrid_enableAcceleration__SWIG_3
  end type TasmanianSparseGrid
- public :: makeEmpty
  public :: TasmanianReadGrid
- interface TasmanianLocalPolynomialGrid
-  module procedure swigf_TasmanianLocalPolynomialGrid__SWIG_1, swigf_TasmanianLocalPolynomialGrid__SWIG_2, &
-    swigf_TasmanianLocalPolynomialGrid__SWIG_3
- end interface
- public :: TasmanianLocalPolynomialGrid
- interface TasmanianGlobalGrid
-  module procedure swigf_TasmanianGlobalGrid__SWIG_5
- end interface
- public :: TasmanianGlobalGrid
  interface TasmanianSparseGrid
   module procedure swigf_new_TasmanianSparseGrid__SWIG_0, swigf_new_TasmanianSparseGrid__SWIG_1
  end interface
- interface TasmanianFourierGrid
-  module procedure swigf_TasmanianFourierGrid__SWIG_2
- end interface
- public :: TasmanianFourierGrid
- interface TasmanianSequenceGrid
-  module procedure swigf_TasmanianSequenceGrid__SWIG_2
- end interface
- public :: TasmanianSequenceGrid
  interface TasmanianCopyGrid
   module procedure swigf_TasmanianCopyGrid__SWIG_0, swigf_TasmanianCopyGrid__SWIG_1, swigf_TasmanianCopyGrid__SWIG_2
  end interface
  public :: TasmanianCopyGrid
- interface TasmanianWaveletGrid
-  module procedure swigf_TasmanianWaveletGrid__SWIG_1, swigf_TasmanianWaveletGrid__SWIG_2
- end interface
- public :: TasmanianWaveletGrid
 
 ! WRAPPER DECLARATIONS
 interface
@@ -1412,111 +1395,6 @@ type(SwigClassWrapper), intent(inout) :: farg1
 type(SwigClassWrapper), intent(in) :: farg2
 end subroutine
 
-function swigc_makeEmpty() &
-bind(C, name="_wrap_makeEmpty") &
-result(fresult)
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-type(SwigClassWrapper) :: fresult
-end function
-
-function swigc_TasmanianGlobalGrid__SWIG_5(farg1, farg2, farg3, farg4, farg5) &
-bind(C, name="_wrap_TasmanianGlobalGrid__SWIG_5") &
-result(fresult)
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-integer(C_INT), intent(in) :: farg1
-integer(C_INT), intent(in) :: farg2
-integer(C_INT), intent(in) :: farg3
-integer(C_INT), intent(in) :: farg4
-integer(C_INT), intent(in) :: farg5
-type(SwigClassWrapper) :: fresult
-end function
-
-function swigc_TasmanianSequenceGrid__SWIG_2(farg1, farg2, farg3, farg4, farg5) &
-bind(C, name="_wrap_TasmanianSequenceGrid__SWIG_2") &
-result(fresult)
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-integer(C_INT), intent(in) :: farg1
-integer(C_INT), intent(in) :: farg2
-integer(C_INT), intent(in) :: farg3
-integer(C_INT), intent(in) :: farg4
-integer(C_INT), intent(in) :: farg5
-type(SwigClassWrapper) :: fresult
-end function
-
-function swigc_TasmanianLocalPolynomialGrid__SWIG_1(farg1, farg2, farg3, farg4, farg5) &
-bind(C, name="_wrap_TasmanianLocalPolynomialGrid__SWIG_1") &
-result(fresult)
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-integer(C_INT), intent(in) :: farg1
-integer(C_INT), intent(in) :: farg2
-integer(C_INT), intent(in) :: farg3
-integer(C_INT), intent(in) :: farg4
-integer(C_INT), intent(in) :: farg5
-type(SwigClassWrapper) :: fresult
-end function
-
-function swigc_TasmanianLocalPolynomialGrid__SWIG_2(farg1, farg2, farg3, farg4) &
-bind(C, name="_wrap_TasmanianLocalPolynomialGrid__SWIG_2") &
-result(fresult)
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-integer(C_INT), intent(in) :: farg1
-integer(C_INT), intent(in) :: farg2
-integer(C_INT), intent(in) :: farg3
-integer(C_INT), intent(in) :: farg4
-type(SwigClassWrapper) :: fresult
-end function
-
-function swigc_TasmanianLocalPolynomialGrid__SWIG_3(farg1, farg2, farg3) &
-bind(C, name="_wrap_TasmanianLocalPolynomialGrid__SWIG_3") &
-result(fresult)
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-integer(C_INT), intent(in) :: farg1
-integer(C_INT), intent(in) :: farg2
-integer(C_INT), intent(in) :: farg3
-type(SwigClassWrapper) :: fresult
-end function
-
-function swigc_TasmanianWaveletGrid__SWIG_1(farg1, farg2, farg3, farg4) &
-bind(C, name="_wrap_TasmanianWaveletGrid__SWIG_1") &
-result(fresult)
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-integer(C_INT), intent(in) :: farg1
-integer(C_INT), intent(in) :: farg2
-integer(C_INT), intent(in) :: farg3
-integer(C_INT), intent(in) :: farg4
-type(SwigClassWrapper) :: fresult
-end function
-
-function swigc_TasmanianWaveletGrid__SWIG_2(farg1, farg2, farg3) &
-bind(C, name="_wrap_TasmanianWaveletGrid__SWIG_2") &
-result(fresult)
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-integer(C_INT), intent(in) :: farg1
-integer(C_INT), intent(in) :: farg2
-integer(C_INT), intent(in) :: farg3
-type(SwigClassWrapper) :: fresult
-end function
-
-function swigc_TasmanianFourierGrid__SWIG_2(farg1, farg2, farg3, farg4) &
-bind(C, name="_wrap_TasmanianFourierGrid__SWIG_2") &
-result(fresult)
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-integer(C_INT), intent(in) :: farg1
-integer(C_INT), intent(in) :: farg2
-integer(C_INT), intent(in) :: farg3
-integer(C_INT), intent(in) :: farg4
-type(SwigClassWrapper) :: fresult
-end function
-
 function swigc_TasmanianReadGrid(farg1) &
 bind(C, name="_wrap_TasmanianReadGrid") &
 result(fresult)
@@ -1563,6 +1441,149 @@ end interface
 contains
  ! MODULE SUBPROGRAMS
 
+
+function TasmanianGlobalGrid(dims, outs, depth, gtype, rule, &
+                             aweights, alpha, beta, custom_filename, level_limits) result(grid)
+    type(TasmanianSparseGrid) :: grid
+    integer(C_INT), intent(in) :: dims, outs, depth, gtype, rule
+    integer(C_INT), optional, target  :: aweights(:)
+    double precision, optional :: alpha, beta
+    character(len=*), target, optional :: custom_filename
+    integer(C_INT), optional :: level_limits(dims)
+    real(C_DOUBLE) :: al, be
+    integer(C_INT), dimension(:), pointer  :: aw(:)
+
+    if ( present(aweights) ) then
+        aw => aweights
+    else
+        allocate(aw(2 * dims))
+        aw(1:dims) = 1;
+        aw(dims+1:2*dims) = 0;
+    endif
+    if ( present(alpha) ) then
+        al = alpha
+    else
+        al = 0.0D-0
+    endif
+    if ( present(beta) ) then
+        be = beta
+    else
+        be = 0.0D-0
+    endif
+
+    grid%swigdata = swigc_new_TasmanianSparseGrid__SWIG_0()
+    if ( present(custom_filename) ) then
+        if ( present(level_limits) ) then
+            call grid%makeGlobalGrid(dims, outs, depth, gtype, rule, aw, al, be, custom_filename, level_limits)
+        else
+            call grid%makeGlobalGrid(dims, outs, depth, gtype, rule, aw, al, be, custom_filename)
+        endif
+    else
+        if ( present(level_limits) ) then
+            call grid%makeGlobalGrid(dims, outs, depth, gtype, rule, aw, al, be, "", level_limits)
+        else
+            call grid%makeGlobalGrid(dims, outs, depth, gtype, rule, aw, al, be)
+        endif
+    endif
+    if ( .not. present(aweights) ) then
+        deallocate(aw)
+    endif
+end function
+
+function TasmanianSequenceGrid(dims, outs, depth, gtype, rule, aweights, level_limits) result(grid)
+    type(TasmanianSparseGrid) :: grid
+    integer(C_INT) :: dims, outs, depth, gtype, rule
+    integer(C_INT), optional, target  :: aweights(:)
+    integer(C_INT), optional :: level_limits(dims)
+    integer(C_INT) :: aw(2 * dims)
+
+    grid%swigdata = swigc_new_TasmanianSparseGrid__SWIG_0()
+    if ( present(aweights) ) then
+        if ( present(level_limits) ) then
+            call grid%makeSequenceGrid(dims, outs, depth, gtype, rule, aweights, level_limits)
+        else
+            call grid%makeSequenceGrid(dims, outs, depth, gtype, rule, aweights)
+        endif
+    else
+        if ( present(level_limits) ) then
+            aw(1:dims) = 1;
+            aw(dims+1:2*dims) = 0;
+            call grid%makeSequenceGrid(dims, outs, depth, gtype, rule, aw, level_limits)
+        else
+            call grid%makeSequenceGrid(dims, outs, depth, gtype, rule)
+        endif
+    endif
+end function
+
+function TasmanianLocalPolynomialGrid(dims, outs, depth, order, rule, level_limits) result(grid)
+    type(TasmanianSparseGrid) :: grid
+    integer(C_INT) :: dims, outs, depth, ord, ru
+    integer(C_INT), optional :: order, rule
+    integer(C_INT), optional :: level_limits(dims)
+
+    if ( present(order) ) then
+        ord = order
+    else
+        ord = 1
+    endif
+    if ( present(rule) ) then
+        ru = rule
+    else
+        ru = tsg_rule_localp
+    endif
+
+    grid%swigdata = swigc_new_TasmanianSparseGrid__SWIG_0()
+    if ( present(level_limits) ) then
+        call grid%makeLocalPolynomialGrid(dims, outs, depth, ord, ru, level_limits)
+    else
+        call grid%makeLocalPolynomialGrid(dims, outs, depth, ord, ru)
+    endif
+end function
+
+function TasmanianWaveletGrid(dims, outs, depth, order, level_limits) result(grid)
+    type(TasmanianSparseGrid) :: grid
+    integer(C_INT) :: dims, outs, depth, ord
+    integer(C_INT), optional :: order
+    integer(C_INT), optional :: level_limits(dims)
+
+    if ( present(order) ) then
+        ord = order
+    else
+        ord = 1
+    endif
+
+    grid%swigdata = swigc_new_TasmanianSparseGrid__SWIG_0()
+    if ( present(level_limits) ) then
+        call grid%makeWaveletGrid(dims, outs, depth, ord, level_limits)
+    else
+        call grid%makeWaveletGrid(dims, outs, depth, ord)
+    endif
+end function
+
+function TasmanianFourierGrid(dims, outs, depth, gtype, aweights, level_limits) result(grid)
+    type(TasmanianSparseGrid) :: grid
+    integer(C_INT) :: dims, outs, depth, gtype
+    integer(C_INT), dimension(:), optional :: aweights(:)
+    integer(C_INT), optional :: level_limits(dims)
+    integer(C_INT) :: aw(2 * dims)
+
+    grid%swigdata = swigc_new_TasmanianSparseGrid__SWIG_0()
+    if ( present(aweights) ) then
+        if ( present(level_limits) ) then
+            call grid%makeFourierGrid(dims, outs, depth, gtype, aweights, level_limits)
+        else
+            call grid%makeFourierGrid(dims, outs, depth, gtype, aweights)
+        endif
+    else
+        if ( present(level_limits) ) then
+            aw(1:dims) = 1;
+            aw(dims+1:2*dims) = 0;
+            call grid%makeFourierGrid(dims, outs, depth, gtype, aw, level_limits)
+        else
+            call grid%makeFourierGrid(dims, outs, depth, gtype)
+        endif
+    endif
+end function
 
 function tsgGetLoadedPoints(grid) result(fresult)
     use, intrinsic :: ISO_C_BINDING
@@ -3469,195 +3490,6 @@ farg2 = other%swigdata
 call swigc_TasmanianSparseGrid_op_assign__(farg1, farg2)
 self%swigdata = farg1
 end subroutine
-
-function makeEmpty() &
-result(swig_result)
-use, intrinsic :: ISO_C_BINDING
-type(TasmanianSparseGrid) :: swig_result
-type(SwigClassWrapper) :: fresult 
-
-fresult = swigc_makeEmpty()
-swig_result%swigdata = fresult
-end function
-
-function swigf_TasmanianGlobalGrid__SWIG_5(dimensions, outputs, depth, type, rule) &
-result(swig_result)
-use, intrinsic :: ISO_C_BINDING
-type(TasmanianSparseGrid) :: swig_result
-integer(C_INT), intent(in) :: dimensions
-integer(C_INT), intent(in) :: outputs
-integer(C_INT), intent(in) :: depth
-integer(tsg_TypeDepth), intent(in) :: type
-integer(tsg_TypeOneDRule), intent(in) :: rule
-type(SwigClassWrapper) :: fresult 
-integer(C_INT) :: farg1 
-integer(C_INT) :: farg2 
-integer(C_INT) :: farg3 
-integer(C_INT) :: farg4 
-integer(C_INT) :: farg5 
-
-farg1 = dimensions
-farg2 = outputs
-farg3 = depth
-farg4 = type
-farg5 = rule
-fresult = swigc_TasmanianGlobalGrid__SWIG_5(farg1, farg2, farg3, farg4, farg5)
-swig_result%swigdata = fresult
-end function
-
-function swigf_TasmanianSequenceGrid__SWIG_2(dimensions, outputs, depth, type, rule) &
-result(swig_result)
-use, intrinsic :: ISO_C_BINDING
-type(TasmanianSparseGrid) :: swig_result
-integer(C_INT), intent(in) :: dimensions
-integer(C_INT), intent(in) :: outputs
-integer(C_INT), intent(in) :: depth
-integer(tsg_TypeDepth), intent(in) :: type
-integer(tsg_TypeOneDRule), intent(in) :: rule
-type(SwigClassWrapper) :: fresult 
-integer(C_INT) :: farg1 
-integer(C_INT) :: farg2 
-integer(C_INT) :: farg3 
-integer(C_INT) :: farg4 
-integer(C_INT) :: farg5 
-
-farg1 = dimensions
-farg2 = outputs
-farg3 = depth
-farg4 = type
-farg5 = rule
-fresult = swigc_TasmanianSequenceGrid__SWIG_2(farg1, farg2, farg3, farg4, farg5)
-swig_result%swigdata = fresult
-end function
-
-function swigf_TasmanianLocalPolynomialGrid__SWIG_1(dimensions, outputs, depth, order, rule) &
-result(swig_result)
-use, intrinsic :: ISO_C_BINDING
-type(TasmanianSparseGrid) :: swig_result
-integer(C_INT), intent(in) :: dimensions
-integer(C_INT), intent(in) :: outputs
-integer(C_INT), intent(in) :: depth
-integer(C_INT), intent(in) :: order
-integer(tsg_TypeOneDRule), intent(in) :: rule
-type(SwigClassWrapper) :: fresult 
-integer(C_INT) :: farg1 
-integer(C_INT) :: farg2 
-integer(C_INT) :: farg3 
-integer(C_INT) :: farg4 
-integer(C_INT) :: farg5 
-
-farg1 = dimensions
-farg2 = outputs
-farg3 = depth
-farg4 = order
-farg5 = rule
-fresult = swigc_TasmanianLocalPolynomialGrid__SWIG_1(farg1, farg2, farg3, farg4, farg5)
-swig_result%swigdata = fresult
-end function
-
-function swigf_TasmanianLocalPolynomialGrid__SWIG_2(dimensions, outputs, depth, order) &
-result(swig_result)
-use, intrinsic :: ISO_C_BINDING
-type(TasmanianSparseGrid) :: swig_result
-integer(C_INT), intent(in) :: dimensions
-integer(C_INT), intent(in) :: outputs
-integer(C_INT), intent(in) :: depth
-integer(C_INT), intent(in) :: order
-type(SwigClassWrapper) :: fresult 
-integer(C_INT) :: farg1 
-integer(C_INT) :: farg2 
-integer(C_INT) :: farg3 
-integer(C_INT) :: farg4 
-
-farg1 = dimensions
-farg2 = outputs
-farg3 = depth
-farg4 = order
-fresult = swigc_TasmanianLocalPolynomialGrid__SWIG_2(farg1, farg2, farg3, farg4)
-swig_result%swigdata = fresult
-end function
-
-function swigf_TasmanianLocalPolynomialGrid__SWIG_3(dimensions, outputs, depth) &
-result(swig_result)
-use, intrinsic :: ISO_C_BINDING
-type(TasmanianSparseGrid) :: swig_result
-integer(C_INT), intent(in) :: dimensions
-integer(C_INT), intent(in) :: outputs
-integer(C_INT), intent(in) :: depth
-type(SwigClassWrapper) :: fresult 
-integer(C_INT) :: farg1 
-integer(C_INT) :: farg2 
-integer(C_INT) :: farg3 
-
-farg1 = dimensions
-farg2 = outputs
-farg3 = depth
-fresult = swigc_TasmanianLocalPolynomialGrid__SWIG_3(farg1, farg2, farg3)
-swig_result%swigdata = fresult
-end function
-
-function swigf_TasmanianWaveletGrid__SWIG_1(dimensions, outputs, depth, order) &
-result(swig_result)
-use, intrinsic :: ISO_C_BINDING
-type(TasmanianSparseGrid) :: swig_result
-integer(C_INT), intent(in) :: dimensions
-integer(C_INT), intent(in) :: outputs
-integer(C_INT), intent(in) :: depth
-integer(C_INT), intent(in) :: order
-type(SwigClassWrapper) :: fresult 
-integer(C_INT) :: farg1 
-integer(C_INT) :: farg2 
-integer(C_INT) :: farg3 
-integer(C_INT) :: farg4 
-
-farg1 = dimensions
-farg2 = outputs
-farg3 = depth
-farg4 = order
-fresult = swigc_TasmanianWaveletGrid__SWIG_1(farg1, farg2, farg3, farg4)
-swig_result%swigdata = fresult
-end function
-
-function swigf_TasmanianWaveletGrid__SWIG_2(dimensions, outputs, depth) &
-result(swig_result)
-use, intrinsic :: ISO_C_BINDING
-type(TasmanianSparseGrid) :: swig_result
-integer(C_INT), intent(in) :: dimensions
-integer(C_INT), intent(in) :: outputs
-integer(C_INT), intent(in) :: depth
-type(SwigClassWrapper) :: fresult 
-integer(C_INT) :: farg1 
-integer(C_INT) :: farg2 
-integer(C_INT) :: farg3 
-
-farg1 = dimensions
-farg2 = outputs
-farg3 = depth
-fresult = swigc_TasmanianWaveletGrid__SWIG_2(farg1, farg2, farg3)
-swig_result%swigdata = fresult
-end function
-
-function swigf_TasmanianFourierGrid__SWIG_2(dimensions, outputs, depth, type) &
-result(swig_result)
-use, intrinsic :: ISO_C_BINDING
-type(TasmanianSparseGrid) :: swig_result
-integer(C_INT), intent(in) :: dimensions
-integer(C_INT), intent(in) :: outputs
-integer(C_INT), intent(in) :: depth
-integer(tsg_TypeDepth), intent(in) :: type
-type(SwigClassWrapper) :: fresult 
-integer(C_INT) :: farg1 
-integer(C_INT) :: farg2 
-integer(C_INT) :: farg3 
-integer(C_INT) :: farg4 
-
-farg1 = dimensions
-farg2 = outputs
-farg3 = depth
-farg4 = type
-fresult = swigc_TasmanianFourierGrid__SWIG_2(farg1, farg2, farg3, farg4)
-swig_result%swigdata = fresult
-end function
 
 function TasmanianReadGrid(filename) &
 result(swig_result)

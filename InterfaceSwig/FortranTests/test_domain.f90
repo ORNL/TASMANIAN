@@ -27,38 +27,77 @@
 ! THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
 ! IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 !==================================================================================================================================================================================
-program FORSWIGTESTER
+
+subroutine test_domain_range()
     use Tasmanian
+    use, intrinsic :: iso_c_binding
     implicit none
     type(TasmanianSparseGrid) :: grid
+    real(C_DOUBLE), dimension(:), pointer :: weights
+    real(C_DOUBLE), dimension(:,:), pointer :: points
+    real(C_DOUBLE), dimension(3) :: lower, upper
     integer :: i
 
-write(*,*)
-write(*,'(a,i1,a,i1)') 'Testing Tasmanian Fortran 2003-SWIG interface: version ', &
-                       grid%getVersionMajor(), ".", grid%getVersionMinor()
-write(*,*)
+    lower = [3.0D-0, -7.0D-0, -12.0D-0]
+    upper = [5.0D-0, -6.0D-0,  17.0D-0]
 
-write(*,'(a,a)') '    module version: ', grid%getVersion()
-write(*,'(a,a)') '    license:        ', grid%getLicense()
-write(*,'(a,a)') '    git hash:       ', grid%getGitCommitHash()
-write(*,'(a,a)') '    cxx flags:      ', grid%getCmakeCxxFlags()
-write(*,'(a,l)') '    openmp enabled: ', grid%isOpenMPEnabled()
-write(*,'(a,l)') '    blas   enabled: ', grid%isAccelerationAvailable(tsg_accel_cpu_blas)
-write(*,'(a,l)') '    magma  enabled: ', grid%isAccelerationAvailable(tsg_accel_gpu_magma)
-write(*,'(a,l)') '    gpu    enabled: ', grid%isAccelerationAvailable(tsg_accel_gpu_cuda)
+    grid = TasmanianGlobalGrid(3, 0, 2, tsg_type_level, tsg_rule_clenshawcurtis, [1, 1, 1])
+    call grid%setDomainTransform(lower, upper)
 
-if (grid%isAccelerationAvailable(tsg_accel_gpu_cuda)) then
-    do i = 1, grid%getNumGPUs()
-        write(*,"(a,i1,a,a20,a,i6,a)") "      device ", i-1, ": ", &
-            grid%getGPUName(i-1), " with ", grid%getGPUMemory(i-1),"MB of RAM"
+    weights => tsgGetQuadratureWeights(grid)
+    points => tsgGetPoints(grid)
+
+    call tassert(abs(sum(weights) - 58.0D-0) < 1.D-11)
+    do i = 1, 3
+        call tassert(abs(minval(points(i,:))-lower(i))  < 1.D-11)
+        call tassert(abs(maxval(points(i,:))-upper(i))  < 1.D-11)
     enddo
-endif
 
-write(*,*)
+    deallocate(points, weights)
+    call grid%release()
+end subroutine
 
-call test_make_grid()
-call test_domain_transforms()
+subroutine test_domain_gauss_hermite()
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid) :: grid
+    real(C_DOUBLE), dimension(:), pointer :: weights
+    double precision, parameter :: pi = 4.0D+0 * atan(1.0D+0)
 
-write(*,*)
+    grid = TasmanianGlobalGrid(1, 0, 4, tsg_type_level, tsg_rule_gausshermite, alpha=2.0D+0)
+    weights => tsgGetQuadratureWeights(grid)
 
-end program FORSWIGTESTER
+    call tassert(abs(sum(weights) - 0.5D+0 * sqrt(pi)) < 1.D-11)
+    call tassert(grid%getAlpha() == 2.0D-0)
+    call tassert(grid%getBeta() == 0.0D-0)
+
+    deallocate(weights)
+    call grid%release()
+end subroutine
+
+subroutine test_domain_conformal()
+!     use Tasmanian
+!     use, intrinsic :: iso_c_binding
+!     implicit none
+!     type(TasmanianSparseGrid) :: gridA, gridB
+!     real(C_DOUBLE), dimension(:), pointer :: weightsA, weighsB
+!     real(C_DOUBLE), dimension(:,:), pointer :: pointsA, pointsB
+!     integer :: i
+!
+!     do i = 7, 8
+!         gridA = TasmanianGlobalGrid(2, 0, i, tsg_type_qptotal, tsg_rule_gausspatterson)
+!         gridB = TasmanianGlobalGrid(2, 0, i, tsg_type_qptotal, tsg_rule_gausspatterson)
+!         call gridA%setConformalTransformASIN([ 4, 4 ])
+!
+!         call gridA%release()
+!         call gridB%release()
+!     enddo
+end subroutine
+
+subroutine test_domain_transforms()
+    call test_domain_range()
+    call test_domain_gauss_hermite()
+    call test_domain_conformal()
+    write(*,*) "  Performing tests on domain transforms:           PASS"
+end subroutine

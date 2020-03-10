@@ -65,3 +65,44 @@ subroutine tassert(x)
         error stop
     endif
 end subroutine
+
+! compare grid points and weights
+subroutine approx_grid_pw(grid, grid_ref)
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid), intent(in) :: grid, grid_ref
+    real(C_DOUBLE), dimension(:), pointer :: weights, weights_ref
+    real(C_DOUBLE), dimension(:,:), pointer :: points, points_ref
+
+    weights => tsgGetQuadratureWeights(grid)
+    points  => tsgGetPoints(grid)
+
+    weights_ref => tsgGetQuadratureWeights(grid_ref)
+    points_ref => tsgGetPoints(grid_ref)
+
+    call approx1d(grid_ref%getNumPoints(), weights, weights_ref)
+    call approx2d(grid_ref%getNumDimensions(), grid_ref%getNumPoints(), points, points_ref)
+
+    deallocate(weights, weights_ref, points, points_ref)
+end subroutine
+
+! print the points of the grid
+subroutine print_points(grid)
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid), intent(in) :: grid
+    integer :: i, j
+    real(C_DOUBLE), dimension(:,:), pointer :: points
+
+    points => tsgGetPoints(grid)
+    do i = 1, grid%getNumPoints()
+        do j = 1, grid%getNumDimensions()
+            write(*, "(ES15.4)", advance="no") points(j, i)
+        enddo
+        write(*,*)
+    enddo
+    deallocate(points)
+
+end subroutine
