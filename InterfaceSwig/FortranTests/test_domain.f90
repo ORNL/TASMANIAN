@@ -76,28 +76,50 @@ subroutine test_domain_gauss_hermite()
     call grid%release()
 end subroutine
 
-subroutine test_domain_conformal()
-!     use Tasmanian
-!     use, intrinsic :: iso_c_binding
-!     implicit none
-!     type(TasmanianSparseGrid) :: gridA, gridB
-!     real(C_DOUBLE), dimension(:), pointer :: weightsA, weighsB
-!     real(C_DOUBLE), dimension(:,:), pointer :: pointsA, pointsB
-!     integer :: i
-!
-!     do i = 7, 8
-!         gridA = TasmanianGlobalGrid(2, 0, i, tsg_type_qptotal, tsg_rule_gausspatterson)
-!         gridB = TasmanianGlobalGrid(2, 0, i, tsg_type_qptotal, tsg_rule_gausspatterson)
-!         call gridA%setConformalTransformASIN([ 4, 4 ])
-!
-!         call gridA%release()
-!         call gridB%release()
-!     enddo
+subroutine test_domain_gauss_jacobi()
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid) :: grid
+    real(C_DOUBLE), dimension(:), pointer :: weights
+
+    grid = TasmanianGlobalGrid(1, 0, 4, tsg_type_level, tsg_rule_gaussjacobi, beta=1.0D+0)
+    weights => tsgGetQuadratureWeights(grid)
+
+    call tassert(abs(sum(weights) - 2.0D-0) < 1.D-11)
+    call tassert(grid%getAlpha() == 0.0D-0)
+    call tassert(grid%getBeta() == 1.0D-0)
+
+    deallocate(weights)
+    call grid%release()
+end subroutine
+
+subroutine test_domain_aniso()
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid) :: grid
+    real(C_DOUBLE), dimension(:), pointer :: weights
+    real(C_DOUBLE), dimension(:,:), pointer :: points
+    real(C_DOUBLE) :: points_ref(2, 4)
+
+    points_ref = reshape([ 0.0D+0, 0.0D+0, 0.0D+0, 1.0D+0, 0.0D+0, -1.0D+0, 1.0D+0, 0.0D+0 ], [2, 4])
+    grid = TasmanianGlobalGrid(2, 1, 2, tsg_type_level, tsg_rule_leja, [2, 1])
+
+    weights => tsgGetQuadratureWeights(grid)
+    points =>tsgGetNeededPoints(grid)
+
+    call tassert(abs(sum(weights) - 4.0D-0) < 1.E-11)
+    call approx2d(points, points_ref)
+
+    deallocate(weights, points)
+    call grid%release()
 end subroutine
 
 subroutine test_domain_transforms()
     call test_domain_range()
     call test_domain_gauss_hermite()
-    call test_domain_conformal()
+    call test_domain_gauss_jacobi()
+    call test_domain_aniso()
     write(*,*) "  Performing tests on domain transforms:           PASS"
 end subroutine

@@ -48,6 +48,7 @@ subroutine test_make_global_grid()
 
     call tassert(grid%isGlobal())
     call tassert(.NOT. grid%isLocalPolynomial())
+    call tassert(.NOT. grid%isEmpty())
     call tassert(grid%getAlpha() .EQ. 0.0D-0)
     call tassert(grid%getBeta()  .EQ. 0.0D-0)
     call tassert(grid%getOrder() .EQ. -1)
@@ -372,6 +373,48 @@ subroutine test_make_wavelet_grid_factory()
     call grid%release()
 end subroutine
 
+subroutine test_read_copy_factory()
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid) :: grid, grid_duplicate
+
+    grid = TasmanianSequenceGrid(2, 1, 1, tsg_type_iptotal, tsg_rule_maxlebesgue)
+    call grid%write("f03_test_file")
+    grid_duplicate = TasmanianReadGrid("f03_test_file")
+
+    call approx_grid_pw(grid, grid_duplicate)
+    call grid%release()
+    call grid_duplicate%release()
+
+    grid = TasmanianFourierGrid(2, 1, 2, tsg_type_hyperbolic)
+    grid_duplicate = TasmanianCopyGrid(grid)
+
+    call approx_grid_pw(grid, grid_duplicate)
+    call grid%release()
+    call grid_duplicate%release()
+
+    grid = TasmanianSparseGrid()
+    call grid%makeGlobalGrid(2, 3, 1, tsg_type_level, tsg_rule_gausslegendre, [2, 1])
+    grid_duplicate = TasmanianCopyGrid(grid, 0, 1)
+
+    call approx_grid_pw(grid, grid_duplicate)
+    call tassert(grid%getNumOutputs() == 3)
+    call tassert(grid_duplicate%getNumOutputs() == 1)
+    call grid%release()
+    call grid_duplicate%release()
+
+    grid = TasmanianSparseGrid()
+    call grid%makeGlobalGrid(2, 4, 1, tsg_type_level, tsg_rule_gausslegendre, [2, 1], 0.0D-0)
+    grid_duplicate = TasmanianCopyGrid(grid, 1)
+
+    call approx_grid_pw(grid, grid_duplicate)
+    call tassert(grid%getNumOutputs() == 4)
+    call tassert(grid_duplicate%getNumOutputs() == 3)
+    call grid%release()
+    call grid_duplicate%release()
+end subroutine
+
 subroutine test_make_grid()
     call test_make_global_grid()
     call test_make_global_grid_factory()
@@ -384,5 +427,6 @@ subroutine test_make_grid()
     call test_make_fourier_grid_factory()
     call test_make_wavelet_grid()
     call test_make_wavelet_grid_factory()
+    call test_read_copy_factory()
     write(*,*) "  Performing tests on make***Grid() methods:       PASS"
 end subroutine
