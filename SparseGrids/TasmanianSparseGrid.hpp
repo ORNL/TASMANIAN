@@ -167,7 +167,8 @@ namespace TasGrid{
  * The grid points are also associated with quadrature and interpolation
  * weights, where the computed weights correspond to the loaded points
  * unless all points are labeled as needed. If the grid is set to work
- * with zero model outputs, then all points are labeled as "loaded".
+ * with zero model outputs, then the distinction is meaningless and
+ * the points will be accessed through the generic getPoints() methods.
  * - getNumLoaded(), getNumNeeded(), getNumPoints()
  * - getLoadedPoints(), getNeededPoints(), getPoints()
  * - getLoadedValues()

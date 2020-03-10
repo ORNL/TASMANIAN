@@ -31,13 +31,33 @@ program FORSWIGTESTER
     use Tasmanian
     implicit none
     type(TasmanianSparseGrid) :: grid
+    integer :: i
 
 write(*,*)
 write(*,'(a,i1,a,i1)') 'Testing Tasmanian Fortran 2003-SWIG interface: version ', &
                        grid%getVersionMajor(), ".", grid%getVersionMinor()
 write(*,*)
 
+write(*,'(a,a)') '    module version: ', grid%getVersion()
+write(*,'(a,a)') '    license:        ', grid%getLicense()
+write(*,'(a,a)') '    git hash:       ', grid%getGitCommitHash()
+write(*,'(a,a)') '    cxx flags:      ', grid%getCmakeCxxFlags()
+write(*,'(a,l)') '    openmp enabled: ', grid%isOpenMPEnabled()
+write(*,'(a,l)') '    blas   enabled: ', grid%isAccelerationAvailable(tsg_accel_cpu_blas)
+write(*,'(a,l)') '    magma  enabled: ', grid%isAccelerationAvailable(tsg_accel_gpu_magma)
+write(*,'(a,l)') '    gpu    enabled: ', grid%isAccelerationAvailable(tsg_accel_gpu_cuda)
+
+if (grid%isAccelerationAvailable(tsg_accel_gpu_cuda)) then
+    do i = 1, grid%getNumGPUs()
+        write(*,"(a,i1,a,a20,a,i6,a)") "      device ", i-1, ": ", &
+            grid%getGPUName(i-1), " with ", grid%getGPUMemory(i-1),"MB of RAM"
+    enddo
+endif
+
+write(*,*)
+
 call test_make_grid()
+call test_domain_transforms()
 
 write(*,*)
 

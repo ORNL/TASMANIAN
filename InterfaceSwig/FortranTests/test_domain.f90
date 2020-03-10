@@ -28,81 +28,98 @@
 ! IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 !==================================================================================================================================================================================
 
-! Tests if two matrices with dimension n by m are approximately the same
-! Calls "error stop" if the entries don't match to 1.D-12
-subroutine approx2d(n, m, A, B)
-    integer :: n, m
-    integer :: i, j
-    double precision, dimension(n,m) :: A, B
-
-    do j = 1, m
-        do i = 1, n
-            if ( abs(A(i, j) - B(i, j)) > 1.D-12 ) then
-                error stop
-            endif
-        enddo
-    enddo
-end subroutine
-
-! Same as approx2d() but uses a 1D array
-subroutine approx1d(n, x, y)
-    integer :: n, i
-    double precision, dimension(n) :: x, y
-
-    do i = 1, n
-        if ( abs(x(i) - y(i)) > 1.D-12 ) then
-            write(*,*) x(i), y(i)
-            error stop
-        endif
-    enddo
-end subroutine
-
-! similar to cassert, exits with "error stop" if the variable is false
-subroutine tassert(x)
-    logical :: x
-
-    if (.NOT. x) then
-        error stop
-    endif
-end subroutine
-
-! compare grid points and weights
-subroutine approx_grid_pw(grid, grid_ref)
+subroutine test_domain_range()
     use Tasmanian
     use, intrinsic :: iso_c_binding
     implicit none
-    type(TasmanianSparseGrid), intent(in) :: grid, grid_ref
-    real(C_DOUBLE), dimension(:), pointer :: weights, weights_ref
-    real(C_DOUBLE), dimension(:,:), pointer :: points, points_ref
+    type(TasmanianSparseGrid) :: grid
+    real(C_DOUBLE), dimension(:), pointer :: weights
+    real(C_DOUBLE), dimension(:,:), pointer :: points
+    real(C_DOUBLE), dimension(3) :: lower, upper
+    integer :: i
+
+    lower = [3.0D-0, -7.0D-0, -12.0D-0]
+    upper = [5.0D-0, -6.0D-0,  17.0D-0]
+
+    grid = TasmanianGlobalGrid(3, 0, 2, tsg_type_level, tsg_rule_clenshawcurtis, [1, 1, 1])
+    call grid%setDomainTransform(lower, upper)
 
     weights => tsgGetQuadratureWeights(grid)
-    points  => tsgGetPoints(grid)
+    points => tsgGetPoints(grid)
 
-    weights_ref => tsgGetQuadratureWeights(grid_ref)
-    points_ref => tsgGetPoints(grid_ref)
+    call tassert(abs(sum(weights) - 58.0D-0) < 1.D-11)
+    do i = 1, 3
+        call tassert(abs(minval(points(i,:))-lower(i))  < 1.D-11)
+        call tassert(abs(maxval(points(i,:))-upper(i))  < 1.D-11)
+    enddo
 
-    call approx1d(grid_ref%getNumPoints(), weights, weights_ref)
-    call approx2d(grid_ref%getNumDimensions(), grid_ref%getNumPoints(), points, points_ref)
-
-    deallocate(weights, weights_ref, points, points_ref)
+    deallocate(points, weights)
+    call grid%release()
 end subroutine
 
-! print the points of the grid
-subroutine print_points(grid)
+subroutine test_domain_gauss_hermite()
     use Tasmanian
     use, intrinsic :: iso_c_binding
     implicit none
-    type(TasmanianSparseGrid), intent(in) :: grid
-    integer :: i, j
+    type(TasmanianSparseGrid) :: grid
+    real(C_DOUBLE), dimension(:), pointer :: weights
+    double precision, parameter :: pi = 4.0D+0 * atan(1.0D+0)
+
+    grid = TasmanianGlobalGrid(1, 0, 4, tsg_type_level, tsg_rule_gausshermite, alpha=2.0D+0)
+    weights => tsgGetQuadratureWeights(grid)
+
+    call tassert(abs(sum(weights) - 0.5D+0 * sqrt(pi)) < 1.D-11)
+    call tassert(grid%getAlpha() == 2.0D-0)
+    call tassert(grid%getBeta() == 0.0D-0)
+
+    deallocate(weights)
+    call grid%release()
+end subroutine
+
+subroutine test_domain_gauss_jacobi()
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid) :: grid
+    real(C_DOUBLE), dimension(:), pointer :: weights
+
+    grid = TasmanianGlobalGrid(1, 0, 4, tsg_type_level, tsg_rule_gaussjacobi, beta=1.0D+0)
+    weights => tsgGetQuadratureWeights(grid)
+
+    call tassert(abs(sum(weights) - 2.0D-0) < 1.D-11)
+    call tassert(grid%getAlpha() == 0.0D-0)
+    call tassert(grid%getBeta() == 1.0D-0)
+
+    deallocate(weights)
+    call grid%release()
+end subroutine
+
+subroutine test_domain_aniso()
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid) :: grid
+    real(C_DOUBLE), dimension(:), pointer :: weights
     real(C_DOUBLE), dimension(:,:), pointer :: points
+    real(C_DOUBLE) :: points_ref(2, 4)
 
-    points => tsgGetPoints(grid)
-    do i = 1, grid%getNumPoints()
-        do j = 1, grid%getNumDimensions()
-            write(*, "(ES15.4)", advance="no") points(j, i)
-        enddo
-        write(*,*)
-    enddo
-    deallocate(points)
+    points_ref = reshape([ 0.0D+0, 0.0D+0, 0.0D+0, 1.0D+0, 0.0D+0, -1.0D+0, 1.0D+0, 0.0D+0 ], [2, 4])
+    grid = TasmanianGlobalGrid(2, 1, 2, tsg_type_level, tsg_rule_leja, [2, 1])
 
+    weights => tsgGetQuadratureWeights(grid)
+    points =>tsgGetNeededPoints(grid)
+
+    call tassert(abs(sum(weights) - 4.0D-0) < 1.E-11)
+    call approx2d(points, points_ref)
+
+    deallocate(weights, points)
+    call grid%release()
+end subroutine
+
+subroutine test_domain_transforms()
+    call test_domain_range()
+    call test_domain_gauss_hermite()
+    call test_domain_gauss_jacobi()
+    call test_domain_aniso()
+    write(*,*) "  Performing tests on domain transforms:           PASS"
 end subroutine
