@@ -32,5 +32,6 @@ program TasmanianExamplesSGFortran
 
 call example_sparse_grid_01()
 call example_sparse_grid_02()
+call example_sparse_grid_03()
 
 end program TasmanianExamplesSGFortran
