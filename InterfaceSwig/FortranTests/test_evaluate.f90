@@ -27,39 +27,50 @@
 ! THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
 ! IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 !==================================================================================================================================================================================
-program FORSWIGTESTER
+
+subroutine test_exact_eval()
     use Tasmanian
+    use, intrinsic :: iso_c_binding
     implicit none
     type(TasmanianSparseGrid) :: grid
-    integer :: i
+    real(C_DOUBLE), dimension(:,:), pointer :: points
+    real(C_DOUBLE), dimension(:,:), pointer :: values
+    real(C_DOUBLE) :: x(2, 3), y(2, 3), y_ref(2, 3)
+    integer :: i, num_points
 
-write(*,*)
-write(*,'(a,i1,a,i1)') 'Testing Tasmanian Fortran 2003-SWIG interface: version ', &
-                       grid%getVersionMajor(), ".", grid%getVersionMinor()
-write(*,*)
+    grid = TasmanianSparseGrid()
+    call grid%makeLocalPolynomialGrid(2, 2, 3)
 
-write(*,'(a,a)') '    module version: ', grid%getVersion()
-write(*,'(a,a)') '    license:        ', grid%getLicense()
-write(*,'(a,a)') '    git hash:       ', grid%getGitCommitHash()
-write(*,'(a,a)') '    cxx flags:      ', grid%getCmakeCxxFlags()
-write(*,'(a,l)') '    openmp enabled: ', grid%isOpenMPEnabled()
-write(*,'(a,l)') '    blas   enabled: ', grid%isAccelerationAvailable(tsg_accel_cpu_blas)
-write(*,'(a,l)') '    magma  enabled: ', grid%isAccelerationAvailable(tsg_accel_gpu_magma)
-write(*,'(a,l)') '    gpu    enabled: ', grid%isAccelerationAvailable(tsg_accel_gpu_cuda)
+    points => tsgGetNeededPoints(grid)
+    num_points = grid%getNumNeeded()
+    allocate(values(2, num_points))
 
-if (grid%isAccelerationAvailable(tsg_accel_gpu_cuda)) then
-    do i = 1, grid%getNumGPUs()
-        write(*,"(a,i1,a,a20,a,i6,a)") "      device ", i-1, ": ", &
-            grid%getGPUName(i-1), " with ", grid%getGPUMemory(i-1),"MB of RAM"
+    do i = 1, num_points
+        values(1, i) = 3.0D-0
+        values(2, i) = 2.0D-0 + points(1, i) + 2.0D+0 * points(2, i)
     enddo
-endif
+    call grid%loadNeededPoints(values(:, 1))
 
-write(*,*)
+    x = reshape([ 0.3D-0, 0.3D-0, 0.7D-0, -0.3D-0, 0.44D-0, -0.11D-0 ], [2, 3])
+    do i = 1, 3
+        y_ref(1, i) = 3.0D-0
+        y_ref(2, i) = 2.0D-0 + x(1, i) + 2.0D+0 * x(2, i)
+    enddo
 
-call test_make_grid()
-call test_domain_transforms()
-call test_eval_surrogate()
+    call grid%evaluate(x(:,1), y(:,1))
+    call approx2d(2, 1, y, y_ref)
 
-write(*,*)
+    y(1, 1) = 0.0D-0
+    y(2, 1) = 0.0D-0
+    call grid%evaluateBatch(x(:,1), 3, y(:,1))
+    call approx2d(2, 3, y, y_ref)
 
-end program FORSWIGTESTER
+    deallocate(points, values)
+    call grid%release()
+end subroutine
+
+
+subroutine test_eval_surrogate()
+    call test_exact_eval()
+    write(*,*) "  Performing tests on evaluate methods:            PASS"
+end subroutine
