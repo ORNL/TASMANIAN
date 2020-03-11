@@ -130,6 +130,7 @@ public:
 
     //! \brief Get the data between \b ibegin and \b iend of each strip.
     Data2D<T> splitData(int ibegin, int iend) const{
+        if (stride == 0) return Data2D<T>(); // empty data object
         Data2D<T> result(iend - ibegin, 0);
         result.num_strips = num_strips;
         result.vec = spltVector2D(vec, stride, ibegin, iend);
