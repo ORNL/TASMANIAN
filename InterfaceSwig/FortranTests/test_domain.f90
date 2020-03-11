@@ -36,6 +36,7 @@ subroutine test_domain_range()
     real(C_DOUBLE), dimension(:), pointer :: weights
     real(C_DOUBLE), dimension(:,:), pointer :: points
     real(C_DOUBLE), dimension(3) :: lower, upper
+    real(C_DOUBLE), dimension(3) :: tlower, tupper
     integer :: i
 
     lower = [3.0D-0, -7.0D-0, -12.0D-0]
@@ -43,6 +44,7 @@ subroutine test_domain_range()
 
     grid = TasmanianGlobalGrid(3, 0, 2, tsg_type_level, tsg_rule_clenshawcurtis, [1, 1, 1])
     call grid%setDomainTransform(lower, upper)
+    call tassert(grid%isSetDomainTransfrom())
 
     weights => tsgGetQuadratureWeights(grid)
     points => tsgGetPoints(grid)
@@ -52,6 +54,13 @@ subroutine test_domain_range()
         call tassert(abs(minval(points(i,:))-lower(i))  < 1.D-11)
         call tassert(abs(maxval(points(i,:))-upper(i))  < 1.D-11)
     enddo
+
+    call grid%getDomainTransform(tlower, tupper)
+    call approx1d(3, tlower, lower)
+    call approx1d(3, tupper, upper)
+
+    call grid%clearDomainTransform()
+    call tassert(.not. grid%isSetDomainTransfrom())
 
     deallocate(points, weights)
     call grid%release()
