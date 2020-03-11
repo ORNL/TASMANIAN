@@ -18,7 +18,6 @@ subroutine example_sparse_grid_02()
     double precision :: exact = 1.861816427518323D+00;
     double precision :: integral, err
 
-    write(*,*)
     write(*,*) "-------------------------------------------------------------------------------------------------"
     write(*,*) "Example 2: integrate f(x,y) = exp(-x^2) * cos(y) over [-5,5] x [-2,3]"
     write(*,*) "           using  Gauss-Patterson nodes and total degree polynomial space"

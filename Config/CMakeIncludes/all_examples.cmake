@@ -38,6 +38,7 @@ if (Tasmanian_ENABLE_FORTRAN)
                                                           InterfaceSwig/FortranExamples/example_sparse_grids_01.f90
                                                           InterfaceSwig/FortranExamples/example_sparse_grids_02.f90
                                                           InterfaceSwig/FortranExamples/example_sparse_grids_03.f90
+                                                          InterfaceSwig/FortranExamples/example_sparse_grids_04.f90
                                                           )
     set_target_properties(Tasmanian_example_sparse_grids_fortran PROPERTIES
                             OUTPUT_NAME "example_sparse_grids_fortran"

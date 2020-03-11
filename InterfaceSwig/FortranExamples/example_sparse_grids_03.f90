@@ -7,7 +7,6 @@ subroutine example_sparse_grid_03()
     real(C_DOUBLE) :: r
     real(C_DOUBLE), external :: ex3_get_error
 
-    write(*,*)
     write(*,*) "-------------------------------------------------------------------------------------------------"
     write(*,*) "Example 3: integrate exp(-x1^2 - x2^2) * cos(x3) * cos(x4)"
     write(*,*) "           for x1, x2 in [-5,5]; x3, x4 in [-2,3];"
