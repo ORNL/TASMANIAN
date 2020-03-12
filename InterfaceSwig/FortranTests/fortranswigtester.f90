@@ -59,6 +59,7 @@ write(*,*)
 call test_make_grid()
 call test_domain_transforms()
 call test_eval_surrogate()
+call test_update_grids()
 
 write(*,*)
 
