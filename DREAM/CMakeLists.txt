@@ -29,7 +29,7 @@ set_target_properties(${Tasmanian_libtdr_target_name} PROPERTIES OUTPUT_NAME "ta
                                                                  INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
                                                                  CXX_EXTENSIONS OFF
                                                                  SOVERSION ${Tasmanian_VERSION_MAJOR}
-                                                                 VERSION   ${Tasmanian_version_string})
+                                                                 VERSION   ${PROJECT_VERSION})
 
 install(TARGETS "${Tasmanian_libtdr_target_name}"
         EXPORT  "${Tasmanian_export_name}"
