@@ -35,7 +35,7 @@ function(tasmanian_add_swig_module tsg_name)
     target_link_libraries(${tsg_name} Tasmanian_addons Tasmanian_libdream_${Tasmanian_lib_default})
     set_target_properties(${tsg_name} PROPERTIES INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
                                                  SOVERSION ${Tasmanian_VERSION_MAJOR}
-                                                 VERSION   ${Tasmanian_version_string})
+                                                 VERSION   ${PROJECT_VERSION})
 
     target_include_directories(${tsg_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
 
@@ -70,7 +70,7 @@ macro(Tasmanian_macro_add_libdfortran03 Tasmanian_shared_or_static)
     set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES OUTPUT_NAME "tasmanianfortran"
                                                                     INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
                                                                     SOVERSION ${Tasmanian_VERSION_MAJOR}
-                                                                    VERSION   ${Tasmanian_version_string}
+                                                                    VERSION   ${PROJECT_VERSION}
                                                                     LINKER_LANGUAGE Fortran)
 
     target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)

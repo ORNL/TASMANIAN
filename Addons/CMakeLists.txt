@@ -36,7 +36,7 @@ if (Tasmanian_ENABLE_PYTHON) # the C addons are used by Python
                                                        LINK_LIBRARIES "Tasmanian_addons;Tasmanian_libdream_shared"
                                                        CXX_EXTENSIONS OFF
                                                        SOVERSION ${Tasmanian_VERSION_MAJOR}
-                                                       VERSION   ${Tasmanian_version_string})
+                                                       VERSION   ${PROJECT_VERSION})
 
     install(TARGETS Tasmanian_caddons
             EXPORT  "${Tasmanian_export_name}"

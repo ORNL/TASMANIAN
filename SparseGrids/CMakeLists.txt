@@ -47,7 +47,7 @@ set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "ta
                                                                  INTERFACE_COMPILE_FEATURES cxx_std_14
                                                                  CXX_EXTENSIONS OFF
                                                                  SOVERSION ${Tasmanian_VERSION_MAJOR}
-                                                                 VERSION   ${Tasmanian_version_string})
+                                                                 VERSION   ${PROJECT_VERSION})
 
 # as MAGMA potentially depends on OpenMP, BLAS, and CuBLAS, it should be set first
 if (Tasmanian_ENABLE_MAGMA)
