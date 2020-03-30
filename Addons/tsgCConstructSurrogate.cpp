@@ -69,7 +69,7 @@ void tsgConstructSurrogateNoIGSurplus
                 (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
                 grid, tolerance, criteria, output, level_limits, cfname);
         }else{
-            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+            TasGrid::constructSurrogate<TasGrid::mode_sequential, TasGrid::no_initial_guess>
                 (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
                 grid, tolerance, criteria, output, level_limits, cfname);
         }
@@ -107,7 +107,7 @@ void tsgConstructSurrogateNoIGAniso
                 (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
                 grid, dtype, output, level_limits, cfname);
         }else{
-            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+            TasGrid::constructSurrogate<TasGrid::mode_sequential, TasGrid::no_initial_guess>
                 (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
                 grid, dtype, output, level_limits, cfname);
         }
@@ -147,7 +147,7 @@ void tsgConstructSurrogateNoIGAnisoFixed
                 (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
                 grid, dtype, anisotropic_weights, level_limits, cfname);
         }else{
-            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::no_initial_guess>
+            TasGrid::constructSurrogate<TasGrid::mode_sequential, TasGrid::no_initial_guess>
                 (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
                 grid, dtype, anisotropic_weights, level_limits, cfname);
         }
@@ -197,7 +197,7 @@ void tsgConstructSurrogateWiIGSurplus
                 (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
                 grid, tolerance, criteria, output, level_limits, cfname);
         }else{
-            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+            TasGrid::constructSurrogate<TasGrid::mode_sequential, TasGrid::with_initial_guess>
                 (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
                 grid, tolerance, criteria, output, level_limits, cfname);
         }
@@ -242,7 +242,7 @@ void tsgConstructSurrogateWiIGAniso
                 (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
                 grid, dtype, output, level_limits, cfname);
         }else{
-            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+            TasGrid::constructSurrogate<TasGrid::mode_sequential, TasGrid::with_initial_guess>
                 (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
                 grid, dtype, output, level_limits, cfname);
         }
@@ -289,7 +289,7 @@ void tsgConstructSurrogateWiIGAnisoFixed
                 (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
                 grid, dtype, anisotropic_weights, level_limits, cfname);
         }else{
-            TasGrid::constructSurrogate<TasGrid::mode_parallel, TasGrid::with_initial_guess>
+            TasGrid::constructSurrogate<TasGrid::mode_sequential, TasGrid::with_initial_guess>
                 (cpp_model, max_num_points, num_parallel_jobs, max_samples_per_job,
                 grid, dtype, anisotropic_weights, level_limits, cfname);
         }
