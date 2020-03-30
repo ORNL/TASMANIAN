@@ -115,28 +115,16 @@ public:
             if (i < num_candidates) status[sorted[i]] = done;
         }
 
-        std::vector<bool> searching(num_complete, true);
-        auto ib = running_jobs.before_begin();
-        while(num_complete > 0){
-            auto ir = ib;
-            ir++;
-            if (ir == running_jobs.end()){
-                ib = running_jobs.before_begin();
-                ir = running_jobs.begin();
-            }
+        // takes an iterator and returns an iterator to the next entry
+        auto next = [](std::forward_list<std::vector<double>>::iterator ib)->
+            std::forward_list<std::vector<double>>::iterator{
+                return ++ib;
+            };
 
-            for(size_t i=0; i<searching.size(); i++){
-                if (searching[i]){
-                    if (match(&p[i * num_dimensions], ir->data())){
-                        running_jobs.erase_after(ib);
-                        ir = ib;
-                        ir++;
-                        num_complete--;
-                        searching[i] = false;
-                    }
-                }
-            }
-            ib++;
+        for(size_t i=0; i<num_complete; i++){
+            auto ib = running_jobs.before_begin();
+            while(not match(&p[i * num_dimensions], next(ib)->data())) ib++;
+            running_jobs.erase_after(ib);
         }
     }
 
