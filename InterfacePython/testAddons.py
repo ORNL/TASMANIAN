@@ -7,6 +7,12 @@ import testCommon
 
 ttc = testCommon.TestTasCommon()
 
+def batch_exp(x):
+    aResult = np.zeros((x.shape[0], 1))
+    for i in range(x.shape[0]):
+        aResult[i, 0] = np.exp(-np.sum(x[i,:]))
+    return aResult
+
 class TestTasClass(unittest.TestCase):
     '''
     Miscelaneous tests that don't quite fit in other categories.
@@ -88,6 +94,27 @@ class TestTasClass(unittest.TestCase):
             gridA.finishConstruction()
             ttc.compareGrids(gridA, gridB)
 
+    def checkBatchConstruct(self):
+        gridA = Tasmanian.SparseGrid()
+        gridB = Tasmanian.SparseGrid()
+
+        gridA.makeGlobalGrid(2, 1, 6, 'level', 'fejer2')
+        gridB.copyGrid(gridA)
+        Tasmanian.constructAnisotropicSurrogate(lambda x, i : batch_exp(x),
+                                                gridA.getNumPoints(), 2, 1, gridA, "iptotal", 0)
+        Tasmanian.constructAnisotropicSurrogate(lambda x, i : batch_exp(x),
+                                                gridB.getNumPoints(), 2, 10, gridB, "iptotal", 0)
+        ttc.compareGrids(gridA, gridB)
+
+        gridA.makeLocalPolynomialGrid(2, 1, 3)
+        gridB.copyGrid(gridA)
+        Tasmanian.constructSurplusSurrogate(lambda x, i : batch_exp(x),
+                                            gridA.getNumPoints(), 2, 1, gridA, 1.E-11, "classic")
+        Tasmanian.constructSurplusSurrogate(lambda x, i : batch_exp(x),
+                                            gridB.getNumPoints(), 2, 10, gridB, 1.E-11, "classic")
+        ttc.compareGrids(gridA, gridB)
+
     def performAddonTests(self):
         self.checkLoadNeeded()
         self.checkConstruction()
+        self.checkBatchConstruct()
