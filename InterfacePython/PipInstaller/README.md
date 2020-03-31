@@ -11,7 +11,7 @@ i.e., the source distribution `sdist` package.
 Tasmanian supports installs under Linux, Max OSX, and Windows using Python 3 and
 either user or virtual environment installation.
 
-* first install the build dependencies this **cannot** happen automatically:
+* if using an pip before 1.10 then must first install the build dependencies:
 ```
 python3 -m pip install scikit-build cmake packaging numpy
 ```
@@ -63,6 +63,12 @@ The package can be installed off-line, e.g.,
 ```
 python3 -m pip install dist/Tasmanian-<version>.tar.gz --user
 ```
+
+### Dependencies
+
+* According to [PEP518](https://www.python.org/dev/peps/pep-0518/), the `pyproject.toml` file must specify the dependencies that are needed to run the `setup.py` script, e.g., scikit-build and packaging.
+* The `setup_requires` list in the `setup.py` script specifies the dependencies for the build process, e.g., make.
+* The `install_requires` list in the `setup.py` script specifies the run-time dependencies, e.g., numpy.
 
 ### Behind the Curtains
 

@@ -30,7 +30,7 @@ try:
         setup_requires.append('cmake')
 except SKBuildError:
     setup_requires.append('cmake')
-
+setup_requires.append('numpy>=1.10')
 
 with open('README.md', 'r') as fh:
      readme_file = fh.readlines()
@@ -103,6 +103,7 @@ setup(
         'Programming Language :: C++',
         'Operating System :: OS Independent',
     ],
+    install_requires=['numpy>=1.10'],
     ### cmake portion of the setup, specific to skbuild ###
     setup_requires=setup_requires,
     cmake_args=cmake_args

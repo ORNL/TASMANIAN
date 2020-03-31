@@ -190,12 +190,16 @@ and the headers and the Fortran module will be copied to the `include` folder.
 
 Tasmanian is included in the Python Pip index: [https://pypi.org/project/Tasmanian/](https://pypi.org/project/Tasmanian/)
 ```
-  python3 -m pip install scikit-build packaging numpy --user (required dependencies)
-  python3 -m pip install Tasmanian --user                    (user installation)
-  python3 -m pip install Tasmanian                           (virtual env installation)
+  python3 -m pip install Tasmanian --user   (user installation)
+  python3 -m pip install Tasmanian          (virtual env installation)
 ```
+Pip-versions prior to 1.10 cannot handle the extra dependencies, those must be installed manually
+```
+  python3 -m pip install scikit-build packaging numpy --user (required dependencies)
+```
+
 The Tasmanian module is not a regular Python-only project but a wrapper around C++ libraries, hence some limitations apply:
-* The `scikit-build`, `packaging` and `numpy` dependencies have to be manually installed first.
+* Pip versions prior to 1.10 require that dependencies are installed manually.
 * Only user installations are supported, installation for all users is possible with CMake but not Pip.
 * Python virtual environments are supported, as well as Linux, Mac and Windows operating systems.
 
