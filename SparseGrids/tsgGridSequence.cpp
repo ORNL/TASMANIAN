@@ -32,7 +32,9 @@
 #define __TASMANIAN_SPARSE_GRID_GLOBAL_NESTED_CPP
 
 #include "tsgGridSequence.hpp"
-#include "tsgHiddenExternals.hpp"
+#ifdef Tasmanian_ENABLE_BLAS
+#include "tsgBlasWrappers.hpp"
+#endif
 
 namespace TasGrid{
 

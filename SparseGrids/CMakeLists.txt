@@ -39,6 +39,7 @@ target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<INSTALL_INTE
 
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../Config/>)
+target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/>)
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../configured/>)
 
 target_compile_features(${Tasmanian_libtsg_target_name} PUBLIC cxx_std_14)
@@ -104,7 +105,6 @@ set(Tasmanian_source_libsparsegrid
         tsgGridWavelet.cpp
         tsgHardCodedTabulatedRules.hpp
         tsgHardCodedTabulatedRules.cpp
-        tsgHiddenExternals.hpp
         tsgGridLocalPolynomial.hpp
         tsgGridLocalPolynomial.cpp
         tsgGridSequence.hpp

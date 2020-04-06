@@ -32,7 +32,9 @@
 #define __TASMANIAN_SPARSE_GRID_WAVELET_CPP
 
 #include "tsgGridWavelet.hpp"
-#include "tsgHiddenExternals.hpp"
+#ifdef Tasmanian_ENABLE_BLAS
+#include "tsgBlasWrappers.hpp"
+#endif
 
 namespace TasGrid{
 

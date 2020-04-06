@@ -32,7 +32,9 @@
 #define __TASMANIAN_SPARSE_GRID_LPOLY_CPP
 
 #include "tsgGridLocalPolynomial.hpp"
-#include "tsgHiddenExternals.hpp"
+#ifdef Tasmanian_ENABLE_BLAS
+#include "tsgBlasWrappers.hpp"
+#endif
 
 namespace TasGrid{
 
