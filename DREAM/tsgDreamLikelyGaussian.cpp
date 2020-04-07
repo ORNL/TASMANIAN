@@ -32,7 +32,9 @@
 #define __TASMANIAN_DREAM_LIKELY_GAUSS_CPP
 
 #include "tsgDreamLikelyGaussian.hpp"
-#include "tsgDreamInternalBlas.hpp"
+#ifdef Tasmanian_ENABLE_BLAS
+#include "tsgBlasWrappers.hpp"
+#endif
 
 namespace TasDREAM{
 
@@ -52,8 +54,8 @@ void LikelihoodGaussIsotropic::getLikelihood(TypeSamplingForm form, double const
     Utils::Wrapper2D<const double> wrapped_model(num_outputs, model);
     #ifdef Tasmanian_ENABLE_BLAS
     for(int i=0; i<num_samples; i++)
-        likely[i] = scale * TasBLAS::dnrm2squared(num_outputs, wrapped_model.getStrip(i));
-    TasBLAS::dgemtv(num_outputs, num_samples, model, data.data(), likely, -2.0 * scale, 1.0);
+        likely[i] = scale * TasBLAS::norm2_2(num_outputs, wrapped_model.getStrip(i));
+    TasBLAS::gemv('T', num_outputs, num_samples, -2.0 * scale, model, num_outputs, data.data(), 1, 1.0, likely, 1);
     #else
     for(int i=0; i<num_samples; i++)
         likely[i] = scale * (std::inner_product(wrapped_model.getStrip(i), wrapped_model.getStrip(i) + num_outputs, wrapped_model.getStrip(i), 0.0)
@@ -89,7 +91,7 @@ void LikelihoodGaussAnisotropic::getLikelihood(TypeSamplingForm form, double con
             likely[i] += sample[k] * sample[k] * noise_variance[k];
         }
     }
-    TasBLAS::dgemtv(num_outputs, num_samples, model, data_by_variance.data(), likely, -2.0, 1.0);
+    TasBLAS::gemv('T', num_outputs, num_samples, -2.0, model, num_outputs, data_by_variance.data(), 1, 1.0, likely, 1);
     #else
     for(int i=0; i<num_samples; i++){
         const double *sample = wrapped_model.getStrip(i);

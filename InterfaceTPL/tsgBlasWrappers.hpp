@@ -58,6 +58,7 @@
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 // Skip the definitions from Doxygen, this serves as a mock-up header for the BLAS API.
+extern "C" double dnrm2_(const int *N, const double *x, const int *incx);
 extern "C" void dgemv_(const char *transa, const int *M, const int *N, const double *alpha, const double *A, const int *lda, const double *x, const int *incx, const double *beta, const double *y, const int *incy);
 extern "C" void dgemm_(const char* transa, const char* transb, const int *m, const int *n, const int *k, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb, const double *beta, const double *C, const int *ldc);
 #endif
@@ -67,6 +68,9 @@ extern "C" void dgemm_(const char* transa, const char* transb, const int *m, con
  * \ingroup TasmanianTPLWrappers
  */
 namespace TasBLAS{
+    inline double norm2(int N, double const x[], int incx){
+        return dnrm2_(&N, x, &incx);
+    }
     //! \brief BLAS dgemv
     inline void gemv(char trans, int M, int N, double alpha, double const A[], int lda, double const x[], int incx,
                      double beta, double y[], int incy){
@@ -78,6 +82,12 @@ namespace TasBLAS{
         dgemm_(&transa, &transb, &M, &N, &K, &alpha, A, &lda, B, &ldb, &beta, C, &ldc);
     }
 
+    //! \brief Returns the square of the norm of the vector.
+    template<typename T>
+    inline auto norm2_2(int N, T const x[]){
+        T nrm = norm2(N, x, 1);
+        return nrm * nrm;
+    }
     /*!
      * \brief Combination of BLAS gemm and gemv
      *
