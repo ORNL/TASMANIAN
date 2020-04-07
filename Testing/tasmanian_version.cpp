@@ -40,6 +40,10 @@
  * and the master cmake target Tasmanian::Tasmanian.
  */
 
+#ifdef __TASMANIAN_BLAS_WRAPPERS_HPP
+#error "Internal file tsgBlasWrappers.hpp included globally"
+#endif
+
 int main(int, char**){
 
     std::cout << "Tasmanian version: " << TASMANIAN_VERSION_STRING << "\n";
