@@ -18,7 +18,6 @@ add_library(${Tasmanian_libtdr_target_name} ${Tasmanian_shared_or_static} Tasman
                                                                           tsgDreamLikelihoodCore.hpp
                                                                           tsgDreamLikelyGaussian.hpp
                                                                           tsgDreamLikelyGaussian.cpp
-                                                                          tsgDreamInternalBlas.hpp
                                                                           tsgDreamCoreRandom.hpp
                                                                           tsgDreamCorePDF.hpp
                                                                           tsgDreamEnumerates.hpp)

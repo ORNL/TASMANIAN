@@ -6,7 +6,7 @@ LIBS = ../libtasmaniansparsegrid.a $(CommonLIBS)
 
 
 LHEADERS = TasmanianDREAM.hpp tsgDreamState.hpp tsgDreamSample.hpp tsgDreamLikelihoodCore.hpp \
-           tsgDreamLikelyGaussian.hpp tsgDreamInternalBlas.hpp tsgDreamCoreRandom.hpp \
+           tsgDreamLikelyGaussian.hpp tsgDreamCoreRandom.hpp \
            tsgDreamCorePDF.hpp tsgDreamEnumerates.hpp
 
 LIBOBJ = tsgDreamState.o tsgDreamLikelyGaussian.o tsgDreamSampleWrapC.o

@@ -28,56 +28,84 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_SPARSE_GRID_HIDDEN_INTERNALS_HPP
-#define __TASMANIAN_SPARSE_GRID_HIDDEN_INTERNALS_HPP
+#ifndef __TASMANIAN_BLAS_WRAPPERS_HPP
+#define __TASMANIAN_BLAS_WRAPPERS_HPP
 
 /*!
- * \file tsgHiddenExternals.hpp
+ * \file tsgBlasWrappers.hpp
  * \brief Wrappers to BLAS functionality.
  * \author Miroslav Stoyanov
- * \ingroup TasmanianAcceleration
+ * \ingroup TasmanianTPLWrappers
  *
  * The header contains a inline wrappers that give C++ style of
  * interface to BLAS operations.
  */
 
-#include "TasmanianConfig.hpp"
+/*!
+ * \internal
+ * \ingroup Tasmanian
+ * \addtogroup TasmanianTPLWrappers Wrappers around TPL functionality
+ *
+ * Tasmanian uses multiple third party libraries (TPL) to gain advanced functionality,
+ * such as optimized liner algebra on the CPU and GPU devices.
+ * The libraries often come with C or Fortran style of API and the included C++ wrappers
+ * help interface with the C++ internals of Tasmanian.
+ * The wrappers are put in a set of private headers and should not be included
+ * as part of the public API.
+ *
+ * \endinternal
+ */
 
-namespace TasGrid{
-
-#ifdef Tasmanian_ENABLE_BLAS
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 // Skip the definitions from Doxygen, this serves as a mock-up header for the BLAS API.
+extern "C" double dnrm2_(const int *N, const double *x, const int *incx);
 extern "C" void dgemv_(const char *transa, const int *M, const int *N, const double *alpha, const double *A, const int *lda, const double *x, const int *incx, const double *beta, const double *y, const int *incy);
 extern "C" void dgemm_(const char* transa, const char* transb, const int *m, const int *n, const int *k, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb, const double *beta, const double *C, const int *ldc);
 #endif
 
-//! \internal
-//! \brief Wrappers for BLAS methods.
-//! \ingroup TasmanianAcceleration
+/*!
+ * \brief Wrappers for BLAS methods.
+ * \ingroup TasmanianTPLWrappers
+ */
 namespace TasBLAS{
-    //! \internal
-    //! \brief Wrapper for BLAS dense matrix-matrix and matrix-vector.
+    inline double norm2(int N, double const x[], int incx){
+        return dnrm2_(&N, x, &incx);
+    }
+    //! \brief BLAS dgemv
+    inline void gemv(char trans, int M, int N, double alpha, double const A[], int lda, double const x[], int incx,
+                     double beta, double y[], int incy){
+        dgemv_(&trans, &M, &N, &alpha, A, &lda, x, &incx, &beta, y, &incy);
+    }
+    //! \brief BLAS gemm
+    inline void gemm(char transa, char transb, int M, int N, int K, double alpha, double const A[], int lda, double const B[], int ldb,
+                     double beta, double C[], int ldc){
+        dgemm_(&transa, &transb, &M, &N, &K, &alpha, A, &lda, B, &ldb, &beta, C, &ldc);
+    }
 
-    //! Common API computing \f$ C = \alpha A B + \beta C \f$ where A is M by K, B is K by N, and C is M by N.
-    //! Transposes are not considered (not needed by Tasmanian).
-    //! The method switches between \b dgemm_ and \b dgemv_ depending on the appropriate dimensions.
-    inline void denseMultiply(int M, int N, int K, double alpha, const double A[], const double B[], double beta, double C[]){
+    //! \brief Returns the square of the norm of the vector.
+    template<typename T>
+    inline auto norm2_2(int N, T const x[]){
+        T nrm = norm2(N, x, 1);
+        return nrm * nrm;
+    }
+    /*!
+     * \brief Combination of BLAS gemm and gemv
+     *
+     * Computes \f$ C = \alpha A B + \beta C \f$ where A is M by K, B is K by N, and C is M by N.
+     * The method uses both gemm() and gemv() to handle the cases when either dimension is one.
+     */
+    template<typename T>
+    inline void denseMultiply(int M, int N, int K, T alpha, const T A[], const T B[], T beta, T C[]){
         if (M > 1){
             if (N > 1){ // matrix mode
-                char charN = 'N';
-                dgemm_(&charN, &charN, &M, &N, &K, &alpha, A, &M, B, &K, &beta, C, &M);
+                gemm('N', 'N', M, N, K, alpha, A, M, B, K, beta, C, M);
             }else{ // matrix vector, A * v = C
-                char charN = 'N'; int blas_one = 1;
-                dgemv_(&charN, &M, &K, &alpha, A, &M, B, &blas_one, &beta, C, &blas_one);
+                gemv('N', M, K, alpha, A, M, B, 1, beta, C, 1);
             }
         }else{ // matrix vector B^T * v = C
-            char charT = 'T'; int blas_one = 1;
-            dgemv_(&charT, &K, &N, &alpha, B, &K, A, &blas_one, &beta, C, &blas_one);
+            gemv('T', K, N, alpha, B, K, A, 1, beta, C, 1);
         }
     }
-}
-#endif
 }
 
 #endif

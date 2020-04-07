@@ -30,6 +30,10 @@
 
 #include "testConstructSurrogate.hpp"
 
+#ifdef __TASMANIAN_BLAS_WRAPPERS_HPP
+#error "Internal file tsgBlasWrappers.hpp included globally"
+#endif
+
 int main(int, char **){
 
     cout << "\n\n";
