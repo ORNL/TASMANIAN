@@ -61,7 +61,7 @@ if (Tasmanian_ENABLE_MAGMA)
 endif()
 
 if (Tasmanian_ENABLE_BLAS)
-    target_link_libraries(${Tasmanian_libtsg_target_name} ${BLAS_LIBRARIES})
+    target_link_libraries(${Tasmanian_libtsg_target_name} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
 endif()
 
 if (Tasmanian_ENABLE_OPENMP)
