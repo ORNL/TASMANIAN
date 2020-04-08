@@ -32,6 +32,9 @@
 #define __TASMANIAN_LINEAR_SOLVERS_CPP
 
 #include "tsgLinearSolvers.hpp"
+#ifdef Tasmanian_ENABLE_BLAS
+#include "tsgBlasWrappers.hpp"
+#endif
 
 namespace TasGrid{
 
@@ -303,29 +306,57 @@ void TasmanianFourierTransform::fast_fourier_transform1D(std::vector<std::vector
 
 namespace TasSparse{
 
-void SparseMatrix::load(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals){
-    num_rows = (int) lpntr.size();
+WaveletBasisMatrix::WaveletBasisMatrix(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals) : tol(Maths::num_tol), num_rows(static_cast<int>(lpntr.size())){
+    if (num_rows == 0) return; // make an empty matrix
 
-    pntr.resize(num_rows+1);
-    pntr[0] = 0;
+    #ifdef Tasmanian_ENABLE_BLAS
+    if (num_rows <= 10000){
+        // use the faster dense format (maybe faster for even bigger problems, but memory usage increases too much)
+        dense = std::vector<double>(Utils::size_mult(num_rows, num_rows));
+        Utils::Wrapper2D<double> dense_rows(num_rows, dense.data());
+
+        auto idx = lindx.begin();
+        auto vls = lvals.begin();
+        auto ii = idx->begin();
+        auto vv = vls->begin();
+        for(int i=0; i<num_rows; i++){
+            if (ii == idx->end()){
+                idx++;
+                vls++;
+                if (idx != lindx.end()){
+                    ii = idx->begin();
+                    vv = vls->begin();
+                }
+            }
+
+            double *r = dense_rows.getStrip(i);
+            for(int j=0; j<lpntr[i]; j++)
+                r[*ii++] = *vv++;
+        }
+
+        ipiv = std::vector<int>(num_rows);
+        TasBLAS::getrf(num_rows, num_rows, dense.data(), num_rows, ipiv.data());
+        return;
+    }
+    #endif
+
+    pntr = std::vector<int>(num_rows+1, 0.0);
     for(int i=0; i<num_rows; i++)
         pntr[i+1] = pntr[i] + lpntr[i];
 
-    int num_nz = pntr[num_rows];
-    indx.resize(num_nz);
-    vals.resize(num_nz);
+    int num_nz = pntr.back();
+    indx.reserve(num_nz);
+    vals.reserve(num_nz);
 
-    int j = 0;
-    for(const auto &idx : lindx) for(auto i : idx) indx[j++] = i;
-    j = 0;
-    for(const auto &vls : lvals) for(auto v : vls) vals[j++] = v;
+    for(const auto &idx1 : lindx)
+        indx.insert(indx.end(), idx1.begin(), idx1.end());
+    for(const auto &vls1 : lvals)
+        vals.insert(vals.end(), vls1.begin(), vls1.end());
 
     computeILU();
 }
 
-int SparseMatrix::getNumRows() const{ return num_rows; }
-
-void SparseMatrix::computeILU(){
+void WaveletBasisMatrix::computeILU(){
     indxD.resize(num_rows);
     ilu.resize(pntr[num_rows]);
     for(int i=0; i<num_rows; i++){
@@ -362,7 +393,57 @@ void SparseMatrix::computeILU(){
     }
 }
 
-void SparseMatrix::solve(const double b[], double x[], bool transposed) const{ // ustd::sing GMRES
+void WaveletBasisMatrix::invertTransposed(double b[]) const{
+    #ifdef Tasmanian_ENABLE_BLAS
+    if (not dense.empty()){
+        TasBLAS::getrs('N', num_rows, 1, dense.data(), num_rows, ipiv.data(), b, num_rows);
+        return;
+    }
+    #endif
+    // using sparse algorithm
+    solve(std::vector<double>(b, b + num_rows).data(), b, true);
+}
+
+void WaveletBasisMatrix::invert(int num_colums, double B[]){
+    #ifdef Tasmanian_ENABLE_BLAS
+    if (not dense.empty()){
+        if (num_colums == 1){
+            TasBLAS::getrs('T', num_rows, 1, dense.data(), num_rows, ipiv.data(), B, num_rows);
+        }else{
+            TasBLAS::trsm('R', 'U', 'N', 'N', num_colums, num_rows, 1.0, dense.data(), num_rows, B, num_colums);
+            TasBLAS::trsm('R', 'L', 'N', 'U', num_colums, num_rows, 1.0, dense.data(), num_rows, B, num_colums);
+            // permute
+            Utils::Wrapper2D<double> rows(num_colums, B);
+            for(int i=0; i<num_rows; i++){
+                if (ipiv[i] - 1 != i){
+                    TasBLAS::vswap(num_colums, rows.getStrip(i), 1, rows.getStrip(ipiv[i] - 1), 1);
+                }
+            }
+        }
+        return;
+    }
+    #endif
+    if (num_colums == 1){
+        std::vector<double> b(B, B + num_rows);
+        solve(b.data(), B, false);
+        return;
+    }
+    Utils::Wrapper2D<double> wrapb(num_colums, B);
+    std::vector<double> b(num_rows);
+    std::vector<double> x(num_rows);
+    for(int k=0; k<num_colums; k++){
+        for(int i=0; i<num_rows; i++){
+            b[i] = wrapb.getStrip(i)[k];
+            x[i] = b[i];
+        }
+
+        solve(b.data(), x.data(), false);
+        for(int i=0; i<num_rows; i++)
+            wrapb.getStrip(i)[k] = x[i];
+    }
+}
+
+void WaveletBasisMatrix::solve(const double b[], double x[], bool transposed) const{ // ustd::sing GMRES
     int max_inner = 30;
     int max_outer = 80;
     std::vector<double> W((max_inner+1) * num_rows); // Krylov basis

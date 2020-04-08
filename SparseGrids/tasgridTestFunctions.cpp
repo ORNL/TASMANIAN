@@ -144,6 +144,15 @@ TwoOneENX2aniso::TwoOneENX2aniso(){} TwoOneENX2aniso::~TwoOneENX2aniso(){} int T
 const char* TwoOneENX2aniso::getDescription() const{ return "f(x,y) = exp(-x^2 -0.1*y^2)"; }
 void TwoOneENX2aniso::eval(const double x[], double y[]) const{ y[0] = std::exp(-x[0]*x[0] -0.1*x[1]*x[1]); } void TwoOneENX2aniso::getIntegral(double y[]) const{ y[0] = 2.890637511323280e+00; }
 
+TwoTwoExpAsym::TwoTwoExpAsym(){} TwoTwoExpAsym::~TwoTwoExpAsym(){}
+int TwoTwoExpAsym::getNumInputs() const{ return 2; } int TwoTwoExpAsym::getNumOutputs() const{ return 2; }
+const char* TwoTwoExpAsym::getDescription() const{ return "f(x,y) = {exp(-(x-0.1)^2 - (y-0.2)^2), exp(-(x-0.3)^2 - (y-0.4)^2)}"; }
+void TwoTwoExpAsym::eval(const double x[], double y[]) const{
+    y[0] = std::exp(-(x[0] - 0.1) * (x[0] - 0.1) - (x[1] - 0.2) * (x[1] - 0.2));
+    y[1] = std::exp(-(x[0] - 0.3) * (x[0] - 0.3) - (x[1] - 0.4) * (x[1] - 0.4));
+}
+void TwoTwoExpAsym::getIntegral(double y[]) const{ y[0] = 2.1765637578800963e+00; y[1] = 1.9699377347041238e+00; }
+
 SixteenOneActive3::SixteenOneActive3(){} SixteenOneActive3::~SixteenOneActive3(){} int SixteenOneActive3::getNumInputs() const{ return 16; } int SixteenOneActive3::getNumOutputs() const{ return 1; }
 const char* SixteenOneActive3::getDescription() const{ return "f(x,y) = x[2] * sin(x[3] + x[15])"; }
 void SixteenOneActive3::eval(const double x[], double y[]) const{ y[0] = x[2] * std::sin(x[3] + x[15]); } void SixteenOneActive3::getIntegral(double y[]) const{ y[0] = 0.0; }

@@ -116,26 +116,28 @@ namespace TasSparse{
 //! \internal
 //! \brief Used to manipulate the wavelet values and solve for the wavelet coefficients.
 //! \ingroup TasmanianLinearSolvers
-class SparseMatrix{
+class WaveletBasisMatrix{
 public:
     //! \brief Default constructor, create an empty matrix.
-    SparseMatrix() : tol(Maths::num_tol), num_rows(0){}
+    WaveletBasisMatrix() : tol(Maths::num_tol), num_rows(0){}
+    //! \brief Initialize the matrix with the given set of indexes.
+    WaveletBasisMatrix(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals);
     //! \brief Default destructor.
-    ~SparseMatrix() = default;
-
-    //! \brief Load the sparse matrix in row-compressed form.
-    void load(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals);
+    ~WaveletBasisMatrix() = default;
 
     //! \brief Return the number of rows in the matrix.
-    int getNumRows() const;
+    int getNumRows() const{ return num_rows; }
+
+    //! \brief Overwrites vector \b b with \b x that solves \f$ A^T x = b \f$.
+    void invertTransposed(double b[]) const;
+
+    //! \brief Overwrites the row-major matrix \b B with \b X that solves \f$ A X = B \f$.
+    void invert(int num_colums, double B[]);
 
     //! \brief Solve `op(A) x = b` where `op` is either identity (find the coefficients) or transpose (find the interpolation weights).
     void solve(const double b[], double x[], bool transposed = false) const;
 
 protected:
-    //! \brief Clear the internal data structures (maybe not needed?)
-    void clear();
-
     //! \brief Compute the incomplete lower-upper decomposition of the matrix (zero extra fill).
     void computeILU();
 
@@ -144,6 +146,8 @@ private:
     int num_rows;
     std::vector<int> pntr, indx, indxD;
     std::vector<double> vals, ilu;
+    std::vector<double> dense; // if using the dense format
+    std::vector<int> ipiv; // pivots for the dense factorize
 };
 
 }

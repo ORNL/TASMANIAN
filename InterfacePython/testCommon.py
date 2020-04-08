@@ -102,23 +102,23 @@ class TestTasCommon(unittest.TestCase):
         if (gridA.getNumLoaded() > 0):
             pA = gridA.evaluate(mX4)
             pB = gridB.evaluate(mX4)
-            np.testing.assert_almost_equal(pA, pB, 15, "Interpolation test 4 not equal", True)
+            np.testing.assert_almost_equal(pA, pB, 12, "Interpolation test 4 not equal", True)
 
             pA = gridA.evaluate(mX5)
             pB = gridB.evaluate(mX5)
-            np.testing.assert_almost_equal(pA, pB, 15, "Interpolation test 5 not equal", True)
+            np.testing.assert_almost_equal(pA, pB, 12, "Interpolation test 5 not equal", True)
 
             pA = gridA.integrate()
             pB = gridB.integrate()
-            np.testing.assert_almost_equal(pA, pB, 15, "Integration test not equal", True)
+            np.testing.assert_almost_equal(pA, pB, 12, "Integration test not equal", True)
 
             pA = gridA.evaluateBatch(aBatchPoints)
             pB = gridB.evaluateBatch(aBatchPoints)
-            np.testing.assert_almost_equal(pA, pB, 15, "Interpolation test 6 (batch) not equal", True)
+            np.testing.assert_almost_equal(pA, pB, 12, "Interpolation test 6 (batch) not equal", True)
 
             pA = gridA.getHierarchicalCoefficients()
             pB = gridB.getHierarchicalCoefficients()
-            np.testing.assert_almost_equal(pA, pB, 15, "getHierarchicalCoefficients() not equal", True)
+            np.testing.assert_almost_equal(pA, pB, 12, "getHierarchicalCoefficients() not equal", True)
 
         # domain transforms
         self.assertEqual(gridA.isSetDomainTransfrom(), gridB.isSetDomainTransfrom(), "error in isSetDomainTransfrom()")
