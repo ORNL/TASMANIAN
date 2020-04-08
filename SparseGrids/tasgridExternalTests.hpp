@@ -143,6 +143,7 @@ private:
     TwoOneConstGH f21constGH;
 
     TwoOneENX2aniso f21nx2aniso;
+    TwoTwoExpAsym f22asym;
     TwoOneExpShiftedDomain f21expDomain;
     TwoOneConformalOne f21conformal;
     SixteenOneActive3 f16active3;

@@ -217,6 +217,12 @@ public:
 
     int getNumInputs() const; int getNumOutputs() const; const char* getDescription() const; void eval(const double x[], double y[]) const; void getIntegral(double y[]) const;
 };
+class TwoTwoExpAsym: public BaseFunction{
+public:
+    TwoTwoExpAsym(); ~TwoTwoExpAsym();
+
+    int getNumInputs() const; int getNumOutputs() const; const char* getDescription() const; void eval(const double x[], double y[]) const; void getIntegral(double y[]) const;
+};
 class SixteenOneActive3: public BaseFunction{
 public:
     SixteenOneActive3(); ~SixteenOneActive3();

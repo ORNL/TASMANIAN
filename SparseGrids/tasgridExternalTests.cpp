@@ -89,7 +89,7 @@ void static_assertions(){ // does nothing but a bunch of static asserts
     assert_copy_move<OneDimensionalWrapper>();
     assert_copy_move<CustomTabulated>();
     assert_copy_move<RuleWavelet>();
-    assert_copy_move<TasSparse::SparseMatrix>();
+    assert_copy_move<TasSparse::WaveletBasisMatrix>();
     assert_copy_move<SimpleConstructData>();
     assert_copy_move<DynamicConstructorDataGlobal>();
     #ifdef Tasmanian_ENABLE_CUDA

@@ -137,7 +137,7 @@ void GridWavelet::getQuadratureWeights(double *weights) const{
     for(int i=0; i<num_points; i++){
         weights[i] = evalIntegral(work.getIndex(i));
     }
-    solveTransposed(weights);
+    inter_matrix.invertTransposed(weights);
 }
 void GridWavelet::getInterpolationWeights(const double x[], double *weights) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
@@ -146,7 +146,7 @@ void GridWavelet::getInterpolationWeights(const double x[], double *weights) con
     for(int i=0; i<num_points; i++){
         weights[i] = evalBasis(work.getIndex(i), x);
     }
-    solveTransposed(weights);
+    inter_matrix.invertTransposed(weights);
 }
 void GridWavelet::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
@@ -343,7 +343,6 @@ void GridWavelet::buildInterpolationMatrix(){
     // updated code, using better parallelism
     // Wavelets don't have a nice rule of support to use monkeys and graphs (or I cannot find the support rule)
     MultiIndexSet &work = (points.empty()) ? needed : points;
-    inter_matrix = TasSparse::SparseMatrix();
 
     int num_points = work.getNumIndexes();
 
@@ -381,7 +380,7 @@ void GridWavelet::buildInterpolationMatrix(){
         }
     }
 
-    inter_matrix.load(pntr, indx, vals);
+    inter_matrix = TasSparse::WaveletBasisMatrix(pntr, indx, vals);
 }
 
 void GridWavelet::recomputeCoefficients(){
@@ -389,37 +388,11 @@ void GridWavelet::recomputeCoefficients(){
     //  Make sure buildInterpolationMatrix has been called since the list was updated.
 
     int num_points = points.getNumIndexes();
-    coefficients = Data2D<double>(num_outputs, num_points);
+    coefficients = Data2D<double>(num_outputs, num_points, std::vector<double>(values.begin(), values.end()));
 
     if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
 
-    std::vector<double> b(num_points), x(num_points);
-
-    for(int output = 0; output < num_outputs; output++){
-        // Copy relevant portion
-        std::fill(x.begin(), x.end(), 0.0);
-        std::fill(b.begin(), b.end(), 0.0);
-
-        // Populate RHS
-        for(int i = 0; i < num_points; i++){
-            b[i] = values.getValues(i)[output];
-        }
-
-        // Solve system
-        inter_matrix.solve(b.data(), x.data());
-
-        // Populate surplus
-        for(int i = 0; i < num_points; i++){
-            coefficients.getStrip(i)[output] = x[i];
-        }
-    }
-}
-
-void GridWavelet::solveTransposed(double w[]) const{
-    // Solves the system A^T * w = y. Used to calculate interpolation and integration
-    // weights. RHS values should be passed in through w. At exit, w will contain the
-    // required weights.
-    inter_matrix.solve(std::vector<double>(w, w + inter_matrix.getNumRows()).data(), w, true);
+    inter_matrix.invert(num_outputs, coefficients.data());
 }
 
 std::vector<double> GridWavelet::getNormalization() const{

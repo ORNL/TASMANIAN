@@ -138,7 +138,7 @@ private:
 
     Data2D<double> coefficients; // a.k.a., surpluses
 
-    TasSparse::SparseMatrix inter_matrix;
+    TasSparse::WaveletBasisMatrix inter_matrix;
 
     std::unique_ptr<SimpleConstructData> dynamic_values;
 

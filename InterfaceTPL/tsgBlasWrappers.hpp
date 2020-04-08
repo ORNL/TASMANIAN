@@ -57,19 +57,39 @@
  */
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
+extern "C"{
 // Skip the definitions from Doxygen, this serves as a mock-up header for the BLAS API.
-extern "C" double dnrm2_(const int *N, const double *x, const int *incx);
-extern "C" void dgemv_(const char *transa, const int *M, const int *N, const double *alpha, const double *A, const int *lda, const double *x, const int *incx, const double *beta, const double *y, const int *incy);
-extern "C" void dgemm_(const char* transa, const char* transb, const int *m, const int *n, const int *k, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb, const double *beta, const double *C, const int *ldc);
+// BLAS level 1
+double dnrm2_(const int *N, const double *x, const int *incx);
+void dswap_(const int *N, double *x, const int *incx, double *y, const int *incy);
+// BLAS level 2
+void dgemv_(const char *transa, const int *M, const int *N, const double *alpha, const double *A, const int *lda,
+            const double *x, const int *incx, const double *beta, const double *y, const int *incy);
+void dtrsv_(const char *uplo, const char *trans, const char *diag, const int *N, const double *A, const int *lda,
+            double *x, const int *incx);
+// BLAS level 3
+void dgemm_(const char* transa, const char* transb, const int *m, const int *n, const int *k, const double *alpha,
+            const double *A, const int *lda, const double *B, const int *ldb, const double *beta, const double *C, const int *ldc);
+void dtrsm_(const char *side, const char *uplo, const char *trans, const char *diag, const int *M, const int *N,
+            const double *alpha, const double *A, const int *lda, double *B, const int *ldb);
+// LAPACK solvers
+void dgetrf_(const int *M, const int *N, double *A, const int *lda, int *ipiv, int *info);
+void dgetrs_(const char *trans, const int *N, const int *nrhs, const double *A, const int *lda, const int *ipiv, double *B, const int *ldb, int *info);
+}
 #endif
 
 /*!
- * \brief Wrappers for BLAS methods.
+ * \brief Wrappers for BLAS and LAPACK methods.
  * \ingroup TasmanianTPLWrappers
  */
 namespace TasBLAS{
+    //! \brief BLAS dnrm2
     inline double norm2(int N, double const x[], int incx){
         return dnrm2_(&N, x, &incx);
+    }
+    //! \brief BLAS dswap
+    inline void vswap(int N, double x[], int incx, double y[], int incy){
+        dswap_(&N, x, &incx, y, &incy);
     }
     //! \brief BLAS dgemv
     inline void gemv(char trans, int M, int N, double alpha, double const A[], int lda, double const x[], int incx,
@@ -80,6 +100,22 @@ namespace TasBLAS{
     inline void gemm(char transa, char transb, int M, int N, int K, double alpha, double const A[], int lda, double const B[], int ldb,
                      double beta, double C[], int ldc){
         dgemm_(&transa, &transb, &M, &N, &K, &alpha, A, &lda, B, &ldb, &beta, C, &ldc);
+    }
+    //! \brief BLAS trsm
+    inline void trsm(char side, char uplo, char trans, char diag, int M, int N, double alpha, double const A[], int lda, double B[], int ldb){
+        dtrsm_(&side, &uplo, &trans, &diag, &M, &N, &alpha, A, &lda, B, &ldb);
+    }
+    //! \brief LAPACK dgetrf
+    inline void getrf(int M, int N, double A[], int lda, int ipiv[]){
+        int info = 0;
+        dgetrf_(&M, &N, A, &lda, ipiv, &info);
+        if (info != 0) throw std::runtime_error(std::string("Lapack dgetrf_ exited with code: ") + std::to_string(info));
+    }
+    //! \brief LAPACK dgetrs
+    inline void getrs(char trans, int N, int nrhs, double const A[], int lda, int const ipiv[], double B[], int ldb){
+        int info = 0;
+        dgetrs_(&trans, &N, &nrhs, A, &lda, ipiv, B, &ldb, &info);
+        if (info != 0) throw std::runtime_error(std::string("Lapack dgetrs_ exited with code: ") + std::to_string(info));
     }
 
     //! \brief Returns the square of the norm of the vector.
