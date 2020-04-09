@@ -124,6 +124,8 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianConfig.in.hpp"
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.hpp"
         DESTINATION include
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+# configure the headers for the logs
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/SparseGrids/tasgridLogs.in.hpp" "${CMAKE_CURRENT_BINARY_DIR}/configured/tasgridLogs.hpp")
 
 
 ########################################################################
