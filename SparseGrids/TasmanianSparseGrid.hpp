@@ -1633,7 +1633,7 @@ public:
      * Returns the acceleration mode that will be used, i.e., the one selected internally
      * based on the request made in enableAcceleration().
      */
-    TypeAcceleration getAccelerationType() const{ return acceleration; }
+    TypeAcceleration getAccelerationType() const{ return accelerate.acceleration; }
     /*!
      * \brief Returns whether a specific mode can be enabled.
      *
@@ -1659,7 +1659,7 @@ public:
      *
      * Does not throw if CUDA is not enabled in CMake, instead the default \b 0 is returned.
      */
-    int getGPUID() const{ return gpu_id; }
+    int getGPUID() const{ return accelerate.device; }
     /*!
      * \brief Return the number of visible CUDA devices.
      *
@@ -2009,13 +2009,11 @@ private:
     std::vector<int> conformal_asin_power;
     std::vector<int> llimits;
 
-    TypeAcceleration acceleration;
-    int gpu_id;
+    AccelerationContext accelerate;
 
     bool usingDynamicConstruction;
 
     #ifdef Tasmanian_ENABLE_CUDA
-    mutable std::unique_ptr<CudaEngine> engine;
     mutable std::unique_ptr<AccelerationDomainTransform> acc_domain;
     #endif
 };

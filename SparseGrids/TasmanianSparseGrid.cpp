@@ -51,17 +51,10 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
     #endif // _OPENMP
 }
 
-TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(accel_none), gpu_id(0), usingDynamicConstruction(false){
-#ifdef Tasmanian_ENABLE_BLAS
-    acceleration = accel_cpu_blas;
-#endif // Tasmanian_ENABLE_BLAS
-}
-TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : acceleration(accel_none), gpu_id(0), usingDynamicConstruction(false)
-{
+TasmanianSparseGrid::TasmanianSparseGrid() : usingDynamicConstruction(false){}
+
+TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) : usingDynamicConstruction(false){
     copyGrid(&source);
-#ifdef Tasmanian_ENABLE_BLAS
-    acceleration = accel_cpu_blas;
-#endif // Tasmanian_ENABLE_BLAS
 }
 
 TasmanianSparseGrid& TasmanianSparseGrid::operator=(TasmanianSparseGrid const &source){
@@ -74,16 +67,11 @@ void TasmanianSparseGrid::clear(){
     domain_transform_a = std::vector<double>();
     domain_transform_b = std::vector<double>();
     conformal_asin_power = std::vector<int>();
+    llimits = std::vector<int>();
+    accelerate = AccelerationContext();
     usingDynamicConstruction = false;
-#ifdef Tasmanian_ENABLE_BLAS
-    acceleration = accel_cpu_blas;
-#else
-    acceleration = accel_none;
-#endif // Tasmanian_ENABLE_BLAS
 #ifdef Tasmanian_ENABLE_CUDA
-    gpu_id = 0;
     acc_domain.reset();
-    engine.reset();
 #endif // Tasmanian_ENABLE_CUDA
 }
 
@@ -354,9 +342,9 @@ void TasmanianSparseGrid::getInterpolationWeights(const double x[], double weigh
 
 void TasmanianSparseGrid::loadNeededPoints(const double *vals){
     #ifdef Tasmanian_ENABLE_CUDA
-    if (engine){
-        engine->setDevice();
-        base->loadNeededPointsCuda(engine.get(), vals);
+    if (accelerate.engine){
+        accelerate.engine->setDevice();
+        base->loadNeededPointsCuda(accelerate.engine.get(), vals);
         return;
     }
     #endif
@@ -388,18 +376,18 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
     Data2D<double> x_tmp;
     double const *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     #ifdef Tasmanian_ENABLE_CUDA
-    if (engine){
-        engine->setDevice();
-        if (acceleration == accel_gpu_cublas){
-            base->evaluateCudaMixed(engine.get(), x_canonical, num_x, y);
+    if (accelerate.engine){
+        accelerate.engine->setDevice();
+        if (accelerate.acceleration == accel_gpu_cublas){
+            base->evaluateCudaMixed(accelerate.engine.get(), x_canonical, num_x, y);
         }else{
-            base->evaluateCuda(engine.get(), x_canonical, num_x, y);
+            base->evaluateCuda(accelerate.engine.get(), x_canonical, num_x, y);
         }
         return;
     }
     #endif
     #ifdef Tasmanian_ENABLE_BLAS
-    if (acceleration == accel_cpu_blas){
+    if (accelerate.acceleration == accel_cpu_blas){
         base->evaluateBlas(x_canonical, num_x, y);
         return;
     }
@@ -413,16 +401,16 @@ void TasmanianSparseGrid::evaluateBatch(const float x[], int num_x, float y[]) c
         throw std::runtime_error("ERROR: batch evaluations in single precision require CUDA or MAGMA acceleration to be enabled");
     Data2D<float> x_tmp;
     float const *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
-    engine->setDevice();
+    accelerate.engine->setDevice();
     CudaVector<float> gpu_x(getNumDimensions(), num_x, x_canonical), gpu_result(num_x, getNumOutputs());
-    base->evaluateBatchGPU(engine.get(), gpu_x.data(), num_x, gpu_result.data());
+    base->evaluateBatchGPU(accelerate.engine.get(), gpu_x.data(), num_x, gpu_result.data());
     gpu_result.unload(y);
 }
 template<typename FloatType> void TasmanianSparseGrid::evaluateBatchGPU(const FloatType gpu_x[], int cpu_num_x, FloatType gpu_y[]) const{
-    if (!engine) throw std::runtime_error("ERROR: evaluateBatchGPU() requires that a cuda gpu acceleration is enabled.");
-    engine->setDevice();
+    if (!accelerate.engine) throw std::runtime_error("ERROR: evaluateBatchGPU() requires that a cuda gpu acceleration is enabled.");
+    accelerate.engine->setDevice();
     CudaVector<FloatType> gpu_temp_x;
-    base->evaluateBatchGPU(engine.get(), formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x), cpu_num_x, gpu_y);
+    base->evaluateBatchGPU(accelerate.engine.get(), formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x), cpu_num_x, gpu_y);
 }
 #else
 template<typename FloatType> void TasmanianSparseGrid::evaluateBatchGPU(const FloatType[], int, FloatType[]) const{
@@ -1030,16 +1018,16 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double
 #ifdef Tasmanian_ENABLE_CUDA
 template<typename T>
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
-    if (!engine) throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
-    engine->setDevice();
+    if (!accelerate.engine) throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
+    accelerate.engine->setDevice();
     CudaVector<T> gpu_temp_x;
     base->evaluateHierarchicalFunctionsGPU(formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x), cpu_num_x, gpu_y);
 }
 template<typename T>
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const T gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, T* &gpu_vals, int &num_nz) const{
     if (!isLocalPolynomial()) throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() is allowed only for local polynomial grid.");
-    if (!engine) throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
-    engine->setDevice();
+    if (!accelerate.engine) throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
+    accelerate.engine->setDevice();
     CudaVector<T> gpu_temp_x;
     const T *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
     CudaVector<int> vec_pntr, vec_indx;
@@ -1155,7 +1143,7 @@ std::vector<double> TasmanianSparseGrid::getHierarchicalSupport() const{
 }
 
 void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
-    base->setHierarchicalCoefficients(c, acceleration);
+    base->setHierarchicalCoefficients(c, accelerate.acceleration);
 }
 void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> &c){
     size_t num_coeffs = Utils::size_mult(getNumOutputs(), getNumPoints()) * ((isFourier()) ? 2 : 1);
@@ -1260,8 +1248,8 @@ void TasmanianSparseGrid::printStats(std::ostream &os) const{
     }else{
         // empty grid, show nothing, just like the sequence grid
     }
-    os << setw(L1) << "Acceleration:" << "  " << AccelerationMeta::getIOAccelerationString(acceleration) << '\n';
-    if (AccelerationMeta::isAccTypeGPU(acceleration)){
+    os << setw(L1) << "Acceleration:" << "  " << AccelerationMeta::getIOAccelerationString(accelerate.acceleration) << '\n';
+    if (AccelerationMeta::isAccTypeGPU(accelerate.acceleration)){
         os << setw(L1) << "GPU:" << "  " << getGPUID() << '\n';
     }
 
@@ -1519,43 +1507,26 @@ void TasmanianSparseGrid::readBinary(std::istream &ifs){
 }
 
 void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
-    TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
-    if (effective_acc != acceleration){
-        acceleration = effective_acc;
-        #ifdef Tasmanian_ENABLE_CUDA
-        if (AccelerationMeta::isAccTypeGPU(acceleration)){ // using CUDA
-            if (!engine) engine = std::make_unique<CudaEngine>(gpu_id);
-            engine->setBackendMAGMA((acceleration == accel_gpu_magma));
-        }else{ // using not CUDA, clear any loaded data
-            if (engine) engine.reset();
-            acc_domain.reset();
-            if (!empty()) base->clearAccelerationData();
-        }
-        #endif
-    }
-}
-#ifdef Tasmanian_ENABLE_CUDA
-void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){
-#else
-void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc, int, void*, void*){
-#endif
-    TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
-    acceleration = effective_acc;
+    accelerate.enable(acc, accelerate.device, nullptr, nullptr);
     #ifdef Tasmanian_ENABLE_CUDA
-    engine.reset();
-    if ((new_gpu_id != gpu_id) && (!empty())){
-        base->clearAccelerationData();
+    // if gpu acceleration has been disabled, then reset the domain and cache
+    // note that this method cannot possibly change the gpu ID and switching
+    // between variations of GPU accelerations on the same device will keep the same cache
+    if (not AccelerationMeta::isAccTypeGPU(accelerate.acceleration)){
+        if (not empty()) base->clearAccelerationData();
         acc_domain.reset();
     }
-    if (AccelerationMeta::isAccTypeGPU(acceleration)){
-        // create a new engine
-        if ((new_gpu_id < 0) || (new_gpu_id >= AccelerationMeta::getNumCudaDevices()))
-            throw std::runtime_error("Invalid CUDA device ID, see ./tasgrid -v for list of detected devices.");
-        gpu_id = new_gpu_id;
-        bool use_magma = !isLocalPolynomial() && (acceleration == accel_gpu_magma);
-        engine = std::make_unique<CudaEngine>(gpu_id, use_magma, backend_handle, cusparse_handle);
+    #endif
+}
+
+void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){
+    #ifdef Tasmanian_ENABLE_CUDA
+    if (new_gpu_id != accelerate.device or not AccelerationMeta::isAccTypeGPU(accelerate.acceleration)){
+        if (not empty()) base->clearAccelerationData();
+        acc_domain.reset();
     }
     #endif
+    accelerate.enable(acc, new_gpu_id, backend_handle, cusparse_handle);
 }
 void TasmanianSparseGrid::favorSparseAcceleration(bool favor){
     if (isLocalPolynomial()) get<GridLocalPolynomial>()->setFavorSparse(favor);
@@ -1568,18 +1539,11 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
 }
 
 void TasmanianSparseGrid::setGPUID(int new_gpu_id){
-    if (new_gpu_id != gpu_id){
+    if (new_gpu_id != accelerate.device){
+        accelerate.enable(accelerate.acceleration, new_gpu_id, nullptr, nullptr);
         #ifdef Tasmanian_ENABLE_CUDA
-        if ((new_gpu_id < 0) || (new_gpu_id >= AccelerationMeta::getNumCudaDevices()))
-            throw std::runtime_error("Invalid CUDA device ID, see ./tasgrid -v for list of detected devices.");
-        if (!empty()) base->clearAccelerationData();
+        if (not empty()) base->clearAccelerationData();
         acc_domain.reset();
-        gpu_id = new_gpu_id;
-        if (engine){
-            bool use_magma = engine->backendMAGMA();
-            engine = std::make_unique<CudaEngine>(gpu_id);
-            engine->setBackendMAGMA(use_magma);
-        }
         #endif
     }
 }
