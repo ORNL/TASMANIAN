@@ -38,8 +38,6 @@ if (NOT "${Tasmanian_MATLAB_WORK_FOLDER}" STREQUAL "")
 endif()
 message(STATUS "")
 
-# configure the headers for the logs
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/SparseGrids/tasgridLogs.in.hpp" "${CMAKE_CURRENT_BINARY_DIR}/configured/tasgridLogs.hpp")
 
 ########################################################################
 # Print final message (a bit of a hack)
