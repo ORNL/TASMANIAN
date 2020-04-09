@@ -1561,35 +1561,10 @@ void TasmanianSparseGrid::favorSparseAcceleration(bool favor){
     if (isLocalPolynomial()) get<GridLocalPolynomial>()->setFavorSparse(favor);
 }
 bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
-    switch (acc){
-        case accel_none:   return true;
-        #ifdef Tasmanian_ENABLE_BLAS
-        case accel_cpu_blas:   return true;
-        #else
-        case accel_cpu_blas:   return false;
-        #endif // Tasmanian_ENABLE_BLAS
-
-        #ifdef Tasmanian_ENABLE_CUDA
-        case accel_gpu_cublas: return true;
-        case accel_gpu_cuda:   return true;
-        #else
-        case accel_gpu_cublas: return false;
-        case accel_gpu_cuda:   return false;
-        #endif // Tasmanian_ENABLE_CUDA
-
-        #ifdef Tasmanian_ENABLE_MAGMA
-        case accel_gpu_magma:   return true;
-        #else
-        case accel_gpu_magma:   return false;
-        #endif // TASMANIAN_ENABLE_MAGMA
-
-        #ifdef Tasmanian_ENABLE_CUDA
-        case accel_gpu_default:   return true;
-        #else
-        case accel_gpu_default:   return false;
-        #endif // Tasmanian_ENABLE_CUDA
-        default: return false;
-    }
+    #ifdef Tasmanian_ENABLE_CUDA
+    if (acc == accel_gpu_default) return true;
+    #endif
+    return (acc == AccelerationMeta::getAvailableFallback(acc));
 }
 
 void TasmanianSparseGrid::setGPUID(int new_gpu_id){
