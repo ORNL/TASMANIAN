@@ -61,8 +61,8 @@ template<bool iomode> void GridWavelet::write(std::ostream &os) const{
 template void GridWavelet::write<mode_ascii>(std::ostream &) const;
 template void GridWavelet::write<mode_binary>(std::ostream &) const;
 
-GridWavelet::GridWavelet(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits) :
-    BaseCanonicalGrid(cnum_dimensions, cnum_outputs, MultiIndexSet(),
+GridWavelet::GridWavelet(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits) :
+    BaseCanonicalGrid(acc, cnum_dimensions, cnum_outputs, MultiIndexSet(),
                       (corder == 1) ? MultiIndexManipulations::generateNestedPoints(
                           MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type_level,
                                                                  [](int i) -> int{ return i; }, std::vector<int>(), level_limits),
@@ -84,8 +84,8 @@ GridWavelet::GridWavelet(int cnum_dimensions, int cnum_outputs, int depth, int c
 
     buildInterpolationMatrix();
 }
-GridWavelet::GridWavelet(GridWavelet const *wav, int ibegin, int iend) :
-    BaseCanonicalGrid(*wav, ibegin, iend),
+GridWavelet::GridWavelet(AccelerationContext const *acc, GridWavelet const *wav, int ibegin, int iend) :
+    BaseCanonicalGrid(acc, *wav, ibegin, iend),
     rule1D(wav->rule1D),
     order(wav->order),
     coefficients((num_outputs == wav->num_outputs) ? wav->coefficients : wav->coefficients.splitData(ibegin, iend)),
@@ -97,8 +97,8 @@ GridWavelet::GridWavelet(GridWavelet const *wav, int ibegin, int iend) :
     }
 }
 
-GridWavelet::GridWavelet(MultiIndexSet &&pset, int cnum_outputs, int corder, Data2D<double> &&vals) :
-    BaseCanonicalGrid(static_cast<int>(pset.getNumDimensions()), cnum_outputs, std::forward<MultiIndexSet>(pset),
+GridWavelet::GridWavelet(AccelerationContext const *acc, MultiIndexSet &&pset, int cnum_outputs, int corder, Data2D<double> &&vals) :
+    BaseCanonicalGrid(acc, static_cast<int>(pset.getNumDimensions()), cnum_outputs, std::forward<MultiIndexSet>(pset),
                       MultiIndexSet(), StorageSet()),
     rule1D(corder, 10),
     order(corder)
@@ -202,57 +202,71 @@ void GridWavelet::evaluate(const double x[], double y[]) const{
     }
 }
 void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
-    Utils::Wrapper2D<double> ywrap(num_outputs, y);
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++)
-        evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
+    switch(acceleration->acceleration){
+        #ifdef Tasmanian_ENABLE_CUDA
+        case accel_gpu_magma:
+        case accel_gpu_cuda: {
+            acceleration->setDevice();
+            if ((order != 1) || (num_x == 1)){
+                // GPU evaluations are available only for order 1
+                // cannot use GPU to accelerate the evaluation of a single vector
+                evaluateCudaMixed(x, num_x, y);
+                return;
+            }
+            CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
+            evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
+            gpu_result.unload(y);
+            break;
+        }
+        case accel_gpu_cublas: {
+            acceleration->setDevice();
+            evaluateCudaMixed(x, num_x, y);
+            break;
+        }
+        #endif
+        #ifdef Tasmanian_ENABLE_BLAS
+        case accel_cpu_blas: {
+            int num_points = points.getNumIndexes();
+            Data2D<double> weights(num_points, num_x);
+            evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+            TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, coefficients.getStrip(0), weights.getStrip(0), 0.0, y);
+            break;
+        }
+        #endif
+        default: {
+            Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+            Utils::Wrapper2D<double> ywrap(num_outputs, y);
+            #pragma omp parallel for
+            for(int i=0; i<num_x; i++)
+                evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
+            break;
+        }
+    }
 }
-
-#ifdef Tasmanian_ENABLE_BLAS
-void GridWavelet::evaluateBlas(const double x[], int num_x, double y[]) const{
-    int num_points = points.getNumIndexes();
-    Data2D<double> weights(num_points, num_x);
-    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
-    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, coefficients.getStrip(0), weights.getStrip(0), 0.0, y);
-}
-#endif
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridWavelet::loadNeededPointsCuda(CudaEngine *, const double *vals){ loadNeededPoints(vals); }
-void GridWavelet::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
+void GridWavelet::evaluateCudaMixed(const double x[], int num_x, double y[]) const{
     loadCudaCoefficients<double>();
 
     Data2D<double> weights(points.getNumIndexes(), num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->coefficients, weights.data(), y);
+    acceleration->engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->coefficients, weights.data(), y);
 }
-void GridWavelet::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
-    if ((order != 1) || (num_x == 1)){
-        // GPU evaluations are available only for order 1
-        // cannot use GPU to accelerate the evaluation of a single vector
-        evaluateCudaMixed(engine, x, num_x, y);
-        return;
-    }
-    CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
-    evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_result.data());
-    gpu_result.unload(y);
-}
-template<typename T> void GridWavelet::evaluateBatchGPUtempl(CudaEngine *engine, const T *gpu_x, int cpu_num_x, T gpu_y[]) const{
+template<typename T> void GridWavelet::evaluateBatchGPUtempl(const T *gpu_x, int cpu_num_x, T gpu_y[]) const{
     if (order != 1) throw std::runtime_error("ERROR: GPU evaluations are available only for wavelet grids with order 1");
     loadCudaCoefficients<T>();
     int num_points = points.getNumIndexes();
 
     CudaVector<T> gpu_basis(cpu_num_x, num_points);
     evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
-    engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getCudaCache(static_cast<T>(0.0))->coefficients, gpu_basis, 0.0, gpu_y);
+    acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getCudaCache(static_cast<T>(0.0))->coefficients, gpu_basis, 0.0, gpu_y);
 }
-void GridWavelet::evaluateBatchGPU(CudaEngine *engine, const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
-    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
+void GridWavelet::evaluateBatchGPU(const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
+    evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);
 }
-void GridWavelet::evaluateBatchGPU(CudaEngine *engine, const float *gpu_x, int cpu_num_x, float gpu_y[]) const{
-    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
+void GridWavelet::evaluateBatchGPU(const float *gpu_x, int cpu_num_x, float gpu_y[]) const{
+    evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);
 }
 void GridWavelet::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const{
     loadCudaBasis<double>();
@@ -457,7 +471,7 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
                 std::copy_n(points.getIndex(pnts[i]), num_dimensions, indexes.getStrip(i));
             }
 
-            GridWavelet direction_grid({(size_t) num_dimensions, indexes.release()}, active_outputs, order, std::move(vals));
+            GridWavelet direction_grid(acceleration, {(size_t) num_dimensions, indexes.release()}, active_outputs, order, std::move(vals));
 
             for(int i=0; i<nump; i++){
                 bool small = true;
@@ -839,7 +853,7 @@ std::vector<double> GridWavelet::getSupport() const{
     return support;
 }
 
-void GridWavelet::setHierarchicalCoefficients(const double c[], TypeAcceleration){
+void GridWavelet::setHierarchicalCoefficients(const double c[]){
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaCoefficients();
     #endif

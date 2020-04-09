@@ -38,10 +38,10 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridFourier : public BaseCanonicalGrid {
 public:
-    GridFourier() = default;
+    GridFourier(AccelerationContext const *acc) : BaseCanonicalGrid(acc){};
     friend struct GridReaderVersion5<GridFourier>;
-    GridFourier(const GridFourier *fourier, int ibegin, int iend);
-    GridFourier(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
+    GridFourier(AccelerationContext const *acc, const GridFourier *fourier, int ibegin, int iend);
+    GridFourier(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits) : BaseCanonicalGrid(acc) {
         makeGrid(cnum_dimensions, cnum_outputs, depth, type, anisotropic_weights, level_limits);
     }
     ~GridFourier() = default;
@@ -72,17 +72,10 @@ public:
     void evaluate(const double x[], double y[]) const override;
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
-    #ifdef Tasmanian_ENABLE_BLAS
-    void evaluateBlas(const double x[], int num_x, double y[]) const override;
-    #endif
-
     #ifdef Tasmanian_ENABLE_CUDA
-    void loadNeededPointsCuda(CudaEngine *engine, const double *vals) override;
-    void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const override;
-    void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const override;
-    void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const override;
-    void evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const override;
-    template<typename T> void evaluateBatchGPUtempl(CudaEngine *engine, const T gpu_x[], int cpu_num_x, T gpu_y[]) const;
+    void evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const override;
+    void evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu_y[]) const override;
+    template<typename T> void evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpu_y[]) const;
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const override;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const override;
     template<typename T>
@@ -93,7 +86,7 @@ public:
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const override;
     void evaluateHierarchicalFunctionsInternal(const double x[], int num_x, Data2D<double> &wreal, Data2D<double> &wimag) const;
-    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) override;
+    void setHierarchicalCoefficients(const double c[]) override;
 
     void integrateHierarchicalFunctions(double integrals[]) const override;
 
@@ -202,8 +195,8 @@ private:
 
 // Old version reader
 template<> struct GridReaderVersion5<GridFourier>{
-    template<typename iomode> static auto read(std::istream &is){
-        std::unique_ptr<GridFourier> grid = std::make_unique<GridFourier>();
+    template<typename iomode> static auto read(AccelerationContext const *acc, std::istream &is){
+        std::unique_ptr<GridFourier> grid = std::make_unique<GridFourier>(acc);
 
         grid->num_dimensions = IO::readNumber<iomode, int>(is);
         grid->num_outputs = IO::readNumber<iomode, int>(is);

@@ -75,8 +75,8 @@ void GridFourier::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Typ
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, level_limits), cnum_outputs);
 }
 
-GridFourier::GridFourier(GridFourier const *fourier, int ibegin, int iend) :
-    BaseCanonicalGrid(*fourier, ibegin, iend),
+GridFourier::GridFourier(AccelerationContext const *acc, GridFourier const *fourier, int ibegin, int iend) :
+    BaseCanonicalGrid(acc, *fourier, ibegin, iend),
     wrapper(fourier->wrapper),
     tensors       (fourier->tensors),
     active_tensors(fourier->active_tensors),
@@ -432,52 +432,61 @@ void GridFourier::evaluate(const double x[], double y[]) const{
     }
 }
 void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
-    Utils::Wrapper2D<double> ywrap(num_outputs, y);
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++)
-        evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
-}
+    switch(acceleration->acceleration){
+        #ifdef Tasmanian_ENABLE_CUDA
+        case accel_gpu_magma:
+        case accel_gpu_cuda: {
+            acceleration->setDevice();
+            CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_y(num_outputs, num_x);
+            evaluateBatchGPU(gpu_x.data(), num_x, gpu_y.data());
+            gpu_y.unload(y);
+            break;
+        }
+        case accel_gpu_cublas: {
+            acceleration->setDevice();
+            loadCudaCoefficients<double>();
+            Data2D<double> wreal;
+            Data2D<double> wimag;
+            evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
 
-#ifdef Tasmanian_ENABLE_BLAS
-void GridFourier::evaluateBlas(const double x[], int num_x, double y[]) const{
-    int num_points = points.getNumIndexes();
-    Data2D<double> wreal;
-    Data2D<double> wimag;
-    if (num_x > 1){
-        evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
-    }else{ // work-around small OpenMP penalty
-        wreal = Data2D<double>(num_points, 1);
-        wimag = Data2D<double>(num_points, 1);
-        computeBasis<double, false>(points, x, wreal.data(), wimag.data());
+            int num_points = points.getNumIndexes();
+            CudaVector<double> gpu_real(wreal.begin(), wreal.end()), gpu_imag(wimag.begin(), wimag.end()), gpu_y(num_outputs, num_x);
+            acceleration->engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y.data());
+            acceleration->engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y.data());
+            gpu_y.unload(y);
+            break;
+        }
+        #endif
+        #ifdef Tasmanian_ENABLE_BLAS
+        case accel_cpu_blas: {
+            int num_points = points.getNumIndexes();
+            Data2D<double> wreal;
+            Data2D<double> wimag;
+            if (num_x > 1){
+                evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
+            }else{ // work-around small OpenMP penalty
+                wreal = Data2D<double>(num_points, 1);
+                wimag = Data2D<double>(num_points, 1);
+                computeBasis<double, false>(points, x, wreal.data(), wimag.data());
+            }
+            TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, fourier_coefs.getStrip(0), wreal.data(), 0.0, y);
+            TasBLAS::denseMultiply(num_outputs, num_x, num_points, -1.0, fourier_coefs.getStrip(num_points), wimag.data(), 1.0, y);
+            break;
+        }
+        #endif
+        default: {
+            Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
+            Utils::Wrapper2D<double> ywrap(num_outputs, y);
+            #pragma omp parallel for
+            for(int i=0; i<num_x; i++)
+                evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
+            break;
+        }
     }
-    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, fourier_coefs.getStrip(0), wreal.data(), 0.0, y);
-    TasBLAS::denseMultiply(num_outputs, num_x, num_points, -1.0, fourier_coefs.getStrip(num_points), wimag.data(), 1.0, y);
 }
-#endif
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridFourier::loadNeededPointsCuda(CudaEngine *, const double *vals){
-    loadNeededPoints(vals);
-}
-void GridFourier::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
-    loadCudaCoefficients<double>();
-    Data2D<double> wreal;
-    Data2D<double> wimag;
-    evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
-
-    int num_points = points.getNumIndexes();
-    CudaVector<double> gpu_real(wreal.begin(), wreal.end()), gpu_imag(wimag.begin(), wimag.end()), gpu_y(num_outputs, num_x);
-    engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y.data());
-    engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y.data());
-    gpu_y.unload(y);
-}
-void GridFourier::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
-    CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_y(num_outputs, num_x);
-    evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_y.data());
-    gpu_y.unload(y);
-}
-template<typename T> void GridFourier::evaluateBatchGPUtempl(CudaEngine *engine, const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
+template<typename T> void GridFourier::evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
     loadCudaCoefficients<T>();
 
     CudaVector<T> gpu_real, gpu_imag;
@@ -485,14 +494,14 @@ template<typename T> void GridFourier::evaluateBatchGPUtempl(CudaEngine *engine,
 
     int num_points = points.getNumIndexes();
     auto& ccache = getCudaCache(static_cast<T>(0.0));
-    engine->denseMultiply(num_outputs, cpu_num_x, num_points,  1.0, ccache->real, gpu_real, 0.0, gpu_y);
-    engine->denseMultiply(num_outputs, cpu_num_x, num_points, -1.0, ccache->imag, gpu_imag, 1.0, gpu_y);
+    acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points,  1.0, ccache->real, gpu_real, 0.0, gpu_y);
+    acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, -1.0, ccache->imag, gpu_imag, 1.0, gpu_y);
 }
-void GridFourier::evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
-    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
+void GridFourier::evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
+    evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);
 }
-void GridFourier::evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const{
-    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
+void GridFourier::evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu_y[]) const{
+    evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);
 }
 void GridFourier::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
     loadCudaNodes<double>();
@@ -601,7 +610,7 @@ void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int nu
     }
 }
 
-void GridFourier::setHierarchicalCoefficients(const double c[], TypeAcceleration){
+void GridFourier::setHierarchicalCoefficients(const double c[]){
     // takes c to be length 2*num_outputs*num_points
     // first num_points*num_outputs are the real part; second num_points*num_outputs are the imaginary part
 

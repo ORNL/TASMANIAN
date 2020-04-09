@@ -53,10 +53,10 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridLocalPolynomial : public BaseCanonicalGrid{
 public:
-    GridLocalPolynomial() : order(1), top_level(0), sparse_affinity(0){}
+    GridLocalPolynomial(AccelerationContext const *acc) : BaseCanonicalGrid(acc), order(1), top_level(0), sparse_affinity(0){}
     friend struct GridReaderVersion5<GridLocalPolynomial>;
-    GridLocalPolynomial(const GridLocalPolynomial *pwpoly, int ibegin, int iend);
-    GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
+    GridLocalPolynomial(AccelerationContext const *acc, const GridLocalPolynomial *pwpoly, int ibegin, int iend);
+    GridLocalPolynomial(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
     ~GridLocalPolynomial() = default;
 
     bool isLocalPolynomial() const override{ return true; }
@@ -80,19 +80,15 @@ public:
     void evaluate(const double x[], double y[]) const override;
     void integrate(double q[], double *conformal_correction) const override;
 
+    void evaluateBatchOpenMP(const double x[], int num_x, double y[]) const;
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
-    #ifdef Tasmanian_ENABLE_BLAS
-    void evaluateBlas(const double x[], int num_x, double y[]) const override;
-    #endif
-
     #ifdef Tasmanian_ENABLE_CUDA
-    void loadNeededPointsCuda(CudaEngine *engine, const double *vals) override;
-    void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const override;
-    void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const override;
-    void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const override;
-    void evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const override;
-    template<typename T> void evaluateBatchGPUtempl(CudaEngine *engine, const T gpu_x[], int cpu_num_x, T gpu_y[]) const;
+    void loadNeededPointsGPU(const double *vals);
+    void evaluateCudaMixed(const double x[], int num_x, double y[]) const;
+    void evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const override;
+    void evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu_y[]) const override;
+    template<typename T> void evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpu_y[]) const;
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const override;
     void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals) const;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const override;
@@ -114,7 +110,7 @@ public:
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const override;
     std::vector<double> getSupport() const override final;
-    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) override;
+    void setHierarchicalCoefficients(const double c[]) override;
     void integrateHierarchicalFunctions(double integrals[]) const override;
 
     void clearAccelerationData() override;
@@ -129,7 +125,7 @@ public:
 
 protected:
     //! \brief Create a new grid with given parameters and moving the data out of the vectors and sets.
-    GridLocalPolynomial(int cnum_dimensions, int cnum_outputs, int corder, TypeOneDRule crule, std::vector<int> &&pnts, std::vector<double> &&vals, std::vector<double> &&surps);
+    GridLocalPolynomial(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int corder, TypeOneDRule crule, std::vector<int> &&pnts, std::vector<double> &&vals, std::vector<double> &&surps);
 
     //! \brief Used as part of the loadNeededPoints() algorithm, updates the values and cuda cache, but does not touch the surpluses.
     void updateValues(double const *vals);
@@ -319,8 +315,8 @@ private:
 
 // Old version reader
 template<> struct GridReaderVersion5<GridLocalPolynomial>{
-    template<typename iomode> static auto read(std::istream &is){
-        std::unique_ptr<GridLocalPolynomial> grid = std::make_unique<GridLocalPolynomial>();
+    template<typename iomode> static auto read(AccelerationContext const *acc, std::istream &is){
+        std::unique_ptr<GridLocalPolynomial> grid = std::make_unique<GridLocalPolynomial>(acc);
 
             grid->num_dimensions = IO::readNumber<iomode, int>(is);
             grid->num_outputs = IO::readNumber<iomode, int>(is);

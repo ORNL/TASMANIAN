@@ -51,13 +51,13 @@ namespace TasGrid{
 
 class BaseCanonicalGrid{
 public:
-    BaseCanonicalGrid() : num_dimensions(0), num_outputs(0){}
-    BaseCanonicalGrid(int cnum_dimensions, int cnum_outputs, MultiIndexSet &&cpoints, MultiIndexSet &&cneeded, StorageSet &&cvalues)
-        : num_dimensions(cnum_dimensions), num_outputs(cnum_outputs),
+    BaseCanonicalGrid(AccelerationContext const *acc) : acceleration(acc), num_dimensions(0), num_outputs(0){}
+    BaseCanonicalGrid(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, MultiIndexSet &&cpoints, MultiIndexSet &&cneeded, StorageSet &&cvalues)
+        : acceleration(acc), num_dimensions(cnum_dimensions), num_outputs(cnum_outputs),
           points(std::forward<MultiIndexSet>(cpoints)), needed(std::forward<MultiIndexSet>(cneeded)),
           values(std::forward<StorageSet>(cvalues)){}
-    BaseCanonicalGrid(BaseCanonicalGrid const &other, int ibegin, int iend)
-        : num_dimensions(other.num_dimensions), num_outputs(iend - ibegin),
+    BaseCanonicalGrid(AccelerationContext const *acc, BaseCanonicalGrid const &other, int ibegin, int iend)
+        : acceleration(acc), num_dimensions(other.num_dimensions), num_outputs(iend - ibegin),
           points(other.points), needed(other.needed),
           values((iend - ibegin == other.num_outputs) ? other.values : other.values.splitValues(ibegin, iend))
           {}
@@ -95,19 +95,11 @@ public:
 
     virtual void evaluateBatch(const double x[], int num_x, double y[]) const = 0;
 
-    #ifdef Tasmanian_ENABLE_BLAS
-    virtual void evaluateBlas(const double x[], int num_x, double y[]) const = 0;
-    #endif
-
     #ifdef Tasmanian_ENABLE_CUDA
-    virtual void loadNeededPointsCuda(CudaEngine *engine, const double *vals) = 0;
-
-    virtual void evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
-    virtual void evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const = 0;
-    virtual void evaluateBatchGPU(CudaEngine *engine, const double gpu_x[], int cpu_num_x, double gpu_y[]) const = 0;
-    virtual void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const = 0;
-    virtual void evaluateBatchGPU(CudaEngine *, const float [], int , float []) const = 0;
-    virtual void evaluateHierarchicalFunctionsGPU(const float [], int , float []) const = 0;
+    virtual void evaluateBatchGPU(const double[], int, double[]) const = 0;
+    virtual void evaluateBatchGPU(const float[], int, float[]) const = 0;
+    virtual void evaluateHierarchicalFunctionsGPU(const double[], int, double[]) const = 0;
+    virtual void evaluateHierarchicalFunctionsGPU(const float[], int, float[]) const = 0;
     #endif
 
     virtual void clearRefinement() = 0;
@@ -122,12 +114,13 @@ public:
 
     virtual void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const = 0; // add acceleration here
     virtual std::vector<double> getSupport() const{ return std::vector<double>(Utils::size_mult(getNumPoints(), getNumDimensions()), 2.0); }
-    virtual void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) = 0;
+    virtual void setHierarchicalCoefficients(const double c[]) = 0;
     virtual void integrateHierarchicalFunctions(double integrals[]) const = 0;
 
     virtual void clearAccelerationData() = 0;
 
 protected:
+    AccelerationContext const *acceleration;
     int num_dimensions, num_outputs;
     MultiIndexSet points;
     MultiIndexSet needed;
@@ -139,12 +132,14 @@ protected:
 // Befriend the reader class and each grid type
 template<class GridType>
 struct GridReaderVersion5{ // 5 refers to the file format version, not the Tasmanian version
-    template<typename iomode> static std::unique_ptr<BaseCanonicalGrid> read(std::istream &){ return std::unique_ptr<BaseCanonicalGrid>(); }
+    template<typename iomode> static std::unique_ptr<BaseCanonicalGrid> read(AccelerationContext const *acc, std::istream &){
+        return std::unique_ptr<BaseCanonicalGrid>();
+    }
 };
 
 // Factory reader method that instantiates the GridReaderVersion5 class
-template<class GridType, typename iomode> auto readGridVersion5(std::istream &is, iomode){
-    return GridReaderVersion5<GridType>::template read<iomode>(is);
+template<class GridType, typename iomode> auto readGridVersion5(AccelerationContext const *acc, std::istream &is, iomode){
+    return GridReaderVersion5<GridType>::template read<iomode>(acc, is);
 }
 
 }

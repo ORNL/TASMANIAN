@@ -38,11 +38,11 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridWavelet : public BaseCanonicalGrid{
 public:
-    GridWavelet() : rule1D(1, 10), order(1){}
+    GridWavelet(AccelerationContext const *acc) : BaseCanonicalGrid(acc), rule1D(1, 10), order(1){}
     friend struct GridReaderVersion5<GridWavelet>;
-    GridWavelet(const GridWavelet *wav, int ibegin, int iend);
-    GridWavelet(int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits);
-    GridWavelet(MultiIndexSet &&pset, int cnum_outputs, int corder, Data2D<double> &&vals);
+    GridWavelet(AccelerationContext const *acc, const GridWavelet *wav, int ibegin, int iend);
+    GridWavelet(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits);
+    GridWavelet(AccelerationContext const *acc, MultiIndexSet &&pset, int cnum_outputs, int corder, Data2D<double> &&vals);
     ~GridWavelet() = default;
 
     bool isWavelet() const override{ return true; }
@@ -68,17 +68,11 @@ public:
 
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
-    #ifdef Tasmanian_ENABLE_BLAS
-    void evaluateBlas(const double x[], int num_x, double y[]) const override;
-    #endif
-
     #ifdef Tasmanian_ENABLE_CUDA
-    void loadNeededPointsCuda(CudaEngine *engine, const double *vals) override;
-    void evaluateCudaMixed(CudaEngine*, const double*, int, double[]) const override;
-    void evaluateCuda(CudaEngine*, const double*, int, double[]) const override;
-    void evaluateBatchGPU(CudaEngine*, const double*, int, double[]) const override;
-    void evaluateBatchGPU(CudaEngine*, const float*, int, float[]) const override;
-    template<typename T> void evaluateBatchGPUtempl(CudaEngine*, const T*, int, T[]) const;
+    void evaluateCudaMixed(const double*, int, double[]) const;
+    void evaluateBatchGPU(const double*, int, double[]) const override;
+    void evaluateBatchGPU(const float*, int, float[]) const override;
+    template<typename T> void evaluateBatchGPUtempl(const T*, int, T[]) const;
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const override;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const override;
     #endif
@@ -98,7 +92,7 @@ public:
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const override;
     std::vector<double> getSupport() const override;
 
-    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) override;
+    void setHierarchicalCoefficients(const double c[]) override;
     void integrateHierarchicalFunctions(double integrals[]) const override;
 
     const double* getSurpluses() const;
@@ -150,8 +144,8 @@ private:
 
 // Old version reader
 template<> struct GridReaderVersion5<GridWavelet>{
-    template<typename iomode> static auto read(std::istream &is){
-        std::unique_ptr<GridWavelet> grid = std::make_unique<GridWavelet>();
+    template<typename iomode> static auto read(AccelerationContext const *acc, std::istream &is){
+        std::unique_ptr<GridWavelet> grid = std::make_unique<GridWavelet>(acc);
 
         grid->num_dimensions = IO::readNumber<iomode, int>(is);
         grid->num_outputs = IO::readNumber<iomode, int>(is);

@@ -117,7 +117,6 @@ void constructCommon(ModelSignature model,
     std::string filename_old = checkpoint_filename + "_old";
 
     if (!filename.empty()){ // recover from an existing checkpoint
-        auto save_grid = std::move(grid);
         std::ifstream infile(filename, std::ios::binary);
         try{ // attempt to recover from filename
             if (!infile.good()) throw std::runtime_error("missing main checkpoint");
@@ -131,8 +130,7 @@ void constructCommon(ModelSignature model,
                 grid.read(oldfile, mode_binary);
                 complete.read(oldfile);
             }catch(std::runtime_error &){
-                // nothing could be recovered, start over
-                grid = std::move(save_grid);
+                // nothing could be recovered, start over from the current grid
             }
         }
     }

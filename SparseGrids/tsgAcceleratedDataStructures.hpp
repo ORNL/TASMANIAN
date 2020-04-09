@@ -611,6 +611,9 @@ namespace AccelerationMeta{
  * \ingroup TasmanianAcceleration
  * \brief Wrapper class around GPU device ID, acceleration type and CudaEngine.
  *
+ * Single acceleration context held by the TasmanianSparseGrid class and aliased into each of the sub-classes.
+ * The context is modified through the main class and is persistent on move, copy and read.
+ * The sub-classes hold only a const pointer and can read and use the associated variables and the engine.
  * \endinternal
  */
 struct AccelerationContext{
@@ -666,11 +669,18 @@ struct AccelerationContext{
             device = new_gpu_id;
         }
     }
+    //! \brief Set default device.
+    void setDevice() const{ AccelerationMeta::setDefaultCudaDevice(device); }
+    //! \brief Custom convert to \b CudaEngine
+    operator CudaEngine* () const{ return engine.get(); }
+    bool on_gpu() const{ return !!engine; }
     #else
     void enable(TypeAcceleration acc, int new_gpu_id, void*, void*){
         acceleration = AccelerationMeta::getAvailableFallback(acc);
         device = new_gpu_id;
     }
+    void setDevice() const{}
+    bool on_gpu() const{ return false; }
     #endif
 };
 

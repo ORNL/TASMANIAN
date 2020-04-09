@@ -38,12 +38,12 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridSequence : public BaseCanonicalGrid{
 public:
-    GridSequence() : rule(rule_none){}
+    GridSequence(AccelerationContext const *acc) : BaseCanonicalGrid(acc), rule(rule_none){}
     friend struct GridReaderVersion5<GridSequence>;
-    GridSequence(const GridSequence *seq, int ibegin, int iend);
-    GridSequence(int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
-    GridSequence(int cnum_dimensions, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
-    GridSequence(MultiIndexSet &&pset, int cnum_outputs, TypeOneDRule crule);
+    GridSequence(AccelerationContext const *acc, const GridSequence *seq, int ibegin, int iend);
+    GridSequence(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
+    GridSequence(AccelerationContext const *acc, int cnum_dimensions, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits);
+    GridSequence(AccelerationContext const *acc, MultiIndexSet &&pset, int cnum_outputs, TypeOneDRule crule);
     ~GridSequence() = default;
 
     bool isSequence() const override{ return true; }
@@ -70,18 +70,11 @@ public:
 
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
-    #ifdef Tasmanian_ENABLE_BLAS
-    void evaluateBlas(const double x[], int num_x, double y[]) const override;
-    #endif
-
     #ifdef Tasmanian_ENABLE_CUDA
-    void loadNeededPointsCuda(CudaEngine *engine, const double *vals) override;
-    void evaluateCudaMixed(CudaEngine*, const double*, int, double[]) const override;
-    void evaluateCuda(CudaEngine*, const double*, int, double[]) const override;
-    void evaluateBatchGPU(CudaEngine* engine, const double gpu_x[], int cpu_num_x, double gpy_y[]) const override;
+    void evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpy_y[]) const override;
     void evaluateHierarchicalFunctionsGPU(const double x[], int num_x, double y[]) const override;
-    void evaluateBatchGPU(CudaEngine* engine, const float gpu_x[], int cpu_num_x, float gpy_y[]) const override;
-    template<typename T> void evaluateBatchGPUtempl(CudaEngine* engine, const T gpu_x[], int cpu_num_x, T gpy_y[]) const;
+    void evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpy_y[]) const override;
+    template<typename T> void evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpy_y[]) const;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const override;
     #endif
 
@@ -103,7 +96,7 @@ public:
     void loadConstructedPoint(const double x[], int numx, const double y[]) override;
     void finishConstruction() override;
 
-    void setHierarchicalCoefficients(const double c[], TypeAcceleration acc) override;
+    void setHierarchicalCoefficients(const double c[]) override;
     void integrateHierarchicalFunctions(double integrals[]) const override;
 
     std::vector<int> getPolynomialSpace(bool interpolation) const;
@@ -203,8 +196,8 @@ private:
 
 // Old version reader
 template<> struct GridReaderVersion5<GridSequence>{
-    template<typename iomode> static auto read(std::istream &is){
-        std::unique_ptr<GridSequence> grid = std::make_unique<GridSequence>();
+    template<typename iomode> static auto read(AccelerationContext const *acc, std::istream &is){
+        std::unique_ptr<GridSequence> grid = std::make_unique<GridSequence>(acc);
 
         grid->num_dimensions = IO::readNumber<iomode, int>(is);
         grid->num_outputs = IO::readNumber<iomode, int>(is);

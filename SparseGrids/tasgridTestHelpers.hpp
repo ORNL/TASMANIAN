@@ -149,8 +149,6 @@ bool testDenseGPU(std::vector<double> const &x, std::vector<double> const &y, in
         grid.evaluateHierarchicalFunctionsGPU(gpux.data(), numx, gpuy.data());
     }
     auto cpuy = gpuy.unload();
-//     for(auto v : y) cout << v << "\n";
-//     for(auto v : cpuy) cout << v << "\n";
     return testPass(err1(cpuy, y), tolerance, message, grid);
 }
 template<typename T>
