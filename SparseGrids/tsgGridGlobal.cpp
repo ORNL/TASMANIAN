@@ -125,8 +125,8 @@ void GridGlobal::makeGrid(int cnum_dimensions, int cnum_outputs, int depth, Type
     setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, crule, level_limits),
                cnum_outputs, crule, calpha, cbeta);
 }
-GridGlobal::GridGlobal(GridGlobal const *global, int ibegin, int iend) :
-    BaseCanonicalGrid(*global, ibegin, iend),
+GridGlobal::GridGlobal(AccelerationContext const *acc, GridGlobal const *global, int ibegin, int iend) :
+    BaseCanonicalGrid(acc, *global, ibegin, iend),
     rule(global->rule),
     alpha(global->alpha),
     beta(global->beta),
@@ -509,58 +509,63 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
     }
 }
 void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
-    Utils::Wrapper2D<const double> xwrap(num_dimensions, x);
-    Utils::Wrapper2D<double> ywrap(num_outputs, y);
-    #pragma omp parallel for
-    for(int i=0; i<num_x; i++)
-        evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
-}
-
-#ifdef Tasmanian_ENABLE_BLAS
-void GridGlobal::evaluateBlas(const double x[], int num_x, double y[]) const{
-    int num_points = points.getNumIndexes();
-    Data2D<double> weights(num_points, num_x);
-    if (num_x > 1){
-        evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
-    }else{ // skips small OpenMP overhead
-        getInterpolationWeights(x, weights.getStrip(0));
+    switch(acceleration->acceleration){
+        #ifdef Tasmanian_ENABLE_CUDA
+        case accel_gpu_magma:
+        case accel_gpu_cuda: {
+            acceleration->setDevice();
+            CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
+            evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
+            gpu_result.unload(y);
+            break;
+        }
+        case accel_gpu_cublas: {
+            acceleration->setDevice();
+            loadCudaValues<double>();
+            int num_points = points.getNumIndexes();
+            Data2D<double> weights(num_points, num_x);
+            evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+            acceleration->engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->values, weights.data(), y);
+            break;
+        }
+        #endif
+        #ifdef Tasmanian_ENABLE_BLAS
+        case accel_cpu_blas: {
+            int num_points = points.getNumIndexes();
+            Data2D<double> weights(num_points, num_x);
+            if (num_x > 1)
+                evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
+            else // skips small OpenMP overhead
+                getInterpolationWeights(x, weights.getStrip(0));
+            TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, values.getValues(0), weights.getStrip(0), 0.0, y);
+            break;
+        }
+        #endif
+        default: {
+            Utils::Wrapper2D<const double> xwrap(num_dimensions, x);
+            Utils::Wrapper2D<double> ywrap(num_outputs, y);
+            #pragma omp parallel for
+            for(int i=0; i<num_x; i++)
+                evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
+            break;
+        }
     }
-
-    TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, values.getValues(0), weights.getStrip(0), 0.0, y);
 }
-#endif // Tasmanian_ENABLE_BLAS
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridGlobal::loadNeededPointsCuda(CudaEngine *, const double *vals){
-    loadNeededPoints(vals);
-}
-void GridGlobal::evaluateCudaMixed(CudaEngine *engine, const double x[], int num_x, double y[]) const{
-    loadCudaValues<double>();
-
-    int num_points = points.getNumIndexes();
-    Data2D<double> weights(num_points, num_x);
-    evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
-
-    engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->values, weights.data(), y);
-}
-void GridGlobal::evaluateCuda(CudaEngine *engine, const double x[], int num_x, double y[]) const{
-    CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
-    evaluateBatchGPU(engine, gpu_x.data(), num_x, gpu_result.data());
-    gpu_result.unload(y);
-}
-template<typename T> void GridGlobal::evaluateBatchGPUtempl(CudaEngine *engine, T const gpu_x[], int cpu_num_x, T gpu_y[]) const{
+template<typename T> void GridGlobal::evaluateBatchGPUtempl(T const gpu_x[], int cpu_num_x, T gpu_y[]) const{
     loadCudaValues<T>();
     int num_points = points.getNumIndexes();
 
     CudaVector<T> gpu_basis(cpu_num_x, num_points);
     evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
-    engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getCudaCache(static_cast<T>(0.0))->values, gpu_basis, 0.0, gpu_y);
+    acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getCudaCache(static_cast<T>(0.0))->values, gpu_basis, 0.0, gpu_y);
 }
-void GridGlobal::evaluateBatchGPU(CudaEngine *engine, const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
-    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
+void GridGlobal::evaluateBatchGPU(const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
+    evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);
 }
-void GridGlobal::evaluateBatchGPU(CudaEngine *engine, const float gpu_x[], int cpu_num_x, float gpu_y[]) const{
-    evaluateBatchGPUtempl(engine, gpu_x, cpu_num_x, gpu_y);
+void GridGlobal::evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu_y[]) const{
+    evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);
 }
 template<typename T> void GridGlobal::evaluateHierarchicalFunctionsGPUtempl(T const gpu_x[], int cpu_num_x, T *gpu_y) const{
     auto& ccache = getCudaCache(static_cast<T>(0.0));
@@ -676,7 +681,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
             if (std::abs(surp[i]) > max_surp) max_surp = std::abs(surp[i]);
         }
 
-        GridSequence seq(MultiIndexSet(points), 1, rule); // there is an extra copy here, but the sequence grid does the surplus computation automatically
+        GridSequence seq(acceleration, MultiIndexSet(points), 1, rule); // there is an extra copy here, but the sequence grid does the surplus computation automatically
 
         seq.loadNeededPoints(surp.data());
 
@@ -694,7 +699,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
                     return !polynomial_set.missing(qindex);
                 });
 
-        GridGlobal QuadGrid;
+        GridGlobal QuadGrid(acceleration);
         if (quadrature_tensors.getMaxIndex() < TableGaussPatterson::getNumLevels()-1){
             QuadGrid.setTensors(std::move(quadrature_tensors), 0, rule_gausspatterson, 0.0, 0.0);
         }else{
@@ -853,7 +858,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
         proposeUpdatedTensors();
     }
 }
-void GridGlobal::setHierarchicalCoefficients(const double c[], TypeAcceleration){
+void GridGlobal::setHierarchicalCoefficients(const double c[]){
     #ifdef Tasmanian_ENABLE_CUDA
     clearCudaValues();
     #endif

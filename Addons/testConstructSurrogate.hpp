@@ -262,7 +262,7 @@ bool testConstructSurrogate(bool verbose){
         if (grid.getRule() != rule_leja) throw std::runtime_error("Failed recovery from crash, wrong rule.");
         compareGrids(1.E-9, grid, reference_grid, true);
         if (verbose) cout << std::setw(40) << "parallel resilient sequence" << std::setw(10) << "Pass" << endl;
-    };
+    }
     if (std::remove("checkpoint") != 0) throw std::runtime_error("Could not delete the 'checkpoint' file, the file must exists after the test.");
 
     return true;

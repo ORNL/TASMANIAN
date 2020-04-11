@@ -606,6 +606,84 @@ namespace AccelerationMeta{
     #endif
 }
 
+/*!
+ * \internal
+ * \ingroup TasmanianAcceleration
+ * \brief Wrapper class around GPU device ID, acceleration type and CudaEngine.
+ *
+ * Single acceleration context held by the TasmanianSparseGrid class and aliased into each of the sub-classes.
+ * The context is modified through the main class and is persistent on move, copy and read.
+ * The sub-classes hold only a const pointer and can read and use the associated variables and the engine.
+ * \endinternal
+ */
+struct AccelerationContext{
+    //! \brief Defines the sparse-dense algorithm flavors, whenever applicable.
+    enum AlgorithmPreference{
+        //! \brief Use dense algorithm.
+        algorithm_dense,
+        //! \brief Use sparse algorithm.
+        algorithm_sparse,
+        //! \brief Use automatically select based on heuristics.
+        algorithm_autoselect
+    };
+
+    //! \brief The current active acceleration mode.
+    TypeAcceleration acceleration;
+    //! \brief The preference to use dense or sparse algorithms.
+    AlgorithmPreference algorithm_select;
+    //! \brief If using a GPU acceleration mode, holds the active device.
+    int device;
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    //! \brief Holds the context to the GPU TPL handles, e.g., MAGMA queue.
+    mutable std::unique_ptr<CudaEngine> engine;
+    #endif
+    #ifdef Tasmanian_ENABLE_BLAS
+    //! \brief Creates a default context, the device id is set to 0 and acceleration is BLAS (if available) or none.
+    AccelerationContext() : acceleration(accel_cpu_blas), algorithm_select(algorithm_autoselect), device(0){}
+    #else
+    AccelerationContext() : acceleration(accel_none), algorithm_select(algorithm_autoselect), device(0){}
+    #endif
+
+    //! \brief Sets algorithm affinity in the direction of sparse.
+    void favorSparse(bool favor){
+        if (favor){
+            algorithm_select = (algorithm_select == algorithm_dense) ? algorithm_autoselect : algorithm_sparse;
+        }else{
+            algorithm_select = (algorithm_select == algorithm_sparse) ? algorithm_autoselect : algorithm_dense;
+        }
+    }
+
+    #ifdef Tasmanian_ENABLE_CUDA // GPU related methods with fallback options
+    //! \brief Accepts parameters directly from TasmanianSparseGrid::enableAcceleration()
+    void enable(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){
+        acceleration = AccelerationMeta::getAvailableFallback(acc);
+        engine.reset();
+        if (AccelerationMeta::isAccTypeGPU(acceleration)){
+            // create a new engine
+            if ((new_gpu_id < 0) || (new_gpu_id >= AccelerationMeta::getNumCudaDevices()))
+                throw std::runtime_error("Invalid CUDA device ID, see ./tasgrid -v for list of detected devices.");
+            device = new_gpu_id;
+            engine = std::make_unique<CudaEngine>(device, (acceleration == accel_gpu_magma), backend_handle, cusparse_handle);
+        }else{
+            device = new_gpu_id;
+        }
+    }
+    //! \brief Set default device.
+    void setDevice() const{ AccelerationMeta::setDefaultCudaDevice(device); }
+    //! \brief Custom convert to \b CudaEngine
+    operator CudaEngine* () const{ return engine.get(); }
+    bool on_gpu() const{ return !!engine; }
+    #else
+    void enable(TypeAcceleration acc, int new_gpu_id, void*, void*){
+        acceleration = AccelerationMeta::getAvailableFallback(acc);
+        device = new_gpu_id;
+    }
+    void setDevice() const{}
+    bool on_gpu() const{ return false; }
+    #endif
+};
+
 }
 
 #endif // __TASMANIAN_SPARSE_GRID_ACCELERATED_DATA_STRUCTURES_HPP

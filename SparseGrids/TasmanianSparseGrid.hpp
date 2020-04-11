@@ -1237,7 +1237,7 @@ public:
      *
      * Simply returns the internal flag.
      */
-    bool isUsingConstruction() const{ return usingDynamicConstruction; }
+    bool isUsingConstruction() const{ return using_dynamic_construction; }
     /*!
      * \brief Generate a sorted list of points weighted by descending importance.
      *
@@ -1392,7 +1392,7 @@ public:
      *
      * Identical to setHierarchicalCoefficients() but does not check for the size of the array.
      */
-    void setHierarchicalCoefficients(const double c[]);
+    void setHierarchicalCoefficients(const double c[]){ base->setHierarchicalCoefficients(c); }
 
     /*!
      * \brief Computes the values of the hierarchical function basis at the specified points.
@@ -1633,7 +1633,7 @@ public:
      * Returns the acceleration mode that will be used, i.e., the one selected internally
      * based on the request made in enableAcceleration().
      */
-    TypeAcceleration getAccelerationType() const{ return acceleration; }
+    TypeAcceleration getAccelerationType() const{ return acceleration->acceleration; }
     /*!
      * \brief Returns whether a specific mode can be enabled.
      *
@@ -1659,7 +1659,7 @@ public:
      *
      * Does not throw if CUDA is not enabled in CMake, instead the default \b 0 is returned.
      */
-    int getGPUID() const{ return gpu_id; }
+    int getGPUID() const{ return acceleration->device; }
     /*!
      * \brief Return the number of visible CUDA devices.
      *
@@ -1867,7 +1867,7 @@ public:
      * Same as get(), but the method is const and returns a const reference.
      * \endinternal
      */
-    template<class T> inline T const* get() const{ return (T*) base.get(); }
+    template<class T> inline T const* get() const{ return dynamic_cast<T const*>(base.get()); }
     #endif // __TASMANIAN_DOXYGEN_SKIP_INTERNAL
 
 protected:
@@ -2009,13 +2009,11 @@ private:
     std::vector<int> conformal_asin_power;
     std::vector<int> llimits;
 
-    TypeAcceleration acceleration;
-    int gpu_id;
+    std::unique_ptr<AccelerationContext> acceleration;
 
-    bool usingDynamicConstruction;
+    bool using_dynamic_construction;
 
     #ifdef Tasmanian_ENABLE_CUDA
-    mutable std::unique_ptr<CudaEngine> engine;
     mutable std::unique_ptr<AccelerationDomainTransform> acc_domain;
     #endif
 };
