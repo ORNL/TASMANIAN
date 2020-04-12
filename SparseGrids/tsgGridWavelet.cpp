@@ -149,22 +149,16 @@ void GridWavelet::getInterpolationWeights(const double x[], double *weights) con
     inter_matrix.invertTransposed(weights);
 }
 void GridWavelet::loadNeededPoints(const double *vals){
-    #ifdef Tasmanian_ENABLE_CUDA
-    clearCudaCoefficients();
-    #endif
+    clearGpuCoefficients();
     if (points.empty()){
-        #ifdef Tasmanian_ENABLE_CUDA
-        clearCudaBasis();
-        #endif
+        clearGpuBasis();
         values.setValues(vals);
         points = std::move(needed);
         needed = MultiIndexSet();
     }else if (needed.empty()){
         values.setValues(vals);
     }else{
-        #ifdef Tasmanian_ENABLE_CUDA
-        clearCudaBasis();
-        #endif
+        clearGpuBasis();
         values.addValues(points, needed, vals);
         points += needed;
         needed = MultiIndexSet();
@@ -174,10 +168,8 @@ void GridWavelet::loadNeededPoints(const double *vals){
 }
 void GridWavelet::mergeRefinement(){
     if (needed.empty()) return; // nothing to do
-    #ifdef Tasmanian_ENABLE_CUDA
-    clearCudaCoefficients();
-    clearCudaBasis();
-    #endif
+    clearGpuCoefficients();
+    clearGpuBasis();
     int num_all_points = getNumLoaded() + getNumNeeded();
     values.setValues(std::vector<double>(Utils::size_mult(num_all_points, num_outputs), 0.0));
     if (points.empty()){
@@ -210,7 +202,7 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
             if ((order != 1) || (num_x == 1)){
                 // GPU evaluations are available only for order 1
                 // cannot use GPU to accelerate the evaluation of a single vector
-                evaluateCudaMixed(x, num_x, y);
+                evaluateGpuMixed(x, num_x, y);
                 return;
             }
             CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
@@ -220,7 +212,7 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
         }
         case accel_gpu_cublas: {
             acceleration->setDevice();
-            evaluateCudaMixed(x, num_x, y);
+            evaluateGpuMixed(x, num_x, y);
             break;
         }
         #endif
@@ -245,22 +237,22 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
 }
 
 #ifdef Tasmanian_ENABLE_CUDA
-void GridWavelet::evaluateCudaMixed(const double x[], int num_x, double y[]) const{
-    loadCudaCoefficients<double>();
+void GridWavelet::evaluateGpuMixed(const double x[], int num_x, double y[]) const{
+    loadGpuCoefficients<double>();
 
     Data2D<double> weights(points.getNumIndexes(), num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    acceleration->engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, cuda_cache->coefficients, weights.data(), y);
+    acceleration->engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, gpu_cache->coefficients, weights.data(), y);
 }
 template<typename T> void GridWavelet::evaluateBatchGPUtempl(const T *gpu_x, int cpu_num_x, T gpu_y[]) const{
     if (order != 1) throw std::runtime_error("ERROR: GPU evaluations are available only for wavelet grids with order 1");
-    loadCudaCoefficients<T>();
+    loadGpuCoefficients<T>();
     int num_points = points.getNumIndexes();
 
     CudaVector<T> gpu_basis(cpu_num_x, num_points);
     evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
-    acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getCudaCache(static_cast<T>(0.0))->coefficients, gpu_basis, 0.0, gpu_y);
+    acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->coefficients, gpu_basis, 0.0, gpu_y);
 }
 void GridWavelet::evaluateBatchGPU(const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
     evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);
@@ -269,15 +261,15 @@ void GridWavelet::evaluateBatchGPU(const float *gpu_x, int cpu_num_x, float gpu_
     evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);
 }
 void GridWavelet::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const{
-    loadCudaBasis<double>();
-    TasCUDA::devalpwpoly(order, rule_wavelet, num_dimensions, cpu_num_x, getNumPoints(), gpu_x, cuda_cache->nodes.data(), cuda_cache->support.data(), gpu_y);
+    loadGpuBasis<double>();
+    TasCUDA::devalpwpoly(order, rule_wavelet, num_dimensions, cpu_num_x, getNumPoints(), gpu_x, gpu_cache->nodes.data(), gpu_cache->support.data(), gpu_y);
 }
 void GridWavelet::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const{
-    loadCudaBasis<float>();
-    TasCUDA::devalpwpoly(order, rule_wavelet, num_dimensions, cpu_num_x, getNumPoints(), gpu_x, cuda_cachef->nodes.data(), cuda_cachef->support.data(), gpu_y);
+    loadGpuBasis<float>();
+    TasCUDA::devalpwpoly(order, rule_wavelet, num_dimensions, cpu_num_x, getNumPoints(), gpu_x, gpu_cachef->nodes.data(), gpu_cachef->support.data(), gpu_y);
 }
-template<typename T> void GridWavelet::loadCudaBasis() const{
-    auto &ccache = getCudaCache(static_cast<T>(0.0));
+template<typename T> void GridWavelet::loadGpuBasis() const{
+    auto &ccache = getGpuCache<T>();
     if (!ccache) ccache = std::make_unique<CudaWaveletData<T>>();
     if (!ccache->nodes.empty()) return;
 
@@ -295,19 +287,22 @@ template<typename T> void GridWavelet::loadCudaBasis() const{
     ccache->nodes.load(cpu_scale.begin(), cpu_scale.end());
     ccache->support.load(cpu_shift.begin(), cpu_shift.end());
 }
-void GridWavelet::clearCudaBasis(){
-    if (cuda_cache) cuda_cache->clearNodes();
-    if (cuda_cachef) cuda_cachef->clearNodes();
+void GridWavelet::clearGpuBasis() const{
+    if (gpu_cache) gpu_cache->clearNodes();
+    if (gpu_cachef) gpu_cachef->clearNodes();
 }
-template<typename T> void GridWavelet::loadCudaCoefficients() const{
-    auto &ccache = getCudaCache(static_cast<T>(0.0));
+template<typename T> void GridWavelet::loadGpuCoefficients() const{
+    auto &ccache = getGpuCache<T>();
     if (!ccache) ccache = std::make_unique<CudaWaveletData<T>>();
     if (ccache->coefficients.empty()) ccache->coefficients.load(coefficients.begin(), coefficients.end());
 }
-void GridWavelet::clearCudaCoefficients(){
-    if (cuda_cache) cuda_cache->coefficients.clear();
-    if (cuda_cachef) cuda_cachef->coefficients.clear();
+void GridWavelet::clearGpuCoefficients() const{
+    if (gpu_cache) gpu_cache->coefficients.clear();
+    if (gpu_cachef) gpu_cachef->coefficients.clear();
 }
+#else
+void GridWavelet::clearGpuCoefficients() const{}
+void GridWavelet::clearGpuBasis() const{}
 #endif
 
 void GridWavelet::integrate(double q[], double *conformal_correction) const{
@@ -807,10 +802,8 @@ void GridWavelet::loadConstructedPoint(const double x[], int numx, const double 
     auto new_points = WaveManipulations::getLargestConnected(points, MultiIndexSet(candidates), rule1D);
     if (new_points.empty()) return;
 
-    #ifdef Tasmanian_ENABLE_CUDA
-    clearCudaBasis(); // the points will change, clear the cache
-    clearCudaCoefficients();
-    #endif
+    clearGpuBasis(); // the points will change, clear the cache
+    clearGpuCoefficients();
 
     auto vals = dynamic_values->extractValues(new_points);
     if (points.empty()){
@@ -854,9 +847,7 @@ std::vector<double> GridWavelet::getSupport() const{
 }
 
 void GridWavelet::setHierarchicalCoefficients(const double c[]){
-    #ifdef Tasmanian_ENABLE_CUDA
-    clearCudaCoefficients();
-    #endif
+    clearGpuCoefficients();
     if (!points.empty()){
         clearRefinement();
     }else{
@@ -957,8 +948,8 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
 
 void GridWavelet::clearAccelerationData(){
     #ifdef Tasmanian_ENABLE_CUDA
-    cuda_cache.reset();
-    cuda_cachef.reset();
+    gpu_cache.reset();
+    gpu_cachef.reset();
     #endif
 }
 

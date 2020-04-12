@@ -159,14 +159,8 @@ protected:
         }
     }
 
-    #ifdef Tasmanian_ENABLE_CUDA
-    std::unique_ptr<CudaFourierData<double>>& getCudaCache(double) const{ return cuda_cache; }
-    std::unique_ptr<CudaFourierData<float>>& getCudaCache(float) const{ return cuda_cachef; }
-    template<typename T> void loadCudaNodes() const;
-    void clearCudaNodes();
-    template<typename T> void loadCudaCoefficients() const;
-    void clearCudaCoefficients();
-    #endif
+    void clearGpuNodes() const;
+    void clearGpuCoefficients() const;
 
 private:
     OneDimensionalWrapper wrapper;
@@ -188,8 +182,15 @@ private:
     std::unique_ptr<DynamicConstructorDataGlobal> dynamic_values;
 
     #ifdef Tasmanian_ENABLE_CUDA
-    mutable std::unique_ptr<CudaFourierData<double>> cuda_cache;
-    mutable std::unique_ptr<CudaFourierData<float>> cuda_cachef;
+    template<typename T> void loadGpuNodes() const;
+    template<typename T> void loadGpuCoefficients() const;
+    inline std::unique_ptr<CudaFourierData<double>>& getGpuCacheOverload(double) const{ return gpu_cache; }
+    inline std::unique_ptr<CudaFourierData<float>>& getGpuCacheOverload(float) const{ return gpu_cachef; }
+    template<typename T> inline std::unique_ptr<CudaFourierData<T>>& getGpuCache() const{
+        return getGpuCacheOverload(static_cast<T>(0.0));
+    }
+    mutable std::unique_ptr<CudaFourierData<double>> gpu_cache;
+    mutable std::unique_ptr<CudaFourierData<float>> gpu_cachef;
     #endif
 };
 

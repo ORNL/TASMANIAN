@@ -130,14 +130,8 @@ protected:
     void loadConstructedTensors();
     std::vector<int> getMultiIndex(const double x[]);
 
-    #ifdef Tasmanian_ENABLE_CUDA
-    std::unique_ptr<CudaGlobalData<double>>& getCudaCache(double) const{ return cuda_cache; }
-    std::unique_ptr<CudaGlobalData<float>>& getCudaCache(float) const{ return cuda_cachef; }
-    template<typename T> void loadCudaValues() const;
-    void clearCudaValues() const;
-    template<typename T> void loadCudaNodes() const;
-    void clearCudaNodes() const;
-    #endif
+    void clearGpuValues() const;
+    void clearGpuNodes() const;
 
 private:
     TypeOneDRule rule;
@@ -162,8 +156,15 @@ private:
     std::unique_ptr<DynamicConstructorDataGlobal> dynamic_values;
 
     #ifdef Tasmanian_ENABLE_CUDA
-    mutable std::unique_ptr<CudaGlobalData<double>> cuda_cache;
-    mutable std::unique_ptr<CudaGlobalData<float>> cuda_cachef;
+    template<typename T> void loadGpuNodes() const;
+    template<typename T> void loadGpuValues() const;
+    inline std::unique_ptr<CudaGlobalData<double>>& getGpuCacheOverload(double) const{ return gpu_cache; }
+    inline std::unique_ptr<CudaGlobalData<float>>& getGpuCacheOverload(float) const{ return gpu_cachef; }
+    template<typename T> inline std::unique_ptr<CudaGlobalData<T>>& getGpuCache() const{
+        return getGpuCacheOverload(static_cast<T>(0.0));
+    }
+    mutable std::unique_ptr<CudaGlobalData<double>> gpu_cache;
+    mutable std::unique_ptr<CudaGlobalData<float>> gpu_cachef;
     #endif
 };
 

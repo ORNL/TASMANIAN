@@ -141,13 +141,30 @@ protected:
 
     double evalBasis(const int f[], const int p[]) const; // evaluate function corresponding to f at p
 
+    void clearGpuNodes() const;
+    void clearGpuSurpluses() const;
+
+private:
+    TypeOneDRule rule;
+
+    Data2D<double> surpluses;
+    std::vector<double> nodes;
+    std::vector<double> coeff;
+
+    std::vector<int> max_levels;
+
+    std::unique_ptr<SimpleConstructData> dynamic_values;
+
     #ifdef Tasmanian_ENABLE_CUDA
     // specialize below for the float case
-    std::unique_ptr<CudaSequenceData<double>>& getCudaCache(double) const{ return cuda_cache; }
-    std::unique_ptr<CudaSequenceData<float>>& getCudaCache(float) const{ return cuda_cachef; }
+    std::unique_ptr<CudaSequenceData<double>>& getGpuCacheOverload(double) const{ return gpu_cache; }
+    std::unique_ptr<CudaSequenceData<float>>& getGpuCacheOverload(float) const{ return gpu_cachef; }
+    template<typename T> std::unique_ptr<CudaSequenceData<T>>& getGpuCache() const{
+        return getGpuCacheOverload(static_cast<T>(0.0));
+    }
     template<typename T>
-    void loadCudaNodes() const{
-        auto& ccache = getCudaCache(static_cast<T>(0.0));
+    void loadGpuNodes() const{
+        auto& ccache = getGpuCache<T>();
         if (!ccache) ccache = std::make_unique<CudaSequenceData<T>>();
         if (!ccache->num_nodes.empty()) return;
 
@@ -168,29 +185,13 @@ protected:
         }
         ccache->points.load(transpoints.begin(), transpoints.end());
     }
-    void clearCudaNodes();
-    template<typename T> void loadCudaSurpluses() const{
-        auto& ccache = getCudaCache(static_cast<T>(0.0));
+    template<typename T> void loadGpuSurpluses() const{
+        auto& ccache = getGpuCache<T>();
         if (!ccache) ccache = std::make_unique<CudaSequenceData<T>>();
         if (ccache->surpluses.empty()) ccache->surpluses.load(surpluses.begin(), surpluses.end());
     }
-    void clearCudaSurpluses();
-    #endif
-
-private:
-    TypeOneDRule rule;
-
-    Data2D<double> surpluses;
-    std::vector<double> nodes;
-    std::vector<double> coeff;
-
-    std::vector<int> max_levels;
-
-    std::unique_ptr<SimpleConstructData> dynamic_values;
-
-    #ifdef Tasmanian_ENABLE_CUDA
-    mutable std::unique_ptr<CudaSequenceData<double>> cuda_cache;
-    mutable std::unique_ptr<CudaSequenceData<float>> cuda_cachef;
+    mutable std::unique_ptr<CudaSequenceData<double>> gpu_cache;
+    mutable std::unique_ptr<CudaSequenceData<float>> gpu_cachef;
     #endif
 };
 

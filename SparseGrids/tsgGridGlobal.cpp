@@ -279,9 +279,7 @@ void GridGlobal::acceptUpdatedTensors(){
         points = std::move(needed);
         needed = MultiIndexSet();
     }else if (!needed.empty()){
-        #ifdef Tasmanian_ENABLE_CUDA
-        clearCudaNodes();
-        #endif
+        clearGpuNodes();
         points += needed;
         needed = MultiIndexSet();
 
@@ -301,9 +299,7 @@ void GridGlobal::acceptUpdatedTensors(){
 }
 
 void GridGlobal::loadNeededPoints(const double *vals){
-    #ifdef Tasmanian_ENABLE_CUDA
-    clearCudaValues();
-    #endif
+    clearGpuValues();
     if (points.empty() || needed.empty()){
         values.setValues(vals);
     }else{
@@ -313,9 +309,7 @@ void GridGlobal::loadNeededPoints(const double *vals){
 }
 void GridGlobal::mergeRefinement(){
     if (needed.empty()) return; // nothing to do
-    #ifdef Tasmanian_ENABLE_CUDA
-    clearCudaValues();
-    #endif
+    clearGpuValues();
     int num_all_points = getNumLoaded() + getNumNeeded();
     values.setValues(std::vector<double>(Utils::size_mult(num_outputs, num_all_points), 0.0));
     acceptUpdatedTensors();
@@ -474,10 +468,8 @@ void GridGlobal::loadConstructedTensors(){
     dynamic_values->ejectCompleteTensor(tensors, new_tensors, new_points, new_values);
     if (new_tensors.empty()) return; // nothing to do
 
-    #ifdef Tasmanian_ENABLE_CUDA
-    clearCudaNodes();
-    clearCudaValues();
-    #endif
+    clearGpuNodes();
+    clearGpuValues();
 
     if (points.empty()){ // no loaded points yet
         values = std::move(new_values);
@@ -521,11 +513,11 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
         }
         case accel_gpu_cublas: {
             acceleration->setDevice();
-            loadCudaValues<double>();
+            loadGpuValues<double>();
             int num_points = points.getNumIndexes();
             Data2D<double> weights(num_points, num_x);
             evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
-            acceleration->engine->denseMultiply(num_outputs, num_x, num_points, 1.0, cuda_cache->values, weights.data(), y);
+            acceleration->engine->denseMultiply(num_outputs, num_x, num_points, 1.0, gpu_cache->values, weights.data(), y);
             break;
         }
         #endif
@@ -554,12 +546,12 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
 
 #ifdef Tasmanian_ENABLE_CUDA
 template<typename T> void GridGlobal::evaluateBatchGPUtempl(T const gpu_x[], int cpu_num_x, T gpu_y[]) const{
-    loadCudaValues<T>();
+    loadGpuValues<T>();
     int num_points = points.getNumIndexes();
 
     CudaVector<T> gpu_basis(cpu_num_x, num_points);
     evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
-    acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getCudaCache(static_cast<T>(0.0))->values, gpu_basis, 0.0, gpu_y);
+    acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->values, gpu_basis, 0.0, gpu_y);
 }
 void GridGlobal::evaluateBatchGPU(const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
     evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);
@@ -568,8 +560,8 @@ void GridGlobal::evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu_
     evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);
 }
 template<typename T> void GridGlobal::evaluateHierarchicalFunctionsGPUtempl(T const gpu_x[], int cpu_num_x, T *gpu_y) const{
-    auto& ccache = getCudaCache(static_cast<T>(0.0));
-    loadCudaNodes<T>();
+    auto& ccache = getGpuCache<T>();
+    loadGpuNodes<T>();
     TasCUDA::devalglo(!OneDimensionalMeta::isNonNested(rule), (rule == rule_clenshawcurtis0), num_dimensions, cpu_num_x, getNumPoints(),
                       ccache->num_basis,
                       gpu_x, ccache->nodes, ccache->coeff, ccache->tensor_weights,
@@ -583,14 +575,14 @@ void GridGlobal::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_
 void GridGlobal::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const{
     evaluateHierarchicalFunctionsGPUtempl(gpu_x, cpu_num_x, gpu_y);
 }
-template<typename T> void GridGlobal::loadCudaValues() const{
-    auto& ccache = getCudaCache(static_cast<T>(0.0));
+template<typename T> void GridGlobal::loadGpuValues() const{
+    auto& ccache = getGpuCache<T>();
     if (!ccache) ccache = std::make_unique<CudaGlobalData<T>>();
     if (ccache->values.empty()) ccache->values.load(values.begin(), values.end());
 }
-void GridGlobal::clearCudaValues() const{ if (cuda_cache) cuda_cache->values.clear(); }
-template<typename T> void GridGlobal::loadCudaNodes() const{
-    auto& ccache = getCudaCache(static_cast<T>(0.0));
+void GridGlobal::clearGpuValues() const{ if (gpu_cache) gpu_cache->values.clear(); }
+template<typename T> void GridGlobal::loadGpuNodes() const{
+    auto& ccache = getGpuCache<T>();
     if (!ccache) ccache = std::make_unique<CudaGlobalData<T>>();
     if (!ccache->nodes.empty()) return; // already loaded
     // data for stage 1 (Lagrange caching)
@@ -642,10 +634,13 @@ template<typename T> void GridGlobal::loadCudaNodes() const{
     ccache->map_index.load(map_index);
     ccache->map_reference.load(map_reference);
 }
-void GridGlobal::clearCudaNodes() const{
-    if (cuda_cache) cuda_cache->clearNodes();
-    if (cuda_cachef) cuda_cachef->clearNodes();
+void GridGlobal::clearGpuNodes() const{
+    if (gpu_cache) gpu_cache->clearNodes();
+    if (gpu_cachef) gpu_cachef->clearNodes();
 }
+#else
+void GridGlobal::clearGpuNodes() const{}
+void GridGlobal::clearGpuValues() const{}
 #endif // Tasmanian_ENABLE_CUDA
 
 void GridGlobal::integrate(double q[], double *conformal_correction) const{
@@ -859,9 +854,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
     }
 }
 void GridGlobal::setHierarchicalCoefficients(const double c[]){
-    #ifdef Tasmanian_ENABLE_CUDA
-    clearCudaValues();
-    #endif
+    clearGpuValues();
     if (!points.empty()) clearRefinement();
     loadNeededPoints(c);
 }
@@ -881,8 +874,8 @@ double GridGlobal::legendre(int n, double x){
 
 void GridGlobal::clearAccelerationData(){
     #ifdef Tasmanian_ENABLE_CUDA
-    cuda_cache.reset();
-    cuda_cachef.reset();
+    gpu_cache.reset();
+    gpu_cachef.reset();
     #endif
 }
 
