@@ -480,14 +480,14 @@ void GridSequence::evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double 
 }
 void GridSequence::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
     loadGpuNodes<double>();
-    TasCUDA::devalseq(num_dimensions, num_x, max_levels, gpu_x, gpu_cache->num_nodes, gpu_cache->points, gpu_cache->nodes, gpu_cache->coeff, gpu_y);
+    TasGpu::devalseq(num_dimensions, num_x, max_levels, gpu_x, gpu_cache->num_nodes, gpu_cache->points, gpu_cache->nodes, gpu_cache->coeff, gpu_y);
 }
 void GridSequence::evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu_y[]) const{
     evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);
 }
 void GridSequence::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const{
     loadGpuNodes<float>();
-    TasCUDA::devalseq(num_dimensions, num_x, max_levels, gpu_x, gpu_cachef->num_nodes, gpu_cachef->points, gpu_cachef->nodes, gpu_cachef->coeff, gpu_y);
+    TasGpu::devalseq(num_dimensions, num_x, max_levels, gpu_x, gpu_cachef->num_nodes, gpu_cachef->points, gpu_cachef->nodes, gpu_cachef->coeff, gpu_y);
 }
 void GridSequence::clearGpuNodes() const{
     if (gpu_cache) gpu_cache->clearNodes();

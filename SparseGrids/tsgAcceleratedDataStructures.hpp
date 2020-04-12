@@ -384,7 +384,7 @@ private:
 //! \internal
 //! \brief Wrappers around custom CUDA kernels to handle domain transforms and basis evaluations, the kernels are instantiated in tsgCudaKernels.cu
 //! \ingroup TasmanianAcceleration
-namespace TasCUDA{
+namespace TasGpu{
     //! \internal
     //! \brief Uses custom kernel to convert \b transformed points to \b canonical points, all arrays live on the CUDA device.
     //! \ingroup TasmanianAcceleration

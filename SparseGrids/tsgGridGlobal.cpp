@@ -562,7 +562,7 @@ void GridGlobal::evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu_
 template<typename T> void GridGlobal::evaluateHierarchicalFunctionsGPUtempl(T const gpu_x[], int cpu_num_x, T *gpu_y) const{
     auto& ccache = getGpuCache<T>();
     loadGpuNodes<T>();
-    TasCUDA::devalglo(!OneDimensionalMeta::isNonNested(rule), (rule == rule_clenshawcurtis0), num_dimensions, cpu_num_x, getNumPoints(),
+    TasGpu::devalglo(!OneDimensionalMeta::isNonNested(rule), (rule == rule_clenshawcurtis0), num_dimensions, cpu_num_x, getNumPoints(),
                       ccache->num_basis,
                       gpu_x, ccache->nodes, ccache->coeff, ccache->tensor_weights,
                       ccache->nodes_per_level, ccache->offset_per_level, ccache->map_dimension, ccache->map_level,

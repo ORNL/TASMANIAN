@@ -501,11 +501,11 @@ void GridFourier::evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu
 }
 void GridFourier::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
     loadGpuNodes<double>();
-    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, gpu_cache->num_nodes, gpu_cache->points, gpu_y, nullptr);
+    TasGpu::devalfor(num_dimensions, num_x, max_levels, gpu_x, gpu_cache->num_nodes, gpu_cache->points, gpu_y, nullptr);
 }
 void GridFourier::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const{
     loadGpuNodes<float>();
-    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, gpu_cachef->num_nodes, gpu_cachef->points, gpu_y, nullptr);
+    TasGpu::devalfor(num_dimensions, num_x, max_levels, gpu_x, gpu_cachef->num_nodes, gpu_cachef->points, gpu_y, nullptr);
 }
 template<typename T>
 void GridFourier::evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int num_x, GpuVector<T> &wreal, GpuVector<T> &wimag) const{
@@ -514,7 +514,7 @@ void GridFourier::evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int 
     if (wimag.size() != num_weights) wimag.resize(num_weights);
     loadGpuNodes<T>();
     auto& ccache = getGpuCache<T>();
-    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, ccache->num_nodes, ccache->points, wreal.data(), wimag.data());
+    TasGpu::devalfor(num_dimensions, num_x, max_levels, gpu_x, ccache->num_nodes, ccache->points, wreal.data(), wimag.data());
 }
 template<typename T> void GridFourier::loadGpuNodes() const{
     auto& ccache = getGpuCache<T>();
