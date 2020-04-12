@@ -85,14 +85,14 @@ public:
 
     #ifdef Tasmanian_ENABLE_CUDA
     void loadNeededPointsGPU(const double *vals);
-    void evaluateCudaMixed(const double x[], int num_x, double y[]) const;
+    void evaluateGpuMixed(const double x[], int num_x, double y[]) const;
     void evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const override;
     void evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu_y[]) const override;
     template<typename T> void evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpu_y[]) const;
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const override;
-    void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals) const;
+    void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, GpuVector<int> &gpu_spntr, GpuVector<int> &gpu_sindx, GpuVector<double> &gpu_svals) const;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const override;
-    void buildSparseBasisMatrixGPU(const float gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<float> &gpu_svals) const;
+    void buildSparseBasisMatrixGPU(const float gpu_x[], int cpu_num_x, GpuVector<int> &gpu_spntr, GpuVector<int> &gpu_sindx, GpuVector<float> &gpu_svals) const;
     #endif
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction);
@@ -251,6 +251,27 @@ protected:
     void addChild(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const;
     void addChildLimited(const int point[], int direction, const MultiIndexSet &exclude, const std::vector<int> &level_limits, Data2D<int> &destination) const;
 
+    void clearGpuSurpluses();
+    void clearGpuBasisHierarchy();
+
+private:
+    int order, top_level;
+
+    Data2D<double> surpluses;
+
+    Data2D<int> parents;
+
+    // tree for evaluation
+    std::vector<int> roots;
+    std::vector<int> pntr;
+    std::vector<int> indx;
+
+    std::unique_ptr<BaseRuleLocalPolynomial> rule;
+
+    int sparse_affinity;
+
+    std::unique_ptr<SimpleConstructData> dynamic_values;
+
     #ifdef Tasmanian_ENABLE_CUDA
     // synchronize with tasgpu_devalpwpoly_feval
     template<int ord, TypeOneDRule crule, typename T>
@@ -280,36 +301,16 @@ protected:
         }
         return cpu_support;
     }
-    std::unique_ptr<CudaLocalPolynomialData<double>>& getCudaCache(double) const{ return cuda_cache; }
-    std::unique_ptr<CudaLocalPolynomialData<float>>& getCudaCache(float) const{ return cuda_cachef; }
-    template<typename T> void loadCudaBasis() const;
-    template<typename T> void loadCudaHierarchy() const;
-    void clearCudaBasisHierarchy();
-    template<typename T> void loadCudaSurpluses() const;
-    void clearCudaSurpluses();
-    #endif
-
-private:
-    int order, top_level;
-
-    Data2D<double> surpluses;
-
-    Data2D<int> parents;
-
-    // tree for evaluation
-    std::vector<int> roots;
-    std::vector<int> pntr;
-    std::vector<int> indx;
-
-    std::unique_ptr<BaseRuleLocalPolynomial> rule;
-
-    int sparse_affinity;
-
-    std::unique_ptr<SimpleConstructData> dynamic_values;
-
-    #ifdef Tasmanian_ENABLE_CUDA
-    mutable std::unique_ptr<CudaLocalPolynomialData<double>> cuda_cache;
-    mutable std::unique_ptr<CudaLocalPolynomialData<float>> cuda_cachef;
+    std::unique_ptr<CudaLocalPolynomialData<double>>& getGpuCacheOverload(double) const{ return gpu_cache; }
+    std::unique_ptr<CudaLocalPolynomialData<float>>& getGpuCacheOverload(float) const{ return gpu_cachef; }
+    template<typename T> std::unique_ptr<CudaLocalPolynomialData<T>>& getGpuCache() const{
+        return getGpuCacheOverload(static_cast<T>(0.0));
+    }
+    template<typename T> void loadGpuBasis() const;
+    template<typename T> void loadGpuHierarchy() const;
+    template<typename T> void loadGpuSurpluses() const;
+    mutable std::unique_ptr<CudaLocalPolynomialData<double>> gpu_cache;
+    mutable std::unique_ptr<CudaLocalPolynomialData<float>> gpu_cachef;
     #endif
 };
 

@@ -161,9 +161,7 @@ void GridFourier::proposeUpdatedTensors(){
 
 void GridFourier::acceptUpdatedTensors(){
     if (points.empty()){
-        #ifdef Tasmanian_ENABLE_CUDA
-        clearCudaNodes(); // the points and needed will change, clear the cache
-        #endif
+        clearGpuNodes(); // the points and needed will change, clear the cache
         points = std::move(needed);
         needed = MultiIndexSet();
     }else if (!needed.empty()){
@@ -184,9 +182,7 @@ void GridFourier::acceptUpdatedTensors(){
 }
 
 void GridFourier::loadNeededPoints(const double *vals){
-    #ifdef Tasmanian_ENABLE_CUDA
-    clearCudaCoefficients(); // changing values and Fourier coefficients, clear the cache
-    #endif
+    clearGpuCoefficients(); // changing values and Fourier coefficients, clear the cache
     if (points.empty() || needed.empty()){
         values.setValues(vals);
     }else{
@@ -437,22 +433,22 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
-            CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_y(num_outputs, num_x);
+            GpuVector<double> gpu_x(num_dimensions, num_x, x), gpu_y(num_outputs, num_x);
             evaluateBatchGPU(gpu_x.data(), num_x, gpu_y.data());
             gpu_y.unload(y);
             break;
         }
         case accel_gpu_cublas: {
             acceleration->setDevice();
-            loadCudaCoefficients<double>();
+            loadGpuCoefficients<double>();
             Data2D<double> wreal;
             Data2D<double> wimag;
             evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
 
             int num_points = points.getNumIndexes();
-            CudaVector<double> gpu_real(wreal.begin(), wreal.end()), gpu_imag(wimag.begin(), wimag.end()), gpu_y(num_outputs, num_x);
-            acceleration->engine->denseMultiply(num_outputs, num_x, num_points,  1.0, cuda_cache->real, gpu_real, 0.0, gpu_y.data());
-            acceleration->engine->denseMultiply(num_outputs, num_x, num_points, -1.0, cuda_cache->imag, gpu_imag, 1.0, gpu_y.data());
+            GpuVector<double> gpu_real(wreal.begin(), wreal.end()), gpu_imag(wimag.begin(), wimag.end()), gpu_y(num_outputs, num_x);
+            acceleration->engine->denseMultiply(num_outputs, num_x, num_points,  1.0, gpu_cache->real, gpu_real, 0.0, gpu_y.data());
+            acceleration->engine->denseMultiply(num_outputs, num_x, num_points, -1.0, gpu_cache->imag, gpu_imag, 1.0, gpu_y.data());
             gpu_y.unload(y);
             break;
         }
@@ -487,13 +483,13 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
 
 #ifdef Tasmanian_ENABLE_CUDA
 template<typename T> void GridFourier::evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
-    loadCudaCoefficients<T>();
+    loadGpuCoefficients<T>();
 
-    CudaVector<T> gpu_real, gpu_imag;
+    GpuVector<T> gpu_real, gpu_imag;
     evaluateHierarchicalFunctionsInternalGPU(gpu_x, cpu_num_x, gpu_real, gpu_imag);
 
     int num_points = points.getNumIndexes();
-    auto& ccache = getCudaCache(static_cast<T>(0.0));
+    auto& ccache = getGpuCache<T>();
     acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points,  1.0, ccache->real, gpu_real, 0.0, gpu_y);
     acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, -1.0, ccache->imag, gpu_imag, 1.0, gpu_y);
 }
@@ -504,24 +500,24 @@ void GridFourier::evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu
     evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);
 }
 void GridFourier::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
-    loadCudaNodes<double>();
-    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, cuda_cache->num_nodes, cuda_cache->points, gpu_y, nullptr);
+    loadGpuNodes<double>();
+    TasGpu::devalfor(num_dimensions, num_x, max_levels, gpu_x, gpu_cache->num_nodes, gpu_cache->points, gpu_y, nullptr);
 }
 void GridFourier::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const{
-    loadCudaNodes<float>();
-    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, cuda_cachef->num_nodes, cuda_cachef->points, gpu_y, nullptr);
+    loadGpuNodes<float>();
+    TasGpu::devalfor(num_dimensions, num_x, max_levels, gpu_x, gpu_cachef->num_nodes, gpu_cachef->points, gpu_y, nullptr);
 }
 template<typename T>
-void GridFourier::evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int num_x, CudaVector<T> &wreal, CudaVector<T> &wimag) const{
+void GridFourier::evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int num_x, GpuVector<T> &wreal, GpuVector<T> &wimag) const{
     size_t num_weights = ((size_t) points.getNumIndexes()) * ((size_t) num_x);
     if (wreal.size() != num_weights) wreal.resize(num_weights);
     if (wimag.size() != num_weights) wimag.resize(num_weights);
-    loadCudaNodes<T>();
-    auto& ccache = getCudaCache(static_cast<T>(0.0));
-    TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, ccache->num_nodes, ccache->points, wreal.data(), wimag.data());
+    loadGpuNodes<T>();
+    auto& ccache = getGpuCache<T>();
+    TasGpu::devalfor(num_dimensions, num_x, max_levels, gpu_x, ccache->num_nodes, ccache->points, wreal.data(), wimag.data());
 }
-template<typename T> void GridFourier::loadCudaNodes() const{
-    auto& ccache = getCudaCache(static_cast<T>(0.0));
+template<typename T> void GridFourier::loadGpuNodes() const{
+    auto& ccache = getGpuCache<T>();
     if (!ccache) ccache = std::make_unique<CudaFourierData<T>>();
     if (!ccache->num_nodes.empty()) return;
 
@@ -537,18 +533,18 @@ template<typename T> void GridFourier::loadCudaNodes() const{
             transpoints.getStrip(j)[i] = work.getIndex(i)[j];
     ccache->points.load(transpoints.begin(), transpoints.end());
 }
-void GridFourier::clearCudaNodes(){
-    if (cuda_cache){
-        cuda_cache->num_nodes.clear();
-        cuda_cache->points.clear();
+void GridFourier::clearGpuNodes() const{
+    if (gpu_cache){
+        gpu_cache->num_nodes.clear();
+        gpu_cache->points.clear();
     }
-    if (cuda_cachef){
-        cuda_cachef->num_nodes.clear();
-        cuda_cachef->points.clear();
+    if (gpu_cachef){
+        gpu_cachef->num_nodes.clear();
+        gpu_cachef->points.clear();
     }
 }
-template<typename T> void GridFourier::loadCudaCoefficients() const{
-    auto& ccache = getCudaCache(static_cast<T>(0.0));
+template<typename T> void GridFourier::loadGpuCoefficients() const{
+    auto& ccache = getGpuCache<T>();
     if (!ccache) ccache = std::make_unique<CudaFourierData<T>>();
     if (!ccache->real.empty()) return;
     int num_points = points.getNumIndexes();
@@ -556,16 +552,19 @@ template<typename T> void GridFourier::loadCudaCoefficients() const{
     ccache->real.load(num_coeff, fourier_coefs.getStrip(0));
     ccache->imag.load(num_coeff, fourier_coefs.getStrip(num_points));
 }
-void GridFourier::clearCudaCoefficients(){
-    if (cuda_cache){
-        cuda_cache->real.clear();
-        cuda_cache->imag.clear();
+void GridFourier::clearGpuCoefficients() const{
+    if (gpu_cache){
+        gpu_cache->real.clear();
+        gpu_cache->imag.clear();
     }
-    if (cuda_cachef){
-        cuda_cachef->real.clear();
-        cuda_cachef->imag.clear();
+    if (gpu_cachef){
+        gpu_cachef->real.clear();
+        gpu_cachef->imag.clear();
     }
 }
+#else
+void GridFourier::clearGpuNodes() const{}
+void GridFourier::clearGpuCoefficients() const{}
 #endif
 
 void GridFourier::integrate(double q[], double *conformal_correction) const{
@@ -640,8 +639,8 @@ void GridFourier::integrateHierarchicalFunctions(double integrals[]) const{
 
 void GridFourier::clearAccelerationData(){
     #ifdef Tasmanian_ENABLE_CUDA
-    cuda_cache.reset();
-    cuda_cachef.reset();
+    gpu_cache.reset();
+    gpu_cachef.reset();
     #endif
 }
 
@@ -878,10 +877,8 @@ void GridFourier::loadConstructedPoint(const double x[], int numx, const double 
     loadConstructedTensors();
 }
 void GridFourier::loadConstructedTensors(){
-    #ifdef Tasmanian_ENABLE_CUDA
-    clearCudaNodes();
-    clearCudaCoefficients();
-    #endif
+    clearGpuNodes();
+    clearGpuCoefficients();
     MultiIndexSet new_tensors, new_points;
     StorageSet new_values;
     dynamic_values->ejectCompleteTensor(tensors, new_tensors, new_points, new_values);

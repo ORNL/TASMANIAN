@@ -378,14 +378,14 @@ void TasmanianSparseGrid::evaluateBatch(const float x[], int num_x, float y[]) c
     Data2D<float> x_tmp;
     float const *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     acceleration->setDevice();
-    CudaVector<float> gpu_x(getNumDimensions(), num_x, x_canonical), gpu_result(num_x, getNumOutputs());
+    GpuVector<float> gpu_x(getNumDimensions(), num_x, x_canonical), gpu_result(num_x, getNumOutputs());
     base->evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
     gpu_result.unload(y);
 }
 template<typename FloatType> void TasmanianSparseGrid::evaluateBatchGPU(const FloatType gpu_x[], int cpu_num_x, FloatType gpu_y[]) const{
     if (not acceleration->on_gpu()) throw std::runtime_error("ERROR: evaluateBatchGPU() requires that a cuda gpu acceleration is enabled.");
     acceleration->setDevice();
-    CudaVector<FloatType> gpu_temp_x;
+    GpuVector<FloatType> gpu_temp_x;
     base->evaluateBatchGPU(formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x), cpu_num_x, gpu_y);
 }
 #else
@@ -745,7 +745,7 @@ void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) cons
 
 #ifdef Tasmanian_ENABLE_CUDA
 template<typename T>
-const T* TasmanianSparseGrid::formCanonicalPointsGPU(const T *gpu_x, int num_x, CudaVector<T> &gpu_x_temp) const{
+const T* TasmanianSparseGrid::formCanonicalPointsGPU(const T *gpu_x, int num_x, GpuVector<T> &gpu_x_temp) const{
     if (!domain_transform_a.empty()){
         if (!acc_domain)
             acc_domain = std::make_unique<AccelerationDomainTransform>(domain_transform_a, domain_transform_b);
@@ -996,7 +996,7 @@ template<typename T>
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
     if (not acceleration->on_gpu()) throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
     acceleration->setDevice();
-    CudaVector<T> gpu_temp_x;
+    GpuVector<T> gpu_temp_x;
     base->evaluateHierarchicalFunctionsGPU(formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x), cpu_num_x, gpu_y);
 }
 template<typename T>
@@ -1004,10 +1004,10 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const T gpu_x[]
     if (!isLocalPolynomial()) throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() is allowed only for local polynomial grid.");
     if (not acceleration->on_gpu()) throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
     acceleration->setDevice();
-    CudaVector<T> gpu_temp_x;
+    GpuVector<T> gpu_temp_x;
     const T *gpu_canonical_x = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
-    CudaVector<int> vec_pntr, vec_indx;
-    CudaVector<T> vec_vals;
+    GpuVector<int> vec_pntr, vec_indx;
+    GpuVector<T> vec_vals;
     get<GridLocalPolynomial>()->buildSparseBasisMatrixGPU(gpu_canonical_x, cpu_num_x, vec_pntr, vec_indx, vec_vals);
     num_nz = (int) vec_indx.size();
     gpu_pntr = vec_pntr.eject();

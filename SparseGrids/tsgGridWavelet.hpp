@@ -69,7 +69,7 @@ public:
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
     #ifdef Tasmanian_ENABLE_CUDA
-    void evaluateCudaMixed(const double*, int, double[]) const;
+    void evaluateGpuMixed(const double*, int, double[]) const;
     void evaluateBatchGPU(const double*, int, double[]) const override;
     void evaluateBatchGPU(const float*, int, float[]) const override;
     template<typename T> void evaluateBatchGPUtempl(const T*, int, T[]) const;
@@ -116,14 +116,8 @@ protected:
     void addChild(const int point[], int direction, Data2D<int> &destination) const;
     void addChildLimited(const int point[], int direction, const std::vector<int> &level_limits, Data2D<int> &destination) const;
 
-    #ifdef Tasmanian_ENABLE_CUDA
-    std::unique_ptr<CudaWaveletData<double>>& getCudaCache(double) const{ return cuda_cache; }
-    std::unique_ptr<CudaWaveletData<float>>& getCudaCache(float) const{ return cuda_cachef; }
-    template<typename T> void loadCudaCoefficients() const;
-    void clearCudaCoefficients();
-    template<typename T> void loadCudaBasis() const;
-    void clearCudaBasis();
-    #endif
+    void clearGpuCoefficients() const;
+    void clearGpuBasis() const;
 
 private:
     RuleWavelet rule1D;
@@ -137,8 +131,15 @@ private:
     std::unique_ptr<SimpleConstructData> dynamic_values;
 
     #ifdef Tasmanian_ENABLE_CUDA
-    mutable std::unique_ptr<CudaWaveletData<double>> cuda_cache;
-    mutable std::unique_ptr<CudaWaveletData<float>> cuda_cachef;
+    std::unique_ptr<CudaWaveletData<double>>& getGpuCacheOverload(double) const{ return gpu_cache; }
+    std::unique_ptr<CudaWaveletData<float>>& getGpuCacheOverload(float) const{ return gpu_cachef; }
+    template<typename T> std::unique_ptr<CudaWaveletData<T>>& getGpuCache() const{
+        return getGpuCacheOverload(static_cast<T>(0.0));
+    }
+    template<typename T> void loadGpuCoefficients() const;
+    template<typename T> void loadGpuBasis() const;
+    mutable std::unique_ptr<CudaWaveletData<double>> gpu_cache;
+    mutable std::unique_ptr<CudaWaveletData<float>> gpu_cachef;
     #endif
 };
 

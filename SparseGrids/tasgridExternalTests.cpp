@@ -93,9 +93,9 @@ void static_assertions(){ // does nothing but a bunch of static asserts
     assert_copy_move<SimpleConstructData>();
     assert_copy_move<DynamicConstructorDataGlobal>();
     #ifdef Tasmanian_ENABLE_CUDA
-    assert_move_not_copy<CudaVector<double>>();
+    assert_move_not_copy<GpuVector<double>>();
     assert_move_not_copy<AccelerationDomainTransform>();
-    assert_move_not_copy<CudaEngine>();
+    assert_move_not_copy<GpuEngine>();
     #endif
 }
 
