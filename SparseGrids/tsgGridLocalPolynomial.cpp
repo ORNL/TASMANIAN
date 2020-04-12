@@ -166,7 +166,7 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
                 evaluateGpuMixed(x, num_x, y);
                 return;
             }
-            CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
+            GpuVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
             evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
             gpu_result.unload(y);
             break;
@@ -291,13 +291,13 @@ template<typename T> void GridLocalPolynomial::evaluateBatchGPUtempl(const T gpu
     int num_points = points.getNumIndexes();
 
     if (useDense()){
-        CudaVector<T> gpu_basis(cpu_num_x, num_points);
+        GpuVector<T> gpu_basis(cpu_num_x, num_points);
         evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
 
         acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->surpluses, gpu_basis, 0.0, gpu_y);
     }else{
-        CudaVector<int> gpu_spntr, gpu_sindx;
-        CudaVector<T> gpu_svals;
+        GpuVector<int> gpu_spntr, gpu_sindx;
+        GpuVector<T> gpu_svals;
         buildSparseBasisMatrixGPU(gpu_x, cpu_num_x, gpu_spntr, gpu_sindx, gpu_svals);
 
         acceleration->engine->sparseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->surpluses, gpu_spntr, gpu_sindx, gpu_svals, 0.0, gpu_y);
@@ -313,7 +313,7 @@ void GridLocalPolynomial::evaluateHierarchicalFunctionsGPU(const double gpu_x[],
     loadGpuBasis<double>();
     TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, getNumPoints(), gpu_x, gpu_cache->nodes.data(), gpu_cache->support.data(), gpu_y);
 }
-void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<double> &gpu_svals) const{
+void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, GpuVector<int> &gpu_spntr, GpuVector<int> &gpu_sindx, GpuVector<double> &gpu_svals) const{
     loadGpuBasis<double>();
     loadGpuHierarchy<double>();
     TasCUDA::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, getNumPoints(), gpu_x, gpu_cache->nodes, gpu_cache->support,
@@ -323,7 +323,7 @@ void GridLocalPolynomial::evaluateHierarchicalFunctionsGPU(const float gpu_x[], 
     loadGpuBasis<float>();
     TasCUDA::devalpwpoly(order, rule->getType(), num_dimensions, cpu_num_x, getNumPoints(), gpu_x, gpu_cachef->nodes.data(), gpu_cachef->support.data(), gpu_y);
 }
-void GridLocalPolynomial::buildSparseBasisMatrixGPU(const float gpu_x[], int cpu_num_x, CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<float> &gpu_svals) const{
+void GridLocalPolynomial::buildSparseBasisMatrixGPU(const float gpu_x[], int cpu_num_x, GpuVector<int> &gpu_spntr, GpuVector<int> &gpu_sindx, GpuVector<float> &gpu_svals) const{
     loadGpuBasis<float>();
     loadGpuHierarchy<float>();
     TasCUDA::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, getNumPoints(), gpu_x, gpu_cachef->nodes, gpu_cachef->support,

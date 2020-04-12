@@ -433,7 +433,7 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
-            CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_y(num_outputs, num_x);
+            GpuVector<double> gpu_x(num_dimensions, num_x, x), gpu_y(num_outputs, num_x);
             evaluateBatchGPU(gpu_x.data(), num_x, gpu_y.data());
             gpu_y.unload(y);
             break;
@@ -446,7 +446,7 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
             evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
 
             int num_points = points.getNumIndexes();
-            CudaVector<double> gpu_real(wreal.begin(), wreal.end()), gpu_imag(wimag.begin(), wimag.end()), gpu_y(num_outputs, num_x);
+            GpuVector<double> gpu_real(wreal.begin(), wreal.end()), gpu_imag(wimag.begin(), wimag.end()), gpu_y(num_outputs, num_x);
             acceleration->engine->denseMultiply(num_outputs, num_x, num_points,  1.0, gpu_cache->real, gpu_real, 0.0, gpu_y.data());
             acceleration->engine->denseMultiply(num_outputs, num_x, num_points, -1.0, gpu_cache->imag, gpu_imag, 1.0, gpu_y.data());
             gpu_y.unload(y);
@@ -485,7 +485,7 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
 template<typename T> void GridFourier::evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
     loadGpuCoefficients<T>();
 
-    CudaVector<T> gpu_real, gpu_imag;
+    GpuVector<T> gpu_real, gpu_imag;
     evaluateHierarchicalFunctionsInternalGPU(gpu_x, cpu_num_x, gpu_real, gpu_imag);
 
     int num_points = points.getNumIndexes();
@@ -508,7 +508,7 @@ void GridFourier::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_
     TasCUDA::devalfor(num_dimensions, num_x, max_levels, gpu_x, gpu_cachef->num_nodes, gpu_cachef->points, gpu_y, nullptr);
 }
 template<typename T>
-void GridFourier::evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int num_x, CudaVector<T> &wreal, CudaVector<T> &wimag) const{
+void GridFourier::evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int num_x, GpuVector<T> &wreal, GpuVector<T> &wimag) const{
     size_t num_weights = ((size_t) points.getNumIndexes()) * ((size_t) num_x);
     if (wreal.size() != num_weights) wreal.resize(num_weights);
     if (wimag.size() != num_weights) wimag.resize(num_weights);

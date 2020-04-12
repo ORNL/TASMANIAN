@@ -506,7 +506,7 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
-            CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
+            GpuVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
             evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
             gpu_result.unload(y);
             break;
@@ -549,7 +549,7 @@ template<typename T> void GridGlobal::evaluateBatchGPUtempl(T const gpu_x[], int
     loadGpuValues<T>();
     int num_points = points.getNumIndexes();
 
-    CudaVector<T> gpu_basis(cpu_num_x, num_points);
+    GpuVector<T> gpu_basis(cpu_num_x, num_points);
     evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
     acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->values, gpu_basis, 0.0, gpu_y);
 }

@@ -47,23 +47,23 @@ namespace TasGrid{
  */
 template<typename FP>
 struct CudaGlobalData{
-    CudaVector<FP> values;
+    GpuVector<FP> values;
     // cache stage
     int num_basis; // number of 1d basis functions
-    CudaVector<FP> nodes;
-    CudaVector<FP> coeff;
-    CudaVector<int> nodes_per_level;
-    CudaVector<int> offset_per_level; // non-nested case nodes, always used for coefficients
-    CudaVector<int> map_dimension;
-    CudaVector<int> map_level;
+    GpuVector<FP> nodes;
+    GpuVector<FP> coeff;
+    GpuVector<int> nodes_per_level;
+    GpuVector<int> offset_per_level; // non-nested case nodes, always used for coefficients
+    GpuVector<int> map_dimension;
+    GpuVector<int> map_level;
     // compute stage
-    CudaVector<FP> tensor_weights;
-    CudaVector<int> active_tensors;
-    CudaVector<int> active_num_points;
-    CudaVector<int> dim_offsets; // relates to the cache
-    CudaVector<int> map_tensor;
-    CudaVector<int> map_index;
-    CudaVector<int> map_reference;
+    GpuVector<FP> tensor_weights;
+    GpuVector<int> active_tensors;
+    GpuVector<int> active_num_points;
+    GpuVector<int> dim_offsets; // relates to the cache
+    GpuVector<int> map_tensor;
+    GpuVector<int> map_index;
+    GpuVector<int> map_reference;
     void clearNodes(){
         num_basis = 0;
         nodes.clear();
@@ -92,8 +92,8 @@ struct CudaGlobalData{
 //! The \b points and \b num_nodes are needed for the accumulate stage of the basis evaluations.
 template<typename FP>
 struct CudaSequenceData{
-    CudaVector<FP> surpluses, nodes, coeff;
-    CudaVector<int> num_nodes, points;
+    GpuVector<FP> surpluses, nodes, coeff;
+    GpuVector<int> num_nodes, points;
     void clearNodes(){
         nodes.clear();
         coeff.clear();
@@ -109,8 +109,8 @@ struct CudaSequenceData{
 //! The \b points is a transposed copy of the nodes in the MultiIndexSet and \b num_nodes is the number of nodes in each dimension.
 template<typename FP>
 struct CudaFourierData{
-    CudaVector<FP> real, imag;
-    CudaVector<int> num_nodes, points;
+    GpuVector<FP> real, imag;
+    GpuVector<int> num_nodes, points;
 };
 
 //! \internal
@@ -122,8 +122,8 @@ struct CudaFourierData{
 //! The \b hpntr, \b hindx, and \b hroots, describe the hierarchy and are used in the sparse matrix algorithm.
 template<typename FP>
 struct CudaLocalPolynomialData{
-    CudaVector<FP> surpluses, nodes, support;
-    CudaVector<int> hpntr, hindx, hroots;
+    GpuVector<FP> surpluses, nodes, support;
+    GpuVector<int> hpntr, hindx, hroots;
     void clearBasisHierarchy(){
         nodes.clear();
         support.clear();
@@ -139,7 +139,7 @@ struct CudaLocalPolynomialData{
 //! The \b coefficients are the hierarchical coefficients and used in the linear algebra (stage 2) of the evaluations.
 template<typename FP>
 struct CudaWaveletData{
-    CudaVector<FP> coefficients, nodes, support;
+    GpuVector<FP> coefficients, nodes, support;
     void clearNodes(){
         nodes.clear();
         support.clear();

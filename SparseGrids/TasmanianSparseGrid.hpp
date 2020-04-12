@@ -1954,7 +1954,7 @@ protected:
      * \endinternal
      */
     template<typename T>
-    const T* formCanonicalPointsGPU(const T *gpu_x, int num_x, CudaVector<T> &gpu_x_temp) const;
+    const T* formCanonicalPointsGPU(const T *gpu_x, int num_x, GpuVector<T> &gpu_x_temp) const;
     #endif
     /*!
      * \internal

@@ -51,16 +51,16 @@
  * \par RAII Memory Management
  * CUDA uses C-style of memory management with cudaMalloc(), cudaMemcopy(), cudaFree(),
  * but templated C++ std::vector-style class is far more handy and more fail-safe.
- * The \b CudaVector template class guards against memory leaks and offers more seamless
+ * The \b GpuVector template class guards against memory leaks and offers more seamless
  * integration between CPU and GPU data structures.
- * See the \b CudaVector documentation for details.
+ * See the \b GpuVector documentation for details.
  *
  * \par Streams and Handles Encapsulation
  * CUDA linear algebra libraries (as well as MAGAM), use streams and handles for all their calls.
  * The handles have to be allocated, deleted, and passed around which causes unnecessary code clutter.
- * Encapsulating the handles in a single \b CudaEngine class greatly simplifies the work-flow.
+ * Encapsulating the handles in a single \b GpuEngine class greatly simplifies the work-flow.
  * Furthermore, some (sparse) linear operations require multiple calls to CUDA/MAGMA libraries,
- * and it is easier to combine those into a single call to a \b CudaEngine method.
+ * and it is easier to combine those into a single call to a \b GpuEngine method.
  *
  * \par Acceleration Metadata
  * The \b AccelerationMeta namespace offers several methods used throughout the library and in the testing:
@@ -91,47 +91,47 @@ namespace TasGrid{
  * Note that the class does not provide single entry access and it is not copyable, only movable in assignment and constructor.
  */
 template<typename T>
-class CudaVector{
+class GpuVector{
 public:
     //! \brief Delete the copy-constructor.
-    CudaVector(CudaVector<T> const &) = delete;
+    GpuVector(GpuVector<T> const &) = delete;
     //! \brief Delete the copy-assignment.
-    CudaVector<T>& operator =(CudaVector<T> const &) = delete;
+    GpuVector<T>& operator =(GpuVector<T> const &) = delete;
 
     //! \brief Allow for move-construction.
-    CudaVector(CudaVector<T> &&other) : num_entries(std::exchange(other.num_entries, 0)), gpu_data(std::exchange(other.gpu_data, nullptr)){}
+    GpuVector(GpuVector<T> &&other) : num_entries(std::exchange(other.num_entries, 0)), gpu_data(std::exchange(other.gpu_data, nullptr)){}
     //! \brief Allow for move-assignment.
-    CudaVector<T>& operator =(CudaVector<T> &&other){
-        CudaVector<T> temp(std::move(other));
+    GpuVector<T>& operator =(GpuVector<T> &&other){
+        GpuVector<T> temp(std::move(other));
         std::swap(num_entries, other.num_entries);
         std::swap(gpu_data, other.gpu_data);
         return *this;
     }
 
     //! \brief Default constructor, creates an empty (null) array.
-    CudaVector() : num_entries(0), gpu_data(nullptr){}
+    GpuVector() : num_entries(0), gpu_data(nullptr){}
     //! \brief Construct a vector with \b count number of entries.
 
     //! Allocates an array that will be automatically deleted
     //! if \b clear() is called, or \b resize() or \b load() functions
     //! are used with size that is different from \b count.
-    CudaVector(size_t count) : num_entries(0), gpu_data(nullptr){ resize(count); }
+    GpuVector(size_t count) : num_entries(0), gpu_data(nullptr){ resize(count); }
 
-    //! \brief Same as \b CudaVector(dim1 * dim2), but guards against overflow.
+    //! \brief Same as \b GpuVector(dim1 * dim2), but guards against overflow.
 
     //! Many of the Tasmanian data-structures are inherently two-dimensional,
     //! for example, passing number of points and number of dimensions separately makes the code more readable,
     //! and both integers are converted to size_t before multiplication which prevents overflow.
     //! Note: the dimensions \b will \b not be stored, the underlying data is still one dimensional.
-    CudaVector(int dim1, int dim2) : num_entries(0), gpu_data(nullptr){ resize(Utils::size_mult(dim1, dim2)); }
+    GpuVector(int dim1, int dim2) : num_entries(0), gpu_data(nullptr){ resize(Utils::size_mult(dim1, dim2)); }
     //! \brief Create a vector with size that matches \b cpu_data and copy the data to the CUDA device.
-    CudaVector(const std::vector<T> &cpu_data) : num_entries(0), gpu_data(nullptr){ load(cpu_data); }
+    GpuVector(const std::vector<T> &cpu_data) : num_entries(0), gpu_data(nullptr){ load(cpu_data); }
     //! \brief Construct a vector and load with date provided on to the cpu.
-    CudaVector(int dim1, int dim2, T const *cpu_data) : num_entries(0), gpu_data(nullptr){ load(Utils::size_mult(dim1, dim2), cpu_data); }
+    GpuVector(int dim1, int dim2, T const *cpu_data) : num_entries(0), gpu_data(nullptr){ load(Utils::size_mult(dim1, dim2), cpu_data); }
     //! \brief Construct a vector by loading from a given range.
-    template<typename IteratorLike> CudaVector(IteratorLike ibegin, IteratorLike iend) : CudaVector(){ load(ibegin, iend); }
+    template<typename IteratorLike> GpuVector(IteratorLike ibegin, IteratorLike iend) : GpuVector(){ load(ibegin, iend); }
     //! \brief Destructor, release all allocated memory.
-    ~CudaVector(){ clear(); }
+    ~GpuVector(){ clear(); }
 
     //! \brief Return the current size of the CUDA array.
     size_t size() const{ return num_entries; }
@@ -218,17 +218,17 @@ private:
 //! \brief Wrapper class around calls to cuBlas, cuSparse, and MAGMA for CUDA based accelerated linear algebra
 //! \ingroup TasmanianAcceleration
 
-//! (wrappers that manage handles, queues, and CudaVector)
-class CudaEngine{
+//! (wrappers that manage handles, queues, and GpuVector)
+class GpuEngine{
 public:
     //! \brief Construct a new engine associated with the given device, default to cuBlas/cuSparse backend, see \b backendMAGMA().
-    CudaEngine(int device) : gpu(device), magma(false), cublasHandle(nullptr), own_cublas_handle(false), cusparseHandle(nullptr), own_cusparse_handle(false)
+    GpuEngine(int device) : gpu(device), magma(false), cublasHandle(nullptr), own_cublas_handle(false), cusparseHandle(nullptr), own_cusparse_handle(false)
         #ifdef Tasmanian_ENABLE_MAGMA
         , magmaCudaStream(nullptr), magmaCudaQueue(nullptr), own_magma_queue(false)
         #endif
         {}
     //! \brief Construct a new engine with the given device and magma mode, use the provided handles for magma/cublas and cusparse.
-    CudaEngine(int device, bool use_magma, void *handle_magma_cublas, void *handle_cusparse)
+    GpuEngine(int device, bool use_magma, void *handle_magma_cublas, void *handle_cusparse)
         : gpu(device), magma(use_magma), cublasHandle((use_magma) ? nullptr : handle_magma_cublas), own_cublas_handle(false),
           cusparseHandle(handle_cusparse), own_cusparse_handle(false)
         #ifdef Tasmanian_ENABLE_MAGMA
@@ -236,10 +236,10 @@ public:
         #endif
         {}
     //! \brief Destructor, clear all handles and queues.
-    ~CudaEngine();
+    ~GpuEngine();
 
     //! \brief Move construct the engine.
-    CudaEngine(CudaEngine &&other) :
+    GpuEngine(GpuEngine &&other) :
         gpu(std::exchange(other.gpu, 0)),
         magma(std::exchange(other.magma, false)),
         cublasHandle(std::exchange(other.cublasHandle, nullptr)),
@@ -254,8 +254,8 @@ public:
         {}
 
     //! \brief Move assign the engine.
-    CudaEngine& operator= (CudaEngine &&other){
-        CudaEngine temp(std::move(other));
+    GpuEngine& operator= (GpuEngine &&other){
+        GpuEngine temp(std::move(other));
         std::swap(gpu, temp.gpu);
         std::swap(magma, temp.magma);
         std::swap(cublasHandle, temp.cublasHandle);
@@ -279,14 +279,14 @@ public:
     //!
     //! Assumes that all vectors have the correct order.
     template<typename T>
-    void denseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha, const CudaVector<T> &A,
-                       const CudaVector<T> &B, typename CudaVector<T>::value_type beta, T C[]);
+    void denseMultiply(int M, int N, int K, typename GpuVector<T>::value_type alpha, const GpuVector<T> &A,
+                       const GpuVector<T> &B, typename GpuVector<T>::value_type beta, T C[]);
 
     //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
     template<typename T>
-    void denseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha,
-                       const CudaVector<T> &A, T const B[], T C[]){
-        CudaVector<T> gpuB(K, N, B), gpuC(M, N);
+    void denseMultiply(int M, int N, int K, typename GpuVector<T>::value_type alpha,
+                       const GpuVector<T> &A, T const B[], T C[]){
+        GpuVector<T> gpuB(K, N, B), gpuC(M, N);
         denseMultiply(M, N, K, alpha, A, gpuB, 0.0, gpuC.data());
         gpuC.unload(C);
     }
@@ -300,16 +300,16 @@ public:
     //!
     //! Assumes that all vectors have the correct size.
     template<typename T>
-    void sparseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha, const CudaVector<T> &A,
-                        const CudaVector<int> &pntr, const CudaVector<int> &indx,
-                        const CudaVector<T> &vals, typename CudaVector<T>::value_type beta, T C[]);
+    void sparseMultiply(int M, int N, int K, typename GpuVector<T>::value_type alpha, const GpuVector<T> &A,
+                        const GpuVector<int> &pntr, const GpuVector<int> &indx,
+                        const GpuVector<T> &vals, typename GpuVector<T>::value_type beta, T C[]);
 
     //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
     template<typename T>
-    void sparseMultiply(int M, int N, int K, typename CudaVector<T>::value_type alpha, const CudaVector<T> &A,
+    void sparseMultiply(int M, int N, int K, typename GpuVector<T>::value_type alpha, const GpuVector<T> &A,
                         const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<T> &vals, T C[]){
-        CudaVector<int> gpu_pntr(pntr), gpu_indx(indx);
-        CudaVector<T> gpu_vals(vals), gpu_c(M, N);
+        GpuVector<int> gpu_pntr(pntr), gpu_indx(indx);
+        GpuVector<T> gpu_vals(vals), gpu_c(M, N);
         sparseMultiply(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, 0.0, gpu_c.data());
         gpu_c.unload(C);
     }
@@ -362,9 +362,9 @@ public:
     //! \brief Destructor, clear all loaded data.
     ~AccelerationDomainTransform() = default;
 
-    //! \brief The class is move constructable, due to the CudaVector.
+    //! \brief The class is move constructable, due to the GpuVector.
     AccelerationDomainTransform(AccelerationDomainTransform &&) = default;
-    //! \brief The class is move assignable, due to the CudaVector.
+    //! \brief The class is move assignable, due to the GpuVector.
     AccelerationDomainTransform& operator =(AccelerationDomainTransform &&) = default;
 
     //! \brief Transform a set of points, used in the calls to \b evaluateHierarchicalFunctionsGPU()
@@ -373,11 +373,11 @@ public:
     //! The \b gpu_canonical_x is resized to match \b gpu_transformed_x and it loaded with the corresponding canonical points.
     //! The \b use01 flag indicates whether to use canonical domain (0, 1) (Fourier grids), or (-1, 1) (almost everything else).
     template<typename T>
-    void getCanonicalPoints(bool use01, T const gpu_transformed_x[], int num_x, CudaVector<T> &gpu_canonical_x);
+    void getCanonicalPoints(bool use01, T const gpu_transformed_x[], int num_x, GpuVector<T> &gpu_canonical_x);
 
 private:
     // these actually store the rate and shift and not the hard upper/lower limits
-    CudaVector<double> gpu_trans_a, gpu_trans_b;
+    GpuVector<double> gpu_trans_a, gpu_trans_b;
     int num_dimensions, padded_size;
 };
 
@@ -433,9 +433,9 @@ namespace TasCUDA{
     //! e.g., in format that can directly interface with Nvidia cusparseDcsrmm2().
     template<typename T>
     void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const T *gpu_x,
-                            const CudaVector<T> &gpu_nodes, const CudaVector<T> &gpu_support,
-                            const CudaVector<int> &gpu_hpntr, const CudaVector<int> &gpu_hindx, const CudaVector<int> &gpu_hroots,
-                            CudaVector<int> &gpu_spntr, CudaVector<int> &gpu_sindx, CudaVector<T> &gpu_svals);
+                            const GpuVector<T> &gpu_nodes, const GpuVector<T> &gpu_support,
+                            const GpuVector<int> &gpu_hpntr, const GpuVector<int> &gpu_hindx, const GpuVector<int> &gpu_hroots,
+                            GpuVector<int> &gpu_spntr, GpuVector<int> &gpu_sindx, GpuVector<T> &gpu_svals);
 
     //! \internal
     //! \brief Evaluate the basis for a Sequence grid.
@@ -450,8 +450,8 @@ namespace TasCUDA{
     //!
     //! The output is \b gpu_result which must have dimension \b num_x by \b num_nodes.size() / \b dims.
     template<typename T>
-    void devalseq(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x, const CudaVector<int> &num_nodes,
-                  const CudaVector<int> &points, const CudaVector<T> &nodes, const CudaVector<T> &coeffs, T *gpu_result);
+    void devalseq(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x, const GpuVector<int> &num_nodes,
+                  const GpuVector<int> &points, const GpuVector<T> &nodes, const GpuVector<T> &coeffs, T *gpu_result);
 
     //! \internal
     //! \brief Evaluate the basis for a Fourier grid.
@@ -460,7 +460,7 @@ namespace TasCUDA{
     //! The logic is identical to \b devalseq(), except the Fourier polynomials do not require nodes or coefficients.
     //! The output is two real arrays of size \b num_x by \b num_nodes.size() / \b dims corresponding to the real and complex parts of the basis.
     template<typename T>
-    void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x, const CudaVector<int> &num_nodes, const CudaVector<int> &points, T *gpu_wreal, typename CudaVector<T>::value_type *gpu_wimag);
+    void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x, const GpuVector<int> &num_nodes, const GpuVector<int> &points, T *gpu_wreal, typename GpuVector<T>::value_type *gpu_wimag);
 
     /*!
      * \internal
@@ -472,10 +472,10 @@ namespace TasCUDA{
      */
     template<typename T>
     void devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num_x, int num_p, int num_basis,
-                  T const *gpu_x, CudaVector<T> const &nodes, CudaVector<T> const &coeff, CudaVector<T> const &tensor_weights,
-                  CudaVector<int> const &nodes_per_level, CudaVector<int> const &offset_per_level, CudaVector<int> const &map_dimension, CudaVector<int> const &map_level,
-                  CudaVector<int> const &active_tensors, CudaVector<int> const &active_num_points, CudaVector<int> const &dim_offsets,
-                  CudaVector<int> const &map_tensor, CudaVector<int> const &map_index, CudaVector<int> const &map_reference, T *gpu_result);
+                  T const *gpu_x, GpuVector<T> const &nodes, GpuVector<T> const &coeff, GpuVector<T> const &tensor_weights,
+                  GpuVector<int> const &nodes_per_level, GpuVector<int> const &offset_per_level, GpuVector<int> const &map_dimension, GpuVector<int> const &map_level,
+                  GpuVector<int> const &active_tensors, GpuVector<int> const &active_num_points, GpuVector<int> const &dim_offsets,
+                  GpuVector<int> const &map_tensor, GpuVector<int> const &map_index, GpuVector<int> const &map_reference, T *gpu_result);
 
     // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas
     #ifdef __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__
@@ -571,12 +571,12 @@ namespace AccelerationMeta{
     std::string getCudaDeviceName(int deviceID);
 
     //! \internal
-    //! \brief Copy a device array to the main memory, used for testing only, always favor using \b CudaVector (if possible).
+    //! \brief Copy a device array to the main memory, used for testing only, always favor using \b GpuVector (if possible).
     //! \ingroup TasmanianAcceleration
     template<typename T> void recvCudaArray(size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data);
 
     //! \internal
-    //! \brief Deallocate  device array, used primarily for testing, always favor using \b CudaVector (if possible).
+    //! \brief Deallocate  device array, used primarily for testing, always favor using \b GpuVector (if possible).
     //! \ingroup TasmanianAcceleration
     template<typename T> void delCudaArray(T *x);
 
@@ -609,7 +609,7 @@ namespace AccelerationMeta{
 /*!
  * \internal
  * \ingroup TasmanianAcceleration
- * \brief Wrapper class around GPU device ID, acceleration type and CudaEngine.
+ * \brief Wrapper class around GPU device ID, acceleration type and GpuEngine.
  *
  * Single acceleration context held by the TasmanianSparseGrid class and aliased into each of the sub-classes.
  * The context is modified through the main class and is persistent on move, copy and read.
@@ -636,7 +636,7 @@ struct AccelerationContext{
 
     #ifdef Tasmanian_ENABLE_CUDA
     //! \brief Holds the context to the GPU TPL handles, e.g., MAGMA queue.
-    mutable std::unique_ptr<CudaEngine> engine;
+    mutable std::unique_ptr<GpuEngine> engine;
     #endif
     #ifdef Tasmanian_ENABLE_BLAS
     //! \brief Creates a default context, the device id is set to 0 and acceleration is BLAS (if available) or none.
@@ -664,15 +664,15 @@ struct AccelerationContext{
             if ((new_gpu_id < 0) || (new_gpu_id >= AccelerationMeta::getNumCudaDevices()))
                 throw std::runtime_error("Invalid CUDA device ID, see ./tasgrid -v for list of detected devices.");
             device = new_gpu_id;
-            engine = std::make_unique<CudaEngine>(device, (acceleration == accel_gpu_magma), backend_handle, cusparse_handle);
+            engine = std::make_unique<GpuEngine>(device, (acceleration == accel_gpu_magma), backend_handle, cusparse_handle);
         }else{
             device = new_gpu_id;
         }
     }
     //! \brief Set default device.
     void setDevice() const{ AccelerationMeta::setDefaultCudaDevice(device); }
-    //! \brief Custom convert to \b CudaEngine
-    operator CudaEngine* () const{ return engine.get(); }
+    //! \brief Custom convert to \b GpuEngine
+    operator GpuEngine* () const{ return engine.get(); }
     bool on_gpu() const{ return !!engine; }
     #else
     void enable(TypeAcceleration acc, int new_gpu_id, void*, void*){

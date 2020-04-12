@@ -205,7 +205,7 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
                 evaluateGpuMixed(x, num_x, y);
                 return;
             }
-            CudaVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
+            GpuVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
             evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
             gpu_result.unload(y);
             break;
@@ -250,7 +250,7 @@ template<typename T> void GridWavelet::evaluateBatchGPUtempl(const T *gpu_x, int
     loadGpuCoefficients<T>();
     int num_points = points.getNumIndexes();
 
-    CudaVector<T> gpu_basis(cpu_num_x, num_points);
+    GpuVector<T> gpu_basis(cpu_num_x, num_points);
     evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
     acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->coefficients, gpu_basis, 0.0, gpu_y);
 }

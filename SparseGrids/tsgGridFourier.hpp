@@ -79,7 +79,7 @@ public:
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const override;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const override;
     template<typename T>
-    void evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int num_x, CudaVector<T> &wreal, CudaVector<T> &wimag) const;
+    void evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int num_x, GpuVector<T> &wreal, GpuVector<T> &wimag) const;
     #endif
 
     void integrate(double q[], double *conformal_correction) const override;

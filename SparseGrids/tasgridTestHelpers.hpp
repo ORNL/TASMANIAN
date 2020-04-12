@@ -139,9 +139,9 @@ struct GridMethodHierBasisGPU{};
 struct GridMethodEvalBatchGPU{};
 template<typename T, typename GridMethod>
 bool testDenseGPU(std::vector<double> const &x, std::vector<double> const &y, int numx, double tolerance, TasmanianSparseGrid const &grid, std::string message){
-    CudaVector<T> gpux;
+    GpuVector<T> gpux;
     gpux.load(x);
-    CudaVector<T> gpuy(((grid.isFourier() && std::is_same<GridMethod, GridMethodHierBasisGPU>::value) ? 2 : 1) * numx,
+    GpuVector<T> gpuy(((grid.isFourier() && std::is_same<GridMethod, GridMethodHierBasisGPU>::value) ? 2 : 1) * numx,
                        (std::is_same<GridMethod, GridMethodHierBasisGPU>::value) ? grid.getNumPoints() : grid.getNumOutputs());
     if (std::is_same<GridMethod, GridMethodEvalBatchGPU>::value){
         grid.evaluateBatchGPU(gpux.data(), numx, gpuy.data());
@@ -156,7 +156,7 @@ bool testHBasisGPUSparse(std::vector<double> const &x,
                          std::vector<int> const &pntr, std::vector<int> const &indx, std::vector<double> const &vals,
                          double tolerance, TasmanianSparseGrid const &grid, std::string message){
     if (grid.empty()){ cout << "ERROR: cannot test an empty grid\n"; return false; }
-    CudaVector<T> gpux;
+    GpuVector<T> gpux;
     gpux.load(x);
 
     int nump = (int) x.size() / grid.getNumDimensions();
