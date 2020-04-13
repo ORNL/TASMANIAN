@@ -1,6 +1,10 @@
 Changelog for version 7.1
 --------------
 
+* the Python pip installer now handles dependencies automatically
+    * requeres up-to-date version of pip
+* an LAPACK implementation is required for the BLAS option
+    * BLAS and LAPACK are packaged together in all tested libraries
 * added Swig generated Fortran 2003 interface
     * naming conventions and objects mimic C++, similar to python
 * split the Tasmanian::Tasmanian and Tasmanian::Fortran targets
@@ -9,6 +13,7 @@ Changelog for version 7.1
     * `evaluateBatchGPU()` and `evaluateHierarchicalFunctionsGPU()`
     * `evaluateBatch()` when the acceleration mode is cuda or magma
 * C++ 2014 standard is required now
+    * the standard is supported by all previously tested compilers
 
 
 Changelog for version 7.0

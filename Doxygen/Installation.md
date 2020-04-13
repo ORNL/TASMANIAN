@@ -20,6 +20,7 @@ Minimum requirements to use Tasmanian:
 Recommended additional features:
 * [Python](https://www.python.org/) with with [NumPy](http://www.numpy.org/) 1.10 (or newer) and [CTypes](https://docs.python.org/3/library/ctypes.html) packages
 * [Basic Linear Algebra Subroutine (BLAS)](https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms) implementation
+* [Linear Algebra PACKage](http://www.netlib.org/lapack/) implementation
 * [OpenMP](https://en.wikipedia.org/wiki/OpenMP) implementation (usually included with the compiler)
 
 Optional features:
@@ -96,6 +97,9 @@ The preferred way to install Tasmanian is to use the included CMake build script
     * Basic Linear Algebra Subroutines (BLAS) is a standard with many implementations,
       e.g., [https://www.openblas.net/](https://www.openblas.net/); optimized BLAS improves the
       performance when using evaluate commands on grids with many points or working with models with many outputs
+    * Linear Algebra PACKage (LAPACK) is a set of advanced solver, eigen-solvers and decomposition methods
+      that build upon BLAS and is usually included in the same packge, e.g., OpenBLAS, MKL, ESSL, and ATLAS;
+      within Tasmanian, the name BLAS in CMake or run-time options indicate the dependence and usage of both BLAS and LAPACK
     * CUDA is a C++ language extension that allows Tasmanian to leverage the computing power of Nvidia GPU devices,
       which greatly enhances the performance of `evaluateFast()` and `evaluateBatch()` calls
     * Matrix Algebra on GPU and Multicore Architectures (MAGMA) is a library for CUDA accelerated linear
@@ -128,13 +132,14 @@ The preferred way to install Tasmanian is to use the included CMake build script
 * Alternatives allowing to directly specify libraries and bypass `find_package()` altogether:
 ```
   -D BLAS_LIBRARIES
+  -D LAPACK_LIBRARIES
   -D Tasmanian_MAGMA_LIBRARIES
   -D Tasmanian_MAGMA_INCLUDE_DIRS
 ```
 
 * Extra options are available in case CMake fails to find a required dependency, e.g., `find_package()` sometimes fails to acknowledge that the ACML implementation of BLAS depends on both `libgfortran` and `libgomp`; the manual options below should not be necessary in the majority of cases:
 ```
-  -D Tasmanian_EXTRA_LIBRARIES:STRING   (add more libraries as dependencies)
+  -D Tasmanian_EXTRA_LIBRARIES:LIST   (add more libraries as dependencies)
   -D Tasmanian_EXTRA_INCLUDE_DIRS:PATH  (add more include paths to search for headers)
   -D Tasmanian_EXTRA_LINK_DIRS:PATH     (appends more link paths to search for libraries)
 ```
@@ -193,19 +198,19 @@ Tasmanian is included in the Python Pip index: [https://pypi.org/project/Tasmani
   python3 -m pip install Tasmanian --user   (user installation)
   python3 -m pip install Tasmanian          (virtual env installation)
 ```
-Pip-versions prior to 1.10 cannot handle the extra dependencies, those must be installed manually
+Pip versions prior to 1.10 cannot handle the extra dependencies, those must be installed manually
 ```
   python3 -m pip install scikit-build packaging numpy --user (required dependencies)
 ```
 
-The Tasmanian module is not a regular Python-only project but a wrapper around C++ libraries, hence some limitations apply:
+The Tasmanian module is not a regular Python-only project but a wrapper around C++ libraries, note the following:
 * Pip versions prior to 1.10 require that dependencies are installed manually.
 * Only user installations are supported, installation for all users is possible with CMake but not Pip.
 * Python virtual environments are supported, as well as Linux, Mac and Windows operating systems.
-
-The pip installer will enable only the recommended options, if the required libraries are found automatically by CMake.
-CUDA acceleration is not available through Pip and there is currently no way to manually specify the BLAS libraries.
-Only the C++ and Python interfaces can be installed through Pip.
+* The pip installer will enable only the recommended options, if the required libraries are found automatically by CMake.
+* There is currently no way to manually specify the BLAS libraries.
+* CUDA acceleration is not available through Pip.
+* Only the C++ and Python interfaces can be installed through Pip.
 
 ### Install with Spack
 
@@ -216,7 +221,7 @@ Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 
 ### Install on MS Windows platform
 
-Tasmanian has been tested with MS Visual Studio 2017 and CMake 3.11.
+Tasmanian has been tested with MS Visual Studio 2017 and 2019 and CMake 3.11.
 
 * First use the CMake GUI to set the folders and options
 * Then use the command prompt (`cmd.exe`) to enter the build folder
@@ -337,8 +342,7 @@ Several known issues and work-around fixes:
     * Rerun the tests and/or installation to see if the problem is persistent
 * Mixing the GCC and Clang compilers and linkers sometimes fails with an error about the architecture
     * use shared libraries only, i.e., `-D BUILD_SHARED_LIBS=ON` in CMake
-* The PGI compiler fails when using optimization `-O2` with an error about an empty `free()`
-    * the bug happens when `std::vector<double>::resize()` is called on an empty vector
-    * use the `-O1` instead, this issue needs further investigation
+* The older versions of the PGI compiler fails when using optimization `-O2`
+    * use the `-O1` instead, or the newest version of the compiler
 * Older versions of CUDA do not work with newer versions of some compilers, e.g., `gcc`
     * consult the CUDA manual for a list of acceptable compilers

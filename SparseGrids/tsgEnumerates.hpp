@@ -408,96 +408,99 @@ enum TypeRefinement{
     refine_none
 };
 
-//! \brief Types of acceleration for \b TasmanianSparseGrid::evaluateFast() and \b TasmanianSparseGrid::evaluateBatch().
-//! \ingroup SGEnumerates
-
-//! \par Evaluation Stages
-//! Computing the value of the interpolant at one or more nodes is done in two stages, first a matrix of basis function
-//! values is constructed, then the matrix is multiplied by a persistent data matrix (containing model values, or
-//! the corresponding hierarchical or Fourier coefficients). The main factors that determine the performance are
-//! the number of basis functions (i.e., grid nodes), the number of model outputs, and the size of the batch.
-//!
-//! \par
-//! The BLAS and cuBLAS modes use the CPU (and OpenMP) for the first stage of evaluations, and then the corresponding
-//! library for fast linear algebra. Both modes are most efficient when dealing with many outputs.
-//! The CUDA mode uses custom kernels for basis evaluation and can be very fast especially when the grid has many nodes,
-//! the second stage of the evaluations uses the cuBLAS library. The MAGMA mode is the same as CUDA but using the
-//! <a href="http://icl.cs.utk.edu/magma/">UTK MAGMA library.</a> The \b none mode uses only OpenMP (if available), but
-//! the implementation minimizes the memory footprint, the matrices are not formed explicitly and thus the mode
-//! could be the fastest when working with small grids.
-//!
-//! \par Defaults
-//! If \b Tasmanian_ENABLE_BLAS is enabled in CMake, then \b accel_cpu_blas will be the default acceleration mode,
-//! otherwise the default mode is \b accel_none.
-//! The \b accel_gpu_default uses the first available in the list: \b accel_gpu_magma, \b accel_gpu_cuda,
-//! \b accel_cpu_blas, \b accel_none.
-//! When using \b accel_none, \b TasmanianSparseGrid::evaluateFast() is equivalent to \b TasmanianSparseGrid::evaluate()
-//! and equivalent to \b TasmanianSparseGrid::evaluateBatch() with \b num_x equal to 1.
-//!
-//! \par
-//! Note that regardless of the acceleration mode, all evaluate methods are required to generate output identical up to
-//! rounding error.
-//! Thus, the Tasmanian API is designed so that \b TasmanianSparseGrid::enableAcceleration() can be called
-//! with any acceleration type regardless whether it has been enabled by CMake.
-//! In order to facilitate code portability, Tasmanian implements sane fall-back
-//! modes so that "the next best mode" will be automatically selected if the desired mode is not present. Specifically,
-//! missing MAGMA will fallback to CUDA, missing CUDA will fallback to BLAS, and missing BLAS will fallback to \b none.
-//!
-//! \par Memory Management
-//! All acceleration modes (other than \b none) require that potentially large matrices are explicitly constructed,
-//! which leads to an increase of memory footprint. Furthermore, the GPU modes will copy the matrices to the
-//! device memory, which may not be feasible when using weaker GPU devices or working with very large problems.
-//!
-//! \par
-//! Global, Sequence and Fourier grids operate only with dense matrices and require one matrix of size \b getNumPoints()
-//! times \b getNumOutputs(), one matrix of size \b getNumOutputs() times \b num_x, and one matrix of size \b getNumPoints()
-//! times \b num_x. For \b evaluateFast(), \b num_x is equal to 1. The batch size \b num_x can be adjusted to accommodate
-//! memory constraints, but the first stage of evaluations achieved better performance when \b num_x is large (especially
-//! when executed on the GPU).
-//!
-//! \par
-//! Local polynomial grids can perform evaluations in either dense or sparse modes. Dense mode has memory requirements
-//! identical to the Global case, but dense evaluations are less efficient when working with fewer grid dimensions
-//! and many grid nodes.
-//! The sparse mode requires two matrices of size \b getNumOutputs() times \b num_x, one matrix of size \b getNumPoints()
-//! times \b getNumOutputs(), and one sparse matrix of size \b getNumPoints() times \b num_x. The actual sparsity
-//! pattern and the exact memory requirements are hard to predict, but can also be controlled through the batch size,
-//! albeit with larger performance penalty for small batches. By default, Tasmanian will automatically select sparse
-//! or dense mode based on criteria derived from numerous in-house benchmark tests,
-//! but the mode can also be manually selected with \b TasmanianSparseGrid::favorSparseAcceleration().
-//!
-//! \par
-//! In all cases, a matrix of size \b getNumPoints() times \b getNumOutputs() will be stored in device memory and will
-//! be kept persistent until the gird is modified (points are added/removed or the object is removed). The persistent
-//! memory can be cleared manually by switching to non-GPU acceleration mode.
-//!
-//! \par Thread Safety
-//! The \b accel_none mode and the simple \b TasmanianSparseGrid::evaluate() function are thread safe, i.e., can be called
-//! concurrently from multiple threads and together with any other const methods and will always return result that vary
-//! by no more than rounding error. Using \b accel_cpu_blas, the \b evaluateBatch() and \b evaluateFast() are thread save
-//! to the extent to which the BLAS library is thread save; for example, OpenBLAS must be build with a special flag
-//! otherwise concurrent calls to BLAS functions can result in incorrect output.
-//!
-//! \par
-//! The GPU methods use mutable internal data-structures for cuBLAS and MAGAM handles and to load the persistent
-//! matrix into GPU memory. Thus, calls to \b evaluateBatch() and \b evaluateFast() are not thread safe when using
-//! any of the GPU acceleration modes. However, the mutable data-structures are encapsulated within the corresponding
-//! object, thus evaluations for different objects can be performed concurrently and different objects can be associated
-//! with different GPU devices without causing any conflicts. Note that this is a feature of Tasmanian and some third
-//! party libraries (e.g., OpenBLAS and \b accel_cpu_blas mode) can still cause issues even when different threads
-//! manipulate different objects.
+/*!
+ * \ingroup SGEnumerates
+ * \brief Modes of acceleration.
+ *
+ * \par Acceleration Context
+ * Each Tasmanian object creates a Tasmanian acceleration context that operate on one of several modes
+ * (depending on the external libraries being used) and the context will remain persistent on read/write,
+ * make/clean, and move operation. The context cannot be copied from one object to another.
+ * For example, an object is created and CUDA acceleration is enabled, then makeLocalPolynomial() is called,
+ * then the Nvidia GPU device will be used to speed the different operation of the grid, if then read()
+ * is called, a new grid will be loaded from a file and regardless of the type of grid the GPU will still
+ * be in use by the object. If the grid is copied, both source and destination will retain their original
+ * acceleration contexts and only the grid data (e.g., points and model values) will be copied.
+ *
+ * \par Utilizing Accelerated Libraries
+ * Each Tasmanian operation that has a (potentially) significant computational cost is a candidate for acceleration.
+ * Currently, OpenMP is uses throughout the Tasmanian code is essentially all potential places and
+ * the evaluateBatch() methods associated with all types of grids can be accelerated with BLAS and CUDA.
+ * The BLAS/LAPACK and CUDA acceleration is also available in other select methods, e.g.,
+ * TasmanianSparseGrid::loadNeededPoints() for local polynomial and wavelet grid.
+ *
+ * \par OpenMP and Thread Count
+ * If enabled, OpenMP is ubiquitous throughout Tasmanian in almost all computationally expensive operations.
+ * The acceleration mode can be disabled only at compile time; however, the standard OpenMP options
+ * are respected at runtime, e.g., the method omp_set_num_threads() and OMP_NUM_THREADS environment variable,
+ * if either is set to 1, Tasmanian will use only one hardware thread.
+ *
+ * \par Acceleration Mode None
+ * In this mode, Tasmanian will forego the use of third party libraries (other then OpenMP) and the algorithms
+ * will run in the most memory conservative way. Due to improved data-locality and depending on the hardware architecture,
+ * the TasGrid::accel_none mode can be the fastest mode for small grids with few points and few outputs.
+ *
+ * \par Memory Management and Persistent Data
+ * The use of third party libraries requires that matrices are explicitly formed even when that can be avoided
+ * in the no-acceleration mode. Furthermore, operations that are called repeatedly, i.e., evaluateBatch() used
+ * in the context of DREAM sampling, will also cache matrices that can be reused in multiple calls.
+ * The cache is particularly an issue for the various GPU modes since the memory on the accelerator devices is
+ * sometimes limited. One-shot calls, such as loadNeededPoints(), will not use cache that persistent after
+ * the call to the method.
+ * The cache can always be cleared by either changing the grid (creating a new grid or loading more points
+ * as part of iterative refinement), or by switching to mode TasGrid::accel_none and then back to one of the fast modes.
+ *
+ * \par Memory usage for Evaluate Batch
+ * Global, Sequence, Fourier and Wavelet grids operate only with dense matrices and require one persistent
+ * matrix of size \b getNumPoints() times \b getNumOutputs(), one temporary matrix of size \b getNumPoints()
+ * times \b num_x, and user provided matrix to hold the result of size \b getNumOutputs() times \b num_x.
+ * The batch size \b num_x can be adjusted to accommodate memory constraints, but better performance
+ * is usually achieved when \b num_x is large due to the increased opportunities to parallelize.
+ * Local polynomial grids (when using the default sparse mode) will use sparse representation of
+ * the transient matrix and thus the memory usage strongly depends on the graph structure of the grid.
+ * In addition, all grids use a relatively small amount of GPU cache which depends on the number of underlying
+ * tensors and the specific graph structure of the grid.
+ *
+ * \par Defaults
+ * If \b Tasmanian_ENABLE_BLAS is enabled in CMake, then TasGrid::accel_cpu_blas will be the default acceleration mode,
+ * otherwise the default mode is TasGrid::accel_none.
+ * The TasGrid::accel_gpu_default uses the first available in the list:
+ * - TasGrid::accel_gpu_magma
+ * - TasGrid::accel_gpu_cuda
+ * - TasGrid::accel_cpu_blas
+ * - TasGrid::accel_none
+ *
+ * \par
+ * Note that regardless of the acceleration mode, all evaluate methods will to generate output that
+ * is identical up to rounding error. By design, the \b TasmanianSparseGrid::enableAcceleration() can be called
+ * with any acceleration type regardless whether it has been enabled by CMake.
+ * In order to facilitate code portability, Tasmanian implements sane fall-back
+ * modes so that "the next best mode" will be automatically selected if the desired mode is not present. Specifically,
+ * missing MAGMA will fallback to CUDA, missing CUDA will fallback to BLAS, and missing BLAS will fallback to none.
+ *
+ * \par Thread Safety and Const-correctness
+ * Using mode TasGrid::accel_none, Tasmanian will not use any transient data-structures and the code is const-correct
+ * in the strictest definition, i.e., any two const-methods can be called concurrently from any two threads
+ * and will produce the correct result.
+ * Other modes use transient cache (with the C++ keyword mutable), which will be generated after the first call
+ * to the method and will be reused in follow on call. Thus, the first call is not thread-safe, while the follow on
+ * calls are strictly const-correct in the same sense as TasGrid::accel_none.
+ * Also note that some third party libraries can have additional restrictions, e.g., concurrent calls to OpenBLAS
+ * are not thread-safe unless the library is build with a specific flag. The CUDA and MAGMA libraries appear
+ * to not have such limitations.
+ */
 enum TypeAcceleration{
     //! \brief Usually the slowest mode, uses only OpenMP multi-threading, but optimized for memory and could be the fastest mode for small problems.
     accel_none,
-    //! \brief Default (if available), uses OpenMP to form matrices and BLAS on the CPU for linear algebra.
+    //! \brief Default (if available), uses both BLAS and LAPACK libraries.
     accel_cpu_blas,
-    //! \brief Equivalent to the first available from \b accel_gpu_magma, \b accel_gpu_cuda, \b accel_cpu_blas, \b accel_none.
+    //! \brief Equivalent to the first available from MAGMA, CUDA, BLAS, or none.
     accel_gpu_default,
-    //! \brief Using the CPU to form the matrices and the GPU for linear algebra, good when the model number of outputs is large.
+    //! \brief Mixed usage of the CPU (OpenMP) and GPU libraries.
     accel_gpu_cublas,
-    //! \brief Same as \b accel_gpu_cublas but uses the GPU to form the matrices and is thus faster when using many grid nodes and large batch size.
+    //! \brief Similar to the cuBLAS option but also uses a set of Tasmanian custom GPU kernels.
     accel_gpu_cuda,
-    //! \brief Same as \b accel_gpu_cuda but uses the UTK MAGAM library for the linear algebra.
+    //! \brief Same the CUDA option but uses the UTK MAGMA library for the linear algebra operations.
     accel_gpu_magma
 };
 
