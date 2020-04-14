@@ -81,15 +81,13 @@ GridWavelet::GridWavelet(AccelerationContext const *acc, int cnum_dimensions, in
     }else{
         values.resize(num_outputs, needed.getNumIndexes());
     }
-
-    buildInterpolationMatrix();
 }
 GridWavelet::GridWavelet(AccelerationContext const *acc, GridWavelet const *wav, int ibegin, int iend) :
     BaseCanonicalGrid(acc, *wav, ibegin, iend),
     rule1D(wav->rule1D),
     order(wav->order),
-    coefficients((num_outputs == wav->num_outputs) ? wav->coefficients : wav->coefficients.splitData(ibegin, iend)),
-    inter_matrix(wav->inter_matrix){
+    coefficients((num_outputs == wav->num_outputs) ? wav->coefficients : wav->coefficients.splitData(ibegin, iend))
+    {
 
     if (wav->dynamic_values){
         dynamic_values = std::make_unique<SimpleConstructData>(*wav->dynamic_values);
@@ -103,9 +101,6 @@ GridWavelet::GridWavelet(AccelerationContext const *acc, MultiIndexSet &&pset, i
     rule1D(corder, 10),
     order(corder)
 {
-
-    buildInterpolationMatrix();
-
     if (num_outputs > 0){
         values = StorageSet(num_outputs, points.getNumIndexes(), vals.release());
         recomputeCoefficients();
@@ -137,6 +132,7 @@ void GridWavelet::getQuadratureWeights(double *weights) const{
     for(int i=0; i<num_points; i++){
         weights[i] = evalIntegral(work.getIndex(i));
     }
+    if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
     inter_matrix.invertTransposed(weights);
 }
 void GridWavelet::getInterpolationWeights(const double x[], double *weights) const{
@@ -146,6 +142,7 @@ void GridWavelet::getInterpolationWeights(const double x[], double *weights) con
     for(int i=0; i<num_points; i++){
         weights[i] = evalBasis(work.getIndex(i), x);
     }
+    if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
     inter_matrix.invertTransposed(weights);
 }
 void GridWavelet::loadNeededPoints(const double *vals){
@@ -162,7 +159,6 @@ void GridWavelet::loadNeededPoints(const double *vals){
         values.addValues(points, needed, vals);
         points += needed;
         needed = MultiIndexSet();
-        buildInterpolationMatrix();
     }
     recomputeCoefficients();
 }
@@ -176,7 +172,6 @@ void GridWavelet::mergeRefinement(){
         points = std::move(needed);
     }else{
         points += needed;
-        buildInterpolationMatrix();
     }
     needed = MultiIndexSet();
     coefficients = Data2D<double>(num_outputs, num_all_points);
@@ -194,7 +189,7 @@ void GridWavelet::evaluate(const double x[], double y[]) const{
     }
 }
 void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
-    switch(acceleration->acceleration){
+    switch(acceleration->mode){
         #ifdef Tasmanian_ENABLE_CUDA
         case accel_gpu_magma:
         case accel_gpu_cuda: {
@@ -348,10 +343,10 @@ double GridWavelet::evalIntegral(const int p[]) const{
     return v;
 }
 
-void GridWavelet::buildInterpolationMatrix(){
+void GridWavelet::buildInterpolationMatrix() const{
     // updated code, using better parallelism
     // Wavelets don't have a nice rule of support to use monkeys and graphs (or I cannot find the support rule)
-    MultiIndexSet &work = (points.empty()) ? needed : points;
+    MultiIndexSet const &work = (points.empty()) ? needed : points;
 
     int num_points = work.getNumIndexes();
 
@@ -389,7 +384,7 @@ void GridWavelet::buildInterpolationMatrix(){
         }
     }
 
-    inter_matrix = TasSparse::WaveletBasisMatrix(pntr, indx, vals);
+    inter_matrix = TasSparse::WaveletBasisMatrix(acceleration, pntr, indx, vals);
 }
 
 void GridWavelet::recomputeCoefficients(){
@@ -813,7 +808,6 @@ void GridWavelet::loadConstructedPoint(const double x[], int numx, const double 
         values.addValues(points, new_points, vals.data());
         points += new_points;
     }
-    buildInterpolationMatrix();
     recomputeCoefficients(); // costly, but the only option under the circumstances
 }
 void GridWavelet::finishConstruction(){ dynamic_values.reset(); }

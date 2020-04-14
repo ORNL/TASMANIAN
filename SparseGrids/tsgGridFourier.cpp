@@ -428,7 +428,7 @@ void GridFourier::evaluate(const double x[], double y[]) const{
     }
 }
 void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
-    switch(acceleration->acceleration){
+    switch(acceleration->mode){
         #ifdef Tasmanian_ENABLE_CUDA
         case accel_gpu_magma:
         case accel_gpu_cuda: {

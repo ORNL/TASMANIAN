@@ -1633,7 +1633,7 @@ public:
      * Returns the acceleration mode that will be used, i.e., the one selected internally
      * based on the request made in enableAcceleration().
      */
-    TypeAcceleration getAccelerationType() const{ return acceleration->acceleration; }
+    TypeAcceleration getAccelerationType() const{ return acceleration->mode; }
     /*!
      * \brief Returns whether a specific mode can be enabled.
      *

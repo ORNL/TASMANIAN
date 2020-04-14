@@ -628,7 +628,7 @@ struct AccelerationContext{
     };
 
     //! \brief The current active acceleration mode.
-    TypeAcceleration acceleration;
+    TypeAcceleration mode;
     //! \brief The preference to use dense or sparse algorithms.
     AlgorithmPreference algorithm_select;
     //! \brief If using a GPU acceleration mode, holds the active device.
@@ -640,9 +640,9 @@ struct AccelerationContext{
     #endif
     #ifdef Tasmanian_ENABLE_BLAS
     //! \brief Creates a default context, the device id is set to 0 and acceleration is BLAS (if available) or none.
-    AccelerationContext() : acceleration(accel_cpu_blas), algorithm_select(algorithm_autoselect), device(0){}
+    AccelerationContext() : mode(accel_cpu_blas), algorithm_select(algorithm_autoselect), device(0){}
     #else
-    AccelerationContext() : acceleration(accel_none), algorithm_select(algorithm_autoselect), device(0){}
+    AccelerationContext() : mode(accel_none), algorithm_select(algorithm_autoselect), device(0){}
     #endif
 
     //! \brief Sets algorithm affinity in the direction of sparse.
@@ -657,14 +657,14 @@ struct AccelerationContext{
     #ifdef Tasmanian_ENABLE_CUDA // GPU related methods with fallback options
     //! \brief Accepts parameters directly from TasmanianSparseGrid::enableAcceleration()
     void enable(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){
-        acceleration = AccelerationMeta::getAvailableFallback(acc);
+        mode = AccelerationMeta::getAvailableFallback(acc);
         engine.reset();
-        if (AccelerationMeta::isAccTypeGPU(acceleration)){
+        if (AccelerationMeta::isAccTypeGPU(mode)){
             // create a new engine
             if ((new_gpu_id < 0) || (new_gpu_id >= AccelerationMeta::getNumCudaDevices()))
                 throw std::runtime_error("Invalid CUDA device ID, see ./tasgrid -v for list of detected devices.");
             device = new_gpu_id;
-            engine = std::make_unique<GpuEngine>(device, (acceleration == accel_gpu_magma), backend_handle, cusparse_handle);
+            engine = std::make_unique<GpuEngine>(device, (mode == accel_gpu_magma), backend_handle, cusparse_handle);
         }else{
             device = new_gpu_id;
         }
@@ -676,7 +676,7 @@ struct AccelerationContext{
     bool on_gpu() const{ return !!engine; }
     #else
     void enable(TypeAcceleration acc, int new_gpu_id, void*, void*){
-        acceleration = AccelerationMeta::getAvailableFallback(acc);
+        mode = AccelerationMeta::getAvailableFallback(acc);
         device = new_gpu_id;
     }
     void setDevice() const{}

@@ -1221,8 +1221,8 @@ void TasmanianSparseGrid::printStats(std::ostream &os) const{
     }else{
         // empty grid, show nothing, just like the sequence grid
     }
-    os << setw(L1) << "Acceleration:" << "  " << AccelerationMeta::getIOAccelerationString(acceleration->acceleration) << '\n';
-    if (AccelerationMeta::isAccTypeGPU(acceleration->acceleration)){
+    os << setw(L1) << "Acceleration:" << "  " << AccelerationMeta::getIOAccelerationString(acceleration->mode) << '\n';
+    if (AccelerationMeta::isAccTypeGPU(acceleration->mode)){
         os << setw(L1) << "GPU:" << "  " << getGPUID() << '\n';
     }
 
@@ -1510,7 +1510,7 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
     // if gpu acceleration has been disabled, then reset the domain and cache
     // note that this method cannot possibly change the gpu ID and switching
     // between variations of GPU accelerations on the same device will keep the same cache
-    if (not AccelerationMeta::isAccTypeGPU(acceleration->acceleration)){
+    if (not AccelerationMeta::isAccTypeGPU(acceleration->mode)){
         if (not empty()) base->clearAccelerationData();
         acc_domain.reset();
     }
@@ -1519,7 +1519,7 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
 
 void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){
     #ifdef Tasmanian_ENABLE_CUDA
-    if (new_gpu_id != acceleration->device or not AccelerationMeta::isAccTypeGPU(acceleration->acceleration)){
+    if (new_gpu_id != acceleration->device or not AccelerationMeta::isAccTypeGPU(acceleration->mode)){
         if (not empty()) base->clearAccelerationData();
         acc_domain.reset();
     }
@@ -1538,7 +1538,7 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
 
 void TasmanianSparseGrid::setGPUID(int new_gpu_id){
     if (new_gpu_id != acceleration->device){
-        acceleration->enable(acceleration->acceleration, new_gpu_id, nullptr, nullptr);
+        acceleration->enable(acceleration->mode, new_gpu_id, nullptr, nullptr);
         #ifdef Tasmanian_ENABLE_CUDA
         if (not empty()) base->clearAccelerationData();
         acc_domain.reset();

@@ -306,12 +306,25 @@ void TasmanianFourierTransform::fast_fourier_transform1D(std::vector<std::vector
 
 namespace TasSparse{
 
-WaveletBasisMatrix::WaveletBasisMatrix(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals) : tol(Maths::num_tol), num_rows(static_cast<int>(lpntr.size())){
+#ifdef Tasmanian_ENABLE_BLAS
+WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const *acceleration,
+#else
+WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const*,
+#endif
+                                       const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals) : tol(Maths::num_tol), num_rows(static_cast<int>(lpntr.size())){
+
     if (num_rows == 0) return; // make an empty matrix
 
     #ifdef Tasmanian_ENABLE_BLAS
-    if (num_rows <= 10000){
-        // use the faster dense format (maybe faster for even bigger problems, but memory usage increases too much)
+    if ((acceleration->mode != accel_none)
+        and (acceleration->algorithm_select != AccelerationContext::algorithm_sparse)
+        and not (acceleration->algorithm_select == AccelerationContext::algorithm_autoselect and num_rows > 10000)
+        ){
+        // Using the sparse algorithm if:
+        // - BLAS (and LAPACK) not enabled, guarded by the ifdef
+        // - explicitly using acceleration none, first term in the if
+        // - explicitly the sparse algorithm, second term in the if
+        // - using auto-select but the memory usage would be too much
         dense = std::vector<double>(Utils::size_mult(num_rows, num_rows));
         Utils::Wrapper2D<double> dense_rows(num_rows, dense.data());
 

@@ -33,7 +33,7 @@
 
 #include <complex>
 
-#include "tsgEnumerates.hpp"
+#include "tsgAcceleratedDataStructures.hpp"
 
 //! \internal
 //! \file tsgLinearSolvers.hpp
@@ -121,7 +121,7 @@ public:
     //! \brief Default constructor, create an empty matrix.
     WaveletBasisMatrix() : tol(Maths::num_tol), num_rows(0){}
     //! \brief Initialize the matrix with the given set of indexes.
-    WaveletBasisMatrix(const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals);
+    WaveletBasisMatrix(AccelerationContext const *acceleration, const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals);
     //! \brief Default destructor.
     ~WaveletBasisMatrix() = default;
 
