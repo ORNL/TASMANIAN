@@ -1222,6 +1222,12 @@ void TasmanianSparseGrid::printStats(std::ostream &os) const{
         // empty grid, show nothing, just like the sequence grid
     }
     os << setw(L1) << "Acceleration:" << "  " << AccelerationMeta::getIOAccelerationString(acceleration->mode) << '\n';
+    if (isLocalPolynomial() or isWavelet()){
+        os << setw(L1) << "Flavor:" << "  " << (
+            (acceleration->algorithm_select == AccelerationContext::algorithm_autoselect) ? "auto" :
+                ((acceleration->algorithm_select == AccelerationContext::algorithm_dense) ? "dense" : "sparse")
+                                               ) << "\n";
+    }
     if (AccelerationMeta::isAccTypeGPU(acceleration->mode)){
         os << setw(L1) << "GPU:" << "  " << getGPUID() << '\n';
     }

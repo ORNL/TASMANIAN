@@ -53,7 +53,7 @@ namespace TasGrid{
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 class GridLocalPolynomial : public BaseCanonicalGrid{
 public:
-    GridLocalPolynomial(AccelerationContext const *acc) : BaseCanonicalGrid(acc), order(1), top_level(0), sparse_affinity(0){}
+    GridLocalPolynomial(AccelerationContext const *acc) : BaseCanonicalGrid(acc), order(1), top_level(0){}
     friend struct GridReaderVersion5<GridLocalPolynomial>;
     GridLocalPolynomial(AccelerationContext const *acc, const GridLocalPolynomial *pwpoly, int ibegin, int iend);
     GridLocalPolynomial(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
@@ -114,7 +114,6 @@ public:
     void integrateHierarchicalFunctions(double integrals[]) const override;
 
     void updateAccelerationData(AccelerationContext::ChangeType change) const override;
-    void setFavorSparse(bool favor);
 
     const double* getSurpluses() const;
     const int* getNeededIndexes() const;
@@ -129,9 +128,6 @@ protected:
 
     //! \brief Used as part of the loadNeededPoints() algorithm, updates the values and cuda cache, but does not touch the surpluses.
     void updateValues(double const *vals);
-
-    //! \brief Tuning decision whether to use sparse or dense.
-    bool useDense() const{ return (sparse_affinity == -1); }
 
     void buildTree();
 
@@ -267,8 +263,6 @@ private:
     std::vector<int> indx;
 
     std::unique_ptr<BaseRuleLocalPolynomial> rule;
-
-    int sparse_affinity;
 
     std::unique_ptr<SimpleConstructData> dynamic_values;
 

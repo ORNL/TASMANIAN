@@ -74,8 +74,8 @@ template void GridLocalPolynomial::write<mode_binary>(std::ostream &) const;
 GridLocalPolynomial::GridLocalPolynomial(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits)
     : BaseCanonicalGrid(acc, cnum_dimensions, cnum_outputs, MultiIndexSet(), MultiIndexSet(), StorageSet()),
       order(corder),
-      rule(makeRuleLocalPolynomial(((crule == rule_semilocalp) && (order < 2)) ? rule_localp : crule, corder)),
-      sparse_affinity(0){
+      rule(makeRuleLocalPolynomial(((crule == rule_semilocalp) && (order < 2)) ? rule_localp : crule, corder))
+      {
 
     MultiIndexSet tensors = MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type_level, [&](int i) -> int{ return i; }, std::vector<int>(), level_limits);
 
@@ -101,8 +101,7 @@ GridLocalPolynomial::GridLocalPolynomial(AccelerationContext const *acc, GridLoc
     roots(pwpoly->roots),
     pntr(pwpoly->pntr),
     indx(pwpoly->indx),
-    rule(makeRuleLocalPolynomial(pwpoly->rule->getType(), pwpoly->order)),
-    sparse_affinity(pwpoly->sparse_affinity){
+    rule(makeRuleLocalPolynomial(pwpoly->rule->getType(), pwpoly->order)){
 
     if (pwpoly->dynamic_values){
         dynamic_values = std::make_unique<SimpleConstructData>(*pwpoly->dynamic_values);
@@ -116,8 +115,7 @@ GridLocalPolynomial::GridLocalPolynomial(AccelerationContext const *acc, int cnu
                         StorageSet(cnum_outputs, static_cast<int>(vals.size() / cnum_outputs), std::move(vals))),
     order(corder),
     surpluses(Data2D<double>(cnum_outputs, points.getNumIndexes(), std::move(surps))),
-    rule(makeRuleLocalPolynomial(crule, corder)),
-    sparse_affinity(0){
+    rule(makeRuleLocalPolynomial(crule, corder)){
 
     buildTree();
 }
@@ -193,7 +191,8 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
             double nnz = (double) spntr[num_x];
             double total_size = ((double) num_x) * ((double) num_points);
 
-            if ((sparse_affinity == -1) || ((sparse_affinity == 0) && (nnz / total_size > 0.1))){
+            if ((acceleration->algorithm_select == AccelerationContext::algorithm_dense)
+                or ((acceleration->algorithm_select == AccelerationContext::algorithm_autoselect) and (nnz / total_size > 0.1))){
                 // potentially wastes a lot of memory
                 Data2D<double> A(num_points, num_x, 0.0);
                 for(int i=0; i<num_x; i++){
@@ -250,11 +249,11 @@ void GridLocalPolynomial::loadNeededPointsGPU(const double *vals){
                                        std::vector<int>(cumulative_poitns.begin(), cumulative_poitns.end()), // copy cumulative_poitns
                                        std::vector<double>(Utils::size_mult(num_outputs, cumulative_poitns.getNumIndexes())),  // dummy values, will not be read or used
                                        std::vector<double>(cumulative_surpluses.begin(), cumulative_surpluses.end())); // copy the cumulative_surpluses
-        upper_grid.sparse_affinity = sparse_affinity;
 
         Data2D<double> upper_evaluate(num_outputs, level_points.getNumIndexes());
         int batch_size = 20000; // needs tuning
-        if (useDense()){ // dense uses lots of memory, try to keep it contained to about 4GB
+        if (acceleration->algorithm_select == AccelerationContext::algorithm_dense){
+            // dense uses lots of memory, try to keep it contained to about 4GB
             batch_size = 536870912 / upper_grid.getNumPoints() - 2 * (num_outputs + num_dimensions);
             if (batch_size < 100) batch_size = 100; // use at least 100 points
         }
@@ -290,7 +289,7 @@ template<typename T> void GridLocalPolynomial::evaluateBatchGPUtempl(const T gpu
     loadGpuSurpluses<T>();
     int num_points = points.getNumIndexes();
 
-    if (useDense()){
+    if (acceleration->algorithm_select == AccelerationContext::algorithm_dense){
         GpuVector<T> gpu_basis(cpu_num_x, num_points);
         evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
 
@@ -1430,15 +1429,6 @@ void GridLocalPolynomial::updateAccelerationData(AccelerationContext::ChangeType
 #else
 void GridLocalPolynomial::updateAccelerationData(AccelerationContext::ChangeType) const{}
 #endif
-
-void GridLocalPolynomial::setFavorSparse(bool favor){
-    // sparse_affinity == -1: use dense algorithms
-    // sparse_affinity ==  1: use sparse algorithms
-    // sparse_affinity ==  0: let Tasmanian decide
-    // favor true/false bumps you upper or lower on the scale
-    if (favor && (sparse_affinity < 1)) sparse_affinity++;
-    if (!favor && (sparse_affinity > -1)) sparse_affinity--;
-}
 
 }
 
