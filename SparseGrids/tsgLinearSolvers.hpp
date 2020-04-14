@@ -125,6 +125,11 @@ public:
     //! \brief Default destructor.
     ~WaveletBasisMatrix() = default;
 
+    //! \brief Return true if using the sparse mode and false is using dense mode or empty.
+    bool isSparse() const{ return (num_rows > 0) and dense.empty(); }
+    //! \brief Return true if using the dense mode and false is using sparse mode or empty.
+    bool isDense() const{ return (num_rows > 0) and not dense.empty(); }
+
     //! \brief Return the number of rows in the matrix.
     int getNumRows() const{ return num_rows; }
 

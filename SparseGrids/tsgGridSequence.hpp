@@ -103,7 +103,7 @@ public:
 
     const double* getSurpluses() const;
 
-    void clearAccelerationData() override;
+    void updateAccelerationData(AccelerationContext::ChangeType change) const override;
 
     double getNode(int i) const{ return nodes[i]; }
 

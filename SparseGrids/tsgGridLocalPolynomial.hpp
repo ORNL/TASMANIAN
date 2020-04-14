@@ -113,7 +113,7 @@ public:
     void setHierarchicalCoefficients(const double c[]) override;
     void integrateHierarchicalFunctions(double integrals[]) const override;
 
-    void clearAccelerationData() override;
+    void updateAccelerationData(AccelerationContext::ChangeType change) const override;
     void setFavorSparse(bool favor);
 
     const double* getSurpluses() const;

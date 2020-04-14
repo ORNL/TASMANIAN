@@ -935,13 +935,16 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
     }
 }
 
-void GridSequence::clearAccelerationData(){
-    #ifdef Tasmanian_ENABLE_CUDA
-    gpu_cache.reset();
-    gpu_cachef.reset();
-    #endif
+#ifdef Tasmanian_ENABLE_CUDA
+void GridSequence::updateAccelerationData(AccelerationContext::ChangeType change) const{
+    if (change == AccelerationContext::change_gpu_device){
+        gpu_cache.reset();
+        gpu_cachef.reset();
+    }
 }
-
+#else
+void GridSequence::updateAccelerationData(AccelerationContext::ChangeType) const{}
+#endif
 
 }
 

@@ -121,7 +121,8 @@ MultiIndexSet GridFourier::selectTensors(size_t dims, int depth, TypeDepth type,
 }
 
 void GridFourier::setTensors(MultiIndexSet &&tset, int cnum_outputs){
-    clearAccelerationData();
+    clearGpuNodes();
+    clearGpuCoefficients();
     points = MultiIndexSet();
     values = StorageSet();
     active_w.clear();
@@ -612,8 +613,8 @@ void GridFourier::evaluateHierarchicalFunctionsInternal(const double x[], int nu
 void GridFourier::setHierarchicalCoefficients(const double c[]){
     // takes c to be length 2*num_outputs*num_points
     // first num_points*num_outputs are the real part; second num_points*num_outputs are the imaginary part
-
-    clearAccelerationData();
+    clearGpuNodes();
+    clearGpuCoefficients();
     if (points.empty()){
         points = std::move(needed);
         needed = MultiIndexSet();
@@ -637,12 +638,16 @@ void GridFourier::integrateHierarchicalFunctions(double integrals[]) const{
     std::fill(integrals + 1, integrals + getNumPoints(), 0.0);
 }
 
-void GridFourier::clearAccelerationData(){
-    #ifdef Tasmanian_ENABLE_CUDA
-    gpu_cache.reset();
-    gpu_cachef.reset();
-    #endif
+#ifdef Tasmanian_ENABLE_CUDA
+void GridFourier::updateAccelerationData(AccelerationContext::ChangeType change) const{
+    if (change == AccelerationContext::change_gpu_device){
+        gpu_cache.reset();
+        gpu_cachef.reset();
+    }
 }
+#else
+void GridFourier::updateAccelerationData(AccelerationContext::ChangeType) const{}
+#endif
 
 void GridFourier::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
     double tol = 1000.0 * Maths::num_tol;

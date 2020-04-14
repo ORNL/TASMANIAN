@@ -117,7 +117,7 @@ public:
     virtual void setHierarchicalCoefficients(const double c[]) = 0;
     virtual void integrateHierarchicalFunctions(double integrals[]) const = 0;
 
-    virtual void clearAccelerationData() = 0;
+    virtual void updateAccelerationData(AccelerationContext::ChangeType change) const = 0;
 
 protected:
     AccelerationContext const *acceleration;

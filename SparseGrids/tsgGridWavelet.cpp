@@ -940,11 +940,22 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
     needed = getRefinementCanidates(tolerance, criteria, output, level_limits);
 }
 
-void GridWavelet::clearAccelerationData(){
-    #ifdef Tasmanian_ENABLE_CUDA
-    gpu_cache.reset();
-    gpu_cachef.reset();
-    #endif
+void GridWavelet::updateAccelerationData(AccelerationContext::ChangeType change) const{
+    switch(change){
+        #ifdef Tasmanian_ENABLE_CUDA
+        case AccelerationContext::change_gpu_device:
+            gpu_cache.reset();
+            gpu_cachef.reset();
+            break;
+        #endif
+        case AccelerationContext::change_sparse_dense:
+            if ((acceleration->algorithm_select == AccelerationContext::algorithm_dense and inter_matrix.isSparse())
+                or (acceleration->algorithm_select == AccelerationContext::algorithm_sparse and inter_matrix.isDense()))
+                inter_matrix = TasSparse::WaveletBasisMatrix();
+            break;
+        default:
+            break;
+    }
 }
 
 }

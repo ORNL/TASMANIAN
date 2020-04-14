@@ -90,7 +90,7 @@ public:
 
     void integrateHierarchicalFunctions(double integrals[]) const override;
 
-    void clearAccelerationData() override;
+    void updateAccelerationData(AccelerationContext::ChangeType change) const override;
 
     void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits);

@@ -97,7 +97,7 @@ public:
 
     const double* getSurpluses() const;
 
-    void clearAccelerationData() override;
+    void updateAccelerationData(AccelerationContext::ChangeType change) const override;
 
 protected:
     double evalBasis(const int p[], const double x[]) const;

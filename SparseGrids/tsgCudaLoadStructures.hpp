@@ -124,12 +124,15 @@ template<typename FP>
 struct CudaLocalPolynomialData{
     GpuVector<FP> surpluses, nodes, support;
     GpuVector<int> hpntr, hindx, hroots;
-    void clearBasisHierarchy(){
-        nodes.clear();
-        support.clear();
+    void clearHierarchy(){
         hpntr.clear();
         hindx.clear();
         hroots.clear();
+    }
+    void clearBasisHierarchy(){
+        nodes.clear();
+        support.clear();
+        clearHierarchy();
     }
 };
 

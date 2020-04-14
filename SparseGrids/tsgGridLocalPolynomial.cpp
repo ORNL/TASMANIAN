@@ -1350,7 +1350,8 @@ int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance,
     int num_kept = 0; for(int i=0; i<num_points; i++) num_kept += (pmap[i]) ? 1 : 0;
 
     if (num_kept == num_points) return num_points; // trivial case, remove nothing
-    clearAccelerationData();
+    clearGpuBasisHierarchy();
+    clearGpuSurpluses();
 
     // save a copy of the points and the values
     Data2D<int> point_kept(num_dimensions, num_kept);
@@ -1408,12 +1409,27 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[]){
     values = StorageSet(num_outputs, points.getNumIndexes(), std::move(y));
 }
 
-void GridLocalPolynomial::clearAccelerationData(){
-    #ifdef Tasmanian_ENABLE_CUDA
-    gpu_cache.reset();
-    gpu_cachef.reset();
-    #endif
+#ifdef Tasmanian_ENABLE_CUDA
+void GridLocalPolynomial::updateAccelerationData(AccelerationContext::ChangeType change) const{
+    switch(change){
+        case AccelerationContext::change_gpu_device:
+            gpu_cache.reset();
+            gpu_cachef.reset();
+            break;
+        case AccelerationContext::change_sparse_dense:
+            if (acceleration->algorithm_select == AccelerationContext::algorithm_dense){
+                // if forcing the dense algorithm then clear the hierarchy cache
+                // note: the sparse algorithm uses both the hierarchy and the basis cache used in the dense mode
+                if (gpu_cache) gpu_cache->clearHierarchy();
+                if (gpu_cachef) gpu_cachef->clearHierarchy();
+            }
+        default:
+            break;
+    }
 }
+#else
+void GridLocalPolynomial::updateAccelerationData(AccelerationContext::ChangeType) const{}
+#endif
 
 void GridLocalPolynomial::setFavorSparse(bool favor){
     // sparse_affinity == -1: use dense algorithms
