@@ -95,6 +95,21 @@ StringListIterator readEntries(StringListIterator iter, ValType1 &val1, ValType2
     return readEntries(iter, val2, others...);
 }
 
+//! \brief If the current iterator is pointing to a string dense/sparse return the string and advance, else return "auto" and do nothing.
+template<typename StringListIterator>
+std::string checkFlavor(StringListIterator &iter, StringListIterator argend){
+    if (iter == argend) return "auto";
+    if (*iter == "sparse"){
+        iter++;
+        return "sparse";
+    }else if (*iter == "dense"){
+        iter++;
+        return "dense";
+    }else{
+        return "auto";
+    }
+}
+
 template<typename IteratorToList>
 std::pair<std::vector<int>, std::vector<int>>
 extractWeightsLimits(GridFamily grid_family, int num_dimensions, TypeDepth dtype,

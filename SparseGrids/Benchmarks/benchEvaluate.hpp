@@ -20,6 +20,8 @@ bool benchmark_evaluate(std::deque<std::string> &args, bool use_mixed){
 
     auto riter = readEntries(args.begin(), num_dimensions, num_outputs, num_depth, dtype, rule, order, num_batch, iteratons, num_jumps, acc, device);
 
+    std::string flavor = checkFlavor(riter, args.end());
+
     auto extra = extractWeightsLimits(grid_family, num_dimensions, dtype, riter, args.end());
 
     auto make_grid = getLambdaMakeGrid(grid_family, num_dimensions, num_outputs, num_depth, dtype, rule, order, extra);
@@ -34,8 +36,9 @@ bool benchmark_evaluate(std::deque<std::string> &args, bool use_mixed){
         if (jump == 0) cout << " (points: " << grid.getNumPoints() << ")" << endl;
         loadGenericModel(grid);
 
-        grid.enableAcceleration(acc);
-        if (AccelerationMeta::isAccTypeGPU(acc)) grid.setGPUID(device);
+        grid.enableAcceleration(acc, device);
+        if (flavor != "auto")
+            grid.favorSparseAcceleration((flavor == "sparse"));
 
         // make one dry-run
         std::vector<double> result;

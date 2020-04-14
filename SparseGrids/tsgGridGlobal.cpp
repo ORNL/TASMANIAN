@@ -148,7 +148,8 @@ GridGlobal::GridGlobal(AccelerationContext const *acc, GridGlobal const *global,
 }
 
 void GridGlobal::setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta){
-    clearAccelerationData();
+    clearGpuNodes();
+    clearGpuValues();
     tensor_refs = std::vector<std::vector<int>>();
     points = MultiIndexSet();
     values = StorageSet();
@@ -501,7 +502,7 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
     }
 }
 void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
-    switch(acceleration->acceleration){
+    switch(acceleration->mode){
         #ifdef Tasmanian_ENABLE_CUDA
         case accel_gpu_magma:
         case accel_gpu_cuda: {
@@ -872,12 +873,16 @@ double GridGlobal::legendre(int n, double x){
     return l;
 }
 
-void GridGlobal::clearAccelerationData(){
-    #ifdef Tasmanian_ENABLE_CUDA
-    gpu_cache.reset();
-    gpu_cachef.reset();
-    #endif
+#ifdef Tasmanian_ENABLE_CUDA
+void GridGlobal::updateAccelerationData(AccelerationContext::ChangeType change) const{
+    if (change == AccelerationContext::change_gpu_device){
+        gpu_cache.reset();
+        gpu_cachef.reset();
+    }
 }
+#else
+void GridGlobal::updateAccelerationData(AccelerationContext::ChangeType) const{}
+#endif
 
 MultiIndexSet GridGlobal::getPolynomialSpaceSet(bool interpolation) const{
     if (interpolation){

@@ -56,7 +56,7 @@ void printHelp(BenchFuction test){
         cout << "aniso : (optional) list of anisotropic weights and level limits\n";
         cout << "      : anisotropic weights come first (if used by the grid), then level limits\n";
     }else if (test == bench_loadneeded){
-        cout << "\nusage: ./benchmark loadneeded <grid> <dims> <outs> <depth> <type> <rule> <order> <iters> <jumps> <acc> <gpu> <aniso>\n\n";
+        cout << "\nusage: ./benchmark loadneeded <grid> <dims> <outs> <depth> <type> <rule> <order> <iters> <jumps> <acc> <gpu> <extra>\n\n";
         cout << "grid  : global, sequence, localp, wavelet, fourier\n";
         cout << "dims  : number of dimensions\n";
         cout << "outs  : number of outputs\n";
@@ -68,10 +68,10 @@ void printHelp(BenchFuction test){
         cout << "jumps : how many times to double <outs>\n";
         cout << "acc   : acceleration type, e.g., gpu-cuda, cpu-blas, none, etc.\n";
         cout << "gpu   : cuda device ID; ignored for cpu acceleration\n";
-        cout << "aniso : (optional) list of anisotropic weights and level limits\n";
+        cout << "extra : (optional) sparse/dense flavor and/or list of anisotropic weights and level limits\n";
         cout << "      : anisotropic weights come first (if used by the grid), then level limits\n";
     }else if (test == bench_evaluate || test == bench_evaluate_mixed){
-        cout << "\nusage: ./benchmark evaluate <grid> <dims> <outs> <depth> <type> <rule> <order> <batch> <iters> <jumps> <acc> <gpu> <aniso>\n\n";
+        cout << "\nusage: ./benchmark evaluate <grid> <dims> <outs> <depth> <type> <rule> <order> <batch> <iters> <jumps> <acc> <gpu> <extra>\n\n";
         cout << "grid  : global, sequence, localp, wavelet, fourier\n";
         cout << "dims  : number of dimensions\n";
         cout << "outs  : number of outputs\n";
@@ -84,7 +84,7 @@ void printHelp(BenchFuction test){
         cout << "jumps : how many times to double <outs>\n";
         cout << "acc   : acceleration type, e.g., gpu-cuda, cpu-blas, none, etc.\n";
         cout << "gpu   : cuda device ID; ignored for cpu acceleration\n";
-        cout << "aniso : (optional) list of anisotropic weights and level limits\n";
+        cout << "extra : (optional) sparse/dense flavor and/or list of anisotropic weights and level limits\n";
         cout << "      : anisotropic weights come first (if used by the grid), then level limits\n";
     }else if (test == bench_iweights){
         cout << "\nusage: ./benchmark iweights <grid> <dims> <depth> <type> <rule> <order> <iters> <jumps> <aniso>\n\n";

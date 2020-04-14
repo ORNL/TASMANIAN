@@ -627,8 +627,27 @@ struct AccelerationContext{
         algorithm_autoselect
     };
 
+    /*!
+     * \brief Defines the types of acceleration context updates so they can be linked to acceleration cache updates.
+     *
+     * The update methods will generate a change event that may require an update of the acceleration cache.
+     * For example, switching to a different GPU device means that the cache from the old device must be cleared.
+     */
+    enum ChangeType{
+        //! \brief No change, do nothing.
+        change_none,
+        //! \brief Change the associated GPU device.
+        change_gpu_device,
+        //! \brief Change from BLAS or none to a GPU acceleration mode.
+        change_gpu_enabled,
+        //! \brief Change BLAS to none or none to BLAS.
+        change_cpu_blas,
+        //! \brief Change the sparse-dense AlgorithmPreference.
+        change_sparse_dense
+    };
+
     //! \brief The current active acceleration mode.
-    TypeAcceleration acceleration;
+    TypeAcceleration mode;
     //! \brief The preference to use dense or sparse algorithms.
     AlgorithmPreference algorithm_select;
     //! \brief If using a GPU acceleration mode, holds the active device.
@@ -640,33 +659,57 @@ struct AccelerationContext{
     #endif
     #ifdef Tasmanian_ENABLE_BLAS
     //! \brief Creates a default context, the device id is set to 0 and acceleration is BLAS (if available) or none.
-    AccelerationContext() : acceleration(accel_cpu_blas), algorithm_select(algorithm_autoselect), device(0){}
+    AccelerationContext() : mode(accel_cpu_blas), algorithm_select(algorithm_autoselect), device(0){}
     #else
-    AccelerationContext() : acceleration(accel_none), algorithm_select(algorithm_autoselect), device(0){}
+    AccelerationContext() : mode(accel_none), algorithm_select(algorithm_autoselect), device(0){}
     #endif
 
     //! \brief Sets algorithm affinity in the direction of sparse.
-    void favorSparse(bool favor){
-        if (favor){
-            algorithm_select = (algorithm_select == algorithm_dense) ? algorithm_autoselect : algorithm_sparse;
+    ChangeType favorSparse(bool favor){
+        AlgorithmPreference new_preference = [=]()->AlgorithmPreference{
+            if (favor){
+                return (algorithm_select == algorithm_dense) ? algorithm_autoselect : algorithm_sparse;
+            }else{
+                return (algorithm_select == algorithm_sparse) ? algorithm_autoselect : algorithm_dense;
+            }
+        }();
+        if (new_preference != algorithm_select){
+            algorithm_select = new_preference;
+            return change_sparse_dense;
         }else{
-            algorithm_select = (algorithm_select == algorithm_sparse) ? algorithm_autoselect : algorithm_dense;
+            return change_none;
         }
     }
 
     #ifdef Tasmanian_ENABLE_CUDA // GPU related methods with fallback options
     //! \brief Accepts parameters directly from TasmanianSparseGrid::enableAcceleration()
-    void enable(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){
-        acceleration = AccelerationMeta::getAvailableFallback(acc);
-        engine.reset();
-        if (AccelerationMeta::isAccTypeGPU(acceleration)){
-            // create a new engine
-            if ((new_gpu_id < 0) || (new_gpu_id >= AccelerationMeta::getNumCudaDevices()))
-                throw std::runtime_error("Invalid CUDA device ID, see ./tasgrid -v for list of detected devices.");
-            device = new_gpu_id;
-            engine = std::make_unique<GpuEngine>(device, (acceleration == accel_gpu_magma), backend_handle, cusparse_handle);
+    ChangeType enable(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){
+        // get the effective new acceleration mode (use the fallback if acc is not enabled)
+        TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
+        // if switching to a GPU mode, check if the device id is valid
+        if (AccelerationMeta::isAccTypeGPU(effective_acc) and ((new_gpu_id < 0 or new_gpu_id >= AccelerationMeta::getNumCudaDevices())))
+            throw std::runtime_error("Invalid CUDA device ID, see ./tasgrid -v for list of detected devices.");
+
+        // assign the new values for the mode and device, but remember the current gpu state and check whether something changed
+        bool was_on_gpu = on_gpu();
+        ChangeType mode_change = (effective_acc == std::exchange(mode, effective_acc)) ? change_none : change_cpu_blas;
+        ChangeType device_change = (new_gpu_id == std::exchange(device, new_gpu_id)) ? change_none : change_gpu_device;
+
+        if (AccelerationMeta::isAccTypeGPU(mode)){
+            // if the new mode is GPU-based, reset the engine and the handles (if already created)
+            engine = std::make_unique<GpuEngine>(device, (mode == accel_gpu_magma), backend_handle, cusparse_handle);
         }else{
-            device = new_gpu_id;
+            engine.reset();
+        }
+
+        if (was_on_gpu){
+            // switching from gpu to gpu issues a change if the device is different
+            // switching from gpu to non-gpu acts as if the device has changed
+            return (on_gpu()) ? device_change : change_gpu_device;
+        }else{
+            // switching from non-gpu to gpu triggers gpu-enabled switch
+            // switching from non-gpu to non-gpu triggers blas change if the modes were different
+            return (on_gpu()) ? change_gpu_enabled : mode_change;
         }
     }
     //! \brief Set default device.
@@ -675,9 +718,10 @@ struct AccelerationContext{
     operator GpuEngine* () const{ return engine.get(); }
     bool on_gpu() const{ return !!engine; }
     #else
-    void enable(TypeAcceleration acc, int new_gpu_id, void*, void*){
-        acceleration = AccelerationMeta::getAvailableFallback(acc);
+    ChangeType enable(TypeAcceleration acc, int new_gpu_id, void*, void*){
         device = new_gpu_id;
+        TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
+        return (effective_acc == std::exchange(mode, effective_acc)) ? change_none : change_cpu_blas;
     }
     void setDevice() const{}
     bool on_gpu() const{ return false; }

@@ -97,11 +97,11 @@ public:
 
     const double* getSurpluses() const;
 
-    void clearAccelerationData() override;
+    void updateAccelerationData(AccelerationContext::ChangeType change) const override;
 
 protected:
     double evalBasis(const int p[], const double x[]) const;
-    void buildInterpolationMatrix();
+    void buildInterpolationMatrix() const;
     void recomputeCoefficients();
     void solveTransposed(double w[]) const;
     double evalIntegral(const int p[]) const;
@@ -126,7 +126,7 @@ private:
 
     Data2D<double> coefficients; // a.k.a., surpluses
 
-    TasSparse::WaveletBasisMatrix inter_matrix;
+    mutable TasSparse::WaveletBasisMatrix inter_matrix;
 
     std::unique_ptr<SimpleConstructData> dynamic_values;
 

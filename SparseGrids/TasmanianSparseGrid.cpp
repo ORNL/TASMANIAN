@@ -1221,8 +1221,14 @@ void TasmanianSparseGrid::printStats(std::ostream &os) const{
     }else{
         // empty grid, show nothing, just like the sequence grid
     }
-    os << setw(L1) << "Acceleration:" << "  " << AccelerationMeta::getIOAccelerationString(acceleration->acceleration) << '\n';
-    if (AccelerationMeta::isAccTypeGPU(acceleration->acceleration)){
+    os << setw(L1) << "Acceleration:" << "  " << AccelerationMeta::getIOAccelerationString(acceleration->mode) << '\n';
+    if (isLocalPolynomial() or isWavelet()){
+        os << setw(L1) << "Flavor:" << "  " << (
+            (acceleration->algorithm_select == AccelerationContext::algorithm_autoselect) ? "auto" :
+                ((acceleration->algorithm_select == AccelerationContext::algorithm_dense) ? "dense" : "sparse")
+                                               ) << "\n";
+    }
+    if (AccelerationMeta::isAccTypeGPU(acceleration->mode)){
         os << setw(L1) << "GPU:" << "  " << getGPUID() << '\n';
     }
 
@@ -1505,29 +1511,28 @@ void TasmanianSparseGrid::readBinary(std::istream &ifs){
 }
 
 void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
-    acceleration->enable(acc, acceleration->device, nullptr, nullptr);
+    auto change = acceleration->enable(acc, acceleration->device, nullptr, nullptr);
+    if (not empty()) base->updateAccelerationData(change);
     #ifdef Tasmanian_ENABLE_CUDA
     // if gpu acceleration has been disabled, then reset the domain and cache
     // note that this method cannot possibly change the gpu ID and switching
     // between variations of GPU accelerations on the same device will keep the same cache
-    if (not AccelerationMeta::isAccTypeGPU(acceleration->acceleration)){
-        if (not empty()) base->clearAccelerationData();
+    if (change == AccelerationContext::change_gpu_device)
         acc_domain.reset();
-    }
     #endif
 }
 
 void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){
+    auto change = acceleration->enable(acc, new_gpu_id, backend_handle, cusparse_handle);
+    if (not empty()) base->updateAccelerationData(change);
     #ifdef Tasmanian_ENABLE_CUDA
-    if (new_gpu_id != acceleration->device or not AccelerationMeta::isAccTypeGPU(acceleration->acceleration)){
-        if (not empty()) base->clearAccelerationData();
+    if (change == AccelerationContext::change_gpu_device)
         acc_domain.reset();
-    }
     #endif
-    acceleration->enable(acc, new_gpu_id, backend_handle, cusparse_handle);
 }
 void TasmanianSparseGrid::favorSparseAcceleration(bool favor){
-    if (isLocalPolynomial()) get<GridLocalPolynomial>()->setFavorSparse(favor);
+    auto change = acceleration->favorSparse(favor);
+    if (not empty()) base->updateAccelerationData(change);
 }
 bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
     #ifdef Tasmanian_ENABLE_CUDA
@@ -1538,10 +1543,11 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
 
 void TasmanianSparseGrid::setGPUID(int new_gpu_id){
     if (new_gpu_id != acceleration->device){
-        acceleration->enable(acceleration->acceleration, new_gpu_id, nullptr, nullptr);
+        auto change = acceleration->enable(acceleration->mode, new_gpu_id, nullptr, nullptr);
+        if (not empty()) base->updateAccelerationData(change);
         #ifdef Tasmanian_ENABLE_CUDA
-        if (not empty()) base->clearAccelerationData();
-        acc_domain.reset();
+        if (change == AccelerationContext::change_gpu_device)
+            acc_domain.reset();
         #endif
     }
 }
