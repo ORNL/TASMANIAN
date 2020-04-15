@@ -406,7 +406,7 @@ void WaveletBasisMatrix::computeILU(){
     }
 }
 
-void WaveletBasisMatrix::invertTransposed(double b[]) const{
+void WaveletBasisMatrix::invertTransposed(AccelerationContext const *acceleration, double b[]) const{
     #ifdef Tasmanian_ENABLE_BLAS
     if (not dense.empty()){
         TasBLAS::getrs('N', num_rows, 1, dense.data(), num_rows, ipiv.data(), b, num_rows);
@@ -414,10 +414,13 @@ void WaveletBasisMatrix::invertTransposed(double b[]) const{
     }
     #endif
     // using sparse algorithm
-    solve(std::vector<double>(b, b + num_rows).data(), b, true);
+    if (acceleration->blasCompatible())
+        solve<use_transpose, use_blas>(std::vector<double>(b, b + num_rows).data(), b);
+    else
+        solve<use_transpose, no_blas>(std::vector<double>(b, b + num_rows).data(), b);
 }
 
-void WaveletBasisMatrix::invert(int num_colums, double B[]){
+void WaveletBasisMatrix::invert(AccelerationContext const *acceleration, int num_colums, double B[]){
     #ifdef Tasmanian_ENABLE_BLAS
     if (not dense.empty()){
         if (num_colums == 1){
@@ -438,7 +441,10 @@ void WaveletBasisMatrix::invert(int num_colums, double B[]){
     #endif
     if (num_colums == 1){
         std::vector<double> b(B, B + num_rows);
-        solve(b.data(), B, false);
+        if (acceleration->blasCompatible())
+            solve<no_transpose, use_blas>(b.data(), B);
+        else
+            solve<no_transpose, no_blas>(b.data(), B);
         return;
     }
     Utils::Wrapper2D<double> wrapb(num_colums, B);
@@ -450,13 +456,136 @@ void WaveletBasisMatrix::invert(int num_colums, double B[]){
             x[i] = b[i];
         }
 
-        solve(b.data(), x.data(), false);
+        if (acceleration->blasCompatible())
+            solve<no_transpose, use_blas>(b.data(), x.data());
+        else
+            solve<no_transpose, no_blas>(b.data(), x.data());
         for(int i=0; i<num_rows; i++)
             wrapb.getStrip(i)[k] = x[i];
     }
 }
 
-void WaveletBasisMatrix::solve(const double b[], double x[], bool transposed) const{ // ustd::sing GMRES
+template<bool transpose> void WaveletBasisMatrix::applyILU(double x[]) const{
+    if (transpose){
+        for(int i=0; i<num_rows; i++){
+            x[i] /= ilu[indxD[i]];
+            for(int j=indxD[i]+1; j<pntr[i+1]; j++)
+                x[indx[j]] -= ilu[j] * x[i];
+        }
+        for(int i=num_rows-2; i>=0; i--)
+            for(int j=pntr[i]; j<indxD[i]; j++)
+                x[indx[j]] -= ilu[j] * x[i];
+    }else{
+        for(int i=1; i<num_rows; i++){
+            for(int j=pntr[i]; j<indxD[i]; j++){
+                x[i] -= ilu[j] * x[indx[j]];
+            }
+        }
+        for(int i=num_rows-1; i>=0; i--){
+            for(int j=indxD[i]+1; j<pntr[i+1]; j++){
+                x[i] -= ilu[j] * x[indx[j]];
+            }
+            x[i] /= ilu[indxD[i]];
+        }
+    }
+}
+template<bool transpose> void WaveletBasisMatrix::apply(double const x[], double r[]) const{
+    if (transpose){
+        std::fill_n(r, num_rows, 0.0);
+        for(int i=0; i<num_rows; i++){
+            for(int j=pntr[i]; j<pntr[i+1]; j++)
+                r[indx[j]] += vals[j] * x[i];
+        }
+    }else{
+        for(int i=0; i<num_rows; i++){
+            double sum = 0.0;
+            for(int j=pntr[i]; j<pntr[i+1]; j++)
+                sum += vals[j] * x[indx[j]];
+            r[i] = sum;
+        }
+    }
+}
+
+void WaveletBasisMatrix::residual(double const x[], double const b[], double r[]) const{
+    for(int i=0; i<num_rows; i++){
+        double sum = 0.0;
+        for(int j=pntr[i]; j<pntr[i+1]; j++)
+            sum += vals[j] * x[indx[j]];
+        r[i] = b[i] - sum;
+    }
+}
+
+// compute the norm, scale x by 1 / norm, return the norm
+inline double rescale(int num_entries, double x[]){
+    double nrm = 0.0;
+    for(int i=0; i<num_entries; i++) nrm += x[i] * x[i];
+    nrm = std::sqrt(nrm);
+    double s = 1.0 / nrm;
+    if (nrm > 0.0) for(int i=0; i<num_entries; i++) x[i] *= s;
+    return nrm;
+}
+inline double rescale_blas(int num_entries, double x[]){
+    #ifdef Tasmanian_ENABLE_BLAS
+    double nrm = TasBLAS::norm2(num_entries, x, 1);
+    if (nrm > 0.0) TasBLAS::scal(num_entries, 1.0 / nrm, x, 1);
+    return nrm;
+    #else
+    return rescale(num_entries, x);
+    #endif
+}
+
+// project the krylov basis
+inline void projectKrylov(int inner_itr, int max_inner, int num_rows, std::vector<double> &W, std::vector<double> &H){
+    #pragma omp parallel for
+    for(int i=0; i<inner_itr; i++){
+        H[i*max_inner + inner_itr-1] = 0.0; for(int j=0; j<num_rows; j++){  H[i*max_inner + inner_itr-1] += W[inner_itr*num_rows+j] * W[i*num_rows+j];  };
+    }
+
+    #pragma omp parallel for
+    for(int j=0; j<num_rows; j++){
+        for(int i=0; i<inner_itr; i++){
+            W[inner_itr*num_rows+j] -= H[i*max_inner + inner_itr-1] * W[i*num_rows+j];
+        }
+    }
+}
+inline void projectKrylov_blas(int inner_itr, int max_inner, int num_rows, std::vector<double> &W, std::vector<double> &H){
+    #ifdef Tasmanian_ENABLE_BLAS
+    TasBLAS::gemv('T', num_rows, inner_itr,  1.0, W.data(), num_rows, &W[inner_itr * num_rows], 1, 0.0, &H[inner_itr-1], max_inner);
+    TasBLAS::gemv('N', num_rows, inner_itr, -1.0, W.data(), num_rows, &H[inner_itr-1], max_inner, 1.0, &W[inner_itr * num_rows], 1);
+    #else
+    projectKrylov(inner_itr, max_inner, num_rows, W, H);
+    #endif
+}
+// reconstruct the krylov solution from the basis
+inline void reconstructKrylov(int inner_itr, int max_inner, int num_rows, std::vector<double> const &W, std::vector<double> const &H,
+                              std::vector<double> &Z, double x[]){
+    Z[inner_itr] /= H[inner_itr * max_inner + inner_itr];
+    for(int i=inner_itr-1; i>-1; i--){
+        double beta = 0.0;
+        for(int j=i+1; j<=inner_itr; j++){
+            beta += H[i*max_inner + j] * Z[j];
+        };
+        Z[i] = (Z[i] - beta) / H[i * max_inner + i];
+    }
+
+    for(int i=0; i<=inner_itr; i++){
+        for(int j=0; j<num_rows; j++){
+            x[j] += Z[i] * W[i*num_rows+j];
+        }
+    }
+}
+inline void reconstructKrylov_blas(int inner_itr, int max_inner, int num_rows, std::vector<double> const &W, std::vector<double> const &H,
+                                   std::vector<double> &Z, double x[]){
+    #ifdef Tasmanian_ENABLE_BLAS
+    TasBLAS::trsv('L', 'T', 'N', inner_itr, H.data(), max_inner, Z.data(), 1);
+    TasBLAS::gemv('N', num_rows, inner_itr, 1.0, W.data(), num_rows, Z.data(), 1, 1.0, x, 1);
+    #else
+    reconstructKrylov(inner_itr, max_inner, num_rows, W, H, Z, x);
+    #endif
+}
+
+template<bool transpose, bool blas>
+void WaveletBasisMatrix::solve(const double b[], double x[]) const{
     int max_inner = 30;
     int max_outer = 80;
     std::vector<double> W((max_inner+1) * num_rows); // Krylov basis
@@ -466,139 +595,51 @@ void WaveletBasisMatrix::solve(const double b[], double x[], bool transposed) co
     std::vector<double> C(max_inner+1);
     std::vector<double> Z(max_inner); // holds the coefficients of the solution
 
-    double alpha, h_k; // temp variables
+    double alpha, beta; // temp variables
 
     double outer_res = tol + 1.0; // outer and inner residual
     int outer_itr = 0; // counts the inner and outer iterations
 
-    std::vector<double> pb(num_rows);
-    if (!transposed){
-        std::copy(b, b + num_rows, pb.data());
+    std::vector<double> temp;
 
-        // action of the preconditioner
-        for(int i=1; i<num_rows; i++){
-            for(int j=pntr[i]; j<indxD[i]; j++){
-                pb[i] -= ilu[j] * pb[indx[j]];
-            }
-        }
-        for(int i=num_rows-1; i>=0; i--){
-            for(int j=indxD[i]+1; j<pntr[i+1]; j++){
-                pb[i] -= ilu[j] * pb[indx[j]];
-            }
-            pb[i] /= ilu[indxD[i]];
-        }
-    }
+    std::fill_n(x, num_rows, 0.0); // zero initial guess, I wonder if we can improve this
 
-    std::fill(x, x + num_rows, 0.0); // zero initial guess, I wonder if we can improve this
-
-    while ((outer_res > tol) && (outer_itr < max_outer)){
-        for(int i=0; i<num_rows; i++) W[i] = 0.0;
-        if (transposed){
-            std::copy(x, x + num_rows, pb.data());
-            for(int i=0; i<num_rows; i++){
-                pb[i] /= ilu[indxD[i]];
-                for(int j=indxD[i]+1; j<pntr[i+1]; j++){
-                    pb[indx[j]] -= ilu[j] * pb[i];
-                }
-            }
-            for(int i=num_rows-2; i>=0; i--){
-                for(int j=pntr[i]; j<indxD[i]; j++){
-                    pb[indx[j]] -= ilu[j] * pb[i];
-                }
-            }
-            for(int i=0; i<num_rows; i++){
-                for(int j=pntr[i]; j<pntr[i+1]; j++){
-                    W[indx[j]] += vals[j] * pb[i];
-                }
-            }
+    while (outer_res > tol and outer_itr < max_outer){
+        if (transpose){
+            temp = std::vector<double>(x, x + num_rows);
+            applyILU<transpose>(temp.data());
+            apply<transpose>(temp.data(), W.data());
             for(int i=0; i<num_rows; i++){
                 W[i] = b[i] - W[i];
             }
         }else{
-            for(int i=0; i<num_rows; i++){
-                for(int j=pntr[i]; j<pntr[i+1]; j++){
-                    W[i] += vals[j] * x[indx[j]];
-                }
-            }
-            for(int i=1; i<num_rows; i++){
-                for(int j=pntr[i]; j<indxD[i]; j++){
-                    W[i] -= ilu[j] * W[indx[j]];
-                }
-            }
-            for(int i=num_rows-1; i>=0; i--){
-                for(int j=indxD[i]+1; j<pntr[i+1]; j++){
-                    W[i] -= ilu[j] * W[indx[j]];
-                }
-                W[i] /= ilu[indxD[i]];
-            }
-
-            for(int i=0; i<num_rows; i++){
-                W[i] = pb[i] - W[i];
-            }
+            residual(x, b, W.data());
+            applyILU<transpose>(W.data());
         }
 
-        Z[0] = 0.0;  for(int i=0; i<num_rows; i++){  Z[0] += W[i]*W[i];  };  Z[0] = std::sqrt(Z[0]);
-        for(int i=0; i<num_rows; i++){  W[i] /= Z[0]; };
+        double inner_res = (blas) ? rescale_blas(num_rows, W.data()) : rescale(num_rows, W.data());
+        Z[0] = inner_res;
 
-        double inner_res = Z[0]; // first residual
-        //std::cout << Z[0] << std::endl;
         int inner_itr = 0; // counts the size of the basis
 
         while ((inner_res > tol) && (inner_itr < max_inner-1)){
             inner_itr++;
 
-            std::fill(&(W[inner_itr*num_rows]), &(W[inner_itr*num_rows]) + num_rows, 0.0);
-            if (transposed){
-                std::copy(&(W[num_rows*(inner_itr-1)]), &(W[num_rows*(inner_itr-1)]) + num_rows, pb.data());
-                for(int i=0; i<num_rows; i++){
-                    pb[i] /= ilu[indxD[i]];
-                    for(int j=indxD[i]+1; j<pntr[i+1]; j++){
-                        pb[indx[j]] -= ilu[j] * pb[i];
-                    }
-                }
-                for(int i=num_rows-2; i>=0; i--){
-                    for(int j=pntr[i]; j<indxD[i]; j++){
-                        pb[indx[j]] -= ilu[j] * pb[i];
-                    }
-                }
-                for(int i=0; i<num_rows; i++){
-                    for(int j=pntr[i]; j<pntr[i+1]; j++){
-                        W[inner_itr*num_rows + indx[j]] += vals[j] * pb[i];
-                    }
-                }
+            if (transpose){
+                std::copy_n(&(W[num_rows*(inner_itr-1)]), num_rows, temp.data());
+                applyILU<transpose>(temp.data());
+                apply<transpose>(temp.data(), &W[inner_itr*num_rows]);
             }else{
-                for(int i=0; i<num_rows; i++){
-                    for(int j=pntr[i]; j<pntr[i+1]; j++){
-                        W[inner_itr*num_rows + i] += vals[j] * W[num_rows*(inner_itr-1) + indx[j]];
-                    }
-                }
-                for(int i=1; i<num_rows; i++){
-                    for(int j=pntr[i]; j<indxD[i]; j++){
-                        W[inner_itr*num_rows + i] -= ilu[j] * W[inner_itr*num_rows + indx[j]];
-                    }
-                }
-                for(int i=num_rows-1; i>=0; i--){
-                    for(int j=indxD[i]+1; j<pntr[i+1]; j++){
-                        W[inner_itr*num_rows + i] -= ilu[j] * W[inner_itr*num_rows + indx[j]];
-                    }
-                    W[inner_itr*num_rows + i] /= ilu[indxD[i]];
-                }
+                apply<transpose>(&W[num_rows*(inner_itr-1)], &W[inner_itr*num_rows]);
+                applyILU<transpose>(&W[inner_itr*num_rows]);
             }
 
-            #pragma omp parallel for
-            for(int i=0; i<inner_itr; i++){
-                H[i*max_inner + inner_itr-1] = 0.0; for(int j=0; j<num_rows; j++){  H[i*max_inner + inner_itr-1] += W[inner_itr*num_rows+j] * W[i*num_rows+j];  };
-            }
+            if (blas)
+                projectKrylov_blas(inner_itr, max_inner, num_rows, W, H);
+            else
+                projectKrylov(inner_itr, max_inner, num_rows, W, H);
 
-            #pragma omp parallel for
-            for(int j=0; j<num_rows; j++){
-                for(int i=0; i<inner_itr; i++){
-                    W[inner_itr*num_rows+j] -= H[i*max_inner + inner_itr-1] * W[i*num_rows+j];
-                }
-            };
-
-            h_k = 0.0;  for(int i=0; i<num_rows; i++){  h_k += W[inner_itr*num_rows+i]*W[inner_itr*num_rows+i];  }; h_k = std::sqrt(h_k); //std::cout << "h_k = " << h_k << "  itr = " << inner_itr << std::endl;
-            if (h_k > 0.0) for(int i=0; i<num_rows; i++){ W[inner_itr*num_rows+i] /= h_k; };
+            beta = (blas) ? rescale_blas(num_rows, &W[inner_itr*num_rows]) : rescale(num_rows, &W[inner_itr*num_rows]);
 
             for (int i=0; i<inner_itr-1; i++){ // form the next row of the transformation
                 alpha = H[i*max_inner + inner_itr-1];
@@ -606,10 +647,10 @@ void WaveletBasisMatrix::solve(const double b[], double x[], bool transposed) co
                 H[(i+1)*max_inner + inner_itr-1] = S[i] * alpha - C[i] * H[(i+1)*max_inner + inner_itr-1];
             };
 
-            alpha = std::sqrt(h_k * h_k  +  H[(inner_itr-1)*max_inner + inner_itr-1] * H[(inner_itr-1)*max_inner + inner_itr-1]);
+            alpha = std::sqrt(beta * beta  +  H[(inner_itr-1)*max_inner + inner_itr-1] * H[(inner_itr-1)*max_inner + inner_itr-1]);
 
             // set the next set of Givens rotations
-            S[inner_itr-1] = h_k / alpha;
+            S[inner_itr-1] = beta / alpha;
             C[inner_itr-1] = H[(inner_itr-1)*max_inner + inner_itr-1] / alpha;
 
             H[(inner_itr-1) * max_inner + inner_itr-1] = alpha;
@@ -624,34 +665,13 @@ void WaveletBasisMatrix::solve(const double b[], double x[], bool transposed) co
         inner_itr--;
 
         if (inner_itr > -1){ // if the first guess was not within TOL of the true solution
-            Z[inner_itr] /= H[inner_itr * max_inner + inner_itr];
-            for(int i=inner_itr-1; i>-1; i--){
-                h_k = 0.0;
-                for(int j=i+1; j<=inner_itr; j++){
-                    h_k += H[i*max_inner + j] * Z[j];
-                };
-                Z[i] = (Z[i] - h_k) / H[i * max_inner + i];
-            }
+            if (blas)
+                reconstructKrylov_blas(inner_itr, max_inner, num_rows, W, H, Z, x);
+            else
+                reconstructKrylov(inner_itr, max_inner, num_rows, W, H, Z, x);
 
-            for(int i=0; i<=inner_itr; i++){
-                for(int j=0; j<num_rows; j++){
-                    x[j] += Z[i] * W[i*num_rows+j];
-                }
-            }
-
-            if (transposed){
-                for(int i=0; i<num_rows; i++){
-                    x[i] /= ilu[indxD[i]];
-                    for(int j=indxD[i]+1; j<pntr[i+1]; j++){
-                        x[indx[j]] -= ilu[j] * x[i];
-                    }
-                }
-                for(int i=num_rows-2; i>=0; i--){
-                    for(int j=pntr[i]; j<indxD[i]; j++){
-                        x[indx[j]] -= ilu[j] * x[i];
-                    }
-                }
-            }
+            if (transpose)
+                applyILU<transpose>(x);
 
         }
 

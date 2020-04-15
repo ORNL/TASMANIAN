@@ -134,17 +134,31 @@ public:
     int getNumRows() const{ return num_rows; }
 
     //! \brief Overwrites vector \b b with \b x that solves \f$ A^T x = b \f$.
-    void invertTransposed(double b[]) const;
+    void invertTransposed(AccelerationContext const *acceleration, double b[]) const;
 
     //! \brief Overwrites the row-major matrix \b B with \b X that solves \f$ A X = B \f$.
-    void invert(int num_colums, double B[]);
+    void invert(AccelerationContext const *acceleration, int num_colums, double B[]);
 
     //! \brief Solve `op(A) x = b` where `op` is either identity (find the coefficients) or transpose (find the interpolation weights).
-    void solve(const double b[], double x[], bool transposed = false) const;
+    template<bool transpose, bool blas> void solve(const double b[], double x[]) const;
 
 protected:
     //! \brief Compute the incomplete lower-upper decomposition of the matrix (zero extra fill).
     void computeILU();
+    //! \brief Apply the preconditioner on a vector.
+    template<bool transpose> void applyILU(double x[]) const;
+    //! \brief Sets to be the product of the sparse matrix times x.
+    template<bool transpose> void apply(double const x[], double r[]) const;
+    //! \brief Computes the residual.
+    void residual(double const x[], double const b[], double r[]) const;
+    //! \brief Expressive call to transpose method.
+    static constexpr bool use_transpose = true;
+    //! \brief Expressive call to no transpose method.
+    static constexpr bool no_transpose = false;
+    //! \brief Expressive call to blas variant method.
+    static constexpr bool use_blas = true;
+    //! \brief Expressive call to no-blas variant method.
+    static constexpr bool no_blas = false;
 
 private:
     double tol;

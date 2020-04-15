@@ -681,6 +681,14 @@ struct AccelerationContext{
         }
     }
 
+    bool blasCompatible() const{
+        #ifdef Tasmanian_ENABLE_BLAS
+        return (mode != accel_none);
+        #else
+        return false;
+        #endif
+    }
+
     #ifdef Tasmanian_ENABLE_CUDA // GPU related methods with fallback options
     //! \brief Accepts parameters directly from TasmanianSparseGrid::enableAcceleration()
     ChangeType enable(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){

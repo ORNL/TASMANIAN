@@ -1034,7 +1034,7 @@ bool ExternalTester::testAllPWLocal() const{
     return pass;
 }
 
-bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depths[], const double tols[]) const{
+bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depths[], const double tols[], bool flavor) const{
     TestResults R;
     TestType tests[3] = { type_integration, type_nodal_interpolation, type_internal_interpolation };
     int orders[2] = { 1, 3 };
@@ -1042,6 +1042,7 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
     bool bPass = true;
     for(int i=0; i<6; i++){
         auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/3]);
+        grid.favorSparseAcceleration(flavor);
         R = getError(f, grid, tests[i%3], x);
         if (R.error > tols[i]){
             bPass = false;
@@ -1068,7 +1069,7 @@ bool ExternalTester::testAllWavelet() const{
     const int depths1[6] = { 7, 7, 7, 5, 5, 5 };
     const double tols1[6] = { 5.E-05, 1.E-04, 1.E-04, 1.E-08, 1.E-07, 1.E-07 };
     int wfirst = 11, wsecond = 34, wthird = 15;
-    if (testLocalWaveletRule(&f21nx2, depths1, tols1)){
+    if (testLocalWaveletRule(&f21nx2, depths1, tols1, true) and testLocalWaveletRule(&f21nx2, depths1, tols1, false)){
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "wavelet" << setw(wthird) << "Pass" << endl;
     }else{
         cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(rule_wavelet) << setw(wthird) << "FAIL" << endl; pass = false;
