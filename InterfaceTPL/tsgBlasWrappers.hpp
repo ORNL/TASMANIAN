@@ -62,6 +62,7 @@ extern "C"{
 // BLAS level 1
 double dnrm2_(const int *N, const double *x, const int *incx);
 void dswap_(const int *N, double *x, const int *incx, double *y, const int *incy);
+void dscal_(const int *N, const double *alpha, const double *x, const int *incx);
 // BLAS level 2
 void dgemv_(const char *transa, const int *M, const int *N, const double *alpha, const double *A, const int *lda,
             const double *x, const int *incx, const double *beta, const double *y, const int *incy);
@@ -91,10 +92,18 @@ namespace TasBLAS{
     inline void vswap(int N, double x[], int incx, double y[], int incy){
         dswap_(&N, x, &incx, y, &incy);
     }
+    //! \brief BLAS dscal
+    inline void scal(int N, double alpha, double x[], int incx){
+        dscal_(&N, &alpha, x, &incx);
+    }
     //! \brief BLAS dgemv
     inline void gemv(char trans, int M, int N, double alpha, double const A[], int lda, double const x[], int incx,
                      double beta, double y[], int incy){
         dgemv_(&trans, &M, &N, &alpha, A, &lda, x, &incx, &beta, y, &incy);
+    }
+    //! \brief BLAS dtrsv
+    inline void trsv(char uplo, char trans, char diag, int N, double const A[], int lda, double x[], int incx){
+        dtrsv_(&uplo, &trans, &diag, &N, A, &lda, x, &incx);
     }
     //! \brief BLAS gemm
     inline void gemm(char transa, char transb, int M, int N, int K, double alpha, double const A[], int lda, double const B[], int ldb,
@@ -117,6 +126,8 @@ namespace TasBLAS{
         dgetrs_(&trans, &N, &nrhs, A, &lda, ipiv, B, &ldb, &info);
         if (info != 0) throw std::runtime_error(std::string("Lapack dgetrs_ exited with code: ") + std::to_string(info));
     }
+
+    // higher-level methods building on top of one or more BLAS/LAPACK Methods
 
     //! \brief Returns the square of the norm of the vector.
     template<typename T>

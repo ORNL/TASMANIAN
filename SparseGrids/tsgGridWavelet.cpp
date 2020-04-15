@@ -133,7 +133,7 @@ void GridWavelet::getQuadratureWeights(double *weights) const{
         weights[i] = evalIntegral(work.getIndex(i));
     }
     if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
-    inter_matrix.invertTransposed(weights);
+    inter_matrix.invertTransposed(acceleration, weights);
 }
 void GridWavelet::getInterpolationWeights(const double x[], double *weights) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
@@ -143,7 +143,7 @@ void GridWavelet::getInterpolationWeights(const double x[], double *weights) con
         weights[i] = evalBasis(work.getIndex(i), x);
     }
     if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
-    inter_matrix.invertTransposed(weights);
+    inter_matrix.invertTransposed(acceleration, weights);
 }
 void GridWavelet::loadNeededPoints(const double *vals){
     clearGpuCoefficients();
@@ -396,7 +396,7 @@ void GridWavelet::recomputeCoefficients(){
 
     if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
 
-    inter_matrix.invert(num_outputs, coefficients.data());
+    inter_matrix.invert(acceleration, num_outputs, coefficients.data());
 }
 
 std::vector<double> GridWavelet::getNormalization() const{

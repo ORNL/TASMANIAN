@@ -90,7 +90,7 @@ public:
     bool performGaussTransfromTest(TasGrid::TypeOneDRule rule) const;
 
     bool testLocalPolynomialRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int depths[], const double tols[]) const;
-    bool testLocalWaveletRule(const BaseFunction *f, const int depths[], const double tols[]) const;
+    bool testLocalWaveletRule(const BaseFunction *f, const int depths[], const double tols[], bool flavor) const;
     bool testSurplusRefinement(const BaseFunction *f, TasmanianSparseGrid &grid, double tol, TypeRefinement rtype, const int np[], const double errs[], int max_iter ) const;
     bool testAnisotropicRefinement(const BaseFunction *f, TasmanianSparseGrid &grid, TypeDepth type, int min_growth, const int np[], const double errs[], int max_iter ) const;
     bool testDynamicRefinement(const BaseFunction *f, TasmanianSparseGrid &grid, TypeDepth type, double tolerance, TypeRefinement reftype,
