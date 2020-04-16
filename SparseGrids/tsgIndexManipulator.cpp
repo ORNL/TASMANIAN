@@ -539,7 +539,7 @@ std::vector<int> inferAnisotropicWeights(AccelerationContext const *acceleration
         A.getStrip(j)[data_rows + j] = 0.003;
 
     std::vector<double> x(cols);
-    TasmanianDenseSolver::solveLeastSquares(acceleration, data_rows + cols, cols, A.getStrip(0), b.data(), 0.0, x.data());
+    TasmanianDenseSolver::solveLeastSquares(acceleration, data_rows + cols, cols, A.getStrip(0), b.data(), x.data());
 
     std::vector<int> weights(cols - 1);
     for(size_t j=0; j<weights.size(); j++)

@@ -38,7 +38,7 @@
 
 namespace TasGrid{
 
-void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], const double b[], double reg, double *x){
+void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], const double b[], double *x){
     // form Ar = A' * A
     // form x = A' * b
     std::vector<double> Ar(m * m);
@@ -56,9 +56,6 @@ void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], con
             x[i] += A[i*n+k] * b[k];
         }
     }
-
-    // add regularization
-    for(int i=0; i<m; i++){  Ar[i *m + i] += reg;  };
 
     // factorize Ar
     for(int i=0; i<m; i++){
@@ -93,7 +90,7 @@ void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], con
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
-void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const *acceleration, int n, int m, double A[], const double b[], double reg, double *x){
+void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const *acceleration, int n, int m, double A[], const double b[], double *x){
     if (acceleration->blasCompatible()){
         int worksize = -1;
         std::vector<double> work(1);
@@ -106,9 +103,9 @@ void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const *accelera
         return;
     }
 #else
-void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const*, int n, int m, double A[], const double b[], double reg, double *x){
+void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const*, int n, int m, double A[], const double b[], double *x){
 #endif
-    solveLeastSquares(n, m, A, b, reg, x);
+    solveLeastSquares(n, m, A, b, x);
 }
 
 void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z){
