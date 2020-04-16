@@ -621,74 +621,7 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
         for(auto &m : max_surp) m = surpluses.getStrip(i++)[output];
     }
 
-    int n = 0, m;
-    for(int i=0; i<num_points; i++){
-        n += (max_surp[i] > tol) ? 1 : 0;
-    }
-
-    Data2D<double> A;
-    std::vector<double> b(n);
-
-    if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
-        m = 2*num_dimensions + 1;
-        A = Data2D<double>(n, m);
-
-        int count = 0;
-        for(int c=0; c<num_points; c++){
-            const int *indx = points.getIndex(c);
-            if (max_surp[c] > tol){
-                for(int j=0; j<num_dimensions; j++){
-                    A.getStrip(j)[count] = ((double) indx[j]);
-                }
-                for(int j=0; j<num_dimensions; j++){
-                    A.getStrip(j + num_dimensions)[count] = log((double) (indx[j] + 1));
-                }
-                A.getStrip(2*num_dimensions)[count] = 1.0;
-                b[count++] = -log(max_surp[c]);
-            }
-        }
-    }else{
-        m = num_dimensions + 1;
-        A = Data2D<double>(n, m);
-
-        int count = 0;
-        for(int c=0; c<num_points; c++){
-            const int *indx = points.getIndex(c);
-            if (max_surp[c] > tol){
-                for(int j=0; j<num_dimensions; j++){
-                    A.getStrip(j)[count] = - ((double) indx[j]);
-                }
-                A.getStrip(num_dimensions)[count] = 1.0;
-                b[count++] = log(max_surp[c]);
-            }
-        }
-    }
-
-    std::vector<double> x(m);
-    TasmanianDenseSolver::solveLeastSquares(n, m, A.data(), b.data(), 1.E-5, x.data());
-
-    weights.resize(--m);
-    for(int j=0; j<m; j++){
-        weights[j] = (int)(x[j] * 1000.0 + 0.5);
-    }
-
-    int min_weight = weights[0];  for(int j=1; j<num_dimensions; j++){  if (min_weight < weights[j]) min_weight = weights[j];  } // start by finding the largest weight
-    if (min_weight < 0){ // all directions are diverging, default to isotropic total degree
-        for(int j=0; j<num_dimensions; j++)  weights[j] = 1;
-        if (m == 2*num_dimensions) for(int j=num_dimensions; j<2*num_dimensions; j++)  weights[j] = 0;
-    }else{
-        for(int j=0; j<num_dimensions; j++)  if ((weights[j]>0) && (weights[j]<min_weight)) min_weight = weights[j];  // find the smallest positive weight
-        for(int j=0; j<num_dimensions; j++){
-            if (weights[j] <= 0){
-                weights[j] = min_weight;
-                if (m == 2*num_dimensions){
-                    if (std::abs(weights[num_dimensions + j]) > weights[j]){
-                        weights[num_dimensions + j] = (weights[num_dimensions + j] > 0.0) ? weights[j] : -weights[j];
-                    }
-                }
-            }
-        }
-    }
+    weights = MultiIndexManipulations::inferAnisotropicWeights(rule, type, points, max_surp, tol);
 }
 
 void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){

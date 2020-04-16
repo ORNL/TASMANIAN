@@ -578,6 +578,17 @@ std::vector<double> indexesToNodes(IteratorLike ibegin, size_t num_entries, Rule
     return result;
 }
 
+/*!
+ * \ingroup TasmanianMultiIndexManipulations
+ * \brief Overload that returns the result in a vector.
+ *
+ * Infers the weights that best describe the decay-rate of the normalized coefficients given the rule and depth.
+ * The points represent either the polynomial powers of the frequencies of the Fourier transform and tol is the
+ * cutoff tolerance, i.e., use only the coefficients with magnitude exceeding tol.
+ */
+std::vector<int> inferAnisotropicWeights(TypeOneDRule rule, TypeDepth depth,
+                                         MultiIndexSet const &points, std::vector<double> const &coefficients, double tol);
+
 }
 
 }
