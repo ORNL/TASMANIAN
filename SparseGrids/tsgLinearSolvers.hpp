@@ -72,6 +72,8 @@ namespace TasmanianDenseSolver{
     //! the result is given in \b x (length \b m). The regularized term \b reg is added to the diagonal of
     //! the product `transpose(A) * A` to stabilize the Cholesky decomposition.
     void solveLeastSquares(int n, int m, const double A[], const double b[], double reg, double *x);
+    //! \brief The same solver, but can take advantage of TPL.
+    void solveLeastSquares(AccelerationContext const *acceleration, int n, int m, double A[], const double b[], double reg, double *x);
 }
 
 //! \internal

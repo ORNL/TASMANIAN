@@ -750,7 +750,7 @@ void GridGlobal::estimateAnisotropicCoefficients(TypeDepth type, int output, std
     double tol = 1000.0 * Maths::num_tol;
     std::vector<double> surp = computeSurpluses(output, false);
 
-    weights = MultiIndexManipulations::inferAnisotropicWeights(rule, type, points, surp, tol);
+    weights = MultiIndexManipulations::inferAnisotropicWeights(acceleration, rule, type, points, surp, tol);
 }
 
 void GridGlobal::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){

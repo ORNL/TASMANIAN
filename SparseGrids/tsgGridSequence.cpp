@@ -621,7 +621,7 @@ void GridSequence::estimateAnisotropicCoefficients(TypeDepth type, int output, s
         for(auto &m : max_surp) m = surpluses.getStrip(i++)[output];
     }
 
-    weights = MultiIndexManipulations::inferAnisotropicWeights(rule, type, points, max_surp, tol);
+    weights = MultiIndexManipulations::inferAnisotropicWeights(acceleration, rule, type, points, max_surp, tol);
 }
 
 void GridSequence::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){

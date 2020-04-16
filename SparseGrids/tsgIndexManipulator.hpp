@@ -586,7 +586,7 @@ std::vector<double> indexesToNodes(IteratorLike ibegin, size_t num_entries, Rule
  * The points represent either the polynomial powers of the frequencies of the Fourier transform and tol is the
  * cutoff tolerance, i.e., use only the coefficients with magnitude exceeding tol.
  */
-std::vector<int> inferAnisotropicWeights(TypeOneDRule rule, TypeDepth depth,
+std::vector<int> inferAnisotropicWeights(AccelerationContext const *acceleration, TypeOneDRule rule, TypeDepth depth,
                                          MultiIndexSet const &points, std::vector<double> const &coefficients, double tol);
 
 }

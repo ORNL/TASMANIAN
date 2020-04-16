@@ -484,17 +484,17 @@ MultiIndexSet createPolynomialSpace(const MultiIndexSet &tensors, std::function<
     return unionSets(polynomial_tensors);
 }
 
-std::vector<int> inferAnisotropicWeights(TypeOneDRule rule, TypeDepth depth,
+std::vector<int> inferAnisotropicWeights(AccelerationContext const *acceleration, TypeOneDRule rule, TypeDepth depth,
                                          MultiIndexSet const &points, std::vector<double> const &coefficients, double tol){
 
     int num_dimensions = static_cast<int>(points.getNumDimensions());
     int cols = (OneDimensionalMeta::getControurType(depth) == type_curved) ?
                 2 * num_dimensions + 1 : num_dimensions + 1;
 
-    int rows = std::count_if(coefficients.begin(), coefficients.end(), [=](double c)->bool{ return (std::abs(c) > tol); });
+    int data_rows = std::count_if(coefficients.begin(), coefficients.end(), [=](double c)->bool{ return (std::abs(c) > tol); });
 
-    Data2D<double> A(rows, cols);
-    std::vector<double> b(rows);
+    Data2D<double> A(data_rows + cols, cols, 0.0);
+    std::vector<double> b(data_rows + cols, 0.0);
 
     int c = 0;
     for(int i=0; i<points.getNumIndexes(); i++){
@@ -511,7 +511,7 @@ std::vector<int> inferAnisotropicWeights(TypeOneDRule rule, TypeDepth depth,
     if (rule == rule_fourier){
         for(int j=0; j<num_dimensions; j++){
             double *cc = A.getStrip(j);
-            for(int i=0; i<rows; i++)
+            for(int i=0; i<data_rows; i++)
                 cc[i] = static_cast<double>((static_cast<int>(cc[i]) + 1) / 2);
         }
     }
@@ -519,7 +519,7 @@ std::vector<int> inferAnisotropicWeights(TypeOneDRule rule, TypeDepth depth,
     if (OneDimensionalMeta::getControurType(depth) == type_hyperbolic){
         for(int j=0; j<num_dimensions; j++){
             double *cc = A.getStrip(j);
-            for(int i=0; i<rows; i++)
+            for(int i=0; i<data_rows; i++)
                 cc[i] = std::log(cc[i] + 1.0);
         }
     }
@@ -528,13 +528,18 @@ std::vector<int> inferAnisotropicWeights(TypeOneDRule rule, TypeDepth depth,
         for(int j=0; j<num_dimensions; j++){
             double *cc = A.getStrip(j);
             double *vv = A.getStrip(num_dimensions + j);
-            for(int i=0; i<rows; i++)
+            for(int i=0; i<data_rows; i++)
                 vv[i] = std::log(cc[i] + 1.0);
         }
     }
 
+    // pad with a block of identity to provide regularization
+    // adds 0.003^2 to the diagonal of the A^T * A matrix
+    for(int j=0; j<cols; j++)
+        A.getStrip(j)[data_rows + j] = 0.003;
+
     std::vector<double> x(cols);
-    TasmanianDenseSolver::solveLeastSquares(rows, cols, A.getStrip(0), b.data(), 1.E-5, x.data());
+    TasmanianDenseSolver::solveLeastSquares(acceleration, data_rows + cols, cols, A.getStrip(0), b.data(), 0.0, x.data());
 
     std::vector<int> weights(cols - 1);
     for(size_t j=0; j<weights.size(); j++)

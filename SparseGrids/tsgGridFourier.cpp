@@ -685,7 +685,7 @@ void GridFourier::estimateAnisotropicCoefficients(TypeDepth type, int output, st
         }
     }
 
-    weights = MultiIndexManipulations::inferAnisotropicWeights(rule_fourier, type, points, max_fcoef, tol);
+    weights = MultiIndexManipulations::inferAnisotropicWeights(acceleration, rule_fourier, type, points, max_fcoef, tol);
 }
 
 void GridFourier::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){

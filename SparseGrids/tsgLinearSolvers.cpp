@@ -92,6 +92,25 @@ void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], con
     }
 }
 
+#ifdef Tasmanian_ENABLE_BLAS
+void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const *acceleration, int n, int m, double A[], const double b[], double reg, double *x){
+    if (acceleration->blasCompatible()){
+        int worksize = -1;
+        std::vector<double> work(1);
+        std::vector<double> solution(b, b + n);
+        TasBLAS::gels('N', n, m, 1, A, n, solution.data(), n, work.data(), worksize);
+        worksize = static_cast<int>(work[0]);
+        work.resize(worksize);
+        TasBLAS::gels('N', n, m, 1, A, n, solution.data(), n, work.data(), worksize);
+        std::copy_n(solution.data(), m, x);
+        return;
+    }
+#else
+void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const*, int n, int m, double A[], const double b[], double reg, double *x){
+#endif
+    solveLeastSquares(n, m, A, b, reg, x);
+}
+
 void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z){
     const double tol = Maths::num_tol;
     if (n == 1){ z[0] = z[0]*z[0]; return; }
