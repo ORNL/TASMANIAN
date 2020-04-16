@@ -1392,6 +1392,7 @@ bool ExternalTester::testAllRefinement() const{
     }{
         const BaseFunction *f = &f21curved;
         grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_iptotal, rule_leja);
+        grid.enableAcceleration(accel_none);
         int np[10] = { 10, 12, 17, 24, 32, 34, 41, 42, 57, 59 };
         double errs[10] = { 9.48e-03, 9.50e-03, 6.85e-03, 5.11e-04, 6.26e-05, 7.11e-06, 5.07e-06, 5.19e-06, 1.17e-08, 1.86e-08 };
         if (!testAnisotropicRefinement(f, grid, type_ipcurved, 1, np, errs, 7)){
@@ -1409,6 +1410,7 @@ bool ExternalTester::testAllRefinement() const{
     }{
         const BaseFunction *f = &f21c1c2periodic;
         grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_level);
+        grid.enableAcceleration(accel_cpu_blas);
         grid.setDomainTransform({-1.0, -1.0}, {1.0, 1.0});
         int np[5] = { 81, 135, 297, 783, 2295 };
         double errs[5] = { 1.32e-3, 1.92e-4, 6.75e-5, 5.67e-5, 2.11e-6 };

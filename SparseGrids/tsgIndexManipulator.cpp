@@ -484,6 +484,91 @@ MultiIndexSet createPolynomialSpace(const MultiIndexSet &tensors, std::function<
     return unionSets(polynomial_tensors);
 }
 
+std::vector<int> inferAnisotropicWeights(AccelerationContext const *acceleration, TypeOneDRule rule, TypeDepth depth,
+                                         MultiIndexSet const &points, std::vector<double> const &coefficients, double tol){
+
+    int num_dimensions = static_cast<int>(points.getNumDimensions());
+    int cols = (OneDimensionalMeta::getControurType(depth) == type_curved) ?
+                2 * num_dimensions + 1 : num_dimensions + 1;
+
+    int data_rows = std::count_if(coefficients.begin(), coefficients.end(), [=](double c)->bool{ return (std::abs(c) > tol); });
+
+    Data2D<double> A(data_rows + cols, cols, 0.0);
+    std::vector<double> b(data_rows + cols, 0.0);
+
+    int c = 0;
+    for(int i=0; i<points.getNumIndexes(); i++){
+        if (std::abs(coefficients[i]) > tol){
+            int const *indx = points.getIndex(i);
+            for(int j=0; j<num_dimensions; j++){
+                A.getStrip(j)[c] = static_cast<double>(indx[j]);
+            }
+            A.getStrip(cols-1)[c] = 1.0;
+            b[c++] = -std::log(std::abs(coefficients[i]));
+        }
+    }
+
+    if (rule == rule_fourier){
+        for(int j=0; j<num_dimensions; j++){
+            double *cc = A.getStrip(j);
+            for(int i=0; i<data_rows; i++)
+                cc[i] = static_cast<double>((static_cast<int>(cc[i]) + 1) / 2);
+        }
+    }
+
+    if (OneDimensionalMeta::getControurType(depth) == type_hyperbolic){
+        for(int j=0; j<num_dimensions; j++){
+            double *cc = A.getStrip(j);
+            for(int i=0; i<data_rows; i++)
+                cc[i] = std::log(cc[i] + 1.0);
+        }
+    }
+
+    if (OneDimensionalMeta::getControurType(depth) == type_curved){
+        for(int j=0; j<num_dimensions; j++){
+            double *cc = A.getStrip(j);
+            double *vv = A.getStrip(num_dimensions + j);
+            for(int i=0; i<data_rows; i++)
+                vv[i] = std::log(cc[i] + 1.0);
+        }
+    }
+
+    // pad with a block of identity to provide regularization
+    // adds 0.003^2 to the diagonal of the A^T * A matrix
+    for(int j=0; j<cols; j++)
+        A.getStrip(j)[data_rows + j] = 0.003;
+
+    std::vector<double> x(cols);
+    TasmanianDenseSolver::solveLeastSquares(acceleration, data_rows + cols, cols, A.getStrip(0), b.data(), x.data());
+
+    std::vector<int> weights(cols - 1);
+    for(size_t j=0; j<weights.size(); j++)
+        weights[j] = static_cast<int>(x[j] * 1000.0 + 0.5);
+
+    int max_weight = *std::max_element(weights.begin(), weights.begin() + num_dimensions);
+
+    if (max_weight < 0){ // all directions are diverging, default to isotropic total degree
+        std::fill_n(weights.begin(), num_dimensions, 1);
+        if (OneDimensionalMeta::getControurType(depth) == type_curved)
+            std::fill(weights.begin() + num_dimensions, weights.end(), 0);
+    }else{
+        int min_weight = max_weight;
+        for(int j=0; j<num_dimensions; j++)
+            if (weights[j] > 0 and weights[j] < min_weight) min_weight = weights[j];  // find the smallest positive weight
+        for(int j=0; j<num_dimensions; j++){
+            if (weights[j] <= 0){
+                weights[j] = min_weight;
+                if (OneDimensionalMeta::getControurType(depth) == type_curved){
+                    if (std::abs(weights[num_dimensions + j]) > weights[j])
+                        weights[num_dimensions + j] = std::copysign(weights[j], weights[num_dimensions + j]);
+                }
+            }
+        }
+    }
+
+    return weights;
+}
+
 } // MultiIndexManipulations
 
 } // TasGrid

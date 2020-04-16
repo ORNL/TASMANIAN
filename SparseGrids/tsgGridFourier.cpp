@@ -685,37 +685,7 @@ void GridFourier::estimateAnisotropicCoefficients(TypeDepth type, int output, st
         }
     }
 
-    int n = 0;
-    int m = num_dimensions + 1;
-    for(int i=0; i<num_points; i++) n += (max_fcoef[i] > tol) ? 1 : 0;
-
-    Data2D<double> A(n,m);
-    std::vector<double> b(n);
-
-    int count = 0;
-    bool ishyperbolic = (OneDimensionalMeta::getControurType(type) == type_hyperbolic);
-    for(int c=0; c<num_points; c++){
-        const int *indx = points.getIndex(c);
-        if (max_fcoef[c] > tol){
-            for(int j=0; j<num_dimensions; j++) A.getStrip(j)[count] = (ishyperbolic) ? log((double) ((indx[j]+1)/2 + 1)) : ((double) ((indx[j]+1)/2));
-            A.getStrip(num_dimensions)[count] = 1.0;
-            b[count++] = -std::log(max_fcoef[c]);
-        }
-    }
-
-    std::vector<double> x(m);
-    TasmanianDenseSolver::solveLeastSquares(n, m, A.getStrip(0), b.data(), 1.E-5, x.data());
-
-    weights.resize(--m);
-    for(int j=0; j<m; j++) weights[j] = (int)(x[j] * 1000.0 + 0.5);
-
-    int min_weight = *std::max_element(weights.begin(), weights.end()); // start with max weight (placeholder name)
-    if (min_weight < 0){ // all directions are diverging, default to isotropic total degree
-        for(int j=0; j<num_dimensions; j++) weights[j] = 1;
-    }else{
-        for(int j=0; j<num_dimensions; j++) if ((weights[j] > 0) && (weights[j] < min_weight)) min_weight = weights[j]; // find the smallest positive element now
-        for(int j=0; j<num_dimensions; j++) if (weights[j] <= 0) weights[j] = min_weight;
-    }
+    weights = MultiIndexManipulations::inferAnisotropicWeights(acceleration, rule_fourier, type, points, max_fcoef, tol);
 }
 
 void GridFourier::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits){

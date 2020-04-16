@@ -76,6 +76,8 @@ void dtrsm_(const char *side, const char *uplo, const char *trans, const char *d
 // LAPACK solvers
 void dgetrf_(const int *M, const int *N, double *A, const int *lda, int *ipiv, int *info);
 void dgetrs_(const char *trans, const int *N, const int *nrhs, const double *A, const int *lda, const int *ipiv, double *B, const int *ldb, int *info);
+void dgels_(const char *trans, const int *M, const int *N, const int *nrhs, double *A, const int *lda,
+            double *B, const int *ldb, double *work, int *lwork, int *info);
 }
 #endif
 
@@ -125,6 +127,17 @@ namespace TasBLAS{
         int info = 0;
         dgetrs_(&trans, &N, &nrhs, A, &lda, ipiv, B, &ldb, &info);
         if (info != 0) throw std::runtime_error(std::string("Lapack dgetrs_ exited with code: ") + std::to_string(info));
+    }
+    //! \brief LAPACK dgels
+    inline void gels(char trans, int M, int N, int nrhs, double A[], int lda, double B[], int ldb, double work[], int lwork){
+        int info = 0;
+        dgels_(&trans, &M, &N, &nrhs, A, &lda, B, &ldb, work, &lwork, &info);
+        if (info != 0){
+            if (lwork > 0)
+                throw std::runtime_error(std::string("Lapack dgels_ solve-stage exited with code: ") + std::to_string(info));
+            else
+                throw std::runtime_error(std::string("Lapack dgels_ infer-worksize-stage exited with code: ") + std::to_string(info));
+        }
     }
 
     // higher-level methods building on top of one or more BLAS/LAPACK Methods
