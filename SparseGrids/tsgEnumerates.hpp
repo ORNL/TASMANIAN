@@ -471,6 +471,12 @@ enum TypeRefinement{
  * - TasGrid::accel_none
  *
  * \par
+ * The defaults and fallback extend to all methods that could use accelerations. For example, if GPU acceleration
+ * has been enabled, but the current method does not have a GPU implementation, the "next-best" BLAS implementation
+ * will be used instead. Thus, the use of BLAS and LAPACK can be disabled either at compile time or with accel_none,
+ * but not with accel_gpu_cuda.
+ *
+ * \par
  * Note that regardless of the acceleration mode, all evaluate methods will to generate output that
  * is identical up to rounding error. By design, the \b TasmanianSparseGrid::enableAcceleration() can be called
  * with any acceleration type regardless whether it has been enabled by CMake.

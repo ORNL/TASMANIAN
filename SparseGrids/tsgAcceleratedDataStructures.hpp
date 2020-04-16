@@ -81,14 +81,14 @@ namespace TasGrid{
 #ifdef Tasmanian_ENABLE_CUDA
 /*!
  * \ingroup TasmanianAcceleration
- * \brief Template class that wraps around a single CUDA array, providing functionality that mimics std::vector.
+ * \brief Template class that wraps around a single GPU array, providing functionality that mimics std::vector.
  *
- * \par Wraps Around a CUDA Array
- * The class can be instantiated with either \b int, \b float or \b double (other types are not currently available through the external API).
- * The class can either allocate (and deallocate with the descructor) a CUDA array of desired size,
- * and load/unload data to a CPU std::vector with the same type.
+ * \par Wraps Around a GPU Array
+ * The class can be instantiated with either \b int, \b float or \b double (other types are not currently available).
+ * The class can either allocate (and deallocate with the descructor) an array of desired size that resided in the GPU device memory,
+ * and load/unload data to a CPU std::vector or array with the same type.
  *
- * Note that the class does not provide single entry access and it is not copyable, only movable in assignment and constructor.
+ * Note that the class does not provide a single entry access and it is not copyable, only movable in assignment and constructor.
  */
 template<typename T>
 class GpuVector{
@@ -111,20 +111,18 @@ public:
     //! \brief Default constructor, creates an empty (null) array.
     GpuVector() : num_entries(0), gpu_data(nullptr){}
     //! \brief Construct a vector with \b count number of entries.
-
-    //! Allocates an array that will be automatically deleted
-    //! if \b clear() is called, or \b resize() or \b load() functions
-    //! are used with size that is different from \b count.
     GpuVector(size_t count) : num_entries(0), gpu_data(nullptr){ resize(count); }
 
-    //! \brief Same as \b GpuVector(dim1 * dim2), but guards against overflow.
-
-    //! Many of the Tasmanian data-structures are inherently two-dimensional,
-    //! for example, passing number of points and number of dimensions separately makes the code more readable,
-    //! and both integers are converted to size_t before multiplication which prevents overflow.
-    //! Note: the dimensions \b will \b not be stored, the underlying data is still one dimensional.
+    /*!
+     * \brief Same as \b GpuVector(dim1 * dim2), but guards against overflow.
+     *
+     * Many of the Tasmanian data-structures are inherently two-dimensional,
+     * for example, passing number of points and number of dimensions separately makes the code more readable,
+     * and both integers are converted to size_t before multiplication which prevents overflow.
+     * Note: the dimensions \b will \b not be stored, the underlying data is still one dimensional.
+     */
     GpuVector(int dim1, int dim2) : num_entries(0), gpu_data(nullptr){ resize(Utils::size_mult(dim1, dim2)); }
-    //! \brief Create a vector with size that matches \b cpu_data and copy the data to the CUDA device.
+    //! \brief Create a vector with size that matches \b cpu_data and copy the data to the GPU device.
     GpuVector(const std::vector<T> &cpu_data) : num_entries(0), gpu_data(nullptr){ load(cpu_data); }
     //! \brief Construct a vector and load with date provided on to the cpu.
     GpuVector(int dim1, int dim2, T const *cpu_data) : num_entries(0), gpu_data(nullptr){ load(Utils::size_mult(dim1, dim2), cpu_data); }
@@ -133,23 +131,21 @@ public:
     //! \brief Destructor, release all allocated memory.
     ~GpuVector(){ clear(); }
 
-    //! \brief Return the current size of the CUDA array.
+    //! \brief Return the current size of the GPU array.
     size_t size() const{ return num_entries; }
-    //! \brief Get a reference to the CUDA array, which an be used as input to CUDA libraries and kernels.
+    //! \brief Get a reference to the GPU array, which an be used as input to GPU libraries and kernels.
     T* data(){ return gpu_data; }
-    //! \brief Get a const-reference to the CUDA array, which an be used as input to CUDA libraries and kernels.
+    //! \brief Get a const-reference to the GPU array, which an be used as input to GPU libraries and kernels.
     const T* data() const{ return gpu_data; }
 
-    //! \brief Clear all data currently stored in the vector and allocate a new array (unlike std::vector this does not copy the data).
+    //! \brief Clear all data currently stored in the vector and allocate a new array (unlike std::vector this does not relocate the old data).
     void resize(size_t count);
     //! \brief Delete all allocated memory and reset the array to empty.
     void clear();
     //! \brief Return \b true if the \b size() is zero.
     bool empty(){ return (num_entries == 0); }
 
-    //! \brief Copy the content of \b cpu_data to the CUDA device, all pre-existing data is deleted and the vector is resized to match \b cpu_data.
-
-    //! Makes a call to the other overload with \b cpu_data.size() as \b count. See the overload.
+    //! \brief Copy the content of \b cpu_data to the GPU device, all pre-existing data is deleted and the vector is resized to match \b cpu_data.
     void load(const std::vector<T> &cpu_data){ load(cpu_data.size(), cpu_data.data()); }
 
     //! \brief Load from a range defined by the begin and end, converts if necessary.
@@ -168,11 +164,14 @@ public:
         load(cpu_data.size(), cpu_data.data());
     }
 
-    //! \brief Copy the first \b count entries of \b cpu_data to the CUDA device, all pre-existing data is deleted and the vector is resized to match \b count.
-
-    //! If \b count does not match the current size, the current array will be deleted and new array will be allocated (even if \b size() exceeds \b count).
-    //! If the currently stored array has been assigned with \b wrap(), the alias is released.
-    //! However, if \b count matches \b size(), the data is overwritten but no arrays will be allocated, deleted, or de-aliased.
+    /*!
+     * \brief Copy the first \b count entries of \b cpu_data to the GPU device.
+     *
+     * If \b count does not match the current size, the current array will be deleted and new array will be allocated
+     * (even if \b size() exceeds \b count).
+     * The final vector size will match \b count.
+     * However, if \b count matches \b size(), the data is overwritten but no arrays will be allocated, deleted, or de-aliased.
+     */
     void load(size_t count, const T* cpu_data);
     /*!
      * \brief Takes a vector with entries of different precision, converts and loads.
@@ -185,7 +184,7 @@ public:
         std::transform(cpu_data, cpu_data + count, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
         load(converted);
     }
-    //! \brief Copy the data from the CUDA array to \b cpu_data, the \b cpu_data will be resized and overwritten, the new size will match the \b size().
+    //! \brief Copy the data from the GPU array to \b cpu_data, the \b cpu_data will be resized and overwritten.
     void unload(std::vector<T> &cpu_data) const{
         cpu_data.resize(num_entries);
         unload(cpu_data.data());
@@ -196,7 +195,7 @@ public:
         unload(y);
         return y;
     }
-    //! \brief Copy the data from the CUDA array to the \b cpu_data buffer, assumes that the buffer is sufficiently large.
+    //! \brief Copy the data from the GPU array to the \b cpu_data buffer, assumes that the buffer is sufficiently large.
     void unload(T* cpu_data) const;
 
     //! \brief Move the data to the \b external array, the vector is set to empty (unlike move command on std::vector).
@@ -212,13 +211,15 @@ public:
 
 private:
     size_t num_entries; // keep track of the size, update on every call that changes the gpu_data
-    T *gpu_data; // the CUDA array
+    T *gpu_data; // the GPU array
 };
 
-//! \brief Wrapper class around calls to cuBlas, cuSparse, and MAGMA for CUDA based accelerated linear algebra
-//! \ingroup TasmanianAcceleration
-
-//! (wrappers that manage handles, queues, and GpuVector)
+/*!
+ * \ingroup TasmanianAcceleration
+ * \brief Wrapper class around calls GPU accelerated linear algebra libraries.
+ *
+ * The class also manages the required handles and queues and holds the context of the active GPU device.
+ */
 class GpuEngine{
 public:
     //! \brief Construct a new engine associated with the given device, default to cuBlas/cuSparse backend, see \b backendMAGMA().
@@ -681,6 +682,7 @@ struct AccelerationContext{
         }
     }
 
+    //! \brief Returns true if BLAS is enabled and the current mode is not none.
     bool blasCompatible() const{
         #ifdef Tasmanian_ENABLE_BLAS
         return (mode != accel_none);

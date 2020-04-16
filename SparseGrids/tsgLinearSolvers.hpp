@@ -53,36 +53,47 @@
  *
  * \par Linear Solvers
  * Many sparse grids methods rely on various linear solvers, sparse iterative, eigenvalue,
- * fast-fourier-transform, and least-squares. The solvers are tuned for the specific
- * problems and can perform as good (or even better) than general third-party methods.
- * In addition, this reduces the external dependencies.
+ * fast-fourier-transform, and least-squares. Some solvers use third-party-libraries,
+ * e.g., BLAS and LAPACK, but others are implemented specifically for Tasmanian.
+ * The custom solvers are tuned for the specific problems and can (in the specific circumstances)
+ * outperform than general third-party methods.
+ * Thus, balance is maintained between external dependencies, performance, and capabilities.
+ * \endinternal
  */
 
 namespace TasGrid{
 
-//! \internal
-//! \brief Methods for dense linear algebra.
-//! \ingroup TasmanianLinearSolvers
+/*!
+ * \ingroup TasmanianLinearSolvers
+ * \brief Methods for dense linear algebra.
+ *
+ * Most of these build on BLAS and LAPACK, but some come with basic reference implementations.
+ * For example, the general least-squares is used with a single right-hand-size and size of x of 10 - 20,
+ * hence a reference solution is sufficient.
+ */
 namespace TasmanianDenseSolver{
-    //! \internal
-    //! \brief Least squares solver, used to infer anisotropic coefficients and thus rarely exceeds 10 - 20.
-    //! \ingroup TasmanianLinearSolvers
-
-    //! Matrix \b A is \b n by \b m (with \b n much larger), vector \b b has length \b n,
-    //! the result is given in \b x (length \b m). The regularized term \b reg is added to the diagonal of
-    //! the product `transpose(A) * A` to stabilize the Cholesky decomposition.
+    /*!
+     * \ingroup TasmanianLinearSolvers
+     * \brief Least squares solver, used to infer anisotropic coefficients and thus rarely exceeds 10 - 20.
+     *
+     * Solves \f$ \min_x \| A x - b \|_2 \f$ where \b A is an \b n by \b m matrix (column major format),
+     * and \b b and \b x are vectors with sizes \b n and \b m.
+     * The assumption here is that \b n is larger than \b m (the problem is over-determined)
+     * and \b A has full column rank.
+     * The use case is for the rates of anisotropic decay which never exceed twice the number of dimensions
+     * and are hence not too large and expensive.
+     */
     void solveLeastSquares(int n, int m, const double A[], const double b[], double *x);
-    //! \brief The same solver, but can take advantage of TPL.
+    //! \brief The same solver, but uses LAPACK dgels method (if enabled).
     void solveLeastSquares(AccelerationContext const *acceleration, int n, int m, double A[], const double b[], double *x);
 }
 
-//! \internal
-//! \brief Methods for tridiagonal eigenvalue problems.
-//! \ingroup TasmanianLinearSolvers
+/*!
+ * \ingroup TasmanianLinearSolvers
+ * \brief Methods for tridiagonal eigenvalue problems.
+ */
 namespace TasmanianTridiagonalSolver{
-    //! \internal
-    //! \brief Methods for tridiagonal eigenvalue problems, used to compute nodes and weights for Gaussian rules.
-    //! \ingroup TasmanianLinearSolvers
+    //! \brief Method for tridiagonal eigenvalue decomposition, used to compute nodes and weights for Gaussian rules.
     void decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z);
 }
 
