@@ -163,8 +163,12 @@ public:
     //! \brief Moves the data vector out of the class, this method invalidates the object.
     inline typename std::vector<T> release(){ return std::move(vec); }
 
+    //! \brief Returns an iterator to the beginning of the internal data
+    inline typename std::vector<T>::iterator begin(){ return vec.begin(); }
     //! \brief Returns a const iterator to the beginning of the internal data
     inline typename std::vector<T>::const_iterator begin() const{ return vec.cbegin(); }
+    //! \brief Returns an iterator to the end of the internal data
+    inline typename std::vector<T>::iterator end(){ return vec.end(); }
     //! \brief Returns a const iterator to the end of the internal data
     inline typename std::vector<T>::const_iterator end() const{ return vec.cend(); }
 

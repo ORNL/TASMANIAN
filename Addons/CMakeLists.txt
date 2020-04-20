@@ -23,6 +23,7 @@ Tasmanian_addon_sources(PATH .
                               tsgMPIScatterDream.hpp
                               tsgMPISampleDream.hpp
                               tsgLoadNeededValues.hpp
+                              tsgLoadUnstructuredPoints.hpp
                               tsgCandidateManager.hpp
                               tsgConstructSurrogate.hpp
                               tsgMPIConstructGrid.hpp
@@ -61,7 +62,7 @@ if (Tasmanian_ENABLE_MPI)
 endif()
 
 # test for non-MPI capabilities
-add_executable(Tasmanian_addontester testAddons.cpp testConstructSurrogate.hpp)
+add_executable(Tasmanian_addontester testAddons.cpp testConstructSurrogate.hpp testLoadUnstructured.hpp)
 add_test(AddonTests addontester)
 
 list(APPEND Tasmanian_addons_executables "addontester")
