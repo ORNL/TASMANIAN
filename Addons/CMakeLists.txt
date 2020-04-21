@@ -30,7 +30,7 @@ Tasmanian_addon_sources(PATH .
                               TasmanianAddons.hpp)
 
 if (Tasmanian_ENABLE_PYTHON) # the C addons are used by Python
-    add_library(Tasmanian_caddons SHARED tsgCLoadNeededValues.cpp tsgCConstructSurrogate.cpp)
+    add_library(Tasmanian_caddons SHARED tsgCLoadNeededValues.cpp tsgCConstructSurrogate.cpp tsgCLoadUnstructuredPoints.cpp)
 
     set_target_properties(Tasmanian_caddons PROPERTIES OUTPUT_NAME "tasmaniancaddons"
                                                        INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
