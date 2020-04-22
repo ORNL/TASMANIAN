@@ -491,7 +491,7 @@ std::vector<int> inferAnisotropicWeights(AccelerationContext const *acceleration
     int cols = (OneDimensionalMeta::getControurType(depth) == type_curved) ?
                 2 * num_dimensions + 1 : num_dimensions + 1;
 
-    int data_rows = std::count_if(coefficients.begin(), coefficients.end(), [=](double c)->bool{ return (std::abs(c) > tol); });
+    int data_rows = static_cast<int>(std::count_if(coefficients.begin(), coefficients.end(), [=](double c)->bool{ return (std::abs(c) > tol); }));
 
     Data2D<double> A(data_rows + cols, cols, 0.0);
     std::vector<double> b(data_rows + cols, 0.0);
@@ -560,7 +560,7 @@ std::vector<int> inferAnisotropicWeights(AccelerationContext const *acceleration
                 weights[j] = min_weight;
                 if (OneDimensionalMeta::getControurType(depth) == type_curved){
                     if (std::abs(weights[num_dimensions + j]) > weights[j])
-                        weights[num_dimensions + j] = std::copysign(weights[j], weights[num_dimensions + j]);
+                        weights[num_dimensions + j] = (weights[j] > 0.0) ? weights[num_dimensions + j] : -weights[num_dimensions + j];
                 }
             }
         }
