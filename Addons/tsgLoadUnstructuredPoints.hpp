@@ -54,21 +54,34 @@
  * always requires more data to achieve the same level of accuracy compared to the carefully chosen
  * points, and the approximation is valid only in the convex hull of the data, i.e.,
  * extrapolating outside of the data-cloud is not mathematically stable.
- * Furthermore, the inference usually relies on solving some linear or non-linear problem
+ * In the interior of the data-cloud, the accuracy of the surrogate is very sensitive to
+ * the distribution of the points and good accuracy can be achieved only in areas where
+ * the points are sufficiently dense.
+ *
+ * The inference usually relies on solving some linear or non-linear problem
  * which may not be stable and may require additional regularization, especially if the data
- * is not sufficient to provide values to all points, e.g., all data falls outside of the support
+ * is not sufficient to provide values for all hierarchical coefficients, e.g., all data falls outside of the support
  * of some locally supported basis functions.
  */
 
 namespace TasGrid{
 
-
+/*!
+ * \internal
+ * \ingroup TasmanianAddonsLoadUnstructured
+ * \brief Template implementation that handles the case of Fourier grids vs. all other types.
+ *
+ * Fourier grids require complex arithmetic while the other grid works with real types.
+ * This template operates on the double or std::complex<double> specified by \b scalar_type.
+ * \endinternal
+ */
 template<typename scalar_type>
-inline void loadUnstructuredDataL2(double const data_points[], int num_data, double const model_values[],
+inline void loadUnstructuredDataL2tmpl(double const data_points[], int num_data, double const model_values[],
                                    double tolerance, TasmanianSparseGrid &grid){
     #ifndef Tasmanian_ENABLE_BLAS
     throw std::runtime_error("The loadUnstructuredDataL2() method requires Tasmanian_ENABLE_BLAS=ON in CMake!");
     #endif
+    if (grid.empty()) throw std::runtime_error("Cannot use loadUnstructuredDataL2() with an empty grid.");
     if (grid.getNumNeeded() != 0)
         grid.mergeRefinement();
     int num_equations = (tolerance > 0.0) ? num_data + grid.getNumPoints() : num_data;
@@ -105,17 +118,46 @@ inline void loadUnstructuredDataL2(double const data_points[], int num_data, dou
     }
 }
 
+/*!
+ * \ingroup TasmanianAddonsLoadUnstructured
+ * \brief Construct a sparse grid surrogate using least-squares fit.
+ *
+ * Constructs the coefficients of the grid using a least-squares fit \f$ \min_c \| G_c(x) - Y \|_2 \f$,
+ * where \b c indicates the hierarchical coefficients of the grid, \b x indicates the data-points
+ * and \b Y is the associated model outputs. The problem is set as a linear system of equations
+ * so that \f$ G_c(x) = H c \f$ where \b H is the matrix of hierarchical coefficients.
+ * Depending on the distribution of the points and/or the type of grid, the system may not be well posed,
+ * hence the simple regularization option to add \b tolerance multiplied by the norm of \b c.
+ *
+ * \param data_points array of data points similar to loadNeededPoints() with size grid.getNumDimensions() by \b num_data
+ * \param num_data the number of data points
+ * \param model_values array of model values corresponding to the \b data_points, the size is grid.getNumOutputs() by \b num_data
+ * \param tolerance, if positive, will add regularization to the least-squares problem, must be less than the accuracy
+ *                  of the surrogate so that it will not affect the approximation error
+ * \param grid is a non-empty grid, if a refinement has been set, it will be merged with the existing points before inference
+ *
+ * \throws std::runtime_error if the grid is empty, the BLAS acceleration has not been enabled, or if the LAPACK backend returns an error code.
+ */
 inline void loadUnstructuredDataL2(double const data_points[], int num_data, double const model_values[],
                                    double tolerance, TasmanianSparseGrid &grid){
     if (grid.isFourier()){
-        loadUnstructuredDataL2<std::complex<double>>(data_points, num_data, model_values, tolerance, grid);
+        loadUnstructuredDataL2tmpl<std::complex<double>>(data_points, num_data, model_values, tolerance, grid);
     }else{
-        loadUnstructuredDataL2<double>(data_points, num_data, model_values, tolerance, grid);
+        loadUnstructuredDataL2tmpl<double>(data_points, num_data, model_values, tolerance, grid);
     }
 }
 
+/*!
+ * \ingroup TasmanianAddonsLoadUnstructured
+ * \brief Overload that used vectors and infers the number of data points from the size of the vectors.
+ *
+ * See TasGrid::loadUnstructuredDataL2() for details, in addition
+ *
+ * \throws std::runtime_error if the sizes of the \b data_points and \b model_values do not match
+ */
 inline void loadUnstructuredDataL2(std::vector<double> const &data_points, std::vector<double> const &model_values,
                                    double tolerance, TasmanianSparseGrid &grid){
+    if (grid.empty()) throw std::runtime_error("Cannot use loadUnstructuredDataL2() with an empty grid.");
     int num_data = static_cast<int>(data_points.size() / grid.getNumDimensions());
     if (model_values.size() < Utils::size_mult(num_data, grid.getNumOutputs()))
         throw std::runtime_error("In loadUnstructuredDataL2(), provided more points than data.");
