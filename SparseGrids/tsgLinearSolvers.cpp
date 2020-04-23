@@ -369,7 +369,7 @@ WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const*,
     }
     #endif
 
-    pntr = std::vector<int>(num_rows+1, 0.0);
+    pntr = std::vector<int>(num_rows+1, 0);
     for(int i=0; i<num_rows; i++)
         pntr[i+1] = pntr[i] + lpntr[i];
 

@@ -32,6 +32,10 @@
 #define __TASMANIAN_SPARSE_GRID_ENUMERATES_HPP
 
 // system headers used in many/many places
+#ifdef _MSC_VER
+// without this MSVC++ is not compliant with the C++ sandard and does not accepts keywords such as "not" and "or"
+#include <iso646.h>
+#endif
 #include <map>
 #include <iostream>
 #include <iomanip>
