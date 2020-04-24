@@ -27,34 +27,17 @@
  * THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
+#ifndef __TASMANIAN_ADDONS_CLOADUNSTRUCTURED_CPP
+#define __TASMANIAN_ADDONS_CLOADUNSTRUCTURED_CPP
 
-#ifndef __TASMANIAN_ADDONS_HPP
-#define __TASMANIAN_ADDONS_HPP
+#include "TasmanianAddons.hpp"
 
-/*!
- * \internal
- * \file TasmanianAddons.hpp
- * \brief Header to include add addon templates.
- * \author Miroslav Stoyanov
- * \ingroup TasmanianAddons
- *
- * All addon templates are included with this single header.
- * \endinternal
- */
+extern "C"{
 
-#include "tsgLoadUnstructuredPoints.hpp"
-#include "tsgMPISampleDream.hpp"
+void tsgLoadUnstructuredDataL2(double const data_points[], int num_data, double const model_values[], double tolerance, void *grid){
+    TasGrid::loadUnstructuredDataL2(data_points, num_data, model_values, tolerance,
+                                    *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid));
+}
 
-/*!
- * \defgroup TasmanianAddons Additional Capabilities
- *
- * \par Extra Capabilities
- * The Addon module of Tasmanian offers a series of templates that offer
- * additional capabilities not necessarily included in the core modules.
- * The templates sit in a separate module for various reasons, e.g.,
- * - some methods are hard to classify or address fringe use cases
- * - the templates depend on third-party libraries and should not overwhelm
- *   the core modules with dependencies
- */
-
+} // extern "C"
 #endif

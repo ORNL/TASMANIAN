@@ -23,13 +23,14 @@ Tasmanian_addon_sources(PATH .
                               tsgMPIScatterDream.hpp
                               tsgMPISampleDream.hpp
                               tsgLoadNeededValues.hpp
+                              tsgLoadUnstructuredPoints.hpp
                               tsgCandidateManager.hpp
                               tsgConstructSurrogate.hpp
                               tsgMPIConstructGrid.hpp
                               TasmanianAddons.hpp)
 
 if (Tasmanian_ENABLE_PYTHON) # the C addons are used by Python
-    add_library(Tasmanian_caddons SHARED tsgCLoadNeededValues.cpp tsgCConstructSurrogate.cpp)
+    add_library(Tasmanian_caddons SHARED tsgCLoadNeededValues.cpp tsgCConstructSurrogate.cpp tsgCLoadUnstructuredPoints.cpp)
 
     set_target_properties(Tasmanian_caddons PROPERTIES OUTPUT_NAME "tasmaniancaddons"
                                                        INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
@@ -61,7 +62,7 @@ if (Tasmanian_ENABLE_MPI)
 endif()
 
 # test for non-MPI capabilities
-add_executable(Tasmanian_addontester testAddons.cpp testConstructSurrogate.hpp)
+add_executable(Tasmanian_addontester testAddons.cpp testConstructSurrogate.hpp testLoadUnstructured.hpp)
 add_test(AddonTests addontester)
 
 list(APPEND Tasmanian_addons_executables "addontester")

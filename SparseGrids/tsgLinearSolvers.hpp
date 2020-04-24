@@ -83,9 +83,17 @@ namespace TasmanianDenseSolver{
      * The use case is for the rates of anisotropic decay which never exceed twice the number of dimensions
      * and are hence not too large and expensive.
      */
-    void solveLeastSquares(int n, int m, const double A[], const double b[], double *x);
+    void solveLeastSquares(int n, int m, const double A[], double b[], double *x);
     //! \brief The same solver, but uses LAPACK dgels method (if enabled).
-    void solveLeastSquares(AccelerationContext const *acceleration, int n, int m, double A[], const double b[], double *x);
+    void solveLeastSquares(AccelerationContext const *acceleration, int n, int m, double A[], double b[], double *x);
+    /*!
+     * \brief Least squares solver, operates on multiple right-hand sides and row-major matrices.
+     *
+     * Solves \f$ \min_x \| A x - B \|_2 \f$ where \b A is an \b n by \b m matrix (row major format),
+     * \b B is \b n by \b nrhs. The main difference in this overload is that the matrices are row-major format.
+     */
+    template<typename scalar_type>
+    void solvesLeastSquares(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]);
 }
 
 /*!

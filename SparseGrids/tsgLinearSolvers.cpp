@@ -38,7 +38,7 @@
 
 namespace TasGrid{
 
-void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], const double b[], double *x){
+void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], double b[], double *x){
     // form Ar = A' * A
     // form x = A' * b
     std::vector<double> Ar(m * m);
@@ -90,23 +90,30 @@ void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], con
 }
 
 #ifdef Tasmanian_ENABLE_BLAS
-void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const *acceleration, int n, int m, double A[], const double b[], double *x){
+void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const *acceleration, int n, int m, double A[], double b[], double *x){
     if (acceleration->blasCompatible()){
-        int worksize = -1;
-        std::vector<double> work(1);
-        std::vector<double> solution(b, b + n);
-        TasBLAS::gels('N', n, m, 1, A, n, solution.data(), n, work.data(), worksize);
-        worksize = static_cast<int>(work[0]);
-        work.resize(worksize);
-        TasBLAS::gels('N', n, m, 1, A, n, solution.data(), n, work.data(), worksize);
-        std::copy_n(solution.data(), m, x);
+        TasBLAS::solveLS('N', n, m, A, b);
+        std::copy_n(b, m, x);
         return;
     }
 #else
-void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const*, int n, int m, double A[], const double b[], double *x){
+void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const*, int n, int m, double A[], double b[], double *x){
 #endif
     solveLeastSquares(n, m, A, b, x);
 }
+
+#ifdef Tasmanian_ENABLE_BLAS
+template<typename scalar_type>
+void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const*, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
+    TasBLAS::solveLSmulti(n, m, A, nrhs, B);
+}
+#else
+template<typename scalar_type>
+void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const*, int, int, scalar_type[], int, scalar_type[]){}
+#endif
+
+template void TasmanianDenseSolver::solvesLeastSquares<double>(AccelerationContext const*, int, int, double[], int, double[]);
+template void TasmanianDenseSolver::solvesLeastSquares<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);
 
 void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z){
     const double tol = Maths::num_tol;

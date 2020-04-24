@@ -114,7 +114,29 @@ class TestTasClass(unittest.TestCase):
                                             gridB.getNumPoints(), 2, 10, gridB, 1.E-11, "classic")
         ttc.compareGrids(gridA, gridB)
 
+    def checkUnstructuredL2(self):
+        grid = Tasmanian.makeLocalPolynomialGrid(2, 1, 5)
+        if not grid.isAccelerationAvailable("cpu-blas"): return
+
+        x = np.linspace(-0.9, 0.9, 40)
+        xx, yy = np.meshgrid(x, x)
+
+        points = np.column_stack([xx.reshape((xx.size,)), yy.reshape((yy.size,))])
+        model = np.exp(points[:,0] - points[:,1]).reshape((points.shape[0], 1))
+
+        Tasmanian.loadUnstructuredDataL2(points, model, 1.E-5, grid)
+
+        x = np.linspace(-0.8, 0.8, 20)
+        xx, yy = np.meshgrid(x, x)
+        points = np.column_stack([xx.reshape((xx.size,)), yy.reshape((yy.size,))])
+        model = np.exp(points[:,0] - points[:,1])
+
+        surrogate = grid.evaluateBatch(points)
+
+        self.assertLess(np.max(np.abs(model - surrogate[:,0])), 5.E-3, "Constructed from unstructured too inaccurate.")
+
     def performAddonTests(self):
         self.checkLoadNeeded()
         self.checkConstruction()
         self.checkBatchConstruct()
+        self.checkUnstructuredL2()

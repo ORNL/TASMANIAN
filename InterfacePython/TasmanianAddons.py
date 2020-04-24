@@ -56,6 +56,7 @@ pLibCTSG.tsgConstructSurrogateWiIGAniso.argtypes = [type_icsmodel, c_int, c_int,
 pLibCTSG.tsgConstructSurrogateWiIGAnisoFixed.argtypes = [type_icsmodel, c_int, c_int, c_int, c_void_p, c_char_p,
                                                          POINTER(c_int), POINTER(c_int), c_char_p, POINTER(c_int)]
 
+pLibCTSG.tsgLoadUnstructuredDataL2.argtypes = [POINTER(c_double), c_int, POINTER(c_double), c_double, c_void_p]
 
 def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID, pErrInfo):
     '''
@@ -366,3 +367,25 @@ def constructSurplusSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxSampl
 
     if pErrorCode[0] != 0:
         raise TasmanianInputError("constructSurplusSurrogate", "An error occurred during the call to Tasmanian.")
+
+
+def loadUnstructuredDataL2(points, model_data, tolerance, grid):
+    '''
+    Wrapper around TasGrid::loadUnstructuredDataL2(), see the C++ reference.
+
+    points is 2D ndarray with shape(num_data, grid.getNumDimensions())
+    model_data is 2D ndarray with shape(num_data, grid.getNumOutputs())
+    grid is an instance of TasmanianSparseGrid
+    '''
+    if len(points.shape) != 2 or points.shape[1] != grid.getNumDimensions():
+        raise TasmanianInputError("points", "ERROR: points must be a 2D numpy.ndarray with points.shape[1] == grid.getNumDimensions()")
+    if len(model_data.shape) != 2 or model_data.shape[1] != grid.getNumOutputs():
+        raise TasmanianInputError("model_data", "ERROR: model_data must be a 2D numpy.ndarray with model_data.shape[1] == grid.getNumOutputs()")
+    if points.shape[0] != model_data.shape[0]:
+        raise TasmanianInputError("model_data", "ERROR: mismatch between shape[0] of points and model_data")
+    if not hasattr(grid, "TasmanianSparseGridObject"):
+        raise TasmanianInputError("grid", "ERROR: grid must be an instance of TasmanianSparseGrid")
+
+    num_data = points.shape[0]
+    pLibCTSG.tsgLoadUnstructuredDataL2(np.ctypeslib.as_ctypes(points.reshape((points.size,))), num_data,
+                                       np.ctypeslib.as_ctypes(model_data.reshape((model_data.size,))), tolerance, grid.pGrid)
