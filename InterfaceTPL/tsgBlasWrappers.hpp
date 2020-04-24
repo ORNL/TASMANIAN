@@ -85,6 +85,7 @@ void dgels_(const char *trans, const int *M, const int *N, const int *nrhs, doub
 void zgels_(const char *trans, const int *M, const int *N, const int *nrhs, std::complex<double> *A, const int *lda,
             std::complex<double> *B, const int *ldb, std::complex<double> *work, int *lwork, int *info);
 // General LQ-factorize and multiply by Q
+#ifdef Tasmanian_BLAS_HAS_ZGELQ
 void dgelq_(const int *M, const int *N, double *A, const int *lda, double *T, int const *Tsize, double *work, int const *lwork, int *info);
 void dgemlq_(const char *side, const char *trans, const int *M, const int *N, const int *K, double const *A, int const *lda,
              double const *T, int const *Tsize, double C[], int const *ldc, double *work, int const *lwork, int *info);
@@ -92,6 +93,7 @@ void zgelq_(const int *M, const int *N, std::complex<double> *A, const int *lda,
             std::complex<double> *work, int const *lwork, int *info);
 void zgemlq_(const char *side, const char *trans, const int *M, const int *N, const int *K, std::complex<double> const *A, int const *lda,
              std::complex<double> const *T, int const *Tsize, std::complex<double> C[], int const *ldc, std::complex<double> *work, int const *lwork, int *info);
+#endif
 }
 #endif
 
@@ -169,6 +171,7 @@ namespace TasBLAS{
                 throw std::runtime_error(std::string("Lapack zgels_ infer-worksize-stage exited with code: ") + std::to_string(info));
         }
     }
+    #ifdef Tasmanian_BLAS_HAS_ZGELQ
     //! \brief LAPACK dgeql
     inline void geql(int M, int N, double A[], int lda, double T[], int Tsize, double work[], int lwork){
         int info = 0;
@@ -215,6 +218,7 @@ namespace TasBLAS{
                 throw std::runtime_error(std::string("Lapack zgemlq_ infer-worksize-stage exited with code: ") + std::to_string(info));
         }
     }
+    #endif
 
     // higher-level methods building on top of one or more BLAS/LAPACK Methods
 
@@ -258,15 +262,15 @@ namespace TasBLAS{
      * Note that trans must be a capital letter N or T.
      */
     template<typename scalar_type>
-    inline void solveLS(char trans, int N, int M, scalar_type A[], scalar_type b[]){
+    inline void solveLS(char trans, int N, int M, scalar_type A[], scalar_type b[], int nrhs = 1){
         std::vector<scalar_type> work(1);
         int n = (trans == 'N') ? N : M;
         int m = (trans == 'N') ? M : N;
         char effective_trans = (trans == 'N') ? trans : get_trans(static_cast<scalar_type>(0.0));
         conj_matrix(N, M, A); // does nothing in the real case, computes the conjugate in the complex one
-        TasBLAS::gels(effective_trans, n, m, 1, A, n, b, N, work.data(), -1);
+        TasBLAS::gels(effective_trans, n, m, nrhs, A, n, b, N, work.data(), -1);
         work.resize(static_cast<size_t>(std::real(work[0])));
-        TasBLAS::gels(effective_trans, n, m, 1, A, n, b, N, work.data(), static_cast<int>(work.size()));
+        TasBLAS::gels(effective_trans, n, m, nrhs, A, n, b, N, work.data(), static_cast<int>(work.size()));
     }
     /*!
      * \brief Compute the LQ factorization of the matrix \b A.
@@ -302,10 +306,23 @@ namespace TasBLAS{
         if (nrhs == 1){
             TasBLAS::solveLS('T', n, m, A, B);
         }else{
+            #ifdef Tasmanian_BLAS_HAS_ZGELQ
             std::vector<scalar_type> T;
             TasBLAS::factorizeLQ(m, n, A, T);
             TasBLAS::multiplyQ(nrhs, n, m, A, T, B);
             TasBLAS::trsm('R', 'L', 'N', 'N', nrhs, m, 1.0, A, m, B, nrhs);
+            #else
+            std::vector<scalar_type> Bcols(static_cast<size_t>(n) * static_cast<size_t>(nrhs));
+            size_t ns    = static_cast<size_t>(n);
+            size_t nrhss = static_cast<size_t>(nrhs);
+            for(size_t i=0; i<ns; i++)
+                for(size_t j=0; j<nrhss; j++)
+                    Bcols[j * ns + i] = B[i * nrhss + j];
+            TasBLAS::solveLS('T', n, m, A, Bcols.data(), nrhs);
+            for(size_t i=0; i<static_cast<size_t>(m); i++)
+                for(size_t j=0; j<nrhss; j++)
+                    B[i * nrhss + j] = Bcols[j * ns + i];
+            #endif
         }
     }
 }
