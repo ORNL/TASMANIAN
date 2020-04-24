@@ -38,6 +38,7 @@
 #include <cuda.h>
 #include <cublas_v2.h>
 #include <cusparse.h>
+#include <cusolverDn.h>
 #endif
 
 #ifdef Tasmanian_ENABLE_MAGMA
@@ -97,6 +98,10 @@ GpuEngine::~GpuEngine(){
     if (own_cusparse_handle && cusparseHandle != nullptr){
         cusparseDestroy((cusparseHandle_t) cusparseHandle);
         cusparseHandle = nullptr;
+    }
+    if (own_cusolverdn_handle && cusolverDnHandle != nullptr){
+        cusolverDnDestroy((cusolverDnHandle_t) cusolverDnHandle);
+        cusolverDnHandle = nullptr;
     }
     #ifdef Tasmanian_ENABLE_MAGMA
     if (own_magma_queue && magmaCudaQueue != nullptr){
