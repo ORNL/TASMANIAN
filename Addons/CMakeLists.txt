@@ -63,7 +63,7 @@ endif()
 
 # test for non-MPI capabilities
 add_executable(Tasmanian_addontester testAddons.cpp testConstructSurrogate.hpp testLoadUnstructured.hpp)
-add_test(AddonTests addontester)
+add_test(AddonTests addontester -gpuid ${Tasmanian_TESTS_GPU_ID})
 
 list(APPEND Tasmanian_addons_executables "addontester")
 list(APPEND Tasmanian_addons_tests "AddonTests")

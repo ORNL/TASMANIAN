@@ -31,15 +31,27 @@
 #include "testConstructSurrogate.hpp"
 #include "testLoadUnstructured.hpp"
 
-int main(int, char **){
+int main(int argc, char const **argv){
 
     cout << "\n\n";
     cout << "---------------------------------------------------------------------" << endl;
     cout << "          Tasmanian Addons Module: Functionality Test" << endl;
     cout << "---------------------------------------------------------------------" << endl << endl;
 
+    std::deque<std::string> args = stringArgs(argc, argv);
+
     bool pass_all = true;
-    bool verbose = true; // keep in verbose mode for now
+    bool verbose = false;
+    int gpuid = -1;
+
+    while(not args.empty()){
+        if (hasInfo(args.front())) verbose = true;
+        if (hasGpuID(args.front())){
+            args.pop_front();
+            gpuid = getGpuID(args);
+        }
+        args.pop_front();
+    }
 
     bool pass = testConstructSurrogate(verbose);
     cout << std::setw(40) << "Automated construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
@@ -47,11 +59,12 @@ int main(int, char **){
 
     #if defined(Tasmanian_ENABLE_BLAS) || defined(Tasmanian_ENABLE_CUDA)
     pass = true;
-    pass = testLoadUnstructuredL2(verbose);
+    pass = testLoadUnstructuredL2(verbose, gpuid);
     cout << std::setw(40) << "Unstructured construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
     pass_all = pass_all && pass;
     #else
     cout << std::setw(40) << "Unstructured construction" << std::setw(10) << "skipping" << endl;
+    gpuid *= 2; // no op to register the use of gpuid
     #endif
 
     cout << "\n";

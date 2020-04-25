@@ -130,5 +130,30 @@ inline bool hasRandom(std::string const &s){
     return ((s == "random") || (s == "-random") || (s == "rand") || (s == "-rand"));
 }
 
+/*!
+ * \internal
+ * \ingroup TasmanianCLI
+ * \brief Returns \b true if the string contains "gpu", "-gpu", "gpuid", or "-gpuid"
+ *
+ * \endinternal
+ */
+inline bool hasGpuID(std::string const &s){
+    return ((s == "gpu") or (s == "-gpu") or (s == "gpuid") or (s == "-gpuid"));
+}
+
+/*!
+ * \ingroup TasmanianCLI
+ * \brief Returns the specified GPU id (could be -1) or throws
+ */
+inline int getGpuID(std::deque<std::string> const &args){
+    int gpuid = (args.empty()) ? -2 : std::stoi(args.front());
+    if ((gpuid < -1) || (gpuid >= TasmanianSparseGrid::getNumGPUs())){
+        cerr << "ERROR: -gpuid requires a valid gpuid!" << endl;
+        cerr << "      see ./tasgrid -v for a list of detected GPUs." << endl;
+        throw std::invalid_argument("Invalid GPU ID!");
+    }
+    return gpuid;
+}
+
 
 #endif

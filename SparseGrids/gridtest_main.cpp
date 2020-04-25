@@ -56,18 +56,9 @@ int main(int argc, const char ** argv){
         if (test_maybe != test_none) test = test_maybe;
         UnitTests utest_maybe = GridUnitTester::hasTest(args.front());
         if (utest_maybe != unit_none) utest = utest_maybe;
-        if ((args.front() == "-gpuid") || (args.front() == "-gpu")){
+        if (hasGpuID(args.front())){
             args.pop_front();
-            if (args.empty()){
-                cerr << "ERROR: -gpuid required a valid number!" << endl;
-                return 1;
-            }
-            gpuid = std::stoi(args.front());
-            if ((gpuid < -1) || (gpuid >= TasmanianSparseGrid::getNumGPUs())){
-                cerr << "ERROR: -gpuid " << gpuid << " is not a valid gpuid!" << endl;
-                cerr << "      see ./tasgrid -v for a list of detected GPUs." << endl;
-                return 1;
-            }
+            gpuid = getGpuID(args);
         }
         args.pop_front();
     }
