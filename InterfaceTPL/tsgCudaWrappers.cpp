@@ -193,7 +193,7 @@ inline size_t size_geqrf(cusolverDnHandle_t handle, int m, int n, std::complex<d
 //! \brief Wrapper around dgeqrf().
 inline void geqrf(cusolverDnHandle_t handle, int m, int n, double A[], int lda, double tau[]){
     GpuVector<double> workspace( size_geqrf(handle, m, n, A, lda) );
-    GpuVector<int> info(1);
+    GpuVector<int> info(std::vector<int>(1, 0));
     cucheck(cusolverDnDgeqrf(handle, m, n, A, lda, tau, workspace.data(), static_cast<int>(workspace.size()), info.data()), "cusolverDnDgeqrf()");
     if (info.unload()[0] != 0)
         throw std::runtime_error("cusolverDnDgeqrf() returned non-zero status: " + std::to_string(info.unload()[0]));
@@ -201,7 +201,7 @@ inline void geqrf(cusolverDnHandle_t handle, int m, int n, double A[], int lda, 
 //! \brief Wrapper around zgeqrf().
 inline void geqrf(cusolverDnHandle_t handle, int m, int n, std::complex<double> A[], int lda, std::complex<double> tau[]){
     GpuVector<std::complex<double>> workspace( size_geqrf(handle, m, n, A, lda) );
-    GpuVector<int> info(1);
+    GpuVector<int> info(std::vector<int>(1, 0));
     cucheck(cusolverDnZgeqrf(handle, m, n, reinterpret_cast<cuDoubleComplex*>(A), lda,
                              reinterpret_cast<cuDoubleComplex*>(tau), reinterpret_cast<cuDoubleComplex*>(workspace.data()),
                              static_cast<int>(workspace.size()), info.data()), "cusolverDnZgeqrf()");
@@ -231,7 +231,7 @@ inline size_t size_gemqr(cusolverDnHandle_t handle, cublasSideMode_t side, cubla
 //! \brief Wrapper around dormqr().
 inline void gemqr(cusolverDnHandle_t handle, cublasSideMode_t side, cublasOperation_t trans,
                   int m, int n, int k, double const A[], int lda, double const tau[], double C[], int ldc){
-    GpuVector<int> info(1);
+    GpuVector<int> info(std::vector<int>(1, 0));
     GpuVector<double> workspace( size_gemqr(handle, side, trans, m, n, k, A, lda, tau, C, ldc) );
     cucheck(cusolverDnDormqr(handle, side, trans, m, n, k, A, lda, tau, C, ldc,
                              workspace.data(), static_cast<int>(workspace.size()), info.data()), "cusolverDnDormqr()");
@@ -242,7 +242,7 @@ inline void gemqr(cusolverDnHandle_t handle, cublasSideMode_t side, cublasOperat
 inline void gemqr(cusolverDnHandle_t handle, cublasSideMode_t side, cublasOperation_t trans,
                   int m, int n, int k, std::complex<double> const A[], int lda, std::complex<double> const tau[],
                   std::complex<double> C[], int ldc){
-    GpuVector<int> info(1);
+    GpuVector<int> info(std::vector<int>(1, 0));
     GpuVector<std::complex<double>> workspace( size_gemqr(handle, side, trans, m, n, k, A, lda, tau, C, ldc) );
     cucheck(cusolverDnZunmqr(handle, side, trans, m, n, k, reinterpret_cast<cuDoubleComplex const*>(A), lda,
                              reinterpret_cast<cuDoubleComplex const*>(tau), reinterpret_cast<cuDoubleComplex*>(C), ldc,
