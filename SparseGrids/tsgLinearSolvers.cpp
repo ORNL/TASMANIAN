@@ -106,7 +106,7 @@ void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const *acceler
     #ifdef Tasmanian_ENABLE_CUDA
     if (acceleration->on_gpu()){
         acceleration->setDevice();
-        TasGpu::solveLSmulti(*acceleration, n, m, A, nrhs, B);
+        TasGpu::solveLSmulti(acceleration, n, m, A, nrhs, B);
         return;
     }
     #endif

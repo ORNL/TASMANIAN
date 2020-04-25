@@ -32,9 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_WAVELET_CPP
 
 #include "tsgGridWavelet.hpp"
-#ifdef Tasmanian_ENABLE_BLAS
-#include "tsgBlasWrappers.hpp"
-#endif
+#include "tsgTPLWrappers.hpp"
 
 namespace TasGrid{
 
@@ -238,7 +236,7 @@ void GridWavelet::evaluateGpuMixed(const double x[], int num_x, double y[]) cons
     Data2D<double> weights(points.getNumIndexes(), num_x);
     evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
 
-    acceleration->engine->denseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, gpu_cache->coefficients, weights.data(), y);
+    TasGpu::denseMultiplyMixed(acceleration, num_outputs, num_x, points.getNumIndexes(), 1.0, gpu_cache->coefficients, weights.data(), 0.0, y);
 }
 template<typename T> void GridWavelet::evaluateBatchGPUtempl(const T *gpu_x, int cpu_num_x, T gpu_y[]) const{
     if (order != 1) throw std::runtime_error("ERROR: GPU evaluations are available only for wavelet grids with order 1");
@@ -247,7 +245,7 @@ template<typename T> void GridWavelet::evaluateBatchGPUtempl(const T *gpu_x, int
 
     GpuVector<T> gpu_basis(cpu_num_x, num_points);
     evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
-    acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->coefficients, gpu_basis, 0.0, gpu_y);
+    TasGpu::denseMultiply(acceleration, num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->coefficients, gpu_basis, 0.0, gpu_y);
 }
 void GridWavelet::evaluateBatchGPU(const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
     evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);

@@ -32,9 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_LPOLY_CPP
 
 #include "tsgGridLocalPolynomial.hpp"
-#ifdef Tasmanian_ENABLE_BLAS
-#include "tsgBlasWrappers.hpp"
-#endif
+#include "tsgTPLWrappers.hpp"
 
 namespace TasGrid{
 
@@ -282,7 +280,7 @@ void GridLocalPolynomial::evaluateGpuMixed(const double x[], int num_x, double y
     }else{
         walkTree<2>(points, x, sindx, svals, nullptr);
     }
-    acceleration->engine->sparseMultiply(num_outputs, num_x, points.getNumIndexes(), 1.0, gpu_cache->surpluses, spntr, sindx, svals, y);
+    TasGpu::sparseMultiplyMixed(acceleration, num_outputs, num_x, points.getNumIndexes(), 1.0, gpu_cache->surpluses, spntr, sindx, svals, y);
 }
 template<typename T> void GridLocalPolynomial::evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
     if ((order == -1) || (order > 2)) throw std::runtime_error("ERROR: GPU evaluations are availabe only for local polynomial grid with order 0, 1, and 2");
@@ -293,13 +291,13 @@ template<typename T> void GridLocalPolynomial::evaluateBatchGPUtempl(const T gpu
         GpuVector<T> gpu_basis(cpu_num_x, num_points);
         evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
 
-        acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->surpluses, gpu_basis, 0.0, gpu_y);
+        TasGpu::denseMultiply(acceleration, num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->surpluses, gpu_basis, 0.0, gpu_y);
     }else{
         GpuVector<int> gpu_spntr, gpu_sindx;
         GpuVector<T> gpu_svals;
         buildSparseBasisMatrixGPU(gpu_x, cpu_num_x, gpu_spntr, gpu_sindx, gpu_svals);
 
-        acceleration->engine->sparseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->surpluses, gpu_spntr, gpu_sindx, gpu_svals, 0.0, gpu_y);
+        TasGpu::sparseMultiply(acceleration, num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->surpluses, gpu_spntr, gpu_sindx, gpu_svals, gpu_y);
     }
 }
 void GridLocalPolynomial::evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{

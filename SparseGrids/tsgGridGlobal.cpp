@@ -32,9 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_GLOBAL_CPP
 
 #include "tsgGridGlobal.hpp"
-#ifdef Tasmanian_ENABLE_BLAS
-#include "tsgBlasWrappers.hpp"
-#endif
+#include "tsgTPLWrappers.hpp"
 
 namespace TasGrid{
 
@@ -518,7 +516,7 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
             int num_points = points.getNumIndexes();
             Data2D<double> weights(num_points, num_x);
             evaluateHierarchicalFunctions(x, num_x, weights.getStrip(0));
-            acceleration->engine->denseMultiply(num_outputs, num_x, num_points, 1.0, gpu_cache->values, weights.data(), y);
+            TasGpu::denseMultiplyMixed(acceleration, num_outputs, num_x, num_points, 1.0, gpu_cache->values, weights.data(), 0.0, y);
             break;
         }
         #endif
@@ -552,7 +550,7 @@ template<typename T> void GridGlobal::evaluateBatchGPUtempl(T const gpu_x[], int
 
     GpuVector<T> gpu_basis(cpu_num_x, num_points);
     evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
-    acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->values, gpu_basis, 0.0, gpu_y);
+    TasGpu::denseMultiply(acceleration, num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->values, gpu_basis, 0.0, gpu_y);
 }
 void GridGlobal::evaluateBatchGPU(const double *gpu_x, int cpu_num_x, double gpu_y[]) const{
     evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);

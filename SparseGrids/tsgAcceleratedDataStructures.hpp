@@ -221,16 +221,16 @@ private:
  * The class also manages the required handles and queues and holds the context of the active GPU device.
  */
 struct GpuEngine{
-    //! \brief Construct a new engine associated with the given device, default to cuBlas/cuSparse backend, see \b backendMAGMA().
-    GpuEngine(int device) : gpu(device), magma(false), cublasHandle(nullptr), own_cublas_handle(false),
-                            cusparseHandle(nullptr), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false)
+    //! \brief Construct a new engine without any handles.
+    GpuEngine() : cublasHandle(nullptr), own_cublas_handle(false),
+                  cusparseHandle(nullptr), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false)
         #ifdef Tasmanian_ENABLE_MAGMA
         , magmaCudaStream(nullptr), magmaCudaQueue(nullptr), own_magma_queue(false)
         #endif
         {}
-    //! \brief Construct a new engine with the given device and magma mode, use the provided handles for magma/cublas and cusparse.
-    GpuEngine(int device, bool use_magma, void *handle_magma_cublas, void *handle_cusparse)
-        : gpu(device), magma(use_magma), cublasHandle((use_magma) ? nullptr : handle_magma_cublas), own_cublas_handle(false),
+    //! \brief Construct a new engine with the given magma mode and handles.
+    GpuEngine(bool use_magma, void *handle_magma_cublas, void *handle_cusparse)
+        : cublasHandle((use_magma) ? nullptr : handle_magma_cublas), own_cublas_handle(false),
           cusparseHandle(handle_cusparse), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false)
         #ifdef Tasmanian_ENABLE_MAGMA
         , magmaCudaStream(nullptr), magmaCudaQueue((use_magma) ? handle_magma_cublas : nullptr), own_magma_queue(false)
@@ -241,8 +241,6 @@ struct GpuEngine{
 
     //! \brief Move construct the engine.
     GpuEngine(GpuEngine &&other) :
-        gpu(std::exchange(other.gpu, 0)),
-        magma(std::exchange(other.magma, false)),
         cublasHandle(std::exchange(other.cublasHandle, nullptr)),
         own_cublas_handle(std::exchange(other.own_cublas_handle, false)),
         cusparseHandle(std::exchange(other.cusparseHandle, nullptr)),
@@ -259,8 +257,6 @@ struct GpuEngine{
     //! \brief Move assign the engine.
     GpuEngine& operator= (GpuEngine &&other){
         GpuEngine temp(std::move(other));
-        std::swap(gpu, temp.gpu);
-        std::swap(magma, temp.magma);
         std::swap(cublasHandle, temp.cublasHandle);
         std::swap(own_cublas_handle, temp.own_cublas_handle);
         std::swap(cusparseHandle, temp.cusparseHandle);
@@ -274,69 +270,6 @@ struct GpuEngine{
         #endif
         return *this;
     }
-
-    //! \brief Encompassing dense matrix-matrix or matrix-vector multiplication.
-
-    //! The raw operation is \f$ C = \alpha A B + \beta C \f$ where \b A is M by K, \b B is K by N, and \b C is M by N.
-    //! The signature is almost identical to BLAS dgemm() and Nvidia cublasDgemm().
-    //! Handles special cases when some of the dimensions are 1, then matrix-vector functions will be called.
-    //! Automatically calls CUDA or MAGMA libraries at the back-end.
-    //!
-    //! Assumes that all vectors have the correct order.
-    template<typename T>
-    void denseMultiply(int M, int N, int K, typename GpuVector<T>::value_type alpha, const GpuVector<T> &A,
-                       const GpuVector<T> &B, typename GpuVector<T>::value_type beta, T C[]);
-
-    //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
-    template<typename T>
-    void denseMultiply(int M, int N, int K, typename GpuVector<T>::value_type alpha,
-                       const GpuVector<T> &A, T const B[], T C[]){
-        GpuVector<T> gpuB(K, N, B), gpuC(M, N);
-        denseMultiply(M, N, K, alpha, A, gpuB, 0.0, gpuC.data());
-        gpuC.unload(C);
-    }
-
-    //! \brief Encompassing sparse matrix-matrix or matrix-vector multiplication.
-
-    //! The raw operation is \f$ C = \alpha A B + \beta C \f$ where \b A is M by K, \b B is K by N, and \b C is M by N.
-    //! The matrix \b B is stored in compressed column format, transpose version cusparseDcsrmm2().
-    //! Handles special cases when some of the dimensions are 1, then matrix-vector functions will be called.
-    //! Automatically calls CUDA or MAGMA libraries at the back-end.
-    //!
-    //! Assumes that all vectors have the correct size.
-    template<typename T>
-    void sparseMultiply(int M, int N, int K, typename GpuVector<T>::value_type alpha, const GpuVector<T> &A,
-                        const GpuVector<int> &pntr, const GpuVector<int> &indx,
-                        const GpuVector<T> &vals, typename GpuVector<T>::value_type beta, T C[]);
-
-    //! \brief Overload that handles the case when \b A is already loaded in device memory and \b B and the output \b C sit on the CPU, and \b beta is zero.
-    template<typename T>
-    void sparseMultiply(int M, int N, int K, typename GpuVector<T>::value_type alpha, const GpuVector<T> &A,
-                        const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<T> &vals, T C[]){
-        GpuVector<int> gpu_pntr(pntr), gpu_indx(indx);
-        GpuVector<T> gpu_vals(vals), gpu_c(M, N);
-        sparseMultiply(M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, 0.0, gpu_c.data());
-        gpu_c.unload(C);
-    }
-
-    //! \brief Set the active CUDA device
-    void setDevice() const;
-
-    //! \brief Returns \b true if the backend is set to MAGMA, \b false if set to cuBlas/cuSparse.
-    bool backendMAGMA() const{ return magma; }
-
-    //! \brief Set the backend to MAGMA (if \b use_magma is true), or cuBlas/cuSparse (if \b use_magma is false).
-    void setBackendMAGMA(bool use_magma){ magma = use_magma; }
-
-    //! \brief Ensure cublasHandle is valid after this call, creates a new handle or if no handle exists yet.
-    void cuBlasPrepare();
-    //! \brief Ensure cusparseHandle is valid after this call, creates a new handle or if no handle exists yet.
-    void cuSparsePrepare();
-    //! \brief Ensure \b magmaCudaQueue is valid after this call, creates new handles and/or streams if those don't exist yet.
-    void magmaPrepare();
-
-    int gpu; // which GPU to use
-    bool magma; // use cuBlas/cuSparse or MAGMA
 
     void *cublasHandle;
     bool own_cublas_handle; // indicates whether to delete the handle on exit
@@ -595,19 +528,6 @@ namespace AccelerationMeta{
      * \brief Destroys the cuBlas handle, used in unit-testing only.
      */
     void deleteCublasHandle(void *);
-
-    //! \internal
-    //! \brief Takes \b cudaStatus which is of type \b cudaError_t (see Nvidia documentation), throws with message \b info if the status is not success.
-    //! \ingroup TasmanianAcceleration
-    void cudaCheckError(void *cudaStatus, const char *info);
-    //! \internal
-    //! \brief Takes \b cublasStatus which is of type \b cublasStatus_t (see Nvidia documentation), throws with message \b info if the status is not success.
-    //! \ingroup TasmanianAcceleration
-    void cublasCheckError(void *cublasStatus, const char *info);
-    //! \internal
-    //! \brief Takes \b cusparseStatus which is of type \b cusparseStatus_t (see Nvidia documentation), throws with message \b info if the status is not success.
-    //! \ingroup TasmanianAcceleration
-    void cusparseCheckError(void *cusparseStatus, const char *info);
     #endif
 }
 
@@ -711,7 +631,7 @@ struct AccelerationContext{
 
         if (AccelerationMeta::isAccTypeGPU(mode)){
             // if the new mode is GPU-based, reset the engine and the handles (if already created)
-            engine = std::make_unique<GpuEngine>(device, (mode == accel_gpu_magma), backend_handle, cusparse_handle);
+            engine = std::make_unique<GpuEngine>((mode == accel_gpu_magma), backend_handle, cusparse_handle);
         }else{
             engine.reset();
         }
