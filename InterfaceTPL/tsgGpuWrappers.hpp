@@ -28,42 +28,36 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#include "testConstructSurrogate.hpp"
-#include "testLoadUnstructured.hpp"
+#ifndef __TASMANIAN_GPU_WRAPPERS_HPP
+#define __TASMANIAN_GPU_WRAPPERS_HPP
 
-int main(int, char **){
+/*!
+ * \file tsgGpuWrappers.hpp
+ * \brief Wrappers to GPU functionality.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianTPLWrappers
+ *
+ * The header contains definitions of various operations that can be performed
+ * on the GPU devices with the corresponding GPU backend.
+ */
 
-    cout << "\n\n";
-    cout << "---------------------------------------------------------------------" << endl;
-    cout << "          Tasmanian Addons Module: Functionality Test" << endl;
-    cout << "---------------------------------------------------------------------" << endl << endl;
+#include "tsgAcceleratedDataStructures.hpp"
 
-    bool pass_all = true;
-    bool verbose = true; // keep in verbose mode for now
+namespace TasGrid{
+namespace TasGpu{
 
-    bool pass = testConstructSurrogate(verbose);
-    cout << std::setw(40) << "Automated construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
-    pass_all = pass_all && pass;
+template<typename scalar_type>
+void solveLSmultiGPU(GpuEngine *engine, int n, int m, scalar_type A[], int nrhs, scalar_type B[]);
 
-    #if defined(Tasmanian_ENABLE_BLAS) || defined(Tasmanian_ENABLE_CUDA)
-    pass = true;
-    pass = testLoadUnstructuredL2(verbose);
-    cout << std::setw(40) << "Unstructured construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
-    pass_all = pass_all && pass;
-    #else
-    cout << std::setw(40) << "Unstructured construction" << std::setw(10) << "skipping" << endl;
-    #endif
-
-    cout << "\n";
-    if (pass){
-        cout << "---------------------------------------------------------------------" << endl;
-        cout << "               All Tests Completed Successfully" << endl;
-        cout << "---------------------------------------------------------------------" << endl << endl;
-    }else{
-        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl;
-        cout << "         Some Tests Have Failed" << endl;
-        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl << endl;
-    }
-
-    return ((pass_all) ? 0 : 1);
+template<typename scalar_type>
+void solveLSmulti(GpuEngine *engine, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
+    GpuVector<scalar_type> gpuA(m, n, A);
+    GpuVector<scalar_type> gpuB(nrhs, n, B);
+    solveLSmultiGPU(engine, n, m, gpuA.data(), nrhs, gpuB.data());
+    gpuB.unload(B);
 }
+
+}
+}
+
+#endif

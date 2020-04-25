@@ -28,42 +28,25 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#include "testConstructSurrogate.hpp"
-#include "testLoadUnstructured.hpp"
+#ifndef __TASMANIAN_TPL_WRAPPERS_HPP
+#define __TASMANIAN_TPL_WRAPPERS_HPP
 
-int main(int, char **){
+/*!
+ * \file tsgTPLWrappers.hpp
+ * \brief Wrappers to the enabled TPL functionality.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianTPLWrappers
+ *
+ * The header that includes all TPL headers defined by TasmanianConfig.hpp.
+ */
 
-    cout << "\n\n";
-    cout << "---------------------------------------------------------------------" << endl;
-    cout << "          Tasmanian Addons Module: Functionality Test" << endl;
-    cout << "---------------------------------------------------------------------" << endl << endl;
+#include "TasmanianConfig.hpp"
+#ifdef Tasmanian_ENABLE_BLAS
+#include "tsgBlasWrappers.hpp"
+#endif
+#ifdef Tasmanian_ENABLE_CUDA
+#include "tsgGpuWrappers.hpp"
+#endif
 
-    bool pass_all = true;
-    bool verbose = true; // keep in verbose mode for now
 
-    bool pass = testConstructSurrogate(verbose);
-    cout << std::setw(40) << "Automated construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
-    pass_all = pass_all && pass;
-
-    #if defined(Tasmanian_ENABLE_BLAS) || defined(Tasmanian_ENABLE_CUDA)
-    pass = true;
-    pass = testLoadUnstructuredL2(verbose);
-    cout << std::setw(40) << "Unstructured construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
-    pass_all = pass_all && pass;
-    #else
-    cout << std::setw(40) << "Unstructured construction" << std::setw(10) << "skipping" << endl;
-    #endif
-
-    cout << "\n";
-    if (pass){
-        cout << "---------------------------------------------------------------------" << endl;
-        cout << "               All Tests Completed Successfully" << endl;
-        cout << "---------------------------------------------------------------------" << endl << endl;
-    }else{
-        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl;
-        cout << "         Some Tests Have Failed" << endl;
-        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl << endl;
-    }
-
-    return ((pass_all) ? 0 : 1);
-}
+#endif

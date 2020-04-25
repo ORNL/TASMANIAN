@@ -78,8 +78,8 @@ namespace TasGrid{
 template<typename scalar_type>
 inline void loadUnstructuredDataL2tmpl(double const data_points[], int num_data, double const model_values[],
                                    double tolerance, TasmanianSparseGrid &grid){
-    #ifndef Tasmanian_ENABLE_BLAS
-    throw std::runtime_error("The loadUnstructuredDataL2() method requires Tasmanian_ENABLE_BLAS=ON in CMake!");
+    #if !defined(Tasmanian_ENABLE_BLAS) && !defined(Tasmanian_ENABLE_CUDA)
+    throw std::runtime_error("The loadUnstructuredDataL2() method requires Tasmanian_ENABLE_BLAS=ON or Tasmanian_ENABLE_CUDA=ON in CMake!");
     #endif
     if (grid.empty()) throw std::runtime_error("Cannot use loadUnstructuredDataL2() with an empty grid.");
     if (grid.getNumNeeded() != 0)
@@ -100,8 +100,7 @@ inline void loadUnstructuredDataL2tmpl(double const data_points[], int num_data,
     for(size_t i=0; i<Utils::size_mult(num_data, grid.getNumOutputs()); i++)
         *icoeff++ = model_values[i];
 
-    AccelerationContext acc;
-    TasmanianDenseSolver::solvesLeastSquares(&acc, num_equations, grid.getNumPoints(),
+    TasmanianDenseSolver::solvesLeastSquares(grid.getAccelerationContext(), num_equations, grid.getNumPoints(),
                                              basis_matrix.data(), grid.getNumOutputs(), coefficients.data());
 
     if (std::is_same<scalar_type, std::complex<double>>::value){

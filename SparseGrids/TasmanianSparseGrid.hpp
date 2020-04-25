@@ -1868,6 +1868,13 @@ public:
      * \endinternal
      */
     template<class T> inline T const* get() const{ return dynamic_cast<T const*>(base.get()); }
+    /*!
+     * \internal
+     * \brief Allows the addon methods to use the acceleration context.
+     *
+     * \endinternal
+     */
+    AccelerationContext const* getAccelerationContext() const{ return acceleration.get(); }
     #endif // __TASMANIAN_DOXYGEN_SKIP_INTERNAL
 
 protected:
