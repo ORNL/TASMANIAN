@@ -28,61 +28,25 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#include "tasgridExternalTests.hpp"
-#include "tasgridUnitTests.hpp"
+#ifndef __TASMANIAN_TPL_WRAPPERS_HPP
+#define __TASMANIAN_TPL_WRAPPERS_HPP
 
-int main(int argc, const char ** argv){
+/*!
+ * \file tsgTPLWrappers.hpp
+ * \brief Wrappers to the enabled TPL functionality.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianTPLWrappers
+ *
+ * The header that includes all TPL headers defined by TasmanianConfig.hpp.
+ */
 
-    //cout << " Phruuuuphrrr " << endl; // this is the sound that the Tasmanian devil makes
+#include "TasmanianConfig.hpp"
+#ifdef Tasmanian_ENABLE_BLAS
+#include "tsgBlasWrappers.hpp"
+#endif
+#ifdef Tasmanian_ENABLE_CUDA
+#include "tsgGpuWrappers.hpp"
+#endif
 
-    std::deque<std::string> args = stringArgs(argc, argv);
 
-    // testing
-    bool debug = false;
-    bool debugII = false;
-    bool verbose = false;
-    bool seed_reset = false;
-
-    TestList test = test_all;
-    UnitTests utest = unit_none;
-
-    int gpuid = -1;
-    while (!args.empty()){
-        if (args.front() == "debug") debug = true;
-        if (args.front() == "db") debugII = true;
-        if (hasInfo(args.front())) verbose = true;
-        if (hasRandom(args.front())) seed_reset = true;
-        TestList test_maybe = ExternalTester::hasTest(args.front());
-        if (test_maybe != test_none) test = test_maybe;
-        UnitTests utest_maybe = GridUnitTester::hasTest(args.front());
-        if (utest_maybe != unit_none) utest = utest_maybe;
-        if (hasGpuID(args.front())){
-            args.pop_front();
-            gpuid = getGpuID(args);
-        }
-        args.pop_front();
-    }
-
-    ExternalTester tester(1000);
-    GridUnitTester utester;
-    tester.setGPUID(gpuid);
-    bool pass = true;
-    if (debug){
-        tester.debugTest();
-    }else if (debugII){
-        tester.debugTestII();
-    }else{
-        if (verbose) tester.setVerbose(true);
-        if (verbose) utester.setVerbose(true);
-
-        if (seed_reset) tester.resetRandomSeed();
-
-        if (utest == unit_none){
-            if (test == test_all) pass = pass && utester.Test(unit_all);
-            pass = pass && tester.Test(test);
-        }else{
-            pass = pass && utester.Test(utest);
-        }
-    }
-    return (pass) ? 0 : 1;
-}
+#endif

@@ -32,9 +32,7 @@
 #define __TASMANIAN_LINEAR_SOLVERS_CPP
 
 #include "tsgLinearSolvers.hpp"
-#ifdef Tasmanian_ENABLE_BLAS
-#include "tsgBlasWrappers.hpp"
-#endif
+#include "tsgTPLWrappers.hpp"
 
 namespace TasGrid{
 
@@ -102,10 +100,23 @@ void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const*, int n, 
     solveLeastSquares(n, m, A, b, x);
 }
 
-#ifdef Tasmanian_ENABLE_BLAS
+#if defined(Tasmanian_ENABLE_BLAS) || defined(Tasmanian_ENABLE_CUDA)
 template<typename scalar_type>
-void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const*, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
-    TasBLAS::solveLSmulti(n, m, A, nrhs, B);
+void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
+    #ifdef Tasmanian_ENABLE_CUDA
+    if (acceleration->on_gpu()){
+        acceleration->setDevice();
+        TasGpu::solveLSmulti(*acceleration, n, m, A, nrhs, B);
+        return;
+    }
+    #endif
+    #ifdef Tasmanian_ENABLE_BLAS
+    if (acceleration->blasCompatible()){
+        TasBLAS::solveLSmulti(n, m, A, nrhs, B);
+        return;
+    }
+    #endif
+    throw std::runtime_error("Dense least-squares solve attempted without BLAS or CUDA acceleration enabled.");
 }
 #else
 template<typename scalar_type>

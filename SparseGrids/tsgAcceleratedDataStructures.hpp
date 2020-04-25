@@ -220,10 +220,10 @@ private:
  *
  * The class also manages the required handles and queues and holds the context of the active GPU device.
  */
-class GpuEngine{
-public:
+struct GpuEngine{
     //! \brief Construct a new engine associated with the given device, default to cuBlas/cuSparse backend, see \b backendMAGMA().
-    GpuEngine(int device) : gpu(device), magma(false), cublasHandle(nullptr), own_cublas_handle(false), cusparseHandle(nullptr), own_cusparse_handle(false)
+    GpuEngine(int device) : gpu(device), magma(false), cublasHandle(nullptr), own_cublas_handle(false),
+                            cusparseHandle(nullptr), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false)
         #ifdef Tasmanian_ENABLE_MAGMA
         , magmaCudaStream(nullptr), magmaCudaQueue(nullptr), own_magma_queue(false)
         #endif
@@ -231,7 +231,7 @@ public:
     //! \brief Construct a new engine with the given device and magma mode, use the provided handles for magma/cublas and cusparse.
     GpuEngine(int device, bool use_magma, void *handle_magma_cublas, void *handle_cusparse)
         : gpu(device), magma(use_magma), cublasHandle((use_magma) ? nullptr : handle_magma_cublas), own_cublas_handle(false),
-          cusparseHandle(handle_cusparse), own_cusparse_handle(false)
+          cusparseHandle(handle_cusparse), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false)
         #ifdef Tasmanian_ENABLE_MAGMA
         , magmaCudaStream(nullptr), magmaCudaQueue((use_magma) ? handle_magma_cublas : nullptr), own_magma_queue(false)
         #endif
@@ -246,7 +246,9 @@ public:
         cublasHandle(std::exchange(other.cublasHandle, nullptr)),
         own_cublas_handle(std::exchange(other.own_cublas_handle, false)),
         cusparseHandle(std::exchange(other.cusparseHandle, nullptr)),
-        own_cusparse_handle(std::exchange(other.own_cusparse_handle, false))
+        own_cusparse_handle(std::exchange(other.own_cusparse_handle, false)),
+        cusolverDnHandle(std::exchange(other.cusolverDnHandle, nullptr)),
+        own_cusolverdn_handle(std::exchange(other.own_cusolverdn_handle, false))
         #ifdef Tasmanian_ENABLE_MAGMA
         , magmaCudaStream(std::exchange(other.magmaCudaStream, nullptr)),
         magmaCudaQueue(std::exchange(other.magmaCudaQueue, nullptr)),
@@ -263,6 +265,8 @@ public:
         std::swap(own_cublas_handle, temp.own_cublas_handle);
         std::swap(cusparseHandle, temp.cusparseHandle);
         std::swap(own_cusparse_handle, temp.own_cusparse_handle);
+        std::swap(cusolverDnHandle, temp.cusolverDnHandle);
+        std::swap(own_cusolverdn_handle, temp.own_cusolverdn_handle);
         #ifdef Tasmanian_ENABLE_MAGMA
         std::swap(magmaCudaStream, temp.magmaCudaStream);
         std::swap(magmaCudaQueue, temp.magmaCudaQueue);
@@ -324,7 +328,6 @@ public:
     //! \brief Set the backend to MAGMA (if \b use_magma is true), or cuBlas/cuSparse (if \b use_magma is false).
     void setBackendMAGMA(bool use_magma){ magma = use_magma; }
 
-protected:
     //! \brief Ensure cublasHandle is valid after this call, creates a new handle or if no handle exists yet.
     void cuBlasPrepare();
     //! \brief Ensure cusparseHandle is valid after this call, creates a new handle or if no handle exists yet.
@@ -332,7 +335,6 @@ protected:
     //! \brief Ensure \b magmaCudaQueue is valid after this call, creates new handles and/or streams if those don't exist yet.
     void magmaPrepare();
 
-private:
     int gpu; // which GPU to use
     bool magma; // use cuBlas/cuSparse or MAGMA
 
@@ -340,6 +342,8 @@ private:
     bool own_cublas_handle; // indicates whether to delete the handle on exit
     void *cusparseHandle;
     bool own_cusparse_handle; // indicates whether to delete the handle on exit
+    void *cusolverDnHandle;
+    bool own_cusolverdn_handle;
 
     #ifdef Tasmanian_ENABLE_MAGMA
     void *magmaCudaStream;

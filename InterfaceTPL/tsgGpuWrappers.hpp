@@ -28,61 +28,36 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#include "tasgridExternalTests.hpp"
-#include "tasgridUnitTests.hpp"
+#ifndef __TASMANIAN_GPU_WRAPPERS_HPP
+#define __TASMANIAN_GPU_WRAPPERS_HPP
 
-int main(int argc, const char ** argv){
+/*!
+ * \file tsgGpuWrappers.hpp
+ * \brief Wrappers to GPU functionality.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianTPLWrappers
+ *
+ * The header contains definitions of various operations that can be performed
+ * on the GPU devices with the corresponding GPU backend.
+ */
 
-    //cout << " Phruuuuphrrr " << endl; // this is the sound that the Tasmanian devil makes
+#include "tsgAcceleratedDataStructures.hpp"
 
-    std::deque<std::string> args = stringArgs(argc, argv);
+namespace TasGrid{
+namespace TasGpu{
 
-    // testing
-    bool debug = false;
-    bool debugII = false;
-    bool verbose = false;
-    bool seed_reset = false;
+template<typename scalar_type>
+void solveLSmultiGPU(GpuEngine *engine, int n, int m, scalar_type A[], int nrhs, scalar_type B[]);
 
-    TestList test = test_all;
-    UnitTests utest = unit_none;
-
-    int gpuid = -1;
-    while (!args.empty()){
-        if (args.front() == "debug") debug = true;
-        if (args.front() == "db") debugII = true;
-        if (hasInfo(args.front())) verbose = true;
-        if (hasRandom(args.front())) seed_reset = true;
-        TestList test_maybe = ExternalTester::hasTest(args.front());
-        if (test_maybe != test_none) test = test_maybe;
-        UnitTests utest_maybe = GridUnitTester::hasTest(args.front());
-        if (utest_maybe != unit_none) utest = utest_maybe;
-        if (hasGpuID(args.front())){
-            args.pop_front();
-            gpuid = getGpuID(args);
-        }
-        args.pop_front();
-    }
-
-    ExternalTester tester(1000);
-    GridUnitTester utester;
-    tester.setGPUID(gpuid);
-    bool pass = true;
-    if (debug){
-        tester.debugTest();
-    }else if (debugII){
-        tester.debugTestII();
-    }else{
-        if (verbose) tester.setVerbose(true);
-        if (verbose) utester.setVerbose(true);
-
-        if (seed_reset) tester.resetRandomSeed();
-
-        if (utest == unit_none){
-            if (test == test_all) pass = pass && utester.Test(unit_all);
-            pass = pass && tester.Test(test);
-        }else{
-            pass = pass && utester.Test(utest);
-        }
-    }
-    return (pass) ? 0 : 1;
+template<typename scalar_type>
+void solveLSmulti(GpuEngine *engine, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
+    GpuVector<scalar_type> gpuA(m, n, A);
+    GpuVector<scalar_type> gpuB(nrhs, n, B);
+    solveLSmultiGPU(engine, n, m, gpuA.data(), nrhs, gpuB.data());
+    gpuB.unload(B);
 }
+
+}
+}
+
+#endif

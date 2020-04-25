@@ -22,7 +22,7 @@ OPTF = -O3 -fno-f2c -mtune=native $(COMPILE_OPTIONS) -fPIC
 OPTLFF = $(OPTF)
 
 # Default common libraries
-CommonIADD = -I../InterfaceTPL/
+CommonIADD = -I../InterfaceTPL/ -I./
 CommonLADD =
 CommonLIBS = -lm
 

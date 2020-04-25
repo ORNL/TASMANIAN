@@ -31,6 +31,8 @@
 #ifndef __TASMANIAN_SPARSE_GRID_ACCELERATED_DATA_STRUCTURES_CPP
 #define __TASMANIAN_SPARSE_GRID_ACCELERATED_DATA_STRUCTURES_CPP
 
+#include <complex>
+
 #include "tsgAcceleratedDataStructures.hpp"
 
 #ifdef Tasmanian_ENABLE_CUDA
@@ -38,6 +40,7 @@
 #include <cuda.h>
 #include <cublas_v2.h>
 #include <cusparse.h>
+#include <cusolverDn.h>
 #endif
 
 #ifdef Tasmanian_ENABLE_MAGMA
@@ -79,6 +82,11 @@ template void GpuVector<double>::clear();
 template void GpuVector<double>::load(size_t, const double*);
 template void GpuVector<double>::unload(double*) const;
 
+template void GpuVector<std::complex<double>>::resize(size_t);
+template void GpuVector<std::complex<double>>::clear();
+template void GpuVector<std::complex<double>>::load(size_t, const std::complex<double>*);
+template void GpuVector<std::complex<double>>::unload(std::complex<double>*) const;
+
 template void GpuVector<float>::resize(size_t);
 template void GpuVector<float>::clear();
 template void GpuVector<float>::load(size_t, const float*);
@@ -97,6 +105,10 @@ GpuEngine::~GpuEngine(){
     if (own_cusparse_handle && cusparseHandle != nullptr){
         cusparseDestroy((cusparseHandle_t) cusparseHandle);
         cusparseHandle = nullptr;
+    }
+    if (own_cusolverdn_handle && cusolverDnHandle != nullptr){
+        cusolverDnDestroy((cusolverDnHandle_t) cusolverDnHandle);
+        cusolverDnHandle = nullptr;
     }
     #ifdef Tasmanian_ENABLE_MAGMA
     if (own_magma_queue && magmaCudaQueue != nullptr){

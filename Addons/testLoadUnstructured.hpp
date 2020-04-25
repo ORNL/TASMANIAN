@@ -117,7 +117,7 @@ void testExactL2(TasmanianSparseGrid &&grid, CallableModel model){
 /*!
  * \brief Prepare a list of tests.
  */
-std::vector<std::function<void(void)>> makeTests(){
+std::vector<std::function<void(void)>> makeTests(TypeAcceleration acc, int gpu_id){
     auto model31 = [](double const x[], double y[], int)->
                    void{
                        y[0] = std::exp(-(x[0] - 0.1) * (x[1] - 0.3) * (x[1] - 0.3) * (x[2] + 0.4));
@@ -128,51 +128,58 @@ std::vector<std::function<void(void)>> makeTests(){
                        y[1] = std::exp(-(x[0] - 0.1) * (x[1] - 0.2) * (x[2] + 0.3));
                        y[2] = std::exp(-(x[0] + 0.3) * (x[1] + 0.1) * (x[2] - 0.1));
                    };
+    auto set_acc = [=](TasmanianSparseGrid &&grid)->
+                   TasmanianSparseGrid{
+                       grid.enableAcceleration(acc, gpu_id);
+                       return std::move(grid);
+                   };
     return std::vector<std::function<void(void)>>{
         [=](void)->void{
-            testExactL2(makeGlobalGrid(3, 1, 4, type_level, rule_fejer2), model31);
+            testExactL2(set_acc(makeGlobalGrid(3, 1, 4, type_level, rule_fejer2)), model31);
         },
         [=](void)->void{
-            testExactL2(makeGlobalGrid(3, 1, 7, type_level, rule_chebyshev), model31);
+            testExactL2(set_acc(makeGlobalGrid(3, 1, 7, type_level, rule_chebyshev)), model31);
         },
         [=](void)->void{
-            testExactL2(makeSequenceGrid(3, 1, 12, type_ipcurved, rule_mindelta), model31);
+            testExactL2(set_acc(makeSequenceGrid(3, 1, 12, type_ipcurved, rule_mindelta)), model31);
         },
         [=](void)->void{
-            testExactL2(makeLocalPolynomialGrid(3, 1, 5, 2), model31);
+            testExactL2(set_acc(makeLocalPolynomialGrid(3, 1, 5, 2)), model31);
         },
         [=](void)->void{
-            testExactL2(makeWaveletGrid(3, 1, 3, 1), model31);
+            testExactL2(set_acc(makeWaveletGrid(3, 1, 3, 1)), model31);
         },
         [=](void)->void{
-            testExactL2(makeFourierGrid(3, 1, 6, type_iphyperbolic), model31);
+            testExactL2(set_acc(makeFourierGrid(3, 1, 6, type_iphyperbolic)), model31);
         },
         [=](void)->void{
-            testExactL2(makeGlobalGrid(3, 3, 6, type_level, rule_rlejaodd), model33);
+            testExactL2(set_acc(makeGlobalGrid(3, 3, 6, type_level, rule_rlejaodd)), model33);
         },
         [=](void)->void{
-            testExactL2(makeGlobalGrid(3, 3, 7, type_level, rule_chebyshev), model33);
+            testExactL2(set_acc(makeGlobalGrid(3, 3, 7, type_level, rule_chebyshev)), model33);
         },
         [=](void)->void{
-            testExactL2(makeSequenceGrid(3, 3, 6, type_ipcurved, rule_rlejashifted), model33);
+            testExactL2(set_acc(makeSequenceGrid(3, 3, 6, type_ipcurved, rule_rlejashifted)), model33);
         },
         [=](void)->void{
-            testExactL2(makeLocalPolynomialGrid(3, 3, 4, 3), model33);
+            testExactL2(set_acc(makeLocalPolynomialGrid(3, 3, 4, 3)), model33);
         },
         [=](void)->void{
-            testExactL2(makeWaveletGrid(3, 3, 1, 3), model33);
+            testExactL2(set_acc(makeWaveletGrid(3, 3, 1, 3)), model33);
         },
         [=](void)->void{
-            testExactL2(makeFourierGrid(3, 3, 7, type_iphyperbolic), model33);
+            testExactL2(set_acc(makeFourierGrid(3, 3, 7, type_iphyperbolic)), model33);
         },
     };
 }
 
-
-bool testLoadUnstructuredL2(bool){
+/*!
+ * \brief Execute the tests and returns the result.
+ */
+bool runTests(TypeAcceleration acc, int gpu_id){
     bool pass = true;
 
-    auto tests = makeTests();
+    auto tests = makeTests(acc, gpu_id);
     for(auto &t : tests){
         try{
             t(); // run the test
@@ -180,6 +187,33 @@ bool testLoadUnstructuredL2(bool){
             pass = false;
         }
     }
+
+    return pass;
+}
+
+#ifdef Tasmanian_ENABLE_CUDA
+bool testLoadUnstructuredL2(bool verbose, int gpu_id){
+#else
+bool testLoadUnstructuredL2(bool verbose, int){
+#endif
+    bool pass = true;
+
+    #ifdef Tasmanian_ENABLE_BLAS
+    bool blas_pass = runTests(accel_cpu_blas, 0);
+    if (verbose and not blas_pass)
+        cout << "Failed testLoadUnstructuredL2() blas case.\n";
+    pass = pass and blas_pass;
+    #endif
+    #ifdef Tasmanian_ENABLE_CUDA
+    int gpu_begin = (gpu_id == -1) ? 0 : gpu_id;
+    int gpu_end   = (gpu_id == -1) ? TasmanianSparseGrid::getNumGPUs() : gpu_id + 1;
+    for(int gpu = gpu_begin; gpu < gpu_end; gpu++){
+        bool cuda_pass = runTests(accel_gpu_cuda, gpu);
+        if (verbose and not cuda_pass)
+            cout << "Failed testLoadUnstructuredL2() cuda case on device " << gpu << "\n";
+        pass = pass and cuda_pass;
+    }
+    #endif
 
     return pass;
 }
