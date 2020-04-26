@@ -32,9 +32,7 @@
 #define __TASMANIAN_SPARSE_GRID_FOURIER_CPP
 
 #include "tsgGridFourier.hpp"
-#ifdef Tasmanian_ENABLE_BLAS
-#include "tsgBlasWrappers.hpp"
-#endif
+#include "tsgTPLWrappers.hpp"
 
 namespace TasGrid{
 
@@ -448,8 +446,8 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
 
             int num_points = points.getNumIndexes();
             GpuVector<double> gpu_real(wreal.begin(), wreal.end()), gpu_imag(wimag.begin(), wimag.end()), gpu_y(num_outputs, num_x);
-            acceleration->engine->denseMultiply(num_outputs, num_x, num_points,  1.0, gpu_cache->real, gpu_real, 0.0, gpu_y.data());
-            acceleration->engine->denseMultiply(num_outputs, num_x, num_points, -1.0, gpu_cache->imag, gpu_imag, 1.0, gpu_y.data());
+            TasGpu::denseMultiply(acceleration, num_outputs, num_x, num_points,  1.0, gpu_cache->real, gpu_real, 0.0, gpu_y.data());
+            TasGpu::denseMultiply(acceleration, num_outputs, num_x, num_points, -1.0, gpu_cache->imag, gpu_imag, 1.0, gpu_y.data());
             gpu_y.unload(y);
             break;
         }
@@ -491,8 +489,8 @@ template<typename T> void GridFourier::evaluateBatchGPUtempl(const T gpu_x[], in
 
     int num_points = points.getNumIndexes();
     auto& ccache = getGpuCache<T>();
-    acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points,  1.0, ccache->real, gpu_real, 0.0, gpu_y);
-    acceleration->engine->denseMultiply(num_outputs, cpu_num_x, num_points, -1.0, ccache->imag, gpu_imag, 1.0, gpu_y);
+    TasGpu::denseMultiply(acceleration, num_outputs, cpu_num_x, num_points,  1.0, ccache->real, gpu_real, 0.0, gpu_y);
+    TasGpu::denseMultiply(acceleration, num_outputs, cpu_num_x, num_points, -1.0, ccache->imag, gpu_imag, 1.0, gpu_y);
 }
 void GridFourier::evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const{
     evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);

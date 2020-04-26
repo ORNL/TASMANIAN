@@ -1859,7 +1859,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
         if (grid.getAccelerationType() == accel_gpu_cuda && grid.getAccelerationType() != accel_gpu_hip)
             throw std::runtime_error("failed to acknowledge the accel_gpu_cuda - accel_gpu_hip alias");
 
-        //grid->printStats();
+        //grid.printStats();
         //cout << "Testing Batch evaluations" << endl;
 
         if (!testAccEval<double, GridMethodBatch>(x, baseline_y, num_x, Maths::num_tol, grid, "accelerated batch<double>"))

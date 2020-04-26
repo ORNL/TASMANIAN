@@ -214,6 +214,10 @@ bool testLoadUnstructuredL2(bool verbose, int){
         pass = pass and cuda_pass;
     }
     #endif
+    #if !defined(Tasmanian_ENABLE_BLAS) && !defined(Tasmanian_ENABLE_CUDA)
+    if (verbose)
+        cout << "testLoadUnstructuredL2() requires BLAS or CUDA\n";
+    #endif
 
     return pass;
 }

@@ -14,7 +14,7 @@ if (Tasmanian_ENABLE_CUDA)
     # CMake does not automatically add the CUDA include path, any source file that adds <cuda.h> directly or transitively
     # must be labeled as "CUDA" source files and compiled with the nvcc compiler.
     # Beware that the nvcc compiler seems to struggle with some STL algorithms, transitive inclusion of <cuda.h> must be minimized.
-    set_source_files_properties(${Tasmanian_source_libsparsegrid_cuda} tsgAcceleratedDataStructures.cpp PROPERTIES LANGUAGE CUDA)
+    set_source_files_properties(${Tasmanian_source_libsparsegrid_cuda} PROPERTIES LANGUAGE CUDA)
     add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid} ${Tasmanian_source_libsparsegrid_cuda})
     set_property(TARGET ${Tasmanian_libtsg_target_name} PROPERTY CUDA_STANDARD 14)
     target_link_libraries(${Tasmanian_libtsg_target_name} ${Tasmanian_cudamathlibs}) # add the math libraries
