@@ -1951,7 +1951,6 @@ protected:
      * \endinternal
      */
     template<typename FloatType> const FloatType* formCanonicalPoints(const FloatType *x, Data2D<FloatType> &x_temp, int num_x) const;
-    #ifdef Tasmanian_ENABLE_CUDA
     /*!
      * \internal
      * \brief Returns a CUDA raw-array with the canonical points, linear transform only.
@@ -1962,7 +1961,6 @@ protected:
      */
     template<typename T>
     const T* formCanonicalPointsGPU(const T *gpu_x, int num_x, GpuVector<T> &gpu_x_temp) const;
-    #endif
     /*!
      * \internal
      * \brief Applies both linear and non-linear transformation to the canonical points.
@@ -2020,9 +2018,7 @@ private:
 
     bool using_dynamic_construction;
 
-    #ifdef Tasmanian_ENABLE_CUDA
     mutable std::unique_ptr<AccelerationDomainTransform> acc_domain;
-    #endif
 };
 
 /*!

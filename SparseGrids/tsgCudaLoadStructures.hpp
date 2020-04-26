@@ -35,7 +35,6 @@
 
 namespace TasGrid{
 
-#ifdef Tasmanian_ENABLE_CUDA
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 
@@ -149,8 +148,6 @@ struct CudaWaveletData{
     }
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP
-
-#endif
 
 }
 

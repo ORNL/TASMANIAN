@@ -78,7 +78,6 @@
 
 namespace TasGrid{
 
-#ifdef Tasmanian_ENABLE_CUDA
 /*!
  * \ingroup TasmanianAcceleration
  * \brief Template class that wraps around a single GPU array, providing functionality that mimics std::vector.
@@ -441,7 +440,6 @@ namespace TasGpu{
     // converts a sparse matrix to a dense representation (all data sits on the gpu and is pre-allocated)
     #endif
 }
-#endif
 
 //! \internal
 //! \brief Common methods for manipulating acceleration options and reading CUDA environment properties.
@@ -498,7 +496,6 @@ namespace AccelerationMeta{
     //! The fallback logic is documented with the enumerated type \b TasGrid::TypeAcceleration.
     TypeAcceleration getAvailableFallback(TypeAcceleration accel);
 
-    #ifdef Tasmanian_ENABLE_CUDA
     //! \internal
     //! \brief Return the number of visible CUDA devices, uses cudaGetDeviceCount() (see the Nvidia documentation).
     //! \ingroup TasmanianAcceleration
@@ -548,7 +545,6 @@ namespace AccelerationMeta{
      * \brief Destroys the cuBlas handle, used in unit-testing only.
      */
     void deleteCublasHandle(void *);
-    #endif
 }
 
 /*!
@@ -598,10 +594,9 @@ struct AccelerationContext{
     //! \brief If using a GPU acceleration mode, holds the active device.
     int device;
 
-    #ifdef Tasmanian_ENABLE_CUDA
     //! \brief Holds the context to the GPU TPL handles, e.g., MAGMA queue.
     mutable std::unique_ptr<GpuEngine> engine;
-    #endif
+
     #ifdef Tasmanian_ENABLE_BLAS
     //! \brief Creates a default context, the device id is set to 0 and acceleration is BLAS (if available) or none.
     AccelerationContext() : mode(accel_cpu_blas), algorithm_select(algorithm_autoselect), device(0){}
@@ -635,7 +630,6 @@ struct AccelerationContext{
         #endif
     }
 
-    #ifdef Tasmanian_ENABLE_CUDA // GPU related methods with fallback options
     //! \brief Accepts parameters directly from TasmanianSparseGrid::enableAcceleration()
     ChangeType enable(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){
         // get the effective new acceleration mode (use the fallback if acc is not enabled)
@@ -671,15 +665,6 @@ struct AccelerationContext{
     //! \brief Custom convert to \b GpuEngine
     operator GpuEngine* () const{ return engine.get(); }
     bool on_gpu() const{ return !!engine; }
-    #else
-    ChangeType enable(TypeAcceleration acc, int new_gpu_id, void*, void*){
-        device = new_gpu_id;
-        TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
-        return (effective_acc == std::exchange(mode, effective_acc)) ? change_none : change_cpu_blas;
-    }
-    void setDevice() const{}
-    bool on_gpu() const{ return false; }
-    #endif
 };
 
 }

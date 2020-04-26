@@ -70,13 +70,11 @@ public:
 
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
-    #ifdef Tasmanian_ENABLE_CUDA
     void evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpy_y[]) const override;
     void evaluateHierarchicalFunctionsGPU(const double x[], int num_x, double y[]) const override;
     void evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpy_y[]) const override;
     template<typename T> void evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpy_y[]) const;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const override;
-    #endif
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const override;
 
@@ -155,7 +153,6 @@ private:
 
     std::unique_ptr<SimpleConstructData> dynamic_values;
 
-    #ifdef Tasmanian_ENABLE_CUDA
     // specialize below for the float case
     std::unique_ptr<CudaSequenceData<double>>& getGpuCacheOverload(double) const{ return gpu_cache; }
     std::unique_ptr<CudaSequenceData<float>>& getGpuCacheOverload(float) const{ return gpu_cachef; }
@@ -192,7 +189,6 @@ private:
     }
     mutable std::unique_ptr<CudaSequenceData<double>> gpu_cache;
     mutable std::unique_ptr<CudaSequenceData<float>> gpu_cachef;
-    #endif
 };
 
 // Old version reader

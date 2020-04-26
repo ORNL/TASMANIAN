@@ -21,7 +21,7 @@ LIBOBJ = tsgIndexSets.o tsgCoreOneDimensional.o tsgIndexManipulator.o tsgGridGlo
          tsgGridLocalPolynomial.o tsgRuleWavelet.o tsgGridWavelet.o tsgGridFourier.o \
          tsgDConstructGridGlobal.o \
          tsgAcceleratedDataStructures.o $(TASMANIAN_CUDA_KERNELS) \
-         TasmanianSparseGridWrapC.o TasmanianSparseGrid.o
+         TasmanianSparseGridWrapC.o TasmanianSparseGrid.o tsgGpuNull.o
 
 WROBJ = tasgrid_main.o tasgridTestFunctions.o tasgridExternalTests.o tasgridWrapper.o
 
@@ -41,6 +41,9 @@ TESTNAME = gridtest
 	$(CC) $(OPTC) $(IADD) -c $< -o $@
 
 all: ../$(LIBNAME) ../$(EXECNAME) ../$(TESTNAME) ../$(SHAREDNAME)
+
+tsgGpuNull.o: ../InterfaceTPL/tsgGpuNull.cpp
+	$(CC) $(OPTC) $(IADD) -c ../InterfaceTPL/tsgGpuNull.cpp -o tsgGpuNull.o
 
 ../$(SHAREDNAME): $(LIBOBJ) ../$(LIBNAME) ../$(EXECNAME) ../$(TESTNAME)
 	cd ..; $(CC) $(OPTL) ./SparseGrids/tsg*.o ./SparseGrids/Tasmanian*.o -shared -o $(SHAREDNAME) $(LIBS)

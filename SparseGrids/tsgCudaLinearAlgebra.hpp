@@ -33,8 +33,6 @@
 
 #include "TasmanianConfig.hpp"
 
-#ifdef Tasmanian_ENABLE_CUDA
-
 namespace TasGrid{
 
 // NOTE: the kernels here were used for testing and debugging (and place holders before using the MAGMA library)
@@ -279,7 +277,5 @@ __global__ void tascuda_sparse_to_dense(int num_rows, int num_columns, const int
 }
 
 }
-
-#endif
 
 #endif

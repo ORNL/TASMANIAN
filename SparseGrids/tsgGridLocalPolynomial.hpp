@@ -83,7 +83,6 @@ public:
     void evaluateBatchOpenMP(const double x[], int num_x, double y[]) const;
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
-    #ifdef Tasmanian_ENABLE_CUDA
     void loadNeededPointsGPU(const double *vals);
     void evaluateGpuMixed(const double x[], int num_x, double y[]) const;
     void evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const override;
@@ -93,7 +92,6 @@ public:
     void buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, GpuVector<int> &gpu_spntr, GpuVector<int> &gpu_sindx, GpuVector<double> &gpu_svals) const;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const override;
     void buildSparseBasisMatrixGPU(const float gpu_x[], int cpu_num_x, GpuVector<int> &gpu_spntr, GpuVector<int> &gpu_sindx, GpuVector<float> &gpu_svals) const;
-    #endif
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction);
     void clearRefinement() override;
@@ -266,7 +264,6 @@ private:
 
     std::unique_ptr<SimpleConstructData> dynamic_values;
 
-    #ifdef Tasmanian_ENABLE_CUDA
     // synchronize with tasgpu_devalpwpoly_feval
     template<int ord, TypeOneDRule crule, typename T>
     Data2D<T> encodeSupportForGPU(const MultiIndexSet &work) const{
@@ -305,7 +302,6 @@ private:
     template<typename T> void loadGpuSurpluses() const;
     mutable std::unique_ptr<CudaLocalPolynomialData<double>> gpu_cache;
     mutable std::unique_ptr<CudaLocalPolynomialData<float>> gpu_cachef;
-    #endif
 };
 
 // Old version reader

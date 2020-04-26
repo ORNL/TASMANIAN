@@ -48,9 +48,7 @@
 #include "tsgBlasNull.hpp"
 #endif
 
-#ifdef Tasmanian_ENABLE_CUDA
 #include "tsgGpuWrappers.hpp"
-#endif
 
 
 #endif

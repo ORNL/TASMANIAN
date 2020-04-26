@@ -428,7 +428,6 @@ void GridFourier::evaluate(const double x[], double y[]) const{
 }
 void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
     switch(acceleration->mode){
-        #ifdef Tasmanian_ENABLE_CUDA
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
@@ -451,7 +450,6 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
             gpu_y.unload(y);
             break;
         }
-        #endif
         case accel_cpu_blas: {
             int num_points = points.getNumIndexes();
             Data2D<double> wreal;
@@ -478,7 +476,6 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
     }
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
 template<typename T> void GridFourier::evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
     loadGpuCoefficients<T>();
 
@@ -559,10 +556,6 @@ void GridFourier::clearGpuCoefficients() const{
         gpu_cachef->imag.clear();
     }
 }
-#else
-void GridFourier::clearGpuNodes() const{}
-void GridFourier::clearGpuCoefficients() const{}
-#endif
 
 void GridFourier::integrate(double q[], double *conformal_correction) const{
     if (conformal_correction == 0){

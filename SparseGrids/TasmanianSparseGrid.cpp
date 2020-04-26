@@ -743,7 +743,6 @@ void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) cons
     }
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
 template<typename T>
 const T* TasmanianSparseGrid::formCanonicalPointsGPU(const T *gpu_x, int num_x, GpuVector<T> &gpu_x_temp) const{
     if (!domain_transform_a.empty()){
@@ -755,7 +754,6 @@ const T* TasmanianSparseGrid::formCanonicalPointsGPU(const T *gpu_x, int num_x, 
         return gpu_x;
     }
 }
-#endif // Tasmanian_ENABLE_CUDA
 
 void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits){
     if (using_dynamic_construction) throw std::runtime_error("ERROR: setAnisotropicRefinement() called before finishConstruction()");
@@ -991,9 +989,11 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double
     y.resize(expected_size);
     evaluateHierarchicalFunctions(x.data(), (int) num_x, y.data());
 }
-#ifdef Tasmanian_ENABLE_CUDA
+
 template<typename T>
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
+    if (not AccelerationMeta::isAvailable(accel_gpu_cuda))
+        throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() called, but the library was not compiled with Tasmanian_ENABLE_CUDA=ON");
     if (not acceleration->on_gpu()) throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
     acceleration->setDevice();
     GpuVector<T> gpu_temp_x;
@@ -1001,6 +1001,8 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const T gpu_x[], int 
 }
 template<typename T>
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const T gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, T* &gpu_vals, int &num_nz) const{
+    if (not AccelerationMeta::isAvailable(accel_gpu_cuda))
+        throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() called, but the library was not compiled with Tasmanian_ENABLE_CUDA=ON");
     if (!isLocalPolynomial()) throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() is allowed only for local polynomial grid.");
     if (not acceleration->on_gpu()) throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
     acceleration->setDevice();
@@ -1014,16 +1016,7 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const T gpu_x[]
     gpu_indx = vec_indx.eject();
     gpu_vals = vec_vals.eject();
 }
-#else
-template<typename T>
-void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(T const[], int, T[]) const{
-    throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() called, but the library was not compiled with Tasmanian_ENABLE_CUDA=ON");
-}
-template<typename T>
-void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const T*, int, int*&, int*&, T*&, int&) const{
-    throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() called, but the library was not compiled with Tasmanian_ENABLE_CUDA=ON");
-}
-#endif
+
 template void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU<float>(float const gpu_x[], int cpu_num_x, float gpu_y[]) const;
 template void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU<double>(double const gpu_x[], int cpu_num_x, double gpu_y[]) const;
 template void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU<float>(const float[], int, int*&, int*&, float*&, int&) const;
@@ -1513,22 +1506,18 @@ void TasmanianSparseGrid::readBinary(std::istream &ifs){
 void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
     auto change = acceleration->enable(acc, acceleration->device, nullptr, nullptr);
     if (not empty()) base->updateAccelerationData(change);
-    #ifdef Tasmanian_ENABLE_CUDA
     // if gpu acceleration has been disabled, then reset the domain and cache
     // note that this method cannot possibly change the gpu ID and switching
     // between variations of GPU accelerations on the same device will keep the same cache
     if (change == AccelerationContext::change_gpu_device)
         acc_domain.reset();
-    #endif
 }
 
 void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){
     auto change = acceleration->enable(acc, new_gpu_id, backend_handle, cusparse_handle);
     if (not empty()) base->updateAccelerationData(change);
-    #ifdef Tasmanian_ENABLE_CUDA
     if (change == AccelerationContext::change_gpu_device)
         acc_domain.reset();
-    #endif
 }
 void TasmanianSparseGrid::favorSparseAcceleration(bool favor){
     auto change = acceleration->favorSparse(favor);
@@ -1560,7 +1549,6 @@ int TasmanianSparseGrid::getNumGPUs(){
     #endif // Tasmanian_ENABLE_CUDA
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
 int TasmanianSparseGrid::getGPUMemory(int gpu){
     if ((gpu < 0) || (gpu >= AccelerationMeta::getNumCudaDevices())) return 0;
     return (int) (AccelerationMeta::getTotalGPUMemory(gpu) / 1048576);
@@ -1568,10 +1556,6 @@ int TasmanianSparseGrid::getGPUMemory(int gpu){
 std::string TasmanianSparseGrid::getGPUName(int gpu){
     return AccelerationMeta::getCudaDeviceName(gpu);
 }
-#else
-int TasmanianSparseGrid::getGPUMemory(int){ return 0; }
-std::string TasmanianSparseGrid::getGPUName(int){ return std::string(); }
-#endif // Tasmanian_ENABLE_CUDA
 
 }
 

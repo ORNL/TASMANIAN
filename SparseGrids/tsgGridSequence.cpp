@@ -464,7 +464,6 @@ void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
     }
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
 template<typename T> void GridSequence::evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
     loadGpuSurpluses<T>();
 
@@ -495,10 +494,6 @@ void GridSequence::clearGpuSurpluses() const{
     if (gpu_cache) gpu_cache->surpluses.clear();
     if (gpu_cachef) gpu_cachef->surpluses.clear();
 }
-#else
-void GridSequence::clearGpuNodes() const{}
-void GridSequence::clearGpuSurpluses() const{}
-#endif // Tasmanian_ENABLE_CUDA
 
 void GridSequence::integrate(double q[], double *conformal_correction) const{
     int num_points = points.getNumIndexes();

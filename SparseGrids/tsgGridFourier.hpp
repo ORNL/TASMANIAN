@@ -72,7 +72,6 @@ public:
     void evaluate(const double x[], double y[]) const override;
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
-    #ifdef Tasmanian_ENABLE_CUDA
     void evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const override;
     void evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu_y[]) const override;
     template<typename T> void evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpu_y[]) const;
@@ -80,7 +79,6 @@ public:
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const override;
     template<typename T>
     void evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int num_x, GpuVector<T> &wreal, GpuVector<T> &wimag) const;
-    #endif
 
     void integrate(double q[], double *conformal_correction) const override;
 
@@ -181,7 +179,6 @@ private:
 
     std::unique_ptr<DynamicConstructorDataGlobal> dynamic_values;
 
-    #ifdef Tasmanian_ENABLE_CUDA
     template<typename T> void loadGpuNodes() const;
     template<typename T> void loadGpuCoefficients() const;
     inline std::unique_ptr<CudaFourierData<double>>& getGpuCacheOverload(double) const{ return gpu_cache; }
@@ -191,7 +188,6 @@ private:
     }
     mutable std::unique_ptr<CudaFourierData<double>> gpu_cache;
     mutable std::unique_ptr<CudaFourierData<float>> gpu_cachef;
-    #endif
 };
 
 // Old version reader

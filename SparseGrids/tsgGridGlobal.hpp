@@ -79,14 +79,12 @@ public:
 
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
-    #ifdef Tasmanian_ENABLE_CUDA
     void evaluateBatchGPU(const double[], int, double[]) const override;
     void evaluateBatchGPU(const float[], int, float[]) const override;
     template<typename T> void evaluateBatchGPUtempl(T const[], int, T *) const;
     void evaluateHierarchicalFunctionsGPU(const double[], int, double *) const override;
     void evaluateHierarchicalFunctionsGPU(const float[], int, float *) const override;
     template<typename T> void evaluateHierarchicalFunctionsGPUtempl(T const[], int, T *) const;
-    #endif
 
     void estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const;
 
@@ -155,7 +153,6 @@ private:
 
     std::unique_ptr<DynamicConstructorDataGlobal> dynamic_values;
 
-    #ifdef Tasmanian_ENABLE_CUDA
     template<typename T> void loadGpuNodes() const;
     template<typename T> void loadGpuValues() const;
     inline std::unique_ptr<CudaGlobalData<double>>& getGpuCacheOverload(double) const{ return gpu_cache; }
@@ -165,7 +162,6 @@ private:
     }
     mutable std::unique_ptr<CudaGlobalData<double>> gpu_cache;
     mutable std::unique_ptr<CudaGlobalData<float>> gpu_cachef;
-    #endif
 };
 
 // Old version reader

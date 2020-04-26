@@ -95,12 +95,10 @@ public:
 
     virtual void evaluateBatch(const double x[], int num_x, double y[]) const = 0;
 
-    #ifdef Tasmanian_ENABLE_CUDA
     virtual void evaluateBatchGPU(const double[], int, double[]) const = 0;
     virtual void evaluateBatchGPU(const float[], int, float[]) const = 0;
     virtual void evaluateHierarchicalFunctionsGPU(const double[], int, double[]) const = 0;
     virtual void evaluateHierarchicalFunctionsGPU(const float[], int, float[]) const = 0;
-    #endif
 
     virtual void clearRefinement() = 0;
     virtual void mergeRefinement() = 0;
