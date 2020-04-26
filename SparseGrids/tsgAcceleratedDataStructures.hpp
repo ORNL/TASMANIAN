@@ -470,6 +470,26 @@ namespace AccelerationMeta{
     //! \ingroup TasmanianAcceleration
     bool isAccTypeGPU(TypeAcceleration accel);
 
+    //! \brief Identifies whether the acceleration mode is available.
+    constexpr bool isAvailable(TypeAcceleration accel){
+        switch(accel){
+            #ifdef Tasmanian_ENABLE_MAGMA
+            case accel_gpu_magma: return true;
+            #endif
+            #ifdef Tasmanian_ENABLE_CUDA
+            case accel_gpu_cuda: return true;
+            case accel_gpu_cublas: return true;
+            #endif
+            #ifdef Tasmanian_ENABLE_BLAS
+            case accel_cpu_blas: return true;
+            #endif
+            case accel_none:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     //! \internal
     //! \brief Implements fallback logic, if \b accel has been enabled through CMake then this returns \b accel, otherwise it returns the "next-best-thing".
     //! \ingroup TasmanianAcceleration

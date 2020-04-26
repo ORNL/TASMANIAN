@@ -198,12 +198,10 @@ bool testLoadUnstructuredL2(bool verbose, int){
 #endif
     bool pass = true;
 
-    #ifdef Tasmanian_ENABLE_BLAS
-    bool blas_pass = runTests(accel_cpu_blas, 0);
+    bool blas_pass = (AccelerationMeta::isAvailable(accel_cpu_blas)) ? runTests(accel_cpu_blas, 0) : true;
     if (verbose and not blas_pass)
         cout << "Failed testLoadUnstructuredL2() blas case.\n";
     pass = pass and blas_pass;
-    #endif
     #ifdef Tasmanian_ENABLE_CUDA
     int gpu_begin = (gpu_id == -1) ? 0 : gpu_id;
     int gpu_end   = (gpu_id == -1) ? TasmanianSparseGrid::getNumGPUs() : gpu_id + 1;

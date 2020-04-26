@@ -173,7 +173,6 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
             break;
         }
         #endif
-        #ifdef Tasmanian_ENABLE_BLAS
         case accel_cpu_blas: {
             if (acceleration->algorithm_select == AccelerationContext::algorithm_sparse or
                 (acceleration->algorithm_select == AccelerationContext::algorithm_autoselect and num_outputs <= 1024)){
@@ -213,7 +212,6 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
             }
             break;
         }
-        #endif
         default: {
             evaluateBatchOpenMP(x, num_x, y);
             break;

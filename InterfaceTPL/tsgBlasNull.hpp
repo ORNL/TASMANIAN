@@ -28,29 +28,48 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_TPL_WRAPPERS_HPP
-#define __TASMANIAN_TPL_WRAPPERS_HPP
+#ifndef __TASMANIAN_BLAS_NULL_HPP
+#define __TASMANIAN_BLAS_NULL_HPP
 
 /*!
- * \file tsgTPLWrappers.hpp
- * \brief Wrappers to the enabled TPL functionality.
+ * \file tsgBlasNull.hpp
+ * \brief Wrappers to no-op functions with BLAS signature.
  * \author Miroslav Stoyanov
  * \ingroup TasmanianTPLWrappers
  *
- * The header that includes all TPL headers defined by TasmanianConfig.hpp.
+ * Removed the need for preprocessor directives by providing methods
+ * with the correct signature but are  no-op.
  */
 
-#include "TasmanianConfig.hpp"
+namespace TasBLAS{
 
-#ifdef Tasmanian_ENABLE_BLAS
-#include "tsgBlasWrappers.hpp"
-#else
-#include "tsgBlasNull.hpp"
-#endif
+    inline double norm2(int, double const[], int){ return 0.0; }
+    inline void vswap(int, double[], int, double[], int){}
+    inline void scal(int, double, double[], int){}
 
-#ifdef Tasmanian_ENABLE_CUDA
-#include "tsgGpuWrappers.hpp"
-#endif
+    inline void gemv(char, int, int, double, double const[], int, double const[], int, double, double[], int){}
+    inline void trsv(char, char, char, int, double const[], int, double[], int){}
 
+    template<typename T>
+    inline void trsm(char, char, char, char, int, int, T, T const[], int, T[], int){}
+
+    inline void getrf(int, int, double[], int, int[]){}
+    inline void getrs(char, int, int, double const[], int, int const[], double[], int){}
+
+    template<typename T>
+    inline void denseMultiply(int, int, int, T, const T[], const T[], T, T[]){}
+
+    template<typename scalar_type>
+    inline void solveLS(char, int, int, scalar_type[], scalar_type[], int = 1){}
+
+    template<typename scalar_type>
+    inline void factorizeLQ(int, int, scalar_type[], std::vector<scalar_type> &){}
+
+    template<typename scalar_type>
+    inline void multiplyQ(int, int, int, scalar_type const[], std::vector<scalar_type> const&, scalar_type[]){}
+
+    template<typename scalar_type>
+    void solveLSmulti(int, int, scalar_type[], int, scalar_type[]){}
+}
 
 #endif

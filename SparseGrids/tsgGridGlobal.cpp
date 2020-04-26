@@ -520,7 +520,6 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
             break;
         }
         #endif
-        #ifdef Tasmanian_ENABLE_BLAS
         case accel_cpu_blas: {
             int num_points = points.getNumIndexes();
             Data2D<double> weights(num_points, num_x);
@@ -531,7 +530,6 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
             TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, values.getValues(0), weights.getStrip(0), 0.0, y);
             break;
         }
-        #endif
         default: {
             Utils::Wrapper2D<const double> xwrap(num_dimensions, x);
             Utils::Wrapper2D<double> ywrap(num_outputs, y);
