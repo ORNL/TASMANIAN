@@ -500,6 +500,23 @@ enum TypeRefinement{
  * Also note that some third party libraries can have additional restrictions, e.g., concurrent calls to OpenBLAS
  * are not thread-safe unless the library is build with a specific flag. The CUDA and MAGMA libraries appear
  * to not have such limitations.
+ *
+ * \par Library Handles
+ * The Nvidia libraries use context handles to manage metadata such as active device and device pointer type.
+ * By default, Tasmanian will automatically create the handles whenever needed and will destroy them whenever
+ * the object is destroyed or the acceleration mode is updated.
+ * However, Tasmanian also provides an API where the user can provide the corresponding handles:
+ * \code
+ *  grid.getAccelerationContext()->setCuBlasHandle(cublas_handle);
+ *  grid.getAccelerationContext()->setCuSparseHandle(cusparse_handle);
+ *  grid.getAccelerationContext()->setCuSolverDnHandle(cusolverdn_handle);
+ * \endcode
+ *  - Each handle must be a valid, i.e., already created by the corresponding CUDA call and must be associated
+ *    with the currently selected GPU device ID.
+ *  - Tasmanian assumes that the pointer mode is "host pointer" and if a different mode is set in-between Tasmanian
+ *    API calls, the mode must be reset before the next Tasmanian call.
+ *  - The methods interact directly with the CUDA TPL API and hence the methods do not have fallback modes
+ *    if CUDA has not been enabled.
  */
 enum TypeAcceleration{
     //! \brief Usually the slowest mode, uses only OpenMP multi-threading, but optimized for memory and could be the fastest mode for small problems.

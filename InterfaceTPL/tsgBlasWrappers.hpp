@@ -43,21 +43,6 @@
  * interface to BLAS operations.
  */
 
-/*!
- * \internal
- * \ingroup Tasmanian
- * \addtogroup TasmanianTPLWrappers Wrappers around TPL functionality
- *
- * Tasmanian uses multiple third party libraries (TPL) to gain advanced functionality,
- * such as optimized liner algebra on the CPU and GPU devices.
- * The libraries often come with C or Fortran style of API and the included C++ wrappers
- * help interface with the C++ internals of Tasmanian.
- * The wrappers are put in a set of private headers and should not be included
- * as part of the public API.
- *
- * \endinternal
- */
-
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 extern "C"{
 // Skip the definitions from Doxygen, this serves as a mock-up header for the BLAS API.

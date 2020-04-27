@@ -1764,35 +1764,11 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_0(SwigClassWr
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, void const **farg4, void const **farg5) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TasGrid::TypeAcceleration arg2 ;
-  int arg3 ;
-  void *arg4 = (void *) 0 ;
-  void *arg5 = (void *) 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::enableAcceleration(TasGrid::TypeAcceleration,int,void *,void *)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (TasGrid::TypeAcceleration)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (void *)(*farg4);
-  arg5 = (void *)(*farg5);
-  (arg1)->enableAcceleration(arg2,arg3,arg4,arg5);
+SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_1(SwigClassWrapper *, int const *, int const *, void const **, void const **) {
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_2(SwigClassWrapper *farg1, int const *farg2, int const *farg3, void const **farg4) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  TasGrid::TypeAcceleration arg2 ;
-  int arg3 ;
-  void *arg4 = (void *) 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::enableAcceleration(TasGrid::TypeAcceleration,int,void *)", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (TasGrid::TypeAcceleration)(*farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (void *)(*farg4);
-  (arg1)->enableAcceleration(arg2,arg3,arg4);
+SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_2(SwigClassWrapper *, int const *, int const *, void const **) {
 }
 
 

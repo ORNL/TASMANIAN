@@ -1504,7 +1504,7 @@ void TasmanianSparseGrid::readBinary(std::istream &ifs){
 }
 
 void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
-    auto change = acceleration->enable(acc, acceleration->device, nullptr, nullptr);
+    auto change = acceleration->enable(acc, acceleration->device);
     if (not empty()) base->updateAccelerationData(change);
     // if gpu acceleration has been disabled, then reset the domain and cache
     // note that this method cannot possibly change the gpu ID and switching
@@ -1513,8 +1513,8 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
         acc_domain.reset();
 }
 
-void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){
-    auto change = acceleration->enable(acc, new_gpu_id, backend_handle, cusparse_handle);
+void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc, int new_gpu_id){
+    auto change = acceleration->enable(acc, new_gpu_id);
     if (not empty()) base->updateAccelerationData(change);
     if (change == AccelerationContext::change_gpu_device)
         acc_domain.reset();
@@ -1532,7 +1532,7 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
 
 void TasmanianSparseGrid::setGPUID(int new_gpu_id){
     if (new_gpu_id != acceleration->device){
-        auto change = acceleration->enable(acceleration->mode, new_gpu_id, nullptr, nullptr);
+        auto change = acceleration->enable(acceleration->mode, new_gpu_id);
         if (not empty()) base->updateAccelerationData(change);
         #ifdef Tasmanian_ENABLE_CUDA
         if (change == AccelerationContext::change_gpu_device)

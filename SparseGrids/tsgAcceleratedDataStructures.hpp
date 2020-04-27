@@ -221,19 +221,17 @@ private:
  */
 struct GpuEngine{
     //! \brief Construct a new engine without any handles.
-    GpuEngine() : cublasHandle(nullptr), own_cublas_handle(false),
+    GpuEngine()
+    #ifdef Tasmanian_ENABLE_CUDA
+                : cublasHandle(nullptr), own_cublas_handle(false),
                   cusparseHandle(nullptr), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false),
                   called_magma_init(false)
-        {}
-    //! \brief Construct a new engine with the given magma mode and handles.
-    GpuEngine(bool use_magma, void *handle_magma_cublas, void *handle_cusparse)
-        : cublasHandle((use_magma) ? nullptr : handle_magma_cublas), own_cublas_handle(false),
-          cusparseHandle(handle_cusparse), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false),
-          called_magma_init(false)
+    #endif
         {}
     //! \brief Destructor, clear all handles and queues.
     ~GpuEngine();
 
+    #ifdef Tasmanian_ENABLE_CUDA
     //! \brief Move construct the engine.
     GpuEngine(GpuEngine &&other) :
         cublasHandle(std::exchange(other.cublasHandle, nullptr)),
@@ -244,7 +242,11 @@ struct GpuEngine{
         own_cusolverdn_handle(std::exchange(other.own_cusolverdn_handle, false)),
         called_magma_init(std::exchange(other.called_magma_init, false))
         {}
+    #else
+    GpuEngine(GpuEngine &&) = default;
+    #endif
 
+    #ifdef Tasmanian_ENABLE_CUDA
     //! \brief Move assign the engine.
     GpuEngine& operator= (GpuEngine &&other){
         GpuEngine temp(std::move(other));
@@ -257,14 +259,33 @@ struct GpuEngine{
         std::swap(called_magma_init, temp.called_magma_init);
         return *this;
     }
+    #else
+    GpuEngine& operator= (GpuEngine &&) = default;
+    #endif
 
+    #ifdef Tasmanian_ENABLE_CUDA
+    //! \brief Manually sets the cuBlas handle, handle must be a valid cublasHandle_t associated with this CUDA device.
+    void setCuBlasHandle(void *handle);
+    //! \brief Manually sets the cuSparse handle, handle must be a valid cusparseHandle_t associated with this CUDA device.
+    void setCuSparseHandle(void *handle);
+    //! \brief Manually sets the cuSparse handle, handle must be a valid cusolverDnHandle_t associated with this CUDA device.
+    void setCuSolverDnHandle(void *handle);
+
+    //! \brief Alias the cuBlas handle.
     void *cublasHandle;
+    //! \brief Remembers the ownership of the handle.
     bool own_cublas_handle; // indicates whether to delete the handle on exit
+    //! \brief Alias the cuSparse handle.
     void *cusparseHandle;
+    //! \brief Remembers the ownership of the handle.
     bool own_cusparse_handle; // indicates whether to delete the handle on exit
+    //! \brief Alias the cuSolverDn handle.
     void *cusolverDnHandle;
+    //! \brief Remembers the ownership of the handle.
     bool own_cusolverdn_handle;
+    //! \brief Remembers whether MAGMA init has been called.
     bool called_magma_init;
+    #endif
 };
 
 //! \internal
@@ -614,7 +635,7 @@ struct AccelerationContext{
     }
 
     //! \brief Accepts parameters directly from TasmanianSparseGrid::enableAcceleration()
-    ChangeType enable(TypeAcceleration acc, int new_gpu_id, void *backend_handle, void *cusparse_handle){
+    ChangeType enable(TypeAcceleration acc, int new_gpu_id){
         // get the effective new acceleration mode (use the fallback if acc is not enabled)
         TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
         // if switching to a GPU mode, check if the device id is valid
@@ -628,7 +649,7 @@ struct AccelerationContext{
 
         if (AccelerationMeta::isAccTypeGPU(mode)){
             // if the new mode is GPU-based, reset the engine and the handles (if already created)
-            engine = std::make_unique<GpuEngine>((mode == accel_gpu_magma), backend_handle, cusparse_handle);
+            engine = std::make_unique<GpuEngine>();
         }else{
             engine.reset();
         }
@@ -647,7 +668,26 @@ struct AccelerationContext{
     void setDevice() const{ AccelerationMeta::setDefaultCudaDevice(device); }
     //! \brief Custom convert to \b GpuEngine
     operator GpuEngine* () const{ return engine.get(); }
+    //! \brief Returns true if any of the GPU-based acceleration modes have been enabled.
     bool on_gpu() const{ return !!engine; }
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    //! \brief Manually sets the cuBlas handle, handle must be a valid cublasHandle_t associated with this CUDA device.
+    void setCuBlasHandle(void *handle) const{
+        if (not engine) throw std::runtime_error("Cannot set a handle without first selecting a cuda acceleration mode.");
+        engine->setCuBlasHandle(handle);
+    }
+    //! \brief Manually sets the cuSparse handle, handle must be a valid cusparseHandle_t associated with this CUDA device.
+    void setCuSparseHandle(void *handle) const{
+        if (not engine) throw std::runtime_error("Cannot set a handle without first selecting a cuda acceleration mode.");
+        engine->setCuSparseHandle(handle);
+    }
+    //! \brief Manually sets the cuSparse handle, handle must be a valid cusolverDnHandle_t associated with this CUDA device.
+    void setCuSolverDnHandle(void *handle) const{
+        if (not engine) throw std::runtime_error("Cannot set a handle without first selecting a cuda acceleration mode.");
+        engine->setCuSolverDnHandle(handle);
+    }
+    #endif
 };
 
 }

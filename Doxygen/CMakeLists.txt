@@ -69,7 +69,6 @@ doxygen_add_docs(Tasmanian_doxygen
                  SparseGrids/tsgIndexManipulator.cpp
                  SparseGrids/tsgHierarchyManipulator.hpp
                  SparseGrids/tsgIOHelpers.hpp
-                 SparseGrids/tsgHiddenExternals.hpp
                  SparseGrids/tsgAcceleratedDataStructures.hpp
                  SparseGrids/tsgCudaLoadStructures.hpp
                  SparseGrids/tsgCacheLagrange.hpp
@@ -95,7 +94,6 @@ doxygen_add_docs(Tasmanian_doxygen
                  DREAM/tsgDreamCorePDF.hpp
                  DREAM/tsgDreamLikelihoodCore.hpp
                  DREAM/tsgDreamLikelyGaussian.hpp
-                 DREAM/tsgDreamInternalBlas.hpp
                  Addons/tsgConstructSurrogate.hpp
                  Addons/tsgCandidateManager.hpp
                  Addons/tsgMPIConstructGrid.hpp
@@ -104,6 +102,9 @@ doxygen_add_docs(Tasmanian_doxygen
                  Addons/tsgMPIScatterGrid.hpp
                  Addons/tsgLoadNeededValues.hpp
                  Addons/tsgAddonsCommon.hpp
+                 InterfaceTPL/tsgTPLWrappers.hpp
+                 InterfaceTPL/tsgBlasWrappers.hpp
+                 InterfaceTPL/tsgGpuWrappers.hpp
                  SparseGrids/Examples/example_sparse_grids.cpp
                  SparseGrids/Examples/example_sparse_grids_01.cpp
                  SparseGrids/Examples/example_sparse_grids_02.cpp

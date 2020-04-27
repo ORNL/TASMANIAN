@@ -102,6 +102,21 @@ GpuEngine::~GpuEngine(){
         cusolverDnHandle = nullptr;
     }
 }
+void GpuEngine::setCuBlasHandle(void *handle){
+    if (own_cublas_handle && cublasHandle != nullptr)
+        cublasDestroy(reinterpret_cast<cublasHandle_t>(cublasHandle));
+    cublasHandle = handle;
+}
+void GpuEngine::setCuSparseHandle(void *handle){
+    if (own_cusparse_handle && cusparseHandle != nullptr)
+        cusparseDestroy(reinterpret_cast<cusparseHandle_t>(cusparseHandle));
+    cusparseHandle = handle;
+}
+void GpuEngine::setCuSolverDnHandle(void *handle){
+    if (own_cusolverdn_handle && cusolverDnHandle != nullptr)
+        cusolverDnDestroy(reinterpret_cast<cusolverDnHandle_t>(cusolverDnHandle));
+    cusolverDnHandle = handle;
+}
 
 int AccelerationMeta::getNumCudaDevices(){
     int gpu_count = 0;

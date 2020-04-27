@@ -284,7 +284,8 @@ bool GridUnitTester::testAPIconsistency(){
     grid.evaluateBatch(test_x, baseline_y);
     TasGrid::AccelerationMeta::setDefaultCudaDevice(0);
     auto manual_handle = TasGrid::AccelerationMeta::createCublasHandle();
-    grid.enableAcceleration(accel_gpu_cuda, 0, manual_handle, nullptr);
+    grid.enableAcceleration(accel_gpu_cuda, 0);
+    grid.getAccelerationContext()->setCuBlasHandle(manual_handle);
     if (!testDenseGPU<double, GridMethodEvalBatchGPU>(test_x, baseline_y, 3, Maths::num_tol, grid, "GPU evaluate with manual handle"))
         pass = false;
     TasGrid::AccelerationMeta::deleteCublasHandle(manual_handle);
