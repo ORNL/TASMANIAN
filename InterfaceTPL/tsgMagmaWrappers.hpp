@@ -52,30 +52,13 @@
 namespace TasGrid{
 namespace TasGpu{
 
-/*
- * Common methods
- */
-
-//! \brief Wrapper around magma_sgemv().
-inline void gemv(magma_queue_t mqueue, char transa, int M, int N, float alpha, float const A[], int lda,
-                 float const x[], int incx, float beta, float y[], int incy){
-    magma_sgemv(magma_trans_const(transa), M, N, alpha, A, lda, x, incx, beta, y, incy, mqueue);
-}
-//! \brief Wrapper around magma_dgemv().
-inline void gemv(magma_queue_t mqueue, char transa, int M, int N, double alpha, double const A[], int lda,
-                 double const x[], int incx, double beta, double y[], int incy){
-    magma_dgemv(magma_trans_const(transa), M, N, alpha, A, lda, x, incx, beta, y, incy, mqueue);
-}
-
-//! \brief Wrapper around magma_sgemm().
-inline void gemm(magma_queue_t mqueue, char transa, char transb, int M, int N, int K, float alpha, float const A[], int lda,
-                 float const B[], int ldb, float beta, float C[], int ldc){
-    magma_sgemm(magma_trans_const(transa), magma_trans_const(transb), M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, mqueue);
-}
-//! \brief Wrapper around magma_dgemm().
-inline void gemm(magma_queue_t mqueue, char transa, char transb, int M, int N, int K, double alpha, double const A[], int lda,
-                 double const B[], int ldb, double beta, double C[], int ldc){
-    magma_dgemm(magma_trans_const(transa), magma_trans_const(transb), M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, mqueue);
+//! \brief Calls magma_init() and sets the magma device.
+inline void initMagma(AccelerationContext const *acceleration){
+    if (not acceleration->engine->called_magma_init){
+        magma_init();
+        acceleration->engine->called_magma_init = true;
+    }
+    magma_setdevice(acceleration->device);
 }
 
 //! \brief Wrapper around magma_dgeqrf_ooc()

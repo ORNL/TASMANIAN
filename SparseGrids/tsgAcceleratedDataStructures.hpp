@@ -222,18 +222,14 @@ private:
 struct GpuEngine{
     //! \brief Construct a new engine without any handles.
     GpuEngine() : cublasHandle(nullptr), own_cublas_handle(false),
-                  cusparseHandle(nullptr), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false)
-        #ifdef Tasmanian_ENABLE_MAGMA
-        , magmaCudaStream(nullptr), magmaCudaQueue(nullptr), own_magma_queue(false)
-        #endif
+                  cusparseHandle(nullptr), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false),
+                  called_magma_init(false)
         {}
     //! \brief Construct a new engine with the given magma mode and handles.
     GpuEngine(bool use_magma, void *handle_magma_cublas, void *handle_cusparse)
         : cublasHandle((use_magma) ? nullptr : handle_magma_cublas), own_cublas_handle(false),
-          cusparseHandle(handle_cusparse), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false)
-        #ifdef Tasmanian_ENABLE_MAGMA
-        , magmaCudaStream(nullptr), magmaCudaQueue((use_magma) ? handle_magma_cublas : nullptr), own_magma_queue(false)
-        #endif
+          cusparseHandle(handle_cusparse), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false),
+          called_magma_init(false)
         {}
     //! \brief Destructor, clear all handles and queues.
     ~GpuEngine();
@@ -245,12 +241,8 @@ struct GpuEngine{
         cusparseHandle(std::exchange(other.cusparseHandle, nullptr)),
         own_cusparse_handle(std::exchange(other.own_cusparse_handle, false)),
         cusolverDnHandle(std::exchange(other.cusolverDnHandle, nullptr)),
-        own_cusolverdn_handle(std::exchange(other.own_cusolverdn_handle, false))
-        #ifdef Tasmanian_ENABLE_MAGMA
-        , magmaCudaStream(std::exchange(other.magmaCudaStream, nullptr)),
-        magmaCudaQueue(std::exchange(other.magmaCudaQueue, nullptr)),
-        own_magma_queue(std::exchange(other.own_magma_queue, false))
-        #endif
+        own_cusolverdn_handle(std::exchange(other.own_cusolverdn_handle, false)),
+        called_magma_init(std::exchange(other.called_magma_init, false))
         {}
 
     //! \brief Move assign the engine.
@@ -262,11 +254,7 @@ struct GpuEngine{
         std::swap(own_cusparse_handle, temp.own_cusparse_handle);
         std::swap(cusolverDnHandle, temp.cusolverDnHandle);
         std::swap(own_cusolverdn_handle, temp.own_cusolverdn_handle);
-        #ifdef Tasmanian_ENABLE_MAGMA
-        std::swap(magmaCudaStream, temp.magmaCudaStream);
-        std::swap(magmaCudaQueue, temp.magmaCudaQueue);
-        std::swap(own_magma_queue, temp.own_magma_queue);
-        #endif
+        std::swap(called_magma_init, temp.called_magma_init);
         return *this;
     }
 
@@ -276,12 +264,7 @@ struct GpuEngine{
     bool own_cusparse_handle; // indicates whether to delete the handle on exit
     void *cusolverDnHandle;
     bool own_cusolverdn_handle;
-
-    #ifdef Tasmanian_ENABLE_MAGMA
-    void *magmaCudaStream;
-    void *magmaCudaQueue;
-    bool own_magma_queue;
-    #endif
+    bool called_magma_init;
 };
 
 //! \internal
