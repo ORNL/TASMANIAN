@@ -31,6 +31,8 @@
 #ifndef __TASMANIAN_BLAS_WRAPPERS_HPP
 #define __TASMANIAN_BLAS_WRAPPERS_HPP
 
+#include "tsgEnumerates.hpp"
+
 /*!
  * \file tsgBlasWrappers.hpp
  * \brief Wrappers to BLAS functionality.
@@ -312,16 +314,9 @@ namespace TasBLAS{
             TasBLAS::multiplyQ(nrhs, n, m, A, T, B);
             TasBLAS::trsm('R', 'L', 'N', 'N', nrhs, m, 1.0, A, m, B, nrhs);
             #else
-            std::vector<scalar_type> Bcols(static_cast<size_t>(n) * static_cast<size_t>(nrhs));
-            size_t ns    = static_cast<size_t>(n);
-            size_t nrhss = static_cast<size_t>(nrhs);
-            for(size_t i=0; i<ns; i++)
-                for(size_t j=0; j<nrhss; j++)
-                    Bcols[j * ns + i] = B[i * nrhss + j];
+            auto Bcols = TasGrid::Utils::transpose(nrhs, n, B);
             TasBLAS::solveLS('T', n, m, A, Bcols.data(), nrhs);
-            for(size_t i=0; i<static_cast<size_t>(m); i++)
-                for(size_t j=0; j<nrhss; j++)
-                    B[i * nrhss + j] = Bcols[j * ns + i];
+            TasGrid::Utils::transpose(n, nrhs, Bcols.data(), B);
             #endif
         }
     }
