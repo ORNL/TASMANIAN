@@ -130,7 +130,7 @@ protected:
 // Befriend the reader class and each grid type
 template<class GridType>
 struct GridReaderVersion5{ // 5 refers to the file format version, not the Tasmanian version
-    template<typename iomode> static std::unique_ptr<BaseCanonicalGrid> read(AccelerationContext const *acc, std::istream &){
+    template<typename iomode> static std::unique_ptr<BaseCanonicalGrid> read(AccelerationContext const*, std::istream &){
         return std::unique_ptr<BaseCanonicalGrid>();
     }
 };

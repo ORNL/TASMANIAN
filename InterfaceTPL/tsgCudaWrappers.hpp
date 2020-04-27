@@ -183,20 +183,6 @@ inline cusolverDnHandle_t getCuSolverDnHandle(AccelerationContext const *acceler
     }
     return reinterpret_cast<cusolverDnHandle_t>(acceleration->engine->cusolverDnHandle);
 }
-#ifdef Tasmanian_ENABLE_MAGMA
-//! \brief Make magma queue handle.
-magma_queue_t getMagmaHandle(AccelerationContext const *acceleration){
-    if (acceleration->engine->magmaCudaQueue == nullptr){
-        magma_init();
-        cublasHandle_t cublash = getCuBlasHandle(acceleration);
-        cusparseHandle_t cusparseh = getCuSparseHandle(acceleration);
-        magma_queue_create_from_cuda(acceleration->device, reinterpret_cast<cudaStream_t>(acceleration->engine->magmaCudaStream),
-                                     cublash, cusparseh, reinterpret_cast<magma_queue**>(&acceleration->engine->magmaCudaQueue));
-        acceleration->engine->own_magma_queue = true;
-    }
-    return reinterpret_cast<magma_queue_t>(acceleration->engine->magmaCudaQueue);
-}
-#endif
 
 }
 }

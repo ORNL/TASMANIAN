@@ -100,10 +100,12 @@ void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const *accelera
 template<typename scalar_type>
 void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
     if (acceleration->on_gpu()){
-        acceleration->setDevice();
-        #ifdef Tasmanian_ENABLE_CUDA
-        TasGpu::solveLSmulti(acceleration, n, m, A, nrhs, B);
-        #endif
+        if (acceleration->mode == accel_gpu_magma){
+            TasGpu::solveLSmultiOOC(acceleration, n, m, A, nrhs, B);
+        }else{
+            acceleration->setDevice();
+            TasGpu::solveLSmulti(acceleration, n, m, A, nrhs, B);
+        }
     }else if (acceleration->blasCompatible()){
         TasBLAS::solveLSmulti(n, m, A, nrhs, B);
     }else{
@@ -115,6 +117,34 @@ void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const *acceler
 
 template void TasmanianDenseSolver::solvesLeastSquares<double>(AccelerationContext const*, int, int, double[], int, double[]);
 template void TasmanianDenseSolver::solvesLeastSquares<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);
+
+namespace Utils{ // implements block transpose method
+template<typename scalar_type>
+inline void copy_transpose(long long M, long long N, scalar_type const A[], long long lda, scalar_type B[], long long ldb){
+    for(int i=0; i<M; i++)
+        for(int j=0; j<N; j++)
+            B[i * ldb + j] = A[j * lda + i];
+}
+template<typename scalar_type>
+void transpose(long long M, long long N, scalar_type const A[], scalar_type B[]){
+    constexpr long long bsize = 64;
+    long long bM = (M / bsize) + ((M % bsize == 0) ? 0 : 1); // number of blocks in M and N
+    long long bN = (N / bsize) + ((N % bsize == 0) ? 0 : 1);
+    #pragma omp parallel for
+    for(long long t =0; t < bM * bN; t++){
+        long long i = t / bN;
+        long long j = t % bN;
+        copy_transpose(std::min(bsize, M - i * bsize), std::min(bsize, N - j * bsize),
+                        A + i * bsize + j * bsize * M, M,
+                        B + i * bsize * N + j * bsize, N);
+    }
+}
+
+template void transpose(long long, long long, float const[], float[]);
+template void transpose(long long, long long, double const[], double[]);
+template void transpose(long long, long long, std::complex<double> const[], std::complex<double>[]);
+}
+
 
 void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z){
     const double tol = Maths::num_tol;

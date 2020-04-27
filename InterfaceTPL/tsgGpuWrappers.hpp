@@ -57,6 +57,12 @@ namespace TasGpu{
 template<typename scalar_type>
 void solveLSmultiGPU(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]);
 
+/*!
+ * \brief Identical to TasGpu::solveLSmultiGPU() but the arrays are on the CPU and the MAGMA out-of-core implementation is used.
+ */
+template<typename scalar_type>
+void solveLSmultiOOC(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]);
+
 //! \brief Identical to TasGpu::solveLSmultiGPU() but the data starts with the CPU and gets uploaded to the GPU first.
 template<typename scalar_type>
 void solveLSmulti(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){

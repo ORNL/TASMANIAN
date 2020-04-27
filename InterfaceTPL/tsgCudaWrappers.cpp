@@ -101,15 +101,21 @@ GpuEngine::~GpuEngine(){
         cusolverDnDestroy(reinterpret_cast<cusolverDnHandle_t>(cusolverDnHandle));
         cusolverDnHandle = nullptr;
     }
-    #ifdef Tasmanian_ENABLE_MAGMA
-    if (own_magma_queue && magmaCudaQueue != nullptr){
-        magma_queue_destroy(reinterpret_cast<magma_queue*>(magmaCudaQueue));
-        magmaCudaQueue = nullptr;
-        magma_finalize();
-    }
-    if (magmaCudaStream != nullptr) cudaStreamDestroy(reinterpret_cast<cudaStream_t>(magmaCudaStream));
-    magmaCudaStream = nullptr;
-    #endif
+}
+void GpuEngine::setCuBlasHandle(void *handle){
+    if (own_cublas_handle && cublasHandle != nullptr)
+        cublasDestroy(reinterpret_cast<cublasHandle_t>(cublasHandle));
+    cublasHandle = handle;
+}
+void GpuEngine::setCuSparseHandle(void *handle){
+    if (own_cusparse_handle && cusparseHandle != nullptr)
+        cusparseDestroy(reinterpret_cast<cusparseHandle_t>(cusparseHandle));
+    cusparseHandle = handle;
+}
+void GpuEngine::setCuSolverDnHandle(void *handle){
+    if (own_cusolverdn_handle && cusolverDnHandle != nullptr)
+        cusolverDnDestroy(reinterpret_cast<cusolverDnHandle_t>(cusolverDnHandle));
+    cusolverDnHandle = handle;
 }
 
 int AccelerationMeta::getNumCudaDevices(){
@@ -190,14 +196,14 @@ void geam(cublasHandle_t handle, cublasOperation_t transa, cublasOperation_t tra
 }
 
 //! \brief Wrapper around sgemv().
-inline void gemv(cublasHandle_t handle, char transa, int M, int N,
+inline void gemv(cublasHandle_t handle, cublasOperation_t transa, int M, int N,
                  float alpha, float const A[], int lda, float const x[], int incx, float beta, float y[], int incy){
-    cucheck( cublasSgemv(handle, cublas_trans(transa), M, N, &alpha, A, lda, x, incx, &beta, y, incy), "cublasSgemv()");
+    cucheck( cublasSgemv(handle, transa, M, N, &alpha, A, lda, x, incx, &beta, y, incy), "cublasSgemv()");
 }
 //! \brief Wrapper around dgemv().
-inline void gemv(cublasHandle_t handle, char transa, int M, int N,
+inline void gemv(cublasHandle_t handle, cublasOperation_t transa, int M, int N,
                  double alpha, double const A[], int lda, double const x[], int incx, double beta, double y[], int incy){
-    cucheck( cublasDgemv(handle, cublas_trans(transa), M, N, &alpha, A, lda, x, incx, &beta, y, incy), "cublasDgemv()");
+    cucheck( cublasDgemv(handle, transa, M, N, &alpha, A, lda, x, incx, &beta, y, incy), "cublasDgemv()");
 }
 //! \brief Wrapper around dtrsv().
 inline void trsv(cublasHandle_t handle, cublasFillMode_t uplo, cublasOperation_t trans, cublasDiagType_t diag,
@@ -212,14 +218,14 @@ inline void trsv(cublasHandle_t handle, cublasFillMode_t uplo, cublasOperation_t
 }
 
 //! \brief Wrapper around sgemm().
-inline void gemm(cublasHandle_t handle, char transa, char transb, int M, int N, int K,
+inline void gemm(cublasHandle_t handle, cublasOperation_t transa, cublasOperation_t transb, int M, int N, int K,
                  float alpha, float const A[], int lda, float const B[], int ldb, float beta, float C[], int ldc){
-    cucheck( cublasSgemm(handle, cublas_trans(transa), cublas_trans(transb), M, N, K, &alpha, A, lda, B, ldb, &beta, C, ldc), "cublasSgemm()");
+    cucheck( cublasSgemm(handle, transa, transb, M, N, K, &alpha, A, lda, B, ldb, &beta, C, ldc), "cublasSgemm()");
 }
 //! \brief Wrapper around dgemm().
-inline void gemm(cublasHandle_t handle, char transa, char transb, int M, int N, int K,
+inline void gemm(cublasHandle_t handle, cublasOperation_t transa, cublasOperation_t transb, int M, int N, int K,
                  double alpha, double const A[], int lda, double const B[], int ldb, double beta, double C[], int ldc){
-    cucheck( cublasDgemm(handle, cublas_trans(transa), cublas_trans(transb), M, N, K, &alpha, A, lda, B, ldb, &beta, C, ldc), "cublasDgemm()");
+    cucheck( cublasDgemm(handle, transa, transb, M, N, K, &alpha, A, lda, B, ldb, &beta, C, ldc), "cublasDgemm()");
 }
 //! \brief Wrapper around dtrsm().
 inline void trsm(cublasHandle_t handle, cublasSideMode_t side, cublasFillMode_t uplo,
@@ -404,31 +410,40 @@ void solveLSmultiGPU(AccelerationContext const *acceleration, int n, int m, scal
 template void solveLSmultiGPU<double>(AccelerationContext const*, int, int, double[], int, double[]);
 template void solveLSmultiGPU<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);
 
-//! \brief Automatically selects the level 2 or level 3 BLAS method.
-template<typename handle_type, typename scalar_type>
-void denseMultiplyL2L3(handle_type handle, int M, int N, int K, scalar_type alpha, scalar_type const A[], scalar_type const B[],
-                       scalar_type beta, scalar_type C[]){
-    if (M > 1){
-        if (N > 1){ // matrix-matrix mode
-            gemm(handle, 'N', 'N', M, N, K, alpha, A, M, B, K, beta, C, M);
-        }else{ // matrix vector, A * v = C
-            gemv(handle, 'N', M, K, alpha, A, M, B, 1, beta, C, 1);
-        }
-    }else{ // matrix vector B^T * v = C
-        gemv(handle, 'T', K, N, alpha, B, K, A, 1, beta, C, 1);
-    }
+#ifdef Tasmanian_ENABLE_MAGMA
+template<typename scalar_type>
+void solveLSmultiOOC(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
+    initMagma(acceleration);
+    std::vector<scalar_type> tau(m);
+    auto AT = Utils::transpose(m, n, A);
+    auto BT = Utils::transpose(nrhs, n, B);
+    geqrf_ooc(n, m, AT.data(), n, tau.data());
+    gemqr_ooc(MagmaLeft, (std::is_same<scalar_type, double>::value) ? MagmaTrans : MagmaConjTrans, n, nrhs, m, AT.data(), n, tau.data(), BT.data(), n);
+    trsm_ooc(MagmaLeft, MagmaUpper, MagmaNoTrans, MagmaNonUnit, m, nrhs, 1.0, AT.data(), n, BT.data(), n);
+    Utils::transpose(n, nrhs, BT.data(), B);
 }
+#else
+template<typename scalar_type>
+void solveLSmultiOOC(AccelerationContext const*, int, int, scalar_type[], int, scalar_type[]){}
+#endif
+
+template void solveLSmultiOOC<double>(AccelerationContext const*, int, int, double[], int, double[]);
+template void solveLSmultiOOC<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);
+
 
 template<typename scalar_type>
 void denseMultiply(AccelerationContext const *acceleration, int M, int N, int K, typename GpuVector<scalar_type>::value_type alpha, GpuVector<scalar_type> const &A,
                    GpuVector<scalar_type> const &B, typename GpuVector<scalar_type>::value_type beta, scalar_type C[]){
-    #ifdef Tasmanian_ENABLE_MAGMA
-    if (acceleration->mode == accel_gpu_magma){
-        denseMultiplyL2L3(getMagmaHandle(acceleration), M, N, K, alpha, A.data(), B.data(), beta, C);
-        return;
+    cublasHandle_t cublash = getCuBlasHandle(acceleration);
+    if (M > 1){
+        if (N > 1){ // matrix-matrix mode
+            gemm(cublash, CUBLAS_OP_N, CUBLAS_OP_N, M, N, K, alpha, A.data(), M, B.data(), K, beta, C, M);
+        }else{ // matrix vector, A * v = C
+            gemv(cublash, CUBLAS_OP_N, M, K, alpha, A.data(), M, B.data(), 1, beta, C, 1);
+        }
+    }else{ // matrix vector B^T * v = C
+        gemv(cublash, CUBLAS_OP_T, K, N, alpha, B.data(), K, A.data(), 1, beta, C, 1);
     }
-    #endif
-    denseMultiplyL2L3(getCuBlasHandle(acceleration), M, N, K, alpha, A.data(), B.data(), beta, C);
 }
 
 template void denseMultiply<float>(AccelerationContext const*, int, int, int, float,

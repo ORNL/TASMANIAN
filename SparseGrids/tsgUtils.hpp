@@ -62,6 +62,17 @@ namespace TasGrid{
  */
 namespace Utils{
 
+//! \brief Constructs the transpose of an M by N matrix A in column major format, result is stored in B (implemented in linear solvers).
+template<typename scalar_type>
+void transpose(long long M, long long N, scalar_type const A[], scalar_type B[]);
+//! \brief Constructs the transpose of an M by N matrix A in column major format, result is returned in a vector.
+template<typename scalar_type>
+std::vector<scalar_type> transpose(long long M, long long N, scalar_type const A[]){
+    std::vector<scalar_type> B(M * N);
+    transpose(M, N, A, B.data());
+    return B;
+}
+
 /*!
  * \internal
  * \brief Converts two integer-like variables to \b size_t and returns the product.

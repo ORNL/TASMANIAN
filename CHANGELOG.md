@@ -3,6 +3,11 @@ Changelog for version 7.1
 
 * the Python pip installer now handles dependencies automatically
     * requeres up-to-date version of pip
+* added the API to manually set the CUDA handles
+    * manual handles can be set for cuBlas, cuSparse and cuSolverDn
+* new addon method for constructing a surrogate from unstructured data
+    * utilizes QR factorization from cuSolver and MAGMA
+    * using out-of-core implementation within MAGMA
 * an LAPACK implementation is required for the BLAS option
     * BLAS and LAPACK are packaged together in all tested libraries
 * added Swig generated Fortran 2003 interface
