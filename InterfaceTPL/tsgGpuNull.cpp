@@ -102,6 +102,12 @@ template void solveLSmultiGPU<double>(AccelerationContext const*, int, int, doub
 template void solveLSmultiGPU<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);
 
 template<typename scalar_type>
+void solveLSmultiOOC(AccelerationContext const*, int, int, scalar_type[], int, scalar_type[]){}
+
+template void solveLSmultiOOC<double>(AccelerationContext const*, int, int, double[], int, double[]);
+template void solveLSmultiOOC<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);
+
+template<typename scalar_type>
 void denseMultiply(AccelerationContext const*, int, int, int, typename GpuVector<scalar_type>::value_type, GpuVector<scalar_type> const&,
                    GpuVector<scalar_type> const&, typename GpuVector<scalar_type>::value_type, scalar_type[]){}
 

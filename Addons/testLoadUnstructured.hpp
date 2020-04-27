@@ -207,6 +207,12 @@ bool testLoadUnstructuredL2(bool verbose, int gpu_id){
             if (verbose and not cuda_pass)
                 cout << "Failed testLoadUnstructuredL2() cuda case on device " << gpu << "\n";
             pass = pass and cuda_pass;
+            if (AccelerationMeta::isAvailable(accel_gpu_magma)){
+                bool magma_pass = runTests(accel_gpu_magma, gpu);
+                if (verbose and not magma_pass)
+                    cout << "Failed testLoadUnstructuredL2() magma case on device " << gpu << "\n";
+                pass = pass and magma_pass;
+            }
         }
     }
 

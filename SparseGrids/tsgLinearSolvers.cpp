@@ -100,10 +100,12 @@ void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const *accelera
 template<typename scalar_type>
 void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
     if (acceleration->on_gpu()){
-        acceleration->setDevice();
-        #ifdef Tasmanian_ENABLE_CUDA
-        TasGpu::solveLSmulti(acceleration, n, m, A, nrhs, B);
-        #endif
+        if (acceleration->mode == accel_gpu_magma){
+            TasGpu::solveLSmultiOOC(acceleration, n, m, A, nrhs, B);
+        }else{
+            acceleration->setDevice();
+            TasGpu::solveLSmulti(acceleration, n, m, A, nrhs, B);
+        }
     }else if (acceleration->blasCompatible()){
         TasBLAS::solveLSmulti(n, m, A, nrhs, B);
     }else{
