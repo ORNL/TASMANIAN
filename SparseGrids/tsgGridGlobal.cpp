@@ -501,7 +501,6 @@ void GridGlobal::evaluate(const double x[], double y[]) const{
 }
 void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
     switch(acceleration->mode){
-        #ifdef Tasmanian_ENABLE_CUDA
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
@@ -519,8 +518,6 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
             TasGpu::denseMultiplyMixed(acceleration, num_outputs, num_x, num_points, 1.0, gpu_cache->values, weights.data(), 0.0, y);
             break;
         }
-        #endif
-        #ifdef Tasmanian_ENABLE_BLAS
         case accel_cpu_blas: {
             int num_points = points.getNumIndexes();
             Data2D<double> weights(num_points, num_x);
@@ -531,7 +528,6 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
             TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, values.getValues(0), weights.getStrip(0), 0.0, y);
             break;
         }
-        #endif
         default: {
             Utils::Wrapper2D<const double> xwrap(num_dimensions, x);
             Utils::Wrapper2D<double> ywrap(num_outputs, y);
@@ -543,7 +539,6 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
     }
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
 template<typename T> void GridGlobal::evaluateBatchGPUtempl(T const gpu_x[], int cpu_num_x, T gpu_y[]) const{
     loadGpuValues<T>();
     int num_points = points.getNumIndexes();
@@ -637,10 +632,6 @@ void GridGlobal::clearGpuNodes() const{
     if (gpu_cache) gpu_cache->clearNodes();
     if (gpu_cachef) gpu_cachef->clearNodes();
 }
-#else
-void GridGlobal::clearGpuNodes() const{}
-void GridGlobal::clearGpuValues() const{}
-#endif // Tasmanian_ENABLE_CUDA
 
 void GridGlobal::integrate(double q[], double *conformal_correction) const{
     std::vector<double> w(getNumPoints());

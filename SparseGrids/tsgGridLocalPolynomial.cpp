@@ -152,7 +152,6 @@ void GridLocalPolynomial::evaluateBatchOpenMP(const double x[], int num_x, doubl
 }
 void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
     switch(acceleration->mode){
-        #ifdef Tasmanian_ENABLE_CUDA
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
@@ -172,8 +171,6 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
             evaluateGpuMixed(x, num_x, y);
             break;
         }
-        #endif
-        #ifdef Tasmanian_ENABLE_BLAS
         case accel_cpu_blas: {
             if (acceleration->algorithm_select == AccelerationContext::algorithm_sparse or
                 (acceleration->algorithm_select == AccelerationContext::algorithm_autoselect and num_outputs <= 1024)){
@@ -213,7 +210,6 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
             }
             break;
         }
-        #endif
         default: {
             evaluateBatchOpenMP(x, num_x, y);
             break;
@@ -221,7 +217,6 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
     }
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
 void GridLocalPolynomial::loadNeededPointsGPU(const double *vals){
     updateValues(vals);
 
@@ -385,11 +380,6 @@ void GridLocalPolynomial::clearGpuSurpluses(){
     if (gpu_cache) gpu_cache->surpluses.clear();
     if (gpu_cachef) gpu_cachef->surpluses.clear();
 }
-#else
-void GridLocalPolynomial::clearGpuSurpluses(){}
-void GridLocalPolynomial::clearGpuBasisHierarchy(){}
-#endif
-
 
 void GridLocalPolynomial::updateValues(double const *vals){
     clearGpuSurpluses();

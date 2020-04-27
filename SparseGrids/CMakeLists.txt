@@ -19,7 +19,8 @@ if (Tasmanian_ENABLE_CUDA)
     set_property(TARGET ${Tasmanian_libtsg_target_name} PROPERTY CUDA_STANDARD 14)
     target_link_libraries(${Tasmanian_libtsg_target_name} ${Tasmanian_cudamathlibs}) # add the math libraries
 else()
-    add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid})
+    add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgGpuNull.cpp)
 endif()
 
 # Tasmanian_EXTRA_LIBRARIES gives the user an option to force extra dependencies,

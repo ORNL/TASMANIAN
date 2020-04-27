@@ -428,7 +428,6 @@ void GridFourier::evaluate(const double x[], double y[]) const{
 }
 void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
     switch(acceleration->mode){
-        #ifdef Tasmanian_ENABLE_CUDA
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
@@ -451,8 +450,6 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
             gpu_y.unload(y);
             break;
         }
-        #endif
-        #ifdef Tasmanian_ENABLE_BLAS
         case accel_cpu_blas: {
             int num_points = points.getNumIndexes();
             Data2D<double> wreal;
@@ -468,7 +465,6 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
             TasBLAS::denseMultiply(num_outputs, num_x, num_points, -1.0, fourier_coefs.getStrip(num_points), wimag.data(), 1.0, y);
             break;
         }
-        #endif
         default: {
             Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
             Utils::Wrapper2D<double> ywrap(num_outputs, y);
@@ -480,7 +476,6 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
     }
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
 template<typename T> void GridFourier::evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
     loadGpuCoefficients<T>();
 
@@ -561,10 +556,6 @@ void GridFourier::clearGpuCoefficients() const{
         gpu_cachef->imag.clear();
     }
 }
-#else
-void GridFourier::clearGpuNodes() const{}
-void GridFourier::clearGpuCoefficients() const{}
-#endif
 
 void GridFourier::integrate(double q[], double *conformal_correction) const{
     if (conformal_correction == 0){

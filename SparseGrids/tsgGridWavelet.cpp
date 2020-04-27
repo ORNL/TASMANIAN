@@ -188,7 +188,6 @@ void GridWavelet::evaluate(const double x[], double y[]) const{
 }
 void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
     switch(acceleration->mode){
-        #ifdef Tasmanian_ENABLE_CUDA
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
@@ -208,8 +207,6 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
             evaluateGpuMixed(x, num_x, y);
             break;
         }
-        #endif
-        #ifdef Tasmanian_ENABLE_BLAS
         case accel_cpu_blas: {
             int num_points = points.getNumIndexes();
             Data2D<double> weights(num_points, num_x);
@@ -217,7 +214,6 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
             TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, coefficients.getStrip(0), weights.getStrip(0), 0.0, y);
             break;
         }
-        #endif
         default: {
             Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
             Utils::Wrapper2D<double> ywrap(num_outputs, y);
@@ -229,7 +225,6 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
     }
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
 void GridWavelet::evaluateGpuMixed(const double x[], int num_x, double y[]) const{
     loadGpuCoefficients<double>();
 
@@ -293,10 +288,6 @@ void GridWavelet::clearGpuCoefficients() const{
     if (gpu_cache) gpu_cache->coefficients.clear();
     if (gpu_cachef) gpu_cachef->coefficients.clear();
 }
-#else
-void GridWavelet::clearGpuCoefficients() const{}
-void GridWavelet::clearGpuBasis() const{}
-#endif
 
 void GridWavelet::integrate(double q[], double *conformal_correction) const{
     int num_points = points.getNumIndexes();

@@ -87,41 +87,31 @@ void TasmanianDenseSolver::solveLeastSquares(int n, int m, const double A[], dou
     }
 }
 
-#ifdef Tasmanian_ENABLE_BLAS
 void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const *acceleration, int n, int m, double A[], double b[], double *x){
     if (acceleration->blasCompatible()){
         TasBLAS::solveLS('N', n, m, A, b);
         std::copy_n(b, m, x);
         return;
+    }else{
+        solveLeastSquares(n, m, A, b, x);
     }
-#else
-void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const*, int n, int m, double A[], double b[], double *x){
-#endif
-    solveLeastSquares(n, m, A, b, x);
 }
 
-#if defined(Tasmanian_ENABLE_BLAS) || defined(Tasmanian_ENABLE_CUDA)
 template<typename scalar_type>
 void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
-    #ifdef Tasmanian_ENABLE_CUDA
     if (acceleration->on_gpu()){
         acceleration->setDevice();
+        #ifdef Tasmanian_ENABLE_CUDA
         TasGpu::solveLSmulti(acceleration, n, m, A, nrhs, B);
-        return;
-    }
-    #endif
-    #ifdef Tasmanian_ENABLE_BLAS
-    if (acceleration->blasCompatible()){
+        #endif
+    }else if (acceleration->blasCompatible()){
         TasBLAS::solveLSmulti(n, m, A, nrhs, B);
-        return;
+    }else{
+        if (not AccelerationMeta::isAvailable(accel_gpu_cuda)
+            and not AccelerationMeta::isAvailable(accel_cpu_blas))
+            throw std::runtime_error("Dense least-squares solve attempted without BLAS or CUDA acceleration enabled.");
     }
-    #endif
-    throw std::runtime_error("Dense least-squares solve attempted without BLAS or CUDA acceleration enabled.");
 }
-#else
-template<typename scalar_type>
-void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const*, int, int, scalar_type[], int, scalar_type[]){}
-#endif
 
 template void TasmanianDenseSolver::solvesLeastSquares<double>(AccelerationContext const*, int, int, double[], int, double[]);
 template void TasmanianDenseSolver::solvesLeastSquares<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);
@@ -340,17 +330,12 @@ void TasmanianFourierTransform::fast_fourier_transform1D(std::vector<std::vector
 
 namespace TasSparse{
 
-#ifdef Tasmanian_ENABLE_BLAS
 WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const *acceleration,
-#else
-WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const*,
-#endif
                                        const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals) : tol(Maths::num_tol), num_rows(static_cast<int>(lpntr.size())){
 
     if (num_rows == 0) return; // make an empty matrix
 
-    #ifdef Tasmanian_ENABLE_BLAS
-    if ((acceleration->mode != accel_none)
+    if ((acceleration->blasCompatible() and AccelerationMeta::isAvailable(accel_cpu_blas))
         and (acceleration->algorithm_select != AccelerationContext::algorithm_sparse)
         and not (acceleration->algorithm_select == AccelerationContext::algorithm_autoselect and num_rows > 10000)
         ){
@@ -385,7 +370,6 @@ WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const*,
         TasBLAS::getrf(num_rows, num_rows, dense.data(), num_rows, ipiv.data());
         return;
     }
-    #endif
 
     pntr = std::vector<int>(num_rows+1, 0);
     for(int i=0; i<num_rows; i++)
@@ -441,12 +425,10 @@ void WaveletBasisMatrix::computeILU(){
 }
 
 void WaveletBasisMatrix::invertTransposed(AccelerationContext const *acceleration, double b[]) const{
-    #ifdef Tasmanian_ENABLE_BLAS
     if (not dense.empty()){
         TasBLAS::getrs('N', num_rows, 1, dense.data(), num_rows, ipiv.data(), b, num_rows);
         return;
     }
-    #endif
     // using sparse algorithm
     if (acceleration->blasCompatible())
         solve<use_transpose, use_blas>(std::vector<double>(b, b + num_rows).data(), b);
@@ -455,7 +437,6 @@ void WaveletBasisMatrix::invertTransposed(AccelerationContext const *acceleratio
 }
 
 void WaveletBasisMatrix::invert(AccelerationContext const *acceleration, int num_colums, double B[]){
-    #ifdef Tasmanian_ENABLE_BLAS
     if (not dense.empty()){
         if (num_colums == 1){
             TasBLAS::getrs('T', num_rows, 1, dense.data(), num_rows, ipiv.data(), B, num_rows);
@@ -472,7 +453,6 @@ void WaveletBasisMatrix::invert(AccelerationContext const *acceleration, int num
         }
         return;
     }
-    #endif
     if (num_colums == 1){
         std::vector<double> b(B, B + num_rows);
         if (acceleration->blasCompatible())
@@ -559,13 +539,13 @@ inline double rescale(int num_entries, double x[]){
     return nrm;
 }
 inline double rescale_blas(int num_entries, double x[]){
-    #ifdef Tasmanian_ENABLE_BLAS
-    double nrm = TasBLAS::norm2(num_entries, x, 1);
-    if (nrm > 0.0) TasBLAS::scal(num_entries, 1.0 / nrm, x, 1);
-    return nrm;
-    #else
-    return rescale(num_entries, x);
-    #endif
+    if (AccelerationMeta::isAvailable(accel_cpu_blas)){
+        double nrm = TasBLAS::norm2(num_entries, x, 1);
+        if (nrm > 0.0) TasBLAS::scal(num_entries, 1.0 / nrm, x, 1);
+        return nrm;
+    }else{
+        return rescale(num_entries, x);
+    }
 }
 
 // project the krylov basis
@@ -583,12 +563,12 @@ inline void projectKrylov(int inner_itr, int max_inner, int num_rows, std::vecto
     }
 }
 inline void projectKrylov_blas(int inner_itr, int max_inner, int num_rows, std::vector<double> &W, std::vector<double> &H){
-    #ifdef Tasmanian_ENABLE_BLAS
-    TasBLAS::gemv('T', num_rows, inner_itr,  1.0, W.data(), num_rows, &W[inner_itr * num_rows], 1, 0.0, &H[inner_itr-1], max_inner);
-    TasBLAS::gemv('N', num_rows, inner_itr, -1.0, W.data(), num_rows, &H[inner_itr-1], max_inner, 1.0, &W[inner_itr * num_rows], 1);
-    #else
-    projectKrylov(inner_itr, max_inner, num_rows, W, H);
-    #endif
+    if (AccelerationMeta::isAvailable(accel_cpu_blas)){
+        TasBLAS::gemv('T', num_rows, inner_itr,  1.0, W.data(), num_rows, &W[inner_itr * num_rows], 1, 0.0, &H[inner_itr-1], max_inner);
+        TasBLAS::gemv('N', num_rows, inner_itr, -1.0, W.data(), num_rows, &H[inner_itr-1], max_inner, 1.0, &W[inner_itr * num_rows], 1);
+    }else{
+        projectKrylov(inner_itr, max_inner, num_rows, W, H);
+    }
 }
 // reconstruct the krylov solution from the basis
 inline void reconstructKrylov(int inner_itr, int max_inner, int num_rows, std::vector<double> const &W, std::vector<double> const &H,
@@ -610,12 +590,12 @@ inline void reconstructKrylov(int inner_itr, int max_inner, int num_rows, std::v
 }
 inline void reconstructKrylov_blas(int inner_itr, int max_inner, int num_rows, std::vector<double> const &W, std::vector<double> const &H,
                                    std::vector<double> &Z, double x[]){
-    #ifdef Tasmanian_ENABLE_BLAS
-    TasBLAS::trsv('L', 'T', 'N', inner_itr, H.data(), max_inner, Z.data(), 1);
-    TasBLAS::gemv('N', num_rows, inner_itr, 1.0, W.data(), num_rows, Z.data(), 1, 1.0, x, 1);
-    #else
-    reconstructKrylov(inner_itr, max_inner, num_rows, W, H, Z, x);
-    #endif
+    if (AccelerationMeta::isAvailable(accel_cpu_blas)){
+        TasBLAS::trsv('L', 'T', 'N', inner_itr, H.data(), max_inner, Z.data(), 1);
+        TasBLAS::gemv('N', num_rows, inner_itr, 1.0, W.data(), num_rows, Z.data(), 1, 1.0, x, 1);
+    }else{
+        reconstructKrylov(inner_itr, max_inner, num_rows, W, H, Z, x);
+    }
 }
 
 template<bool transpose, bool blas>

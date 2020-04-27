@@ -191,33 +191,27 @@ bool runTests(TypeAcceleration acc, int gpu_id){
     return pass;
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
 bool testLoadUnstructuredL2(bool verbose, int gpu_id){
-#else
-bool testLoadUnstructuredL2(bool verbose, int){
-#endif
     bool pass = true;
 
-    #ifdef Tasmanian_ENABLE_BLAS
-    bool blas_pass = runTests(accel_cpu_blas, 0);
+    bool blas_pass = (AccelerationMeta::isAvailable(accel_cpu_blas)) ? runTests(accel_cpu_blas, 0) : true;
     if (verbose and not blas_pass)
         cout << "Failed testLoadUnstructuredL2() blas case.\n";
     pass = pass and blas_pass;
-    #endif
-    #ifdef Tasmanian_ENABLE_CUDA
-    int gpu_begin = (gpu_id == -1) ? 0 : gpu_id;
-    int gpu_end   = (gpu_id == -1) ? TasmanianSparseGrid::getNumGPUs() : gpu_id + 1;
-    for(int gpu = gpu_begin; gpu < gpu_end; gpu++){
-        bool cuda_pass = runTests(accel_gpu_cuda, gpu);
-        if (verbose and not cuda_pass)
-            cout << "Failed testLoadUnstructuredL2() cuda case on device " << gpu << "\n";
-        pass = pass and cuda_pass;
+
+    if (AccelerationMeta::isAvailable(accel_gpu_cuda)){
+        int gpu_begin = (gpu_id == -1) ? 0 : gpu_id;
+        int gpu_end   = (gpu_id == -1) ? TasmanianSparseGrid::getNumGPUs() : gpu_id + 1;
+        for(int gpu = gpu_begin; gpu < gpu_end; gpu++){
+            bool cuda_pass = runTests(accel_gpu_cuda, gpu);
+            if (verbose and not cuda_pass)
+                cout << "Failed testLoadUnstructuredL2() cuda case on device " << gpu << "\n";
+            pass = pass and cuda_pass;
+        }
     }
-    #endif
-    #if !defined(Tasmanian_ENABLE_BLAS) && !defined(Tasmanian_ENABLE_CUDA)
-    if (verbose)
+
+    if (verbose and not AccelerationMeta::isAvailable(accel_cpu_blas) and not AccelerationMeta::isAvailable(accel_gpu_cuda))
         cout << "testLoadUnstructuredL2() requires BLAS or CUDA\n";
-    #endif
 
     return pass;
 }

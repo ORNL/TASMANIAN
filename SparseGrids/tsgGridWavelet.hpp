@@ -68,14 +68,12 @@ public:
 
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
-    #ifdef Tasmanian_ENABLE_CUDA
     void evaluateGpuMixed(const double*, int, double[]) const;
     void evaluateBatchGPU(const double*, int, double[]) const override;
     void evaluateBatchGPU(const float*, int, float[]) const override;
     template<typename T> void evaluateBatchGPUtempl(const T*, int, T[]) const;
     void evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const override;
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const override;
-    #endif
 
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits);
     void clearRefinement() override;
@@ -130,7 +128,6 @@ private:
 
     std::unique_ptr<SimpleConstructData> dynamic_values;
 
-    #ifdef Tasmanian_ENABLE_CUDA
     std::unique_ptr<CudaWaveletData<double>>& getGpuCacheOverload(double) const{ return gpu_cache; }
     std::unique_ptr<CudaWaveletData<float>>& getGpuCacheOverload(float) const{ return gpu_cachef; }
     template<typename T> std::unique_ptr<CudaWaveletData<T>>& getGpuCache() const{
@@ -140,7 +137,6 @@ private:
     template<typename T> void loadGpuBasis() const;
     mutable std::unique_ptr<CudaWaveletData<double>> gpu_cache;
     mutable std::unique_ptr<CudaWaveletData<float>> gpu_cachef;
-    #endif
 };
 
 // Old version reader

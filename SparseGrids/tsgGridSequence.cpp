@@ -443,7 +443,6 @@ void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
             break;
         }
         #endif
-        #ifdef Tasmanian_ENABLE_BLAS
         case accel_cpu_blas: {
             int num_points = points.getNumIndexes();
             Data2D<double> weights(num_points, num_x);
@@ -454,7 +453,6 @@ void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
             TasBLAS::denseMultiply(num_outputs, num_x, num_points, 1.0, surpluses.data(), weights.data(), 0.0, y);
             break;
         }
-        #endif
         default: {
             Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
             Utils::Wrapper2D<double> ywrap(num_outputs, y);
@@ -466,7 +464,6 @@ void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
     }
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
 template<typename T> void GridSequence::evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
     loadGpuSurpluses<T>();
 
@@ -497,10 +494,6 @@ void GridSequence::clearGpuSurpluses() const{
     if (gpu_cache) gpu_cache->surpluses.clear();
     if (gpu_cachef) gpu_cachef->surpluses.clear();
 }
-#else
-void GridSequence::clearGpuNodes() const{}
-void GridSequence::clearGpuSurpluses() const{}
-#endif // Tasmanian_ENABLE_CUDA
 
 void GridSequence::integrate(double q[], double *conformal_correction) const{
     int num_points = points.getNumIndexes();
