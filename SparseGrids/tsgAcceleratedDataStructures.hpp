@@ -194,8 +194,10 @@ public:
         unload(y);
         return y;
     }
+    //! \brief Copy the first \b num entries to the \b cpu_data buffer, assumes that the buffer is sufficiently large.
+    void unload(size_t num, T* cpu_data) const;
     //! \brief Copy the data from the GPU array to the \b cpu_data buffer, assumes that the buffer is sufficiently large.
-    void unload(T* cpu_data) const;
+    void unload(T* cpu_data) const{ unload(num_entries, cpu_data); }
 
     //! \brief Move the data to the \b external array, the vector is set to empty (unlike move command on std::vector).
     T* eject(){
@@ -417,6 +419,13 @@ namespace TasGpu{
                   GpuVector<int> const &nodes_per_level, GpuVector<int> const &offset_per_level, GpuVector<int> const &map_dimension, GpuVector<int> const &map_level,
                   GpuVector<int> const &active_tensors, GpuVector<int> const &active_num_points, GpuVector<int> const &dim_offsets,
                   GpuVector<int> const &map_tensor, GpuVector<int> const &map_index, GpuVector<int> const &map_reference, T *gpu_result);
+
+
+    /*!
+     * \ingroup TasmanianAcceleration
+     * \brief Fills the \b data with the provided real number at the given stride.
+     */
+    void fillDataGPU(double value, long long N, long long stride, double data[]);
 
     // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas
     #ifdef __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__

@@ -64,29 +64,29 @@ template<typename T> void GpuVector<T>::load(size_t count, const T* cpu_data){
     resize(count);
     TasGpu::cucheck( cudaMemcpy(gpu_data, cpu_data, num_entries * sizeof(T), cudaMemcpyHostToDevice), "cudaMemcpy() to device");
 }
-template<typename T> void GpuVector<T>::unload(T* cpu_data) const{
-    TasGpu::cucheck( cudaMemcpy(cpu_data, gpu_data, num_entries * sizeof(T), cudaMemcpyDeviceToHost), "cudaMemcpy() from device");
+template<typename T> void GpuVector<T>::unload(size_t num, T* cpu_data) const{
+    TasGpu::cucheck( cudaMemcpy(cpu_data, gpu_data, num * sizeof(T), cudaMemcpyDeviceToHost), "cudaMemcpy() from device");
 }
 
 template void GpuVector<double>::resize(size_t);
 template void GpuVector<double>::clear();
 template void GpuVector<double>::load(size_t, const double*);
-template void GpuVector<double>::unload(double*) const;
+template void GpuVector<double>::unload(size_t, double*) const;
 
 template void GpuVector<std::complex<double>>::resize(size_t);
 template void GpuVector<std::complex<double>>::clear();
 template void GpuVector<std::complex<double>>::load(size_t, const std::complex<double>*);
-template void GpuVector<std::complex<double>>::unload(std::complex<double>*) const;
+template void GpuVector<std::complex<double>>::unload(size_t, std::complex<double>*) const;
 
 template void GpuVector<float>::resize(size_t);
 template void GpuVector<float>::clear();
 template void GpuVector<float>::load(size_t, const float*);
-template void GpuVector<float>::unload(float*) const;
+template void GpuVector<float>::unload(size_t, float*) const;
 
 template void GpuVector<int>::resize(size_t);
 template void GpuVector<int>::clear();
 template void GpuVector<int>::load(size_t, const int*);
-template void GpuVector<int>::unload(int*) const;
+template void GpuVector<int>::unload(size_t, int*) const;
 
 GpuEngine::~GpuEngine(){
     if (own_cublas_handle && cublasHandle != nullptr){

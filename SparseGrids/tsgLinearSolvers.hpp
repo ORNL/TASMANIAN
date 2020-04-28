@@ -92,6 +92,9 @@ namespace TasmanianDenseSolver{
      */
     template<typename scalar_type>
     void solvesLeastSquares(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]);
+    //! \brief Overload that accepts arrays on the GPU device.
+    template<typename scalar_type>
+    void solvesLeastSquaresGPU(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]);
 }
 
 /*!

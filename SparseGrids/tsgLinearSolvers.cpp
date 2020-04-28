@@ -99,24 +99,34 @@ void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const *accelera
 
 template<typename scalar_type>
 void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
-    if (acceleration->on_gpu()){
-        if (acceleration->mode == accel_gpu_magma){
+    switch(acceleration->mode){
+        case accel_gpu_magma:
             TasGpu::solveLSmultiOOC(acceleration, n, m, A, nrhs, B);
-        }else{
+            break;
+        case accel_gpu_cuda:
+        case accel_gpu_cublas:
             acceleration->setDevice();
             TasGpu::solveLSmulti(acceleration, n, m, A, nrhs, B);
-        }
-    }else if (acceleration->blasCompatible()){
-        TasBLAS::solveLSmulti(n, m, A, nrhs, B);
-    }else{
-        if (not AccelerationMeta::isAvailable(accel_gpu_cuda)
-            and not AccelerationMeta::isAvailable(accel_cpu_blas))
+            break;
+        case accel_cpu_blas:
+            TasBLAS::solveLSmulti(n, m, A, nrhs, B);
+            break;
+        default:
             throw std::runtime_error("Dense least-squares solve attempted without BLAS or CUDA acceleration enabled.");
-    }
+            break;
+    };
+}
+template<typename scalar_type>
+void TasmanianDenseSolver::solvesLeastSquaresGPU(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
+    if (not acceleration->on_gpu())
+        throw std::runtime_error("solvesLeastSquaresGPU() requires a GPU mode to be enabled.");
+    TasGpu::solveLSmultiGPU(acceleration, n, m, A, nrhs, B);
 }
 
 template void TasmanianDenseSolver::solvesLeastSquares<double>(AccelerationContext const*, int, int, double[], int, double[]);
 template void TasmanianDenseSolver::solvesLeastSquares<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);
+template void TasmanianDenseSolver::solvesLeastSquaresGPU<double>(AccelerationContext const*, int, int, double[], int, double[]);
+template void TasmanianDenseSolver::solvesLeastSquaresGPU<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);
 
 namespace Utils{ // implements block transpose method
 template<typename scalar_type>
