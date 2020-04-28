@@ -49,27 +49,27 @@ namespace TasGrid{
 template<typename T> void GpuVector<T>::resize(size_t){}
 template<typename T> void GpuVector<T>::clear(){}
 template<typename T> void GpuVector<T>::load(size_t, const T[]){}
-template<typename T> void GpuVector<T>::unload(T[]) const{}
+template<typename T> void GpuVector<T>::unload(size_t, T[]) const{}
 
 template void GpuVector<double>::resize(size_t);
 template void GpuVector<double>::clear();
 template void GpuVector<double>::load(size_t, const double*);
-template void GpuVector<double>::unload(double*) const;
+template void GpuVector<double>::unload(size_t, double*) const;
 
 template void GpuVector<std::complex<double>>::resize(size_t);
 template void GpuVector<std::complex<double>>::clear();
 template void GpuVector<std::complex<double>>::load(size_t, const std::complex<double>*);
-template void GpuVector<std::complex<double>>::unload(std::complex<double>*) const;
+template void GpuVector<std::complex<double>>::unload(size_t, std::complex<double>*) const;
 
 template void GpuVector<float>::resize(size_t);
 template void GpuVector<float>::clear();
 template void GpuVector<float>::load(size_t, const float*);
-template void GpuVector<float>::unload(float*) const;
+template void GpuVector<float>::unload(size_t, float*) const;
 
 template void GpuVector<int>::resize(size_t);
 template void GpuVector<int>::clear();
 template void GpuVector<int>::load(size_t, const int*);
-template void GpuVector<int>::unload(int*) const;
+template void GpuVector<int>::unload(size_t, int*) const;
 
 GpuEngine::~GpuEngine(){}
 
@@ -143,6 +143,8 @@ void devalglo(bool, bool, int, int, int, int, T const[], GpuVector<T> const&, Gp
               GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
               GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
               GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, T[]){}
+
+void fillDataGPU(double, long long, long long, double[]){}
 
 template void dtrans2can<float>(bool, int, int, int, double const*, double const*, float const*, float*);
 template void dtrans2can<double>(bool, int, int, int, double const*, double const*, double const*, double*);

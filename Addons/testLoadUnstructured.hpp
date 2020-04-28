@@ -195,22 +195,38 @@ bool testLoadUnstructuredL2(bool verbose, int gpu_id){
     bool pass = true;
 
     bool blas_pass = (AccelerationMeta::isAvailable(accel_cpu_blas)) ? runTests(accel_cpu_blas, 0) : true;
-    if (verbose and not blas_pass)
+    if (blas_pass){
+        if (verbose) cout << std::setw(10) << "blas   " << std::setw(30) << "unstructured construction" << std::setw(10) << "Pass" << endl;
+    }else{
         cout << "Failed testLoadUnstructuredL2() blas case.\n";
+    }
     pass = pass and blas_pass;
 
     if (AccelerationMeta::isAvailable(accel_gpu_cuda)){
         int gpu_begin = (gpu_id == -1) ? 0 : gpu_id;
         int gpu_end   = (gpu_id == -1) ? TasmanianSparseGrid::getNumGPUs() : gpu_id + 1;
         for(int gpu = gpu_begin; gpu < gpu_end; gpu++){
+            bool cublas_pass = runTests(accel_gpu_cublas, gpu);
+            if (cublas_pass){
+                if (verbose) cout << std::setw(7) << "cublas" << std::setw(3) << gpu << std::setw(30) << "unstructured construction" << std::setw(10) << "Pass" << endl;
+            }else{
+                cout << "Failed testLoadUnstructuredL2() cublas case on device " << gpu << "\n";
+            }
             bool cuda_pass = runTests(accel_gpu_cuda, gpu);
-            if (verbose and not cuda_pass)
+            if (cuda_pass){
+                if (verbose) cout << std::setw(7) << "cuda" << std::setw(3) << gpu << std::setw(30) << "unstructured construction" << std::setw(10) << "Pass" << endl;
+            }else{
                 cout << "Failed testLoadUnstructuredL2() cuda case on device " << gpu << "\n";
+            }
             pass = pass and cuda_pass;
             if (AccelerationMeta::isAvailable(accel_gpu_magma)){
                 bool magma_pass = runTests(accel_gpu_magma, gpu);
-                if (verbose and not magma_pass)
+                if (magma_pass){
+                    if (verbose) cout << std::setw(7) << "magma" << std::setw(3) << gpu
+                                      << std::setw(30) << "unstructured construction" << std::setw(10) << "Pass" << endl;
+                }else{
                     cout << "Failed testLoadUnstructuredL2() magma case on device " << gpu << "\n";
+                }
                 pass = pass and magma_pass;
             }
         }

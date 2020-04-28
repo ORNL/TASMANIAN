@@ -39,6 +39,22 @@
 // thus we can set this to the CUDA max number of threads, based on the current cuda version
 constexpr int _MAX_CUDA_THREADS  = 1024;
 
+/*
+ * Create a 1-D CUDA thread grid using the total_threads and number of threads per block.
+ * Basically, computes the number of blocks but no more than 65536.
+ */
+struct ThreadGrid1d{
+    // Compute the threads and blocks.
+    ThreadGrid1d(long long total_threads, long long num_per_block) :
+        threads(num_per_block),
+        blocks(std::min(total_threads / threads + ((total_threads % threads == 0) ? 0 : 1), 65536ll))
+    {}
+    // number of threads
+    int const threads;
+    // number of blocks
+    int const blocks;
+};
+
 namespace TasGrid{
 
 template<typename T>
@@ -294,6 +310,16 @@ template void TasGpu::devalglo<float>(bool, bool, int, int, int, int,
                                       GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                       GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                       GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, float*);
+
+void TasGpu::fillDataGPU(double value, long long n, long long stride, double data[]){
+    if (stride == 1){
+        ThreadGrid1d tgrid(n, _MAX_CUDA_THREADS);
+        tascuda_vfill<double, _MAX_CUDA_THREADS><<<tgrid.blocks, tgrid.threads>>>(n, data, value);
+    }else{
+        ThreadGrid1d tgrid(n, 32);
+        tascuda_sfill<double, 32><<<tgrid.blocks, tgrid.threads>>>(n, stride, data, value);
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //       Linear Algebra

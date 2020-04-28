@@ -276,6 +276,26 @@ __global__ void tascuda_sparse_to_dense(int num_rows, int num_columns, const int
     }
 }
 
+// vector fill, fills the data with the given value
+template<typename T, long long THREADS>
+__global__ void tascuda_vfill(long long n, T data[], T value){
+    long long k = blockIdx.x * THREADS + threadIdx.x;
+    while(k < n){
+        data[k] = value;
+        k += gridDim.x * THREADS;
+    }
+}
+// strided fill, fills the data with the given value and stride
+template<typename T, long long THREADS>
+__global__ void tascuda_sfill(long long n, long long stride, T data[], T value){
+    long long k = stride * (blockIdx.x * THREADS + threadIdx.x);
+    while(k < n){
+        data[k] = value;
+        k += gridDim.x * THREADS * stride;
+    }
+}
+
+
 }
 
 #endif

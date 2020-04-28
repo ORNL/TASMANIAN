@@ -1681,7 +1681,7 @@ public:
      *      is not compatible, i.e., TasGrid::accel_none or TasGrid::accel_cpu_blas.
      *      Also, if CUDA has not been enabled at compile time.
      *
-     * \b Note: will not work for LocalPolynomial grids with order bigger than 2.
+     * \b Note: will not work for LocalPolynomial grids with order bigger than 2 or Wavelets with order 3.
      */
     template<typename FloatType>
     void evaluateHierarchicalFunctionsGPU(const FloatType gpu_x[], int cpu_num_x, FloatType gpu_y[]) const;
