@@ -375,10 +375,7 @@ WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const *acceleration,
 
     if (num_rows == 0) return; // make an empty matrix
 
-    if ((acceleration->blasCompatible() and AccelerationMeta::isAvailable(accel_cpu_blas))
-        and (acceleration->algorithm_select != AccelerationContext::algorithm_sparse)
-        and not (acceleration->algorithm_select == AccelerationContext::algorithm_autoselect and num_rows > 10000)
-        ){
+    if (acceleration->mode != accel_none and useDense(acceleration, num_rows)){
         // Using the sparse algorithm if:
         // - BLAS (and LAPACK) not enabled, guarded by the ifdef
         // - explicitly using acceleration none, first term in the if

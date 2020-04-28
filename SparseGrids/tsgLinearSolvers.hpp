@@ -147,6 +147,12 @@ public:
     //! \brief Default destructor.
     ~WaveletBasisMatrix() = default;
 
+    //! \brief Decide between sparse and dense variant of the algorithms.
+    static bool useDense(AccelerationContext const *acceleration, int num_rows){
+        return ((acceleration->algorithm_select != AccelerationContext::algorithm_sparse)
+                and not (acceleration->algorithm_select == AccelerationContext::algorithm_autoselect and num_rows > 10000));
+    }
+
     //! \brief Return true if using the sparse mode and false is using dense mode or empty.
     bool isSparse() const{ return (num_rows > 0) and dense.empty(); }
     //! \brief Return true if using the dense mode and false is using sparse mode or empty.

@@ -643,6 +643,15 @@ struct AccelerationContext{
         #endif
     }
 
+    //!  \brief Returns true if the current mode implies the use of custom GPU kernels.
+    bool useKernels() const{
+        #ifdef Tasmanian_ENABLE_CUDA
+        return ((mode == accel_gpu_cuda) or (mode == accel_gpu_magma));
+        #else
+        return false;
+        #endif
+    }
+
     //! \brief Accepts parameters directly from TasmanianSparseGrid::enableAcceleration()
     ChangeType enable(TypeAcceleration acc, int new_gpu_id){
         // get the effective new acceleration mode (use the fallback if acc is not enabled)
