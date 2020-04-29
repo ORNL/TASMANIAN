@@ -377,6 +377,39 @@ inline void gemqr(cusolverDnHandle_t handle, cublasSideMode_t side, cublasOperat
         throw std::runtime_error("cusolverDnZunmqr() returned non-zero status: " + std::to_string(info.unload()[0]));
 }
 
+//! \brief Wrapper around cusolverDnDgetrs().
+void getrs(cusolverDnHandle_t handle, cublasOperation_t trans, int n, int nrhs, double const A[], int lda, int const ipiv[], double B[], int ldb){
+    GpuVector<int> info(std::vector<int>(1, 0));
+    cucheck(cusolverDnDgetrs(handle, trans, n, nrhs, A, lda, ipiv, B, ldb, info.data()), "cusolverDnDgetrs()");
+    if (info.unload()[0] != 0)
+        throw std::runtime_error("cusolverDnDgetrs() returned non-zero status: " + std::to_string(info.unload()[0]));
+}
+
+//! \brief Wrapper around cusolverDnDgetrf().
+void factorizePLU(AccelerationContext const *acceleration, int n, double A[], int ipiv[]){
+    cusolverDnHandle_t cusolverdnh = getCuSolverDnHandle(acceleration);
+    int size = 0;
+    cucheck(cusolverDnDgetrf_bufferSize(cusolverdnh, n, n, A, n, &size), "cusolverDnDgetrf_bufferSize()");
+    GpuVector<double> workspace(static_cast<size_t>(size));
+    GpuVector<int> info(std::vector<int>(1, 0));
+    cucheck(cusolverDnDgetrf(cusolverdnh, n, n, A, n, workspace.data(), ipiv, info.data()), "cusolverDnDgetrf()");
+    if (info.unload()[0] != 0)
+        throw std::runtime_error("cusolverDnDgetrf() returned non-zero status: " + std::to_string(info.unload()[0]));
+}
+
+void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int const ipiv[], double b[]){
+    cusolverDnHandle_t cusolverdnh = getCuSolverDnHandle(acceleration);
+    getrs(cusolverdnh, (trans == 'T') ? CUBLAS_OP_T: CUBLAS_OP_N, n, 1, A, n, ipiv, b, n);
+}
+void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int const ipiv[], int nrhs, double B[]){
+    cublasHandle_t cublash = getCuBlasHandle(acceleration);
+    cusolverDnHandle_t cusolverdnh = getCuSolverDnHandle(acceleration);
+    GpuVector<double> BT(n, nrhs);
+    geam(cublash, CUBLAS_OP_T, CUBLAS_OP_T, n, nrhs, 1.0, B, nrhs, 0.0, B, nrhs, BT.data(), n);
+    getrs(cusolverdnh, (trans == 'T') ? CUBLAS_OP_T: CUBLAS_OP_N, n, nrhs, A, n, ipiv, BT.data(), n);
+    geam(cublash, CUBLAS_OP_T, CUBLAS_OP_T, nrhs, n, 1.0, BT.data(), n, 0.0, BT.data(), n, B, nrhs);
+}
+
 /*
  * Algorithm section
  */

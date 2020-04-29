@@ -95,6 +95,10 @@ namespace TasGpu{
 /*
  * Algorithm section
  */
+void factorizePLU(AccelerationContext const*, int, double[], int[]){}
+void solvePLU(AccelerationContext const*, char, int, double const[], int const[], double[]){}
+void solvePLU(AccelerationContext const*, char, int, double const[], int const[], int, double[]){}
+
 template<typename scalar_type>
 void solveLSmultiGPU(AccelerationContext const*, int, int, scalar_type[], int, scalar_type[]){}
 

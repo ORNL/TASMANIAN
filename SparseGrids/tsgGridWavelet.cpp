@@ -339,6 +339,17 @@ void GridWavelet::buildInterpolationMatrix() const{
 
     int num_points = work.getNumIndexes();
 
+    if (order == 1 and TasSparse::WaveletBasisMatrix::useDense(acceleration, num_points)
+                   and acceleration->useKernels()){ // using the GPU algorithm
+        std::vector<double> pnts(Utils::size_mult(num_dimensions, num_points));
+        getPoints(pnts.data());
+        GpuVector<double> gpu_pnts(pnts);
+        GpuVector<double> gpu_basis(num_points, num_points);
+        evaluateHierarchicalFunctionsGPU(gpu_pnts.data(), num_points, gpu_basis.data());
+        inter_matrix = TasSparse::WaveletBasisMatrix(acceleration, num_points, std::move(gpu_basis));
+        return;
+    }
+
     int num_chunk = 32;
     int num_blocks = num_points / num_chunk + ((num_points % num_chunk == 0) ? 0 : 1);
 
@@ -386,6 +397,9 @@ void GridWavelet::recomputeCoefficients(){
     if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
 
     inter_matrix.invert(acceleration, num_outputs, coefficients.data());
+
+    // do not keep the matrix if working with internal interpolation, don't want to hog GPU RAM
+    if (num_outputs > 0) inter_matrix = TasSparse::WaveletBasisMatrix();
 }
 
 std::vector<double> GridWavelet::getNormalization() const{
