@@ -33,6 +33,10 @@
 
 #include "tsgEnumerates.hpp"
 
+#if defined(CUDART_VERSION) && (CUDART_VERSION < 9000)
+#include "tsgSupportCuda8.hpp"
+#endif
+
 //! \internal
 //! \file tsgAcceleratedDataStructures.hpp
 //! \brief Data structures for interacting with CUDA and MAGMA environments.
@@ -482,7 +486,11 @@ namespace AccelerationMeta{
     bool isAccTypeGPU(TypeAcceleration accel);
 
     //! \brief Identifies whether the acceleration mode is available.
-    constexpr bool isAvailable(TypeAcceleration accel){
+    #ifdef Tasmanian_CUDA8_COMPAT
+    inline bool isAvailable(TypeAcceleration accel){
+    #else
+    inline constexpr bool isAvailable(TypeAcceleration accel){
+    #endif
         switch(accel){
             #ifdef Tasmanian_ENABLE_MAGMA
             case accel_gpu_magma: return true;
