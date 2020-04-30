@@ -144,8 +144,26 @@ public:
     WaveletBasisMatrix() : tol(Maths::num_tol), num_rows(0){}
     //! \brief Initialize the matrix with the given set of indexes.
     WaveletBasisMatrix(AccelerationContext const *acceleration, const std::vector<int> &lpntr, const std::vector<std::vector<int>> &lindx, const std::vector<std::vector<double>> &lvals);
+    //! \brief Initialize the matrix in dense mode with the given data.
+    WaveletBasisMatrix(AccelerationContext const *acceleration, int cnum_rows, GpuVector<double> &&matrix)
+        : tol(Maths::num_tol), num_rows(cnum_rows), gpu_dense(std::move(matrix)) { factorize(acceleration); }
     //! \brief Default destructor.
     ~WaveletBasisMatrix() = default;
+
+    //! \brief Cannot copy.
+    WaveletBasisMatrix(WaveletBasisMatrix const&) = default;
+    //! \brief Move constructor.
+    WaveletBasisMatrix(WaveletBasisMatrix &&) = default;
+    //! \brief Cannot copy.
+    WaveletBasisMatrix& operator =(WaveletBasisMatrix const&) = default;
+    //! \brief Move assignment.
+    WaveletBasisMatrix& operator =(WaveletBasisMatrix &&) = default;
+
+    //! \brief Decide between sparse and dense variant of the algorithms.
+    static bool useDense(AccelerationContext const *acceleration, int num_rows){
+        return ((acceleration->algorithm_select != AccelerationContext::algorithm_sparse)
+                and not (acceleration->algorithm_select == AccelerationContext::algorithm_autoselect and num_rows > 10000));
+    }
 
     //! \brief Return true if using the sparse mode and false is using dense mode or empty.
     bool isSparse() const{ return (num_rows > 0) and dense.empty(); }
@@ -165,6 +183,8 @@ public:
     template<bool transpose, bool blas> void solve(const double b[], double x[]) const;
 
 protected:
+    //! \brief Computes the factorization of the matrix, ILU or PLU using the provided acceleration context (called by the constructor).
+    void factorize(AccelerationContext const *acceleration);
     //! \brief Compute the incomplete lower-upper decomposition of the matrix (zero extra fill).
     void computeILU();
     //! \brief Apply the preconditioner on a vector.
@@ -189,6 +209,9 @@ private:
     std::vector<double> vals, ilu;
     std::vector<double> dense; // if using the dense format
     std::vector<int> ipiv; // pivots for the dense factorize
+
+    GpuVector<double> gpu_dense; // GPU factors
+    GpuVector<int> gpu_ipiv;
 };
 
 }

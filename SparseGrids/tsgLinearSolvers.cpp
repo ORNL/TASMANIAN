@@ -375,15 +375,7 @@ WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const *acceleration,
 
     if (num_rows == 0) return; // make an empty matrix
 
-    if ((acceleration->blasCompatible() and AccelerationMeta::isAvailable(accel_cpu_blas))
-        and (acceleration->algorithm_select != AccelerationContext::algorithm_sparse)
-        and not (acceleration->algorithm_select == AccelerationContext::algorithm_autoselect and num_rows > 10000)
-        ){
-        // Using the sparse algorithm if:
-        // - BLAS (and LAPACK) not enabled, guarded by the ifdef
-        // - explicitly using acceleration none, first term in the if
-        // - explicitly the sparse algorithm, second term in the if
-        // - using auto-select but the memory usage would be too much
+    if (acceleration->mode != accel_none and useDense(acceleration, num_rows)){ // dense mode
         dense = std::vector<double>(Utils::size_mult(num_rows, num_rows));
         Utils::Wrapper2D<double> dense_rows(num_rows, dense.data());
 
@@ -406,25 +398,38 @@ WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const *acceleration,
                 r[*ii++] = *vv++;
         }
 
+        if (acceleration->mode != accel_cpu_blas){ // using GPU
+            acceleration->setDevice();
+            gpu_dense = GpuVector<double>(dense);
+            dense = std::vector<double>();
+        }
+    }else{ // sparse mode
+        pntr = std::vector<int>(num_rows+1, 0);
+        for(int i=0; i<num_rows; i++)
+            pntr[i+1] = pntr[i] + lpntr[i];
+
+        int num_nz = pntr.back();
+        indx.reserve(num_nz);
+        vals.reserve(num_nz);
+
+        for(const auto &idx1 : lindx)
+            indx.insert(indx.end(), idx1.begin(), idx1.end());
+        for(const auto &vls1 : lvals)
+            vals.insert(vals.end(), vls1.begin(), vls1.end());
+    }
+    factorize(acceleration);
+}
+
+void WaveletBasisMatrix::factorize(AccelerationContext const *acceleration){
+    if (not gpu_dense.empty()){
+        gpu_ipiv = GpuVector<int>(num_rows);
+        TasGpu::factorizePLU(acceleration, num_rows, gpu_dense.data(), gpu_ipiv.data());
+    }else if (not dense.empty()){
         ipiv = std::vector<int>(num_rows);
         TasBLAS::getrf(num_rows, num_rows, dense.data(), num_rows, ipiv.data());
-        return;
+    }else{
+        computeILU();
     }
-
-    pntr = std::vector<int>(num_rows+1, 0);
-    for(int i=0; i<num_rows; i++)
-        pntr[i+1] = pntr[i] + lpntr[i];
-
-    int num_nz = pntr.back();
-    indx.reserve(num_nz);
-    vals.reserve(num_nz);
-
-    for(const auto &idx1 : lindx)
-        indx.insert(indx.end(), idx1.begin(), idx1.end());
-    for(const auto &vls1 : lvals)
-        vals.insert(vals.end(), vls1.begin(), vls1.end());
-
-    computeILU();
 }
 
 void WaveletBasisMatrix::computeILU(){
@@ -465,19 +470,31 @@ void WaveletBasisMatrix::computeILU(){
 }
 
 void WaveletBasisMatrix::invertTransposed(AccelerationContext const *acceleration, double b[]) const{
-    if (not dense.empty()){
+    if (not gpu_dense.empty()){
+        GpuVector<double> gpu_b(num_rows, 1, b);
+        TasGpu::solvePLU(acceleration, 'N', num_rows, gpu_dense.data(), gpu_ipiv.data(), gpu_b.data());
+        gpu_b.unload(b);
+    }else if (not dense.empty()){
         TasBLAS::getrs('N', num_rows, 1, dense.data(), num_rows, ipiv.data(), b, num_rows);
-        return;
+    }else{
+        // using sparse algorithm
+        if (acceleration->blasCompatible())
+            solve<use_transpose, use_blas>(std::vector<double>(b, b + num_rows).data(), b);
+        else
+            solve<use_transpose, no_blas>(std::vector<double>(b, b + num_rows).data(), b);
     }
-    // using sparse algorithm
-    if (acceleration->blasCompatible())
-        solve<use_transpose, use_blas>(std::vector<double>(b, b + num_rows).data(), b);
-    else
-        solve<use_transpose, no_blas>(std::vector<double>(b, b + num_rows).data(), b);
 }
 
 void WaveletBasisMatrix::invert(AccelerationContext const *acceleration, int num_colums, double B[]){
-    if (not dense.empty()){
+    if (not gpu_dense.empty()){
+        GpuVector<double> gpu_b(num_rows, num_colums, B);
+        if (num_colums == 1){
+            TasGpu::solvePLU(acceleration, 'T', num_rows, gpu_dense.data(), gpu_ipiv.data(), gpu_b.data());
+        }else{
+            TasGpu::solvePLU(acceleration, 'T', num_rows, gpu_dense.data(), gpu_ipiv.data(), num_colums, gpu_b.data());
+        }
+        gpu_b.unload(B);
+    }else if (not dense.empty()){
         if (num_colums == 1){
             TasBLAS::getrs('T', num_rows, 1, dense.data(), num_rows, ipiv.data(), B, num_rows);
         }else{
@@ -491,31 +508,31 @@ void WaveletBasisMatrix::invert(AccelerationContext const *acceleration, int num
                 }
             }
         }
-        return;
-    }
-    if (num_colums == 1){
-        std::vector<double> b(B, B + num_rows);
-        if (acceleration->blasCompatible())
-            solve<no_transpose, use_blas>(b.data(), B);
-        else
-            solve<no_transpose, no_blas>(b.data(), B);
-        return;
-    }
-    Utils::Wrapper2D<double> wrapb(num_colums, B);
-    std::vector<double> b(num_rows);
-    std::vector<double> x(num_rows);
-    for(int k=0; k<num_colums; k++){
-        for(int i=0; i<num_rows; i++){
-            b[i] = wrapb.getStrip(i)[k];
-            x[i] = b[i];
+    }else{
+        if (num_colums == 1){
+            std::vector<double> b(B, B + num_rows);
+            if (acceleration->blasCompatible())
+                solve<no_transpose, use_blas>(b.data(), B);
+            else
+                solve<no_transpose, no_blas>(b.data(), B);
+            return;
         }
+        Utils::Wrapper2D<double> wrapb(num_colums, B);
+        std::vector<double> b(num_rows);
+        std::vector<double> x(num_rows);
+        for(int k=0; k<num_colums; k++){
+            for(int i=0; i<num_rows; i++){
+                b[i] = wrapb.getStrip(i)[k];
+                x[i] = b[i];
+            }
 
-        if (acceleration->blasCompatible())
-            solve<no_transpose, use_blas>(b.data(), x.data());
-        else
-            solve<no_transpose, no_blas>(b.data(), x.data());
-        for(int i=0; i<num_rows; i++)
-            wrapb.getStrip(i)[k] = x[i];
+            if (acceleration->blasCompatible())
+                solve<no_transpose, use_blas>(b.data(), x.data());
+            else
+                solve<no_transpose, no_blas>(b.data(), x.data());
+            for(int i=0; i<num_rows; i++)
+                wrapb.getStrip(i)[k] = x[i];
+        }
     }
 }
 

@@ -102,8 +102,8 @@ public:
     //! \brief Allow for move-assignment.
     GpuVector<T>& operator =(GpuVector<T> &&other){
         GpuVector<T> temp(std::move(other));
-        std::swap(num_entries, other.num_entries);
-        std::swap(gpu_data, other.gpu_data);
+        std::swap(num_entries, temp.num_entries);
+        std::swap(gpu_data, temp.gpu_data);
         return *this;
     }
 
@@ -142,7 +142,7 @@ public:
     //! \brief Delete all allocated memory and reset the array to empty.
     void clear();
     //! \brief Return \b true if the \b size() is zero.
-    bool empty(){ return (num_entries == 0); }
+    bool empty() const{ return (num_entries == 0); }
 
     //! \brief Copy the content of \b cpu_data to the GPU device, all pre-existing data is deleted and the vector is resized to match \b cpu_data.
     void load(const std::vector<T> &cpu_data){ load(cpu_data.size(), cpu_data.data()); }
@@ -638,6 +638,15 @@ struct AccelerationContext{
     bool blasCompatible() const{
         #ifdef Tasmanian_ENABLE_BLAS
         return (mode != accel_none);
+        #else
+        return false;
+        #endif
+    }
+
+    //!  \brief Returns true if the current mode implies the use of custom GPU kernels.
+    bool useKernels() const{
+        #ifdef Tasmanian_ENABLE_CUDA
+        return ((mode == accel_gpu_cuda) or (mode == accel_gpu_magma));
         #else
         return false;
         #endif

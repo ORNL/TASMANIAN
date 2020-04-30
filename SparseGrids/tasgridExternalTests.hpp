@@ -122,6 +122,8 @@ private:
     bool verbose;
     int gpuid;
 
+    std::vector<TypeAcceleration> available_acc;
+
     OneOneP3 f11p3;
 
     TwoOneExpNX2 f21nx2;

@@ -89,17 +89,19 @@ void static_assertions(){ // does nothing but a bunch of static asserts
     assert_copy_move<OneDimensionalWrapper>();
     assert_copy_move<CustomTabulated>();
     assert_copy_move<RuleWavelet>();
-    assert_copy_move<TasSparse::WaveletBasisMatrix>();
+    assert_move_not_copy<TasSparse::WaveletBasisMatrix>();
     assert_copy_move<SimpleConstructData>();
     assert_copy_move<DynamicConstructorDataGlobal>();
-    #ifdef Tasmanian_ENABLE_CUDA
     assert_move_not_copy<GpuVector<double>>();
     assert_move_not_copy<AccelerationDomainTransform>();
     assert_move_not_copy<GpuEngine>();
-    #endif
 }
 
-ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false), gpuid(-1) {}
+ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false), gpuid(-1) {
+    for(auto acc : std::vector<TypeAcceleration>{accel_none, accel_cpu_blas, accel_gpu_cublas, accel_gpu_cuda, accel_gpu_magma}){
+        if (AccelerationMeta::isAvailable(acc)) available_acc.push_back(acc);
+    }
+}
 ExternalTester::~ExternalTester(){}
 void ExternalTester::resetRandomSeed(){ park_miller.seed(static_cast<long unsigned>(std::time(nullptr))); }
 
@@ -1040,26 +1042,29 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
     int orders[2] = { 1, 3 };
     std::vector<double> x = genRandom(f->getNumInputs());
     bool bPass = true;
-    for(int i=0; i<6; i++){
-        auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/3]);
-        grid.favorSparseAcceleration(flavor);
-        R = getError(f, grid, tests[i%3], x);
-        if (R.error > tols[i]){
-            bPass = false;
-            cout << setw(18) << "ERROR: FAILED";
-            cout << setw(6) << IO::getRuleString(rule_wavelet);
-            cout << " order: " << orders[i/3];
+    for(auto acc : available_acc){
+        for(int i=0; i<6; i++){
+            auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/3]);
+            grid.enableAcceleration(acc, (gpuid == -1) ? 0 : gpuid);
+            grid.favorSparseAcceleration(flavor);
+            R = getError(f, grid, tests[i%3], x);
+            if (R.error > tols[i]){
+                bPass = false;
+                cout << setw(18) << "ERROR: FAILED";
+                cout << setw(6) << IO::getRuleString(rule_wavelet);
+                cout << " order: " << orders[i/3];
 
-            if (tests[i%3] == type_integration){
-                cout << setw(25) << "integration test";
-            }else if (tests[i%3] == type_nodal_interpolation){
-                cout << setw(25) << "w-interpolation";
-            }else{
-                cout << setw(25) << "interpolation";
+                if (tests[i%3] == type_integration){
+                    cout << setw(25) << "integration test";
+                }else if (tests[i%3] == type_nodal_interpolation){
+                    cout << setw(25) << "w-interpolation";
+                }else{
+                    cout << setw(25) << "interpolation";
+                }
+
+                cout << "   failed function: " << f->getDescription();
+                cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
             }
-
-            cout << "   failed function: " << f->getDescription();
-            cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
         }
     }
     return bPass;
@@ -2220,6 +2225,21 @@ bool ExternalTester::testAllAcceleration() const{
 void ExternalTester::debugTest(){
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
+
+    const BaseFunction *f = &f23Kexpsincos;
+    const BaseFunction *f1out = &f21expsincos;
+    TasmanianSparseGrid grid;
+    bool pass = true;
+
+    grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 3);
+    pass = pass && testAcceleration(f, grid);
+    grid.makeWaveletGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 4, 1);
+    pass = pass && testAcceleration(f1out, grid);
+    if (pass){
+        cout << "      Accelerated" << "  Pass" << endl;
+    }else{
+        cout << "      Accelerated" << "  FAIL" << endl;
+    }
 }
 
 void ExternalTester::debugTestII(){
