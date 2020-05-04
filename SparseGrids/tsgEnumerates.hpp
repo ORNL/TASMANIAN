@@ -50,6 +50,8 @@
 #include <type_traits>
 #include <utility>
 #include <complex>
+#include <memory>
+#include <type_traits>
 
 #include "TasmanianConfig.hpp" // contains build options passed down from CMake
 #include "tsgUtils.hpp" // contains array wrapper and size_mult for int-to-size_t

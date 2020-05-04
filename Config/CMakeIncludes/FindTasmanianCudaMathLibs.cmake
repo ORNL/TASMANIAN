@@ -39,6 +39,10 @@ macro(Tasmanian_find_cuda_libraries)
     endforeach()
     if (Tasmanian_cudalibs_REQUIRED)
         find_package_handle_standard_args(TasmanianCudaMathLibs DEFAULT_MSG ${Tasmanian_required_cudalibs})
+        foreach(_lib ${Tasmanian_required_cudalibs})
+            get_filename_component(Tasmanian_libdir ${${_lib}} DIRECTORY)
+            list(APPEND Tasmanian_cuda_rpath "${Tasmanian_libdir}")
+        endforeach()
     endif()
     unset(_lib)
     unset(Tasmanian_is_required)
@@ -54,8 +58,7 @@ if (NOT CMAKE_LIBRARY_ARCHITECTURE)
     set(CMAKE_LIBRARY_ARCHITECTURE "x64") # sometimes missing under Windows
 endif()
 
-Tasmanian_find_cuda_libraries(NAMES cusolver_static cusolver cusparse_static cusparse culibos
-                                    cublas_static cublas cublas_device cublasLt_static cublasLt
+Tasmanian_find_cuda_libraries(NAMES cusolver cusparse culibos cublas cublas_device cublasLt
                               REQUIRED cublas cusparse cusolver
                               PREFIX ${Tasmanian_nvccroot}
                               LIST cudamathlibs)

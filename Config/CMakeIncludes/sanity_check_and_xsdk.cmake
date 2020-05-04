@@ -120,6 +120,7 @@ endif()
 
 # check for BLAS
 if (Tasmanian_ENABLE_BLAS OR Tasmanian_ENABLE_RECOMMENDED)
+    include(CheckLibraryExists)
     if (NOT DEFINED BLAS_LIBRARIES) # user defined BLAS libraries are an XSDK requirement
         if (Tasmanian_ENABLE_BLAS)
             find_package(BLAS REQUIRED) # if BLAS enabled explicitly, require
@@ -225,6 +226,9 @@ if (SKBUILD)
 else()
     set(Tasmanian_final_install_path "${CMAKE_INSTALL_PREFIX}")
 endif()
+
+# set Tasmanian_rpath with all options
+include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/rpath_list.cmake")
 
 
 ########################################################################

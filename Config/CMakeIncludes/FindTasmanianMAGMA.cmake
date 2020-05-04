@@ -184,9 +184,12 @@ if (NOT Tasmanian_MAGMA_LIBRARIES) # user has not provided specific libs, search
 
     list(APPEND Tasmanian_MAGMA_SHARED_LIBRARIES ${Tasmanian_libmagma} ${Tasmanian_libmagma_sparse}) # check if exist below
 
+    if (Tasmanian_libmagma)
+        get_filename_component(Tasmanian_libmagma_dir ${Tasmanian_libmagma} DIRECTORY) # used as RPATH and HINTS to search for "magma.h"
+    endif()
+
     if (Tasmanian_libmagma_static AND Tasmanian_libmagma_sparse_static)
         list(APPEND Tasmanian_MAGMA_LIBRARIES ${Tasmanian_libmagma_static} ${Tasmanian_libmagma_sparse_static})
-        get_filename_component(Tasmanian_libmagma_dir ${Tasmanian_libmagma} DIRECTORY) # used as HINTS to search for "magma.h"
     else()
         set(Tasmanian_MAGMA_LIBRARIES ${Tasmanian_MAGMA_SHARED_LIBRARIES}) # it is OK if shared libs don't exist, will test below
     endif()
@@ -194,8 +197,9 @@ if (NOT Tasmanian_MAGMA_LIBRARIES) # user has not provided specific libs, search
     if (NOT Tasmanian_MAGMA_INCLUDE_DIRS) # if not user provided includes, search for "magma.h"
         Tasmanian_magma_searchinclude() # if fail, sets found to OFF
     endif()
-
-    unset(Tasmanian_libmagma_dir)
+else()
+    list(GET Tasmanian_MAGMA_LIBRARIES 0 Tasmanian_libmagma)
+    get_filename_component(Tasmanian_libmagma_dir ${Tasmanian_libmagma} DIRECTORY)
 endif()
 
 # at this point, Tasmanian_MAGMA_LIBRARIES is set, either by the module or the user

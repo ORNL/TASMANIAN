@@ -33,7 +33,7 @@ function(tasmanian_add_swig_module tsg_name)
     )
 
     target_link_libraries(${tsg_name} Tasmanian_addons Tasmanian_libdream_${Tasmanian_lib_default})
-    set_target_properties(${tsg_name} PROPERTIES INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
+    set_target_properties(${tsg_name} PROPERTIES INSTALL_RPATH "${Tasmanian_rpath}"
                                                  SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                  VERSION   ${PROJECT_VERSION})
 
