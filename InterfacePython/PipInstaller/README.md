@@ -53,8 +53,7 @@ The process will require a compatible C++ compiler, make sure to have installed
 Commands to build the package:
 ```
 cd <repo root, e.g., TASMANIAN>
-cp ./InterfacePython/PipInstaller/* .
-git checkout -f README.md
+bash ./InterfacePython/PipInstaller/make_tarball.sh
 python3 setup.py sdist
 ```
 At this point, the `dist/Tasmanian-<version>.tar.gz` package file will be created.
@@ -69,6 +68,10 @@ python3 -m pip install dist/Tasmanian-<version>.tar.gz --user
 * According to [PEP518](https://www.python.org/dev/peps/pep-0518/), the `pyproject.toml` file must specify the dependencies that are needed to run the `setup.py` script, e.g., scikit-build and packaging.
 * The `setup_requires` list in the `setup.py` script specifies the dependencies for the build process, e.g., make.
 * The `install_requires` list in the `setup.py` script specifies the run-time dependencies, e.g., numpy.
+
+### Options
+
+Pip accepts both `--global-option=` and `--install-option=` parameters and scikit-build will automatically translate some of those into corresponding CMake commands. However, some python distributions (e.g., Ubuntu) deliberately ignore the options, not sure about the reason behind that, perhaps to limit breaks due to incorrect user-provided install paths. As an alternative, when using Pip, Tasmanian will accept environmental variables to setup BLAS, CUDA, MAGAM, MPI, and MATLAB options.
 
 ### Behind the Curtains
 
@@ -88,8 +91,6 @@ in which case the `rpath` is set to the final install path, e.g., `<home>/.local
 
 The `setup.py` file sets the CMake options and predicts the install path.
 General information is also set here.
-
-The `pyproject.toml` file sets the project requirements, not sure if needed.
 
 The `MANIFEST.in` describes the source files that need to be added to
 the package tarball. Some files, such as `.gitignore`, `install` and `Makefile`

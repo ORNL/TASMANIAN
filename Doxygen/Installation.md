@@ -49,7 +49,7 @@ Optional features:
 | ESSL    | 6.2                 | 6.2              |
 | CUDA    | 8.0 - 10.2          | 10.2             |
 | libiomp | 5.0                 | 5.0              |
-| MAGMA   | 2.5.1               | 2.5.1            |
+| MAGMA   | 2.5.1 - 2.5.3       | 2.5.3            |
 | Doxygen | 1.8.13              | 1.8.13           |
 | MPI     | 2.1, 3.1            | 3.1              |
 
@@ -200,17 +200,37 @@ Tasmanian is included in the Python Pip index: [https://pypi.org/project/Tasmani
 ```
 Pip versions prior to 1.10 cannot handle the extra dependencies, those must be installed manually
 ```
-  python3 -m pip install scikit-build packaging numpy --user (required dependencies)
+  python3 -m pip install scikit-build packaging numpy --user
 ```
 
 The Tasmanian module is not a regular Python-only project but a wrapper around C++ libraries, note the following:
 * Pip versions prior to 1.10 require that dependencies are installed manually.
 * Only user installations are supported, installation for all users is possible with CMake but not Pip.
 * Python virtual environments are supported, as well as Linux, Mac and Windows operating systems.
-* The pip installer will enable only the recommended options, if the required libraries are found automatically by CMake.
-* There is currently no way to manually specify the BLAS libraries.
-* CUDA acceleration is not available through Pip.
-* Only the C++ and Python interfaces can be installed through Pip.
+* The Pip installer will accept Tasmanian options specified in the environmental variables:
+```
+Environment Option will translate to               CMake Options
+export Tasmanian_ENABLE_BLAS=<blas-lapack-libs>    -D Tasmanian_ENABLE_BLAS=ON
+                                                   -D BLAS_LIBRARIES=<blas-lapack-libs>
+                                                   -D LAPACK_LIBRARIES=<blas-lapack-libs>
+export Tasmanian_ENABLE_CUDA=<cuda-nvcc>           -D Tasmanian_ENABLE_CUDA=ON
+                                                   -D CMAKE_CUDA_COMPILER=<cuda-nvcc>
+export Tasmanian_ENABLE_MAGMA=<magma-root>         -D Tasmanian_ENABLE_MAGMA=ON
+                                                   -D Tasmanian_MAGMA_ROOT_DIR=<magma-root>
+export Tasmanian_ENABLE_MPI=<mpicxx>               -D Tasmanian_ENABLE_MPI=ON
+                                                   -D MPI_CXX_COMPILER=<mpicxx>
+export Tasmanian_MATLAB_WORK_FOLDER=<path>         -D Tasmanian_MATLAB_WORK_FOLDER=<path>
+```
+* note that the environment variables work only with Python Pip
+* Example virtual install looks like this:
+```
+python3 -m venv tasmanian_virtual_env                   # create a virtual environment
+source ./tasmanian_virtual_env/bin/activate             # activate the virtual environment
+export Tasmanian_ENABLE_CUDA=/usr/local/cuda/bin/nvcc   # specify the CUDA compiler
+python -m pip install Tasmanian                         # will install Tasmanian with CUDA
+python -m Tasmanian                                     # print the install log
+./tasmanian_virtual_env/bin/tasgrid -v                  # print the available CUDA devices
+```
 
 ### Install with Spack
 
