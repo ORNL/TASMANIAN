@@ -58,8 +58,7 @@ if (NOT CMAKE_LIBRARY_ARCHITECTURE)
     set(CMAKE_LIBRARY_ARCHITECTURE "x64") # sometimes missing under Windows
 endif()
 
-Tasmanian_find_cuda_libraries(NAMES cusolver_static cusolver cusparse_static cusparse culibos
-                                    cublas_static cublas cublas_device cublasLt_static cublasLt
+Tasmanian_find_cuda_libraries(NAMES cusolver cusparse culibos cublas cublas_device cublasLt
                               REQUIRED cublas cusparse cusolver
                               PREFIX ${Tasmanian_nvccroot}
                               LIST cudamathlibs)
