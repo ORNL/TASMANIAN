@@ -53,8 +53,7 @@ The process will require a compatible C++ compiler, make sure to have installed
 Commands to build the package:
 ```
 cd <repo root, e.g., TASMANIAN>
-cp ./InterfacePython/PipInstaller/* .
-git checkout -f README.md
+bash ./InterfacePython/PipInstaller/make_tarball.sh
 python3 setup.py sdist
 ```
 At this point, the `dist/Tasmanian-<version>.tar.gz` package file will be created.
@@ -88,8 +87,6 @@ in which case the `rpath` is set to the final install path, e.g., `<home>/.local
 
 The `setup.py` file sets the CMake options and predicts the install path.
 General information is also set here.
-
-The `pyproject.toml` file sets the project requirements, not sure if needed.
 
 The `MANIFEST.in` describes the source files that need to be added to
 the package tarball. Some files, such as `.gitignore`, `install` and `Makefile`
