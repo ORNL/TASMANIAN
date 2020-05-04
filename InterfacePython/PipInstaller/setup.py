@@ -1,21 +1,5 @@
-# First catch Tasmanian specific options so CUDA and manual selection
-# of the BLAS libraries would be possible
-import sys, site
-enable_cuda = False
-cuda_path = ""
-blas_libs = ""
-for opt in sys.argv:
-    if opt.startswith("-cuda"):
-        # remove the option to avoid confusion with the standard options
-        sys.argv.remove(opt)
-        enable_cuda = True
-        if len(opt.split("=")) > 1:
-            cuda_path = opt.split("=")[1]
-    elif opt.startswith("-blas"):
-        sys.argv.remove(opt)
-        if len(opt.split("=")) > 1:
-            blas_libs = opt.split("=")[1]
 
+import sys, site
 
 # do standard skbuild setup
 from packaging.version import LegacyVersion
@@ -27,9 +11,9 @@ from skbuild import setup  # This line replaces 'from setuptools import setup'
 setup_requires = []
 try:
     if LegacyVersion(get_cmake_version()) < LegacyVersion("3.10"):
-        setup_requires.append('cmake')
+        setup_requires.append('cmake>=3.10')
 except SKBuildError:
-    setup_requires.append('cmake')
+    setup_requires.append('cmake>=3.10')
 setup_requires.append('numpy>=1.10')
 
 with open('README.md', 'r') as fh:
@@ -42,7 +26,7 @@ for line in readme_file:
     else:
         long_description += line
 
-long_description += "### Quick Install\n Tasmanian supports `--user` install only, see the on-line documentation for details.\n"
+long_description += "### Quick Install\n Tasmanian supports `--user` and venv install only, see the on-line documentation for details.\n"
 
 # find out whether this is avirtual environment, real_prefix is an older test, base_refix is the newer one
 if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
@@ -57,17 +41,6 @@ else:
         # some implementations do not provide compatible 'site' package, assume default Linux behavior
         final_install_path = os.getenv('HOME') + "/.local/"
 
-isosxframework = False
-if sys.platform == 'darwin':
-    try:
-        if 'python/site-packages' in site.getusersitepackages():
-            # appears to be Mac Framework using Library/Python/X.Y/lib/python/site-packages
-            isosxframework = True
-    except:
-        # cannot determine if using Mac Framework
-        pass
-
-
 # setup cmake arguments
 cmake_args=[
         '-DCMAKE_BUILD_TYPE=Release',
@@ -76,22 +49,15 @@ cmake_args=[
         '-DTasmanian_ENABLE_PYTHON:BOOL=ON',
         '-DPYTHON_EXECUTABLE:PATH={0:1s}'.format(sys.executable),
         '-DTasmanian_python_pip_final:PATH={0:1s}/'.format(final_install_path),
-        '-DTasmanian_ENABLE_CUDA:BOOL={0:1s}'.format('ON' if enable_cuda else 'OFF'),
         ]
-if cuda_path != "":
-    cmake_args.append('-DCMAKE_CUDA_COMPILER:PATH={0:1s}'.format(cuda_path))
-if blas_libs != "":
-    cmake_args.append('-DBLAS_LIBRARIES={0:1s}'.format(blas_libs))
 if isvirtual:
     cmake_args.append('-DTasmanian_windows_virtual:BOOL=ON')
-if isosxframework:
-    cmake_args.append('-DTasmanian_osx_framework:BOOL=ON')
 
 
 # call the actual package setup command
 setup(
     name='Tasmanian',
-    version='7.1.dev1',
+    version='7.1.dev2',
     author='Miroslav Stoyanov',
     author_email='stoyanovmk@ornl.gov',
     description='UQ library for sparse grids and Bayesian inference',
