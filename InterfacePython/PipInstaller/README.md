@@ -69,6 +69,10 @@ python3 -m pip install dist/Tasmanian-<version>.tar.gz --user
 * The `setup_requires` list in the `setup.py` script specifies the dependencies for the build process, e.g., make.
 * The `install_requires` list in the `setup.py` script specifies the run-time dependencies, e.g., numpy.
 
+### Options
+
+Pip accepts both `--global-option=` and `--install-option=` parameters and scikit-build will automatically translate some of those into corresponding CMake commands. However, some python distributions (e.g., Ubuntu) deliberately ignore the options, not sure about the reason behind that, perhaps to limit breaks due to incorrect user-provided install paths. As an alternative, when using Pip, Tasmanian will accept environmental variables to setup BLAS, CUDA, MAGAM, MPI, and MATLAB options.
+
 ### Behind the Curtains
 
 The `pip` installer will execute the following steps:
