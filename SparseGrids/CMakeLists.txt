@@ -46,7 +46,6 @@ target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERF
 target_compile_features(${Tasmanian_libtsg_target_name} PUBLIC cxx_std_14)
 set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid"
                                                                  INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
-                                                                 CXX_EXTENSIONS OFF
                                                                  SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                                  VERSION   ${PROJECT_VERSION})
 

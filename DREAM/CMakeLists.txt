@@ -26,7 +26,6 @@ target_include_directories(${Tasmanian_libtdr_target_name} PUBLIC $<BUILD_INTERF
 
 set_target_properties(${Tasmanian_libtdr_target_name} PROPERTIES OUTPUT_NAME "tasmaniandream"
                                                                  INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
-                                                                 CXX_EXTENSIONS OFF
                                                                  SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                                  VERSION   ${PROJECT_VERSION})
 
