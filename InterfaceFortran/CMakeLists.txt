@@ -16,7 +16,7 @@ add_library(${Tasmanian_libfor_target_name} ${Tasmanian_shared_or_static} Tasman
 
 target_link_libraries(${Tasmanian_libfor_target_name} Tasmanian_addons)
 set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES OUTPUT_NAME "tasmanianfortran90"
-                                                                 INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
+                                                                 INSTALL_RPATH "${Tasmanian_rpath}"
                                                                  SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                                  VERSION   ${PROJECT_VERSION})
 

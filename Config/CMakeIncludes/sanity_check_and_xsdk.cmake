@@ -227,6 +227,9 @@ else()
     set(Tasmanian_final_install_path "${CMAKE_INSTALL_PREFIX}")
 endif()
 
+# set Tasmanian_rpath with all options
+include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/rpath_list.cmake")
+
 
 ########################################################################
 # Needed for TasmanianConfig.cmake and TasmanianConfigVersion.cmake
