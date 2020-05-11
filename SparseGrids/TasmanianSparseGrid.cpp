@@ -51,10 +51,10 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
     #endif // _OPENMP
 }
 
-TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(std::make_unique<AccelerationContext>()), using_dynamic_construction(false){}
+TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(Utils::make_unique<AccelerationContext>()), using_dynamic_construction(false){}
 
 TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) :
-        acceleration(std::make_unique<AccelerationContext>()), using_dynamic_construction(false){
+        acceleration(Utils::make_unique<AccelerationContext>()), using_dynamic_construction(false){
     copyGrid(&source);
 }
 
@@ -138,7 +138,7 @@ void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth,
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeGlobalGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
-    base = std::make_unique<GridGlobal>(acceleration.get(), dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename, llimits);
+    base = Utils::make_unique<GridGlobal>(acceleration.get(), dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename, llimits);
 }
 
 void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, const int *level_limits){
@@ -159,8 +159,8 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeSequenceGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
-    base = (outputs == 0) ? std::make_unique<GridSequence>(acceleration.get(), dimensions, depth, type, rule, anisotropic_weights, llimits) :
-                            std::make_unique<GridSequence>(acceleration.get(), dimensions, outputs, depth, type, rule, anisotropic_weights, llimits);
+    base = (outputs == 0) ? Utils::make_unique<GridSequence>(acceleration.get(), dimensions, depth, type, rule, anisotropic_weights, llimits) :
+                            Utils::make_unique<GridSequence>(acceleration.get(), dimensions, outputs, depth, type, rule, anisotropic_weights, llimits);
 }
 
 void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const int *level_limits){
@@ -181,7 +181,7 @@ void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, i
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
-    base = std::make_unique<GridLocalPolynomial>(acceleration.get(), dimensions, outputs, depth, order, rule, llimits);
+    base = Utils::make_unique<GridLocalPolynomial>(acceleration.get(), dimensions, outputs, depth, order, rule, llimits);
 }
 
 void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const int *level_limits){
@@ -198,7 +198,7 @@ void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeWaveletGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
-    base = std::make_unique<GridWavelet>(acceleration.get(), dimensions, outputs, depth, order, llimits);
+    base = Utils::make_unique<GridWavelet>(acceleration.get(), dimensions, outputs, depth, order, llimits);
 }
 
 void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights, const int* level_limits){
@@ -214,7 +214,7 @@ void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeFourierGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
-    base = std::make_unique<GridFourier>(acceleration.get(), dimensions, outputs, depth, type, anisotropic_weights, llimits);
+    base = Utils::make_unique<GridFourier>(acceleration.get(), dimensions, outputs, depth, type, anisotropic_weights, llimits);
 }
 
 void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source, int outputs_begin, int outputs_end){
@@ -222,15 +222,15 @@ void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source, int output
     clear();
     if (!source->empty()){
         if (source->isGlobal()){
-            base = std::make_unique<GridGlobal>(acceleration.get(), source->get<GridGlobal>(), outputs_begin, outputs_end);
+            base = Utils::make_unique<GridGlobal>(acceleration.get(), source->get<GridGlobal>(), outputs_begin, outputs_end);
         }else if (source->isLocalPolynomial()){
-            base = std::make_unique<GridLocalPolynomial>(acceleration.get(), source->get<GridLocalPolynomial>(), outputs_begin, outputs_end);
+            base = Utils::make_unique<GridLocalPolynomial>(acceleration.get(), source->get<GridLocalPolynomial>(), outputs_begin, outputs_end);
         }else if (source->isSequence()){
-            base = std::make_unique<GridSequence>(acceleration.get(), source->get<GridSequence>(), outputs_begin, outputs_end);
+            base = Utils::make_unique<GridSequence>(acceleration.get(), source->get<GridSequence>(), outputs_begin, outputs_end);
         }else if (source->isFourier()){
-            base = std::make_unique<GridFourier>(acceleration.get(), source->get<GridFourier>(), outputs_begin, outputs_end);
+            base = Utils::make_unique<GridFourier>(acceleration.get(), source->get<GridFourier>(), outputs_begin, outputs_end);
         }else if (source->isWavelet()){
-            base = std::make_unique<GridWavelet>(acceleration.get(), source->get<GridWavelet>(), outputs_begin, outputs_end);
+            base = Utils::make_unique<GridWavelet>(acceleration.get(), source->get<GridWavelet>(), outputs_begin, outputs_end);
         }
     }
     if (source->domain_transform_a.size() > 0){
@@ -747,7 +747,7 @@ template<typename T>
 const T* TasmanianSparseGrid::formCanonicalPointsGPU(const T *gpu_x, int num_x, GpuVector<T> &gpu_x_temp) const{
     if (!domain_transform_a.empty()){
         if (!acc_domain)
-            acc_domain = std::make_unique<AccelerationDomainTransform>(domain_transform_a, domain_transform_b);
+            acc_domain = Utils::make_unique<AccelerationDomainTransform>(domain_transform_a, domain_transform_b);
         acc_domain->getCanonicalPoints(isFourier(), gpu_x, num_x, gpu_x_temp);
         return gpu_x_temp.data();
     }else{

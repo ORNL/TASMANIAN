@@ -59,6 +59,8 @@ namespace TasGrid{
  * \internal
  * \ingroup TasmanianUtils
  * \brief Miscellaneous utility templates.
+ *
+ * \endinternal
  */
 namespace Utils{
 
@@ -139,6 +141,32 @@ private:
     size_t stride;
     T *data;
 };
+
+/*!
+ * \ingroup TasmanianUtils
+ * \brief Equivalent to C++14 enable_if_t<condition, void>
+ */
+template<bool condition>
+using use_if = typename std::enable_if<condition, void>::type;
+
+/*!
+ * \ingroup TasmanianUtils
+ * \brief Equivalent to C++14 exchange, but works with simpler types (int, double, float*).
+ */
+template<typename T, typename U> T exchange(T& x, U new_x){
+    T old_x = x;
+    x = static_cast<T>(new_x);
+    return old_x;
+}
+
+/*!
+ * \ingroup TasmanianUtils
+ * \brief Equivalent to C++14 make_unique.
+ */
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args){
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
 
 }
 

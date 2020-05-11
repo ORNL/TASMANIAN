@@ -306,8 +306,8 @@ private:
 
 // Old version reader
 template<> struct GridReaderVersion5<GridLocalPolynomial>{
-    template<typename iomode> static auto read(AccelerationContext const *acc, std::istream &is){
-        std::unique_ptr<GridLocalPolynomial> grid = std::make_unique<GridLocalPolynomial>(acc);
+    template<typename iomode> static std::unique_ptr<GridLocalPolynomial> read(AccelerationContext const *acc, std::istream &is){
+        std::unique_ptr<GridLocalPolynomial> grid = Utils::make_unique<GridLocalPolynomial>(acc);
 
             grid->num_dimensions = IO::readNumber<iomode, int>(is);
             grid->num_outputs = IO::readNumber<iomode, int>(is);

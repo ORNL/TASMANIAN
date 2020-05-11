@@ -162,7 +162,7 @@ private:
     template<typename T>
     void loadGpuNodes() const{
         auto& ccache = getGpuCache<T>();
-        if (!ccache) ccache = std::make_unique<CudaSequenceData<T>>();
+        if (!ccache) ccache = Utils::make_unique<CudaSequenceData<T>>();
         if (!ccache->num_nodes.empty()) return;
 
         ccache->nodes.load(nodes);
@@ -184,7 +184,7 @@ private:
     }
     template<typename T> void loadGpuSurpluses() const{
         auto& ccache = getGpuCache<T>();
-        if (!ccache) ccache = std::make_unique<CudaSequenceData<T>>();
+        if (!ccache) ccache = Utils::make_unique<CudaSequenceData<T>>();
         if (ccache->surpluses.empty()) ccache->surpluses.load(surpluses.begin(), surpluses.end());
     }
     mutable std::unique_ptr<CudaSequenceData<double>> gpu_cache;
@@ -193,8 +193,8 @@ private:
 
 // Old version reader
 template<> struct GridReaderVersion5<GridSequence>{
-    template<typename iomode> static auto read(AccelerationContext const *acc, std::istream &is){
-        std::unique_ptr<GridSequence> grid = std::make_unique<GridSequence>(acc);
+    template<typename iomode> static std::unique_ptr<GridSequence> read(AccelerationContext const *acc, std::istream &is){
+        std::unique_ptr<GridSequence> grid = Utils::make_unique<GridSequence>(acc);
 
         grid->num_dimensions = IO::readNumber<iomode, int>(is);
         grid->num_outputs = IO::readNumber<iomode, int>(is);

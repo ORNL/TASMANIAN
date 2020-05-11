@@ -192,8 +192,8 @@ private:
 
 // Old version reader
 template<> struct GridReaderVersion5<GridFourier>{
-    template<typename iomode> static auto read(AccelerationContext const *acc, std::istream &is){
-        std::unique_ptr<GridFourier> grid = std::make_unique<GridFourier>(acc);
+    template<typename iomode> static std::unique_ptr<GridFourier> read(AccelerationContext const *acc, std::istream &is){
+        std::unique_ptr<GridFourier> grid = Utils::make_unique<GridFourier>(acc);
 
         grid->num_dimensions = IO::readNumber<iomode, int>(is);
         grid->num_outputs = IO::readNumber<iomode, int>(is);

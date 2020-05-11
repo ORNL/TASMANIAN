@@ -27,9 +27,6 @@ Changelog for version 7.1
     * `evaluateBatchGPU()` and `evaluateHierarchicalFunctionsGPU()`
     * `evaluateBatch()` when the acceleration mode is cuda or magma
 
-* C++ 2014 standard is required now
-    * the standard is supported by all previously tested compilers
-
 
 Changelog for version 7.0
 --------------

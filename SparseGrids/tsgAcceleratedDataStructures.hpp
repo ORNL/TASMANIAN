@@ -33,10 +33,6 @@
 
 #include "tsgEnumerates.hpp"
 
-#if defined(CUDART_VERSION) && (CUDART_VERSION < 9000)
-#include "tsgSupportCuda8.hpp"
-#endif
-
 //! \internal
 //! \file tsgAcceleratedDataStructures.hpp
 //! \brief Data structures for interacting with CUDA and MAGMA environments.
@@ -102,7 +98,7 @@ public:
     GpuVector<T>& operator =(GpuVector<T> const &) = delete;
 
     //! \brief Allow for move-construction.
-    GpuVector(GpuVector<T> &&other) : num_entries(std::exchange(other.num_entries, 0)), gpu_data(std::exchange(other.gpu_data, nullptr)){}
+    GpuVector(GpuVector<T> &&other) : num_entries(Utils::exchange(other.num_entries, 0)), gpu_data(Utils::exchange(other.gpu_data, nullptr)){}
     //! \brief Allow for move-assignment.
     GpuVector<T>& operator =(GpuVector<T> &&other){
         GpuVector<T> temp(std::move(other));
@@ -163,7 +159,7 @@ public:
      * Used when the CPU vectors are stored in double-precision format while the GPU entries are prepared to work with single-precision.
      */
     template<typename U>
-    std::enable_if_t<!std::is_same<U, T>::value> load(const std::vector<U> &cpu_data){
+    Utils::use_if<!std::is_same<U, T>::value> load(const std::vector<U> &cpu_data){
         load(cpu_data.size(), cpu_data.data());
     }
 
@@ -182,7 +178,7 @@ public:
      * Used when the CPU data is stored in double-precision format while the GPU entries are prepared to work with single-precision.
      */
     template<typename U>
-    std::enable_if_t<!std::is_same<U, T>::value> load(size_t count, const U* cpu_data){
+    Utils::use_if<!std::is_same<U, T>::value> load(size_t count, const U* cpu_data){
         std::vector<T> converted(count);
         std::transform(cpu_data, cpu_data + count, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
         load(converted);
@@ -240,13 +236,13 @@ struct GpuEngine{
     #ifdef Tasmanian_ENABLE_CUDA
     //! \brief Move construct the engine.
     GpuEngine(GpuEngine &&other) :
-        cublasHandle(std::exchange(other.cublasHandle, nullptr)),
-        own_cublas_handle(std::exchange(other.own_cublas_handle, false)),
-        cusparseHandle(std::exchange(other.cusparseHandle, nullptr)),
-        own_cusparse_handle(std::exchange(other.own_cusparse_handle, false)),
-        cusolverDnHandle(std::exchange(other.cusolverDnHandle, nullptr)),
-        own_cusolverdn_handle(std::exchange(other.own_cusolverdn_handle, false)),
-        called_magma_init(std::exchange(other.called_magma_init, false))
+        cublasHandle(Utils::exchange(other.cublasHandle, nullptr)),
+        own_cublas_handle(Utils::exchange(other.own_cublas_handle, false)),
+        cusparseHandle(Utils::exchange(other.cusparseHandle, nullptr)),
+        own_cusparse_handle(Utils::exchange(other.own_cusparse_handle, false)),
+        cusolverDnHandle(Utils::exchange(other.cusolverDnHandle, nullptr)),
+        own_cusolverdn_handle(Utils::exchange(other.own_cusolverdn_handle, false)),
+        called_magma_init(Utils::exchange(other.called_magma_init, false))
         {}
     #else
     GpuEngine(GpuEngine &&) = default;
@@ -486,11 +482,7 @@ namespace AccelerationMeta{
     bool isAccTypeGPU(TypeAcceleration accel);
 
     //! \brief Identifies whether the acceleration mode is available.
-    #ifdef Tasmanian_CUDA8_COMPAT
     inline bool isAvailable(TypeAcceleration accel){
-    #else
-    inline constexpr bool isAvailable(TypeAcceleration accel){
-    #endif
         switch(accel){
             #ifdef Tasmanian_ENABLE_MAGMA
             case accel_gpu_magma: return true;
@@ -670,12 +662,12 @@ struct AccelerationContext{
 
         // assign the new values for the mode and device, but remember the current gpu state and check whether something changed
         bool was_on_gpu = on_gpu();
-        ChangeType mode_change = (effective_acc == std::exchange(mode, effective_acc)) ? change_none : change_cpu_blas;
-        ChangeType device_change = (new_gpu_id == std::exchange(device, new_gpu_id)) ? change_none : change_gpu_device;
+        ChangeType mode_change = (effective_acc == Utils::exchange(mode, effective_acc)) ? change_none : change_cpu_blas;
+        ChangeType device_change = (new_gpu_id == Utils::exchange(device, new_gpu_id)) ? change_none : change_gpu_device;
 
         if (AccelerationMeta::isAccTypeGPU(mode)){
             // if the new mode is GPU-based, reset the engine and the handles (if already created)
-            engine = std::make_unique<GpuEngine>();
+            engine = Utils::make_unique<GpuEngine>();
         }else{
             engine.reset();
         }
