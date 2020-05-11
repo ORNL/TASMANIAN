@@ -133,7 +133,7 @@ bool testConstructSurrogate(bool verbose){
         model_trig(&points[2*i], &values[i], 0);
     reference_grid.loadNeededPoints(values);
 
-    loadNeededPoints<false, false>(model_trig, grid, -1); // sequential version ignores the num_threads
+    loadNeededPoints<false, false>(model_trig, grid, 128); // sequential version ignores the num_threads
     compareGrids(1.E-10, grid, reference_grid, true);
 
     grid.loadNeededPoints(std::vector<double>(reference_grid.getNumPoints(), -1.0)); // set wrong values

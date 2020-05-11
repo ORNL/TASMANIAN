@@ -113,7 +113,6 @@ void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const *acceler
             break;
         default:
             throw std::runtime_error("Dense least-squares solve attempted without BLAS or CUDA acceleration enabled.");
-            break;
     };
 }
 template<typename scalar_type>

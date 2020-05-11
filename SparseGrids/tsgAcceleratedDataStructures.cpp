@@ -186,6 +186,15 @@ void AccelerationDomainTransform::getCanonicalPoints(bool use01, const T *gpu_tr
 
 template void AccelerationDomainTransform::getCanonicalPoints<float>(bool, float const[], int, GpuVector<float>&);
 template void AccelerationDomainTransform::getCanonicalPoints<double>(bool, double const[], int, GpuVector<double>&);
+#else
+
+AccelerationDomainTransform::AccelerationDomainTransform(std::vector<double> const&, std::vector<double> const&){}
+
+template<typename T> void AccelerationDomainTransform::getCanonicalPoints(bool, const T*, int, GpuVector<T>&){}
+
+template void AccelerationDomainTransform::getCanonicalPoints<float>(bool, float const[], int, GpuVector<float>&);
+template void AccelerationDomainTransform::getCanonicalPoints<double>(bool, double const[], int, GpuVector<double>&);
+
 #endif // Tasmanian_ENABLE_CUDA
 
 
