@@ -209,7 +209,7 @@ public:
             }
         }else if (rule == rule_localp0){
             return 2*point + ((kid_number == 0) ? 1 : 2);
-        }else if (rule == rule_localpb){
+        }else{ // localpb
             if ((point == 0) || (point == 1)) return (kid_number == 0) ? 2 : -1;
             return 2*point - ((kid_number == 0) ? 1 : 0);
         }
@@ -293,8 +293,7 @@ protected:
         if (rule == rule_localp0){
             if (point == 0) return x;
             return ((double) Maths::int2log2(point + 1) * (x + 3.0) - 3.0 - (double) (2*point));
-        }
-        if ((rule == rule_localp) || (rule == rule_semilocalp) || (rule == rule_localpb)){
+        }else{
             if (rule == rule_localp){
                 if (point == 0) return x;
                 if (point == 1) return (x + 1.0);
