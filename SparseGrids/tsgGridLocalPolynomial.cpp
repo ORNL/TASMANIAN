@@ -102,7 +102,7 @@ GridLocalPolynomial::GridLocalPolynomial(AccelerationContext const *acc, GridLoc
     rule(makeRuleLocalPolynomial(pwpoly->rule->getType(), pwpoly->order)){
 
     if (pwpoly->dynamic_values){
-        dynamic_values = std::make_unique<SimpleConstructData>(*pwpoly->dynamic_values);
+        dynamic_values = Utils::make_unique<SimpleConstructData>(*pwpoly->dynamic_values);
         if (num_outputs != pwpoly->num_outputs) dynamic_values->restrictData(ibegin, iend);
     }
 }
@@ -323,7 +323,7 @@ void GridLocalPolynomial::buildSparseBasisMatrixGPU(const float gpu_x[], int cpu
 }
 template<typename T> void GridLocalPolynomial::loadGpuBasis() const{
     auto& ccache = getGpuCache<T>();
-    if (!ccache) ccache = std::make_unique<CudaLocalPolynomialData<T>>();
+    if (!ccache) ccache = Utils::make_unique<CudaLocalPolynomialData<T>>();
     if (!ccache->nodes.empty()) return;
 
     Data2D<double> cpu_nodes(num_dimensions, getNumPoints());
@@ -363,7 +363,7 @@ void GridLocalPolynomial::clearGpuBasisHierarchy(){
 }
 template<typename T> void GridLocalPolynomial::loadGpuHierarchy() const{
     auto& ccache = getGpuCache<T>();
-    if (!ccache) ccache = std::make_unique<CudaLocalPolynomialData<T>>();
+    if (!ccache) ccache = Utils::make_unique<CudaLocalPolynomialData<T>>();
     if (!ccache->hpntr.empty()) return;
 
     ccache->hpntr.load(pntr);
@@ -372,7 +372,7 @@ template<typename T> void GridLocalPolynomial::loadGpuHierarchy() const{
 }
 template<typename T> void GridLocalPolynomial::loadGpuSurpluses() const{
     auto& ccache = getGpuCache<T>();
-    if (!ccache) ccache = std::make_unique<CudaLocalPolynomialData<T>>();
+    if (!ccache) ccache = Utils::make_unique<CudaLocalPolynomialData<T>>();
     if (ccache->surpluses.size() != 0) return;
     ccache->surpluses.load(surpluses.begin(), surpluses.end());
 }
@@ -427,7 +427,7 @@ void GridLocalPolynomial::mergeRefinement(){
 }
 
 void GridLocalPolynomial::beginConstruction(){
-    dynamic_values = std::make_unique<SimpleConstructData>();
+    dynamic_values = Utils::make_unique<SimpleConstructData>();
     if (points.empty()){
         dynamic_values->initial_points = std::move(needed);
         needed = MultiIndexSet();
@@ -441,9 +441,9 @@ void GridLocalPolynomial::writeConstructionData(std::ostream &os, bool iomode) c
 }
 void GridLocalPolynomial::readConstructionData(std::istream &is, bool iomode){
     if (iomode == mode_ascii)
-        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_ascii_type());
+        dynamic_values = Utils::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_ascii_type());
     else
-        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_binary_type());
+        dynamic_values = Utils::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_binary_type());
 }
 std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output,
                                                                         std::vector<int> const &level_limits, double const *scale_correction){

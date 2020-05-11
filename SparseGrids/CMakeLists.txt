@@ -16,7 +16,7 @@ if (Tasmanian_ENABLE_CUDA)
     # Beware that the nvcc compiler seems to struggle with some STL algorithms, transitive inclusion of <cuda.h> must be minimized.
     set_source_files_properties(${Tasmanian_source_libsparsegrid_cuda} PROPERTIES LANGUAGE CUDA)
     add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid} ${Tasmanian_source_libsparsegrid_cuda})
-    set_property(TARGET ${Tasmanian_libtsg_target_name} PROPERTY CUDA_STANDARD 14)
+    set_property(TARGET ${Tasmanian_libtsg_target_name} PROPERTY CUDA_STANDARD 11)
     target_link_libraries(${Tasmanian_libtsg_target_name} ${Tasmanian_cudamathlibs}) # add the math libraries
 else()
     add_library(${Tasmanian_libtsg_target_name} ${Tasmanian_shared_or_static} ${Tasmanian_source_libsparsegrid}
@@ -43,7 +43,7 @@ target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERF
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/>)
 target_include_directories(${Tasmanian_libtsg_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../configured/>)
 
-target_compile_features(${Tasmanian_libtsg_target_name} PUBLIC cxx_std_14)
+target_compile_features(${Tasmanian_libtsg_target_name} PUBLIC cxx_std_11)
 set_target_properties(${Tasmanian_libtsg_target_name} PROPERTIES OUTPUT_NAME "tasmaniansparsegrid"
                                                                  INSTALL_RPATH "${Tasmanian_rpath}"
                                                                  SOVERSION ${Tasmanian_VERSION_MAJOR}

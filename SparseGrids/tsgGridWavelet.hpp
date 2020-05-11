@@ -141,8 +141,8 @@ private:
 
 // Old version reader
 template<> struct GridReaderVersion5<GridWavelet>{
-    template<typename iomode> static auto read(AccelerationContext const *acc, std::istream &is){
-        std::unique_ptr<GridWavelet> grid = std::make_unique<GridWavelet>(acc);
+    template<typename iomode> static std::unique_ptr<GridWavelet> read(AccelerationContext const *acc, std::istream &is){
+        std::unique_ptr<GridWavelet> grid = Utils::make_unique<GridWavelet>(acc);
 
         grid->num_dimensions = IO::readNumber<iomode, int>(is);
         grid->num_outputs = IO::readNumber<iomode, int>(is);

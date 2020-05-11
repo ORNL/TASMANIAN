@@ -136,7 +136,7 @@ struct GridReaderVersion5{ // 5 refers to the file format version, not the Tasma
 };
 
 // Factory reader method that instantiates the GridReaderVersion5 class
-template<class GridType, typename iomode> auto readGridVersion5(AccelerationContext const *acc, std::istream &is, iomode){
+template<class GridType, typename iomode> std::unique_ptr<GridType> readGridVersion5(AccelerationContext const *acc, std::istream &is, iomode){
     return GridReaderVersion5<GridType>::template read<iomode>(acc, is);
 }
 

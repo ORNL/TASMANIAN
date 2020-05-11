@@ -211,7 +211,7 @@ namespace TasBLAS{
 
     //! \brief Returns the square of the norm of the vector.
     template<typename T>
-    inline auto norm2_2(int N, T const x[]){
+    inline T norm2_2(int N, T const x[]){
         T nrm = norm2(N, x, 1);
         return nrm * nrm;
     }
@@ -234,7 +234,7 @@ namespace TasBLAS{
         }
     }
     //! \brief Conjugates a matrix, no op in the real case.
-    constexpr inline void conj_matrix(int, int, double[]){}
+    inline void conj_matrix(int, int, double[]){}
     //! \brief Conjugates the matrix, used in the case when 'T' operation is needed by only 'C' is available in the LAPACK standard.
     inline void conj_matrix(int N, int M, std::complex<double> A[]){
         for(size_t i=0; i<static_cast<size_t>(N) * static_cast<size_t>(M); i++) A[i] = std::conj(A[i]);

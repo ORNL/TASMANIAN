@@ -101,7 +101,7 @@ The preferred way to install Tasmanian is to use the included CMake build script
       that build upon BLAS and is usually included in the same packge, e.g., OpenBLAS, MKL, ESSL, and ATLAS;
       within Tasmanian, the name BLAS in CMake or run-time options indicate the dependence and usage of both BLAS and LAPACK
     * CUDA is a C++ language extension that allows Tasmanian to leverage the computing power of Nvidia GPU devices,
-      which greatly enhances the performance of `evaluateFast()` and `evaluateBatch()` calls
+      which greatly enhances the performance of `evaluateFast()` and `evaluateBatch()` and a few other calls
     * Matrix Algebra on GPU and Multicore Architectures (MAGMA) is a library for CUDA accelerated linear
       algebra developed at the University of Tennessee at Knoxville
     * MPI allows the use of distributed memory in Bayesian inference, parallel model construction, and send/receive grid through an MPI comm

@@ -246,6 +246,7 @@ clean:
 	rm -fr sandbox.py
 	rm -fr *.py
 	rm -fr include
+	rm -fr tasmanianFortranTestCustomRule.table
 	rm -fr ./SparseGrids/TasmanianConfig.hpp
 	rm -fr ./SparseGrids/tasgridLogs.hpp
 	rm -fr ./InterfacePython/testConfigureData.py
