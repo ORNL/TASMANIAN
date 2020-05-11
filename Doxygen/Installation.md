@@ -39,8 +39,8 @@ Optional features:
 | gcc     | 5 - 8               | any              |
 | clang   | 4 - 8               | 4 or 5           |
 | icc     | 18.0                | 18.0             |
-| xl      | 16.0                | 16.0             |
-| pgi     | 19.4                | 19.4             |
+| xl      | 16.1                | 16.1             |
+| pgi     | 19.10               | 19.10            |
 | cmake   | 3.10 - 3.15         | 3.10             |
 | python  | 2.7, 3.5, 3.6       | 3.5 or 3.6       |
 | anaconda| 5.3                 | 5.3              |
@@ -364,5 +364,6 @@ Several known issues and work-around fixes:
     * use shared libraries only, i.e., `-D BUILD_SHARED_LIBS=ON` in CMake
 * The older versions of the PGI compiler fails when using optimization `-O2`
     * use the `-O1` instead, or the newest version of the compiler
+* XL with OpenMP segfaults if the OMP_NUM_THREADS is not set correctly
 * Older versions of CUDA do not work with newer versions of some compilers, e.g., `gcc`
     * consult the CUDA manual for a list of acceptable compilers
