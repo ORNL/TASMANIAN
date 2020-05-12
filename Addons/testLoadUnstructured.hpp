@@ -54,7 +54,31 @@ std::pair<std::vector<double>, std::vector<double>> generateExactData(TasmanianS
         model(&x[Utils::size_mult(i, num_dimensions)], &y[Utils::size_mult(i, num_outputs)], 0);
 
     return std::make_pair(std::move(x), std::move(y));
+}
 
+/*!
+ * \brief Returns the model values at a set of randomly generated points.
+ *
+ * Similar to generateExactData() but creates a set of samples given by \b num_samples using uniform distribution.
+ */
+template<typename CallableModel>
+std::pair<std::vector<double>, std::vector<double>> generateRandomData(TasmanianSparseGrid const &grid, CallableModel model, int num_samples){
+    int num_dimensions = grid.getNumDimensions();
+    int num_outputs = grid.getNumOutputs();
+
+    std::vector<double> transform_a, transform_b;
+    grid.getDomainTransform(transform_a, transform_b);
+
+    std::minstd_rand park_miller(42);
+    std::uniform_real_distribution<double> unif(0.0, 1.0);
+    auto x = TasDREAM::genUniformSamples(transform_a, transform_b, num_samples, [&]()->double{ return unif(park_miller); });
+
+    std::vector<double> y(Utils::size_mult(num_outputs, num_samples));
+
+    for(int i=0; i<num_samples; i++)
+        model(&x[Utils::size_mult(i, num_dimensions)], &y[Utils::size_mult(i, num_outputs)], 0);
+
+    return std::make_pair(std::move(x), std::move(y));
 }
 
 /*!
@@ -83,12 +107,20 @@ inline double evalDifference(std::vector<double> const&x, TasmanianSparseGrid co
                               [](double a, double b)->double{ return std::abs(a - b); });
 }
 
+inline double vecDifference(std::vector<double> const &x, std::vector<double> const &y){
+    if (x.size() != y.size()) return 1.E+20;
+    return std::inner_product(x.begin(), x.end(), y.begin(), 0.0,
+                              [](double a, double b)->double{ return std::max(a, b); },
+                              [](double a, double b)->double{ return std::abs(a - b); });
+}
+
 /*!
  * \brief Performs an exact test on the specified grid and with the given model.
  *
  * The domain of the grid and the model should be [-0.5, 0.7] in three dimensions, but otherwise
  * the inputs are the same as in generateExactData().
- * The method \b returns true if the test passes and false otherwise.
+ *
+ * \throws std::runtime_error if there is a discrepancy between the computed and expected coefficients
  */
 template<typename CallableModel>
 void testExactL2(TasmanianSparseGrid &&grid, CallableModel model){
@@ -109,6 +141,30 @@ void testExactL2(TasmanianSparseGrid &&grid, CallableModel model){
         cout << "Failed exact unstructured construction\n";
         cout << "Observed coefficients error: " << coefficientDifference(ref_grid, grid) << "\n";
         cout << "Observed evaluate error: " << evalDifference(data.first, ref_grid, grid) << "\n";
+        grid.printStats();
+        throw std::runtime_error("test failed");
+    }
+}
+
+/*!
+ * \brief Similar to testExactL2() but the test is done using randomly selected samples.
+ */
+template<typename CallableModel>
+void testApproxL2(TasmanianSparseGrid &&grid, CallableModel model, int num_samples, double tolerance){
+    grid.setDomainTransform({-0.5, -0.5, -0.5,}, {0.7, 0.7, 0.7});
+
+    auto data = generateRandomData(grid, model, num_samples);
+    loadUnstructuredDataL2(data.first, data.second, 1.E-8, grid);
+
+    std::vector<double> surrogate;
+    grid.evaluateBatch(data.first, surrogate);
+
+    double err = vecDifference(data.second, surrogate);
+    if (err > tolerance){
+        std::cout << std::scientific;
+        std::cout.precision(10);
+        cout << "Failed approximate unstructured construction\n";
+        cout << "Observed error: " << err << "  tolerance: " << tolerance << "\n";
         grid.printStats();
         throw std::runtime_error("test failed");
     }
@@ -170,6 +226,15 @@ std::vector<std::function<void(void)>> makeTests(TypeAcceleration acc, int gpu_i
         [=](void)->void{
             testExactL2(set_acc(makeFourierGrid(3, 3, 7, type_iphyperbolic)), model33);
         },
+        [=](void)->void{
+            testApproxL2(set_acc(makeGlobalGrid(3, 3, 5, type_iptotal, rule_fejer2)), model33, 200, 1.E-4);
+        },
+        [=](void)->void{
+            testApproxL2(set_acc(makeSequenceGrid(3, 3, 6, type_ipcurved, rule_rlejashifted)), model33, 100, 1.E-4);
+        },
+        [=](void)->void{
+            testApproxL2(set_acc(makeLocalPolynomialGrid(3, 1, 3, 2, rule_semilocalp)), model31, 120, 1.E-3);
+        },
     };
 }
 
@@ -191,6 +256,9 @@ bool runTests(TypeAcceleration acc, int gpu_id){
     return pass;
 }
 
+/*!
+ * \brief All tests for the loadUnstructuredDataL2() method for all acceleration modes.
+ */
 bool testLoadUnstructuredL2(bool verbose, int gpu_id){
     bool pass = true;
 

@@ -288,10 +288,10 @@ __global__ void tascuda_vfill(long long n, T data[], T value){
 // strided fill, fills the data with the given value and stride
 template<typename T, long long THREADS>
 __global__ void tascuda_sfill(long long n, long long stride, T data[], T value){
-    long long k = stride * (blockIdx.x * THREADS + threadIdx.x);
+    long long k = blockIdx.x * THREADS + threadIdx.x;
     while(k < n){
-        data[k] = value;
-        k += gridDim.x * THREADS * stride;
+        data[k * stride] = value;
+        k += gridDim.x * THREADS;
     }
 }
 
