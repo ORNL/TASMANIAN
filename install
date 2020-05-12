@@ -43,6 +43,9 @@ if (( $bShowHelp == 1 )); then
     echo "             -fortran: enable Fortran interface"
     echo "      -fortran=<path>: enable Fortran interface and specify Fortran compiler"
     echo "                       e.g., -fortran=/usr/bin/gfortran-6"
+    echo "                 -mpi: enable MPI support (automatic search)"
+    echo "          -mpi=<path>: enable MPI and specify the MPI CXX compiler"
+    echo "                       e.g., -mpi=/usr/bin/mpicxx"
     echo "            -noshared: do not build shared libraries"
     echo "            -nostatic: do not build static libraries"
     echo "              -notest: do not execute any of the tests"
@@ -93,6 +96,8 @@ sEnableCUDA="OFF"
 sCudaRootDir=""
 sEnableMAGMA="OFF"
 sMagmaRootDir=""
+sEnableMPI="OFF"
+sMPICXXCompiler=""
 sEnableFortran="OFF"
 sFortranCompiler=""
 sBuildSharedLibs=""
@@ -127,6 +132,11 @@ for sOption in "$@"; do
     elif [[ $sOption == "-fortran="* ]]; then
         sEnableFortran="ON"
         sFortranCompiler="-D CMAKE_Fortran_COMPILER=${sOption:9}"
+    elif [[ $sOption == "-mpi" ]]; then
+        sEnableMPI="ON"
+    elif [[ $sOption == "-mpi="* ]]; then
+        sEnableMPI="ON"
+        sMPICXXCompiler="-D MPI_CXX_COMPILER=${sOption:5}"
     elif [[ $sOption == "-noshared" ]]; then
         if [[ ! -z $sBuildSharedLibs ]]; then
             echo "ERROR: only one -noshared or -nostatic can appear in the command line"
@@ -251,6 +261,12 @@ fi
 if [[ ! -z $sFortranCompiler ]]; then
     echo "  $sFortranCompiler"
 fi
+if [[ $sEnableMPI == "ON" ]]; then
+    echo "      -mpi: enable Fortran"
+fi
+if [[ ! -z $sMPICXXCompiler ]]; then
+    echo "  $sMPICXXCompiler"
+fi
 if [[ $sBuildSharedLibs == "-D BUILD_SHARED_LIBS:BOOL=OFF" ]]; then
     echo " -noshared: do not build shared libraries"
 fi
@@ -315,7 +331,8 @@ $sCmake \
   $sMagmaRootDir \
   -D Tasmanian_ENABLE_FORTRAN:BOOL=$sEnableFortran \
   $sFortranCompiler \
-  -D Tasmanian_ENABLE_MPI:BOOL=OFF \
+  -D Tasmanian_ENABLE_MPI:BOOL=$sEnableMPI \
+  $sMPICXXCompiler \
   $sMatlabWork \
   ../
 
