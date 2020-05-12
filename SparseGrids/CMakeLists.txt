@@ -187,7 +187,7 @@ foreach(_tsgtarget tasgrid gridtest benchmarksgrid)
     endif()
 endforeach()
 unset(_tsgtarget)
-set_target_properties(Tasmanian_tasgrid PROPERTIES INSTALL_RPATH "${Tasmanian_final_install_path}/lib")
+set_target_properties(Tasmanian_tasgrid PROPERTIES INSTALL_RPATH "${Tasmanian_rpath}")
 
 # data file, needed for testing and reference about custom rule definitions
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"  "${CMAKE_CURRENT_BINARY_DIR}/GaussPattersonRule.table" COPYONLY)
