@@ -2,7 +2,7 @@
 
 The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN is a collection of robust libraries for high dimensional integration and interpolation as well as parameter calibration. This documentation focuses on the libraries and the software API, refer to the PDF document on the project web-page for specifics about the mathematics of the implemented methods.
 
-Visit us at: [https://tasmanian.ornl.gov/](https://tasmanian.ornl.gov/) and 
+Visit us at: [https://tasmanian.ornl.gov/](https://tasmanian.ornl.gov/) and
 [https://github.com/ORNL/Tasmanian](https://github.com/ORNL/Tasmanian)
 
 [Documentation: v7.0 (latest stable)](https://tasmanian.ornl.gov/documentation/)
@@ -56,42 +56,12 @@ Quick Install
 See also the detailed [Installation](Doxygen/Installation.md) instructions.
 
 * The CMake way: see the detailed instruction for a full list of options
-```
-  mkdir Build
-  cd Build
-  cmake <options> <path-to-Tasmanian-source>
-  make
-  make test
-  make install
-  make test_install
-```
 * The basic way: using GNU Make, `g++` and optionally `gfortran` and `/usr/bin/python`
+* The easy way: using cmake and the `install` script, see `./install --help`
+* The MS Windows way: use the CMake GUI to set the folders and options then use either the IDE or the command prompt
+* Tasmanian is also available through Python PIP, make sure you have the latest `pip`
 ```
-  make
-  make test     (will fail if /usr/bin/env python is missing numpy or ctypes modules)
-  make matlab   (optional: sets matlab work folder to ./tsgMatlabWorkFolder/)
-  make python3  (optional: sets #!/usr/bin/env python3)
-  make fortran  (optional: compile Fortran libraries)
-  make examples
-  make clean
-```
-* The easy way: using cmake and the `install` script
-```
-  ./install <install-path> <optional: matlab-work-folder> <extra switches>
-  ./install --help  (list all switches)
-```
-* The MS Windows way: use the CMake GUI to set the folders and options then use the command prompt (`cmd.exe`) to enter the build folder
-```
-  cd <cmake build folder>
-  cmake --build . --config Release
-  ctest -C Release
-  cmake --build . --config Release --target install
-  # both Debug and Release are the supported config modes above
-```
-* Tasmanian is also available through Python PIP (make sure you have the latest `setuptools` and `wheel`)
-```
-python3 -m pip install scikit-build packaging numpy --user
-python3 -m pip install Tasmanian --user
+  python3 -m pip install Tasmanian --user
 ```
 * Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 
