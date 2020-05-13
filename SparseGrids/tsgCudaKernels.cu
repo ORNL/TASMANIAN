@@ -39,15 +39,18 @@
 // thus we can set this to the CUDA max number of threads, based on the current cuda version
 constexpr int _MAX_CUDA_THREADS  = 1024;
 
+// max number of blocks per grid direction
+constexpr int _MAX_CUDA_BLOCKS = 65535;
+
 /*
  * Create a 1-D CUDA thread grid using the total_threads and number of threads per block.
- * Basically, computes the number of blocks but no more than 65536.
+ * Basically, computes the number of blocks but no more than _MAX_CUDA_BLOCKS.
  */
 struct ThreadGrid1d{
     // Compute the threads and blocks.
     ThreadGrid1d(long long total_threads, long long num_per_block) :
-        threads(num_per_block),
-        blocks(std::min(total_threads / threads + ((total_threads % threads == 0) ? 0 : 1), 65536ll))
+        threads(static_cast<int>(num_per_block)),
+        blocks(static_cast<int>(std::min(total_threads / threads + ((total_threads % threads == 0) ? 0 : 1), static_cast<long long>(_MAX_CUDA_BLOCKS))))
     {}
     // number of threads
     int const threads;
@@ -60,7 +63,7 @@ namespace TasGrid{
 template<typename T>
 void TasGpu::dtrans2can(bool use01, int dims, int num_x, int pad_size, double const *gpu_trans_a, double const *gpu_trans_b, T const *gpu_x_transformed, T *gpu_x_canonical){
     int num_blocks = (num_x * dims) / _MAX_CUDA_THREADS + (((num_x * dims) % _MAX_CUDA_THREADS == 0) ? 0 : 1);
-    if (num_blocks >= 65536) num_blocks = 65536;
+    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
     tasgpu_transformed_to_canonical<T, double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS, (2*pad_size) * sizeof(double)>>>(dims, num_x, pad_size, gpu_trans_a, gpu_trans_b, gpu_x_transformed, gpu_x_canonical);
     if (use01) tasgpu_m11_to_01<T, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>(dims * num_x, gpu_x_canonical);
 }
@@ -118,7 +121,7 @@ inline void devalpwpoly_sparse_realize_rule_order(int order, TypeOneDRule rule,
                                           const int *hpntr, const int *hindx, int num_roots, const int *roots,
                                           int *spntr, int *sindx, T *svals){
     int num_blocks = num_x / THREADS + ((num_x % THREADS == 0) ? 0 : 1);
-    if (num_blocks >= 65536) num_blocks = 65536;
+    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
     if (rule == rule_localp){
         switch(order){
             case 0:
@@ -266,7 +269,7 @@ void TasGpu::devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num
                       GpuVector<int> const &map_tensor, GpuVector<int> const &map_index, GpuVector<int> const &map_reference, T *gpu_result){
     GpuVector<T> cache(num_x, num_basis);
     int num_blocks = (int) map_dimension.size();
-    if (num_blocks >= 65536) num_blocks = 65536;
+    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
 
     if (is_nested){
         if (is_clenshawcurtis0){
@@ -289,11 +292,11 @@ void TasGpu::devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num
 
     int mat_size = num_x * num_p;
     num_blocks = num_x / _MAX_CUDA_THREADS + ((mat_size % _MAX_CUDA_THREADS == 0) ? 0 : 1);
-    if (num_blocks >= 65536) num_blocks = 65536;
+    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
     tasgpu_dglo_eval_zero<T, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>(mat_size, gpu_result);
 
     num_blocks = (int) map_tensor.size();
-    if (num_blocks >= 65536) num_blocks = 65536;
+    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
     tasgpu_dglo_eval_sharedpoints<T, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
         (dims, num_x, (int) map_tensor.size(), num_p, cache.data(),
         tensor_weights.data(), offset_per_level.data(), dim_offsets.data(), active_tensors.data(), active_num_points.data(),
@@ -328,7 +331,7 @@ void TasGpu::fillDataGPU(double value, long long n, long long stride, double dat
 void TasCUDA::cudaDgemm(int M, int N, int K, const double *gpu_a, const double *gpu_b, double *gpu_c){ // gpu_c = gpu_a * gpu_b, gpu_c is M by N
     int blocks = (N / 96) + (((N % 96) == 0) ? 0 : 1);
     blocks *= (M / 96) + (((M % 96) == 0) ? 0 : 1);
-    while(blocks > 65536) blocks = 65536;
+    while(blocks > _MAX_CUDA_BLOCKS) blocks = _MAX_CUDA_BLOCKS;
     tasgpu_cudaTgemm<double, 32, 96><<<blocks, 1024>>>(M, N, K, gpu_a, gpu_b, gpu_c);
 }
 
@@ -339,15 +342,15 @@ void TasCUDA::cudaSparseMatmul(int M, int N, int num_nz, const int* gpu_spntr, c
 
 void TasCUDA::cudaSparseVecDenseMat(int M, int N, int num_nz, const double *A, const int *indx, const double *vals, double *C){
     int num_blocks = N / _MAX_CUDA_THREADS + ((N % _MAX_CUDA_THREADS == 0) ? 0 : 1);
-    if (num_blocks< 65536){
+    if (num_blocks< _MAX_CUDA_BLOCKS){
         tasgpu_sparse_matveci<double, _MAX_CUDA_THREADS, 1><<<num_blocks, _MAX_CUDA_THREADS>>>(M, N, num_nz, A, indx, vals, C);
     }else{
         num_blocks = N / (2 * _MAX_CUDA_THREADS) + ((N % (2 * _MAX_CUDA_THREADS) == 0) ? 0 : 1);
-        if (num_blocks< 65536){
+        if (num_blocks< _MAX_CUDA_BLOCKS){
             tasgpu_sparse_matveci<double, _MAX_CUDA_THREADS, 2><<<num_blocks, _MAX_CUDA_THREADS>>>(M, N, num_nz, A, indx, vals, C);
         }else{
             num_blocks = N / (3 * _MAX_CUDA_THREADS) + ((N % (3 * _MAX_CUDA_THREADS) == 0) ? 0 : 1);
-            if (num_blocks< 65536){
+            if (num_blocks< _MAX_CUDA_BLOCKS){
                 tasgpu_sparse_matveci<double, _MAX_CUDA_THREADS, 3><<<num_blocks, _MAX_CUDA_THREADS>>>(M, N, num_nz, A, indx, vals, C);
             }
         }
@@ -357,10 +360,10 @@ void TasCUDA::cudaSparseVecDenseMat(int M, int N, int num_nz, const double *A, c
 void TasCUDA::convert_sparse_to_dense(int num_rows, int num_columns, const int *pntr, const int *indx, const double *vals, double *destination){
     int n = num_rows * num_columns;
     int num_blocks = n / _MAX_CUDA_THREADS + ((n % _MAX_CUDA_THREADS == 0) ? 0 : 1);
-    if (num_blocks >= 65536) num_blocks = 65536;
+    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
     tascuda_fill<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>(n, 0.0, destination);
     num_blocks = num_rows;
-    if (num_blocks >= 65536) num_blocks = 65536;
+    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
     tascuda_sparse_to_dense<double, 64><<<num_blocks, 64>>>(num_rows, num_columns, pntr, indx, vals, destination);
 }
 #endif
