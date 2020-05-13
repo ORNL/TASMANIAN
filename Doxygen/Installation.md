@@ -174,8 +174,7 @@ with command line switches.
 The core capabilities of Tasmanian can be build with a few simple GNU Make commands.
 The basic build engine is useful for quick testing and exploring Tasmanian, or
 if CMake is unavailable or unwanted.
-Acceleration options other than OpenMP are not supported in the basic mode, but could be enabled
-by manually editing `Config/AltBuildSystems/Makefile.in` configuration file.
+Acceleration options other than OpenMP are not supported in the basic mode.
 
 * Using GNU Make with `g++` and optionally `gfortran` and `/usr/bin/env python`
 ```
@@ -203,11 +202,11 @@ Pip versions prior to 1.10 cannot handle the extra dependencies, those must be i
   python3 -m pip install scikit-build packaging numpy --user
 ```
 
-The Tasmanian module is not a regular Python-only project but a wrapper around C++ libraries, note the following:
+The Tasmanian module is not a regular Python-only project but a wrapper around the C++ libraries, note the following:
 * Pip versions prior to 1.10 require that dependencies are installed manually.
 * Only user installations are supported, installation for all users is possible with CMake but not Pip.
 * Python virtual environments are supported, as well as Linux, Mac and Windows operating systems.
-* The Pip installer will accept Tasmanian options specified in the environmental variables:
+* The Pip installer will accept Tasmanian options specified in the environment variables:
 ```
 Environment Option will translate to               CMake Options
 export Tasmanian_ENABLE_BLAS=<blas-lapack-libs>    -D Tasmanian_ENABLE_BLAS=ON
@@ -241,7 +240,7 @@ Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 
 ### Install on MS Windows platform
 
-Tasmanian has been tested with MS Visual Studio 2017 and 2019 and CMake 3.11.
+Tasmanian has been tested with MS Visual Studio 2019 and CMake 3.14.
 
 * First use the CMake GUI to set the folders and options
 * Then use the command prompt (`cmd.exe`) to enter the build folder
