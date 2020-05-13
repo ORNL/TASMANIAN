@@ -230,6 +230,8 @@ python -m pip install Tasmanian                         # will install Tasmanian
 python -m Tasmanian                                     # print the install log
 ./tasmanian_virtual_env/bin/tasgrid -v                  # print the available CUDA devices
 ```
+**Note:** under MS Windows the environment variables can be set from Advanced System Settings,
+but the paths should use Linux style of back-slashes, e.g., `C:/Program Files/CUDA/bin/nvcc.exe`
 
 ### Install with Spack
 
@@ -240,7 +242,7 @@ Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 
 ### Install on MS Windows platform
 
-Tasmanian has been tested with MS Visual Studio 2019 and CMake 3.14.
+Tasmanian has been tested with MS Visual Studio 2017 and 2019.
 
 * First use the CMake GUI to set the folders and options
 * Then use the command prompt (`cmd.exe`) to enter the build folder
