@@ -153,23 +153,23 @@ void fillDataGPU(double, long long, long long, double[]){}
 template void dtrans2can<float>(bool, int, int, int, double const*, double const*, float const*, float*);
 template void dtrans2can<double>(bool, int, int, int, double const*, double const*, double const*, double*);
 
-template void devalpwpoly<float>(int, TypeOneDRule, int, int, int, float const[], float const[], float const[], float[]);
-template void devalpwpoly<double>(int, TypeOneDRule, int, int, int, double const[], double const[], double const[], double[]);
+template void devalpwpoly<float>(int, TypeOneDRule, int, int, int, float const*, float const*, float const*, float*);
+template void devalpwpoly<double>(int, TypeOneDRule, int, int, int, double const*, double const*, double const*, double*);
 
-template void devalpwpoly_sparse<float>(int, TypeOneDRule, int, int, int, float const[], GpuVector<float> const&, GpuVector<float> const&,
+template void devalpwpoly_sparse<float>(int, TypeOneDRule, int, int, int, float const*, GpuVector<float> const&, GpuVector<float> const&,
                                         GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                         GpuVector<int>&, GpuVector<int>&, GpuVector<float>&);
-template void devalpwpoly_sparse<double>(int, TypeOneDRule, int, int, int, double const[], GpuVector<double> const&, GpuVector<double> const&,
+template void devalpwpoly_sparse<double>(int, TypeOneDRule, int, int, int, double const*, GpuVector<double> const&, GpuVector<double> const&,
                                          GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                          GpuVector<int>&, GpuVector<int>&, GpuVector<double>&);
 
-template void devalfor<float>(int, int, std::vector<int> const&, float const[], GpuVector<int> const&, GpuVector<int> const&, float[], float[]);
-template void devalfor<double>(int, int, std::vector<int> const&, double const[], GpuVector<int> const&, GpuVector<int> const&, double[], double[]);
+template void devalfor<float>(int, int, std::vector<int> const&, float const*, GpuVector<int> const&, GpuVector<int> const&, float*, float*);
+template void devalfor<double>(int, int, std::vector<int> const&, double const*, GpuVector<int> const&, GpuVector<int> const&, double*, double*);
 
-template void devalseq<float>(int, int, std::vector<int> const&, float const[], GpuVector<int> const&,
-                              GpuVector<int> const&, GpuVector<float> const&, GpuVector<float> const&, float[]);
-template void devalseq<double>(int, int, std::vector<int> const&, double const[], GpuVector<int> const&,
-                               GpuVector<int> const&, GpuVector<double> const&, GpuVector<double> const&, double[]);
+template void devalseq<float>(int, int, std::vector<int> const&, float const*, GpuVector<int> const&,
+                              GpuVector<int> const&, GpuVector<float> const&, GpuVector<float> const&, float*);
+template void devalseq<double>(int, int, std::vector<int> const&, double const*, GpuVector<int> const&,
+                               GpuVector<int> const&, GpuVector<double> const&, GpuVector<double> const&, double*);
 
 template void devalglo<float>(bool, bool, int, int, int, int,
                               float const*, GpuVector<float> const&, GpuVector<float> const&, GpuVector<float> const&,
