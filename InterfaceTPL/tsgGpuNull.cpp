@@ -182,6 +182,13 @@ template void devalglo<double>(bool, bool, int, int, int, int,
                                GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, double*);
 
+template<typename T> void load_n(T const*, size_t, T*){}
+
+template void load_n<int>(int const*, size_t, int*);
+template void load_n<float>(float const*, size_t, float*);
+template void load_n<double>(double const*, size_t, double*);
+template void load_n<std::complex<double>>(std::complex<double> const*, size_t, std::complex<double>*);
+
 }
 }
 

@@ -427,6 +427,23 @@ namespace TasGpu{
      */
     void fillDataGPU(double value, long long N, long long stride, double data[]);
 
+    /*!
+     * \ingroup TasmanianAcceleration
+     * \brief Similar to copy_n, copies the data from the CPU to the GPU.
+     */
+    template<typename T> void load_n(T const *cpu_data, size_t num_entries, T *gpu_data);
+
+    /*!
+     * \ingroup TasmanianAcceleration
+     * \brief Similar to copy_n, copies the data from the CPU to the GPU.
+     */
+    template<typename T, typename U>
+    Utils::use_if<!std::is_same<U, T>::value> load_n(U const *cpu_data, size_t num_entries, T *gpu_data){
+        std::vector<T> converted(num_entries);
+        std::transform(cpu_data, cpu_data + num_entries, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
+        load_n(converted.data(), num_entries, gpu_data);
+    }
+
     // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas
     #ifdef __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__
     // CUDA kernels that provide essentially the same functionality as cuBlas and MAGMA, but nowhere near as optimal

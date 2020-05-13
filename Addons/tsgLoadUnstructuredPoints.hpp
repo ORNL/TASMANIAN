@@ -108,7 +108,7 @@ void generateCoefficientsGPU(double const data_points[], int num_data, scalar_ty
                             reinterpret_cast<double*>(basis_matrix.data() + Utils::size_mult(num_data, num_points)));
 
         long long stride = static_cast<long long>(num_points + 1) * esize;
-        TasGpu::fillDataGPU(correction, num_total, stride,
+        TasGpu::fillDataGPU(correction, num_points, stride,
                             reinterpret_cast<double*>(basis_matrix.data() + Utils::size_mult(num_data, num_points)));
 
         TasGpu::fillDataGPU(0.0, esize * num_outputs * num_points, 1,
@@ -213,7 +213,7 @@ inline void loadUnstructuredDataL2tmpl(double const data_points[], int num_data,
                 acceleration->setDevice();
                 GpuVector<double> gpu_points(num_dimensions, num_data, data_points);
                 GpuVector<scalar_type> gpu_values(num_outputs, num_equations);
-                gpu_values.load(Utils::size_mult(num_outputs, num_data), model_values);
+                TasGpu::load_n(model_values, Utils::size_mult(num_outputs, num_data), gpu_values.data());
                 generateCoefficientsGPU<scalar_type>(gpu_points.data(), num_data, gpu_values.data(), tolerance, grid);
                 return Data2D<scalar_type>(num_outputs, num_equations, gpu_values.unload());
 
