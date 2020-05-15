@@ -343,8 +343,7 @@ void* tsgGetCandidateConstructionPointsVoidPntr(void *grid, const char *sType, i
     }
     return (void*) vecx;
 }
-void* tsgGetCandidateConstructionPointsSurplusVoidPntr(void *grid, double tolerance, const char *sRefType, int output,
-                                                       const int *limit_levels, const double *scale_correction){ // internal use only
+void* tsgGetCandidateConstructionPointsSurplusVoidPntr(void *grid, double tolerance, const char *sRefType, int output, const int *limit_levels, const double *scale_correction){ // internal use only
     TypeRefinement ref_type = IO::getTypeRefinementString(sRefType);
     #ifndef NDEBUG
     if (ref_type == refine_none){ cerr << "WARNING: incorrect depth type: " << sRefType << ", defaulting to refine_classic." << endl; }
@@ -370,8 +369,7 @@ void tsgGetCandidateConstructionPoints(void *grid, const char *sType, int output
     std::copy_n(vecx->data(), vecx->size(), *x);
     delete vecx;
 }
-void tsgGetCandidateConstructionSurplusPoints(void *grid, double tolerance, const char *sRefType, int output, const int *limit_levels, const double *scale_correction,
-                                              int *num_points, double **x){
+void tsgGetCandidateConstructionSurplusPoints(void *grid, double tolerance, const char *sRefType, int output, const int *limit_levels, const double *scale_correction, int *num_points, double **x){
     size_t dims = (size_t) ((TasmanianSparseGrid*) grid)->getNumDimensions();
     std::vector<double>* vecx = (std::vector<double>*) tsgGetCandidateConstructionPointsSurplusVoidPntr(grid, tolerance, sRefType, output, limit_levels, scale_correction);
     *num_points = (int)(vecx->size() / dims);

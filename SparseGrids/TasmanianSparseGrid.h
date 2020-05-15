@@ -123,6 +123,7 @@ void tsgEvaluateHierarchicalFunctions(void *grid, const double *x, int num_x, do
 void tsgEvaluateSparseHierarchicalFunctions(void *grid, const double x[], int num_x, int **pntr, int **indx, double **vals);
 int tsgEvaluateSparseHierarchicalFunctionsGetNZ(void *grid, const double x[], int num_x);
 void tsgEvaluateSparseHierarchicalFunctionsStatic(void *grid, const double x[], int num_x, int *pntr, int *indx, double *vals);
+void tsgGetHierarchicalSupportStatic(void *grid, double support[]);
 const double* tsgGetHierarchicalCoefficients(void *grid);
 void tsgGetHierarchicalCoefficientsStatic(void *grid, double *coeff);
 void tsgSetHierarchicalCoefficients(void *grid, const double *c);
@@ -134,6 +135,7 @@ int* tsgPythonGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_i
 void tsgGetGlobalPolynomialSpace(void *grid, int interpolation, int *num_indexes, int **indexes);
 void tsgPrintStats(void *grid);
 void tsgEnableAcceleration(void *grid, const char *accel);
+void tsgEnableAccelerationGPU(void *grid, const char *accel, int gpu);
 //int tsgGetAccelerationTypeInt(void *grid){ return AccelerationMeta::getIOAccelerationInt(((TasmanianSparseGrid*) grid)->getAccelerationType()); } // int to acceleration type
 const char* tsgGetAccelerationType(void *grid);
 void tsgSetGPUID(void *grid, int gpuID);
