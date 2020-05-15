@@ -28,7 +28,7 @@ for line in readme_file:
 
 long_description += "### Quick Install\n Tasmanian supports `--user` and venv install only, see the on-line documentation for details.\n"
 
-# find out whether this is avirtual environment, real_prefix is an older test, base_refix is the newer one
+# find out whether this is a virtual environment, real_prefix is an older test, base_refix is the newer one
 if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
     final_install_path = sys.prefix # sys.prefix points to the virtual environment root
     isvirtual = True
@@ -41,6 +41,17 @@ else:
         # some implementations do not provide compatible 'site' package, assume default Linux behavior
         final_install_path = os.getenv('HOME') + "/.local/"
 
+# check if using OSX Framework environment
+isosxframework = False
+if sys.platform == 'darwin':
+    try:
+        if 'python/site-packages' in site.getusersitepackages():
+            # appears to be Mac Framework using Library/Python/X.Y/lib/python/site-packages
+            isosxframework = True
+    except:
+        # cannot determine if using Mac Framework
+        pass
+
 # setup cmake arguments
 cmake_args=[
         '-DCMAKE_BUILD_TYPE=Release',
@@ -52,12 +63,14 @@ cmake_args=[
         ]
 if isvirtual:
     cmake_args.append('-DTasmanian_windows_virtual:BOOL=ON')
+if isosxframework:
+    cmake_args.append('-DTasmanian_osx_framework:BOOL=ON')
 
 
 # call the actual package setup command
 setup(
     name='Tasmanian',
-    version='7.1.rc1',
+    version='7.1rc3',
     author='Miroslav Stoyanov',
     author_email='stoyanovmk@ornl.gov',
     description='UQ library for sparse grids and Bayesian inference',
