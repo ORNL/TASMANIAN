@@ -74,7 +74,7 @@ protected:
 public:
     //! \brief Constructor, accepts number of dimensions as a constant parameter.
     template<typename IntTypeDim, typename IntTypeBatch>
-    CandidateManager(IntTypeDim dimensions, IntTypeBatch batch_size) : num_dimensions((size_t) dimensions),
+    CandidateManager(IntTypeDim dimensions, IntTypeBatch batch_size) : num_dimensions(static_cast<size_t>(dimensions)),
         num_batch(batch_size), num_candidates(0), num_running(0), num_done(0){}
     //! \brief Default destructor.
     ~CandidateManager(){}
@@ -116,14 +116,14 @@ public:
         }
 
         // takes an iterator and returns an iterator to the next entry
-        auto next = [](std::forward_list<std::vector<double>>::iterator ib)->
+        auto inext = [](std::forward_list<std::vector<double>>::iterator ib)->
             std::forward_list<std::vector<double>>::iterator{
                 return ++ib;
             };
 
         for(size_t i=0; i<num_complete; i++){
             auto ib = running_jobs.before_begin();
-            while(not match(&p[i * num_dimensions], next(ib)->data())) ib++;
+            while(not match(&p[i * num_dimensions], inext(ib)->data())) ib++;
             running_jobs.erase_after(ib);
         }
     }

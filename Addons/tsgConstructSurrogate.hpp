@@ -288,7 +288,7 @@ void constructCommon(ModelSignature model,
             until_new_job.notify_all();
         }
 
-        complete.load(grid); // flush completed jobs
+        load_complete(); // flush completed jobs
 
         for(auto &w : workers) if (w.joinable()) w.join(); // join all threads
 
@@ -317,7 +317,8 @@ void constructCommon(ModelSignature model,
             }
             checkpoint();
         }
-        complete.load(grid);
+
+        load_complete(); // flush completed jobs
     }
 }
 
