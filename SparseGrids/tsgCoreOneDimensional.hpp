@@ -33,6 +33,7 @@
 
 #include "tsgIOHelpers.hpp"
 #include "tsgLinearSolvers.hpp"
+#include "tsgSequenceOptimizer.hpp"
 
 /*!
  * \internal

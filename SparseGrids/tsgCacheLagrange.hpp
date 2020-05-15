@@ -32,10 +32,13 @@
 #define __TSG_CACHE_LAGRANGE_HPP
 
 /*!
+ * \internal
  * \file tsgCacheLagrange.hpp
  * \brief Cache data structure for evaluate with Global grids.
  * \author Miroslav Stoyanov
  * \ingroup TasmanianAcceleration
+ *
+ * \endinternal
  */
 
 #include "tsgGridCore.hpp"

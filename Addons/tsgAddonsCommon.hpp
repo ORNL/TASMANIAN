@@ -32,12 +32,14 @@
 #define __TASMANIAN_ADDONS_COMMON_HPP
 
 /*!
+ * \internal
  * \file tsgAddonsCommon.hpp
  * \brief Common includes and methods for all addons.
  * \author Miroslav Stoyanov
  * \ingroup TasmanianAddonsCommon
  *
  * All addon templates will include this core file.
+ * \endinternal
  */
 
 #include <sstream>

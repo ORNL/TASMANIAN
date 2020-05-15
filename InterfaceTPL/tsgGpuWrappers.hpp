@@ -32,6 +32,7 @@
 #define __TASMANIAN_GPU_WRAPPERS_HPP
 
 /*!
+ * \internal
  * \file tsgGpuWrappers.hpp
  * \brief Wrappers to GPU functionality.
  * \author Miroslav Stoyanov
@@ -39,6 +40,7 @@
  *
  * The header contains definitions of various operations that can be performed
  * on the GPU devices with the corresponding GPU backend.
+ * \endinternal
  */
 
 #include "tsgAcceleratedDataStructures.hpp"

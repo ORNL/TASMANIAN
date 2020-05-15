@@ -32,6 +32,7 @@ if (NOT DOXYGEN_INTERNAL_DOCS)
     set(DOXYGEN_EXCLUDE_SYMBOLS TasGrid::Data2D TasGrid::MultiIndexSet TasGrid::StorageSet TasGrid::CustomTabulated TasGrid::OneDimensionalWrapper
         TasGrid::TasSparse::WaveletBasisMatrix TasGrid::GpuEngine TasGrid::GpuVector TasGrid::AccelerationDomainTransform
         TasGrid::AccelerationContext TasGrid::TableGaussPatterson
+        TasBLAS TasGrid::TasmanianDenseSolver TasGrid::TasmanianTridiagonalSolver TasGrid::Utils
         TasGrid::NodeData TasGrid::TensorData TasGrid::CacheLagrange TasGrid::MultiIndexManipulations::ProperWeights
         TasGrid::HierarchyManipulations::SplitDirections
         TasGrid::Utils::Wrapper2D TasGrid::SimpleConstructData TasGrid::DynamicConstructorDataGlobal
@@ -87,9 +88,9 @@ doxygen_add_docs(Tasmanian_doxygen
                  SparseGrids/tsgGridLocalPolynomial.hpp
                  SparseGrids/tsgGridWavelet.hpp
                  SparseGrids/tsgGridFourier.hpp
-                 DREAM/tsgDreamEnumerates.hpp
                  DREAM/tsgDreamState.hpp
                  DREAM/tsgDreamSample.hpp
+                 DREAM/tsgDreamEnumerates.hpp
                  DREAM/tsgDreamCoreRandom.hpp
                  DREAM/tsgDreamCorePDF.hpp
                  DREAM/tsgDreamLikelihoodCore.hpp

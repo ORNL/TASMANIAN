@@ -34,6 +34,7 @@
 #include "tsgEnumerates.hpp"
 
 /*!
+ * \internal
  * \file tsgBlasWrappers.hpp
  * \brief Wrappers to BLAS functionality.
  * \author Miroslav Stoyanov
@@ -41,6 +42,7 @@
  *
  * The header contains a inline wrappers that give C++ style of
  * interface to BLAS operations.
+ * \endinternal
  */
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
@@ -85,58 +87,91 @@ void zgemlq_(const char *side, const char *trans, const int *M, const int *N, co
 #endif
 
 /*!
- * \brief Wrappers for BLAS and LAPACK methods.
  * \ingroup TasmanianTPLWrappers
+ * \brief Wrappers for BLAS and LAPACK methods (hidden internal namespace).
  */
 namespace TasBLAS{
-    //! \brief BLAS dnrm2
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief BLAS dnrm2
+     */
     inline double norm2(int N, double const x[], int incx){
         return dnrm2_(&N, x, &incx);
     }
-    //! \brief BLAS dswap
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief BLAS dswap
+     */
     inline void vswap(int N, double x[], int incx, double y[], int incy){
         dswap_(&N, x, &incx, y, &incy);
     }
-    //! \brief BLAS dscal
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief BLAS dscal
+     */
     inline void scal(int N, double alpha, double x[], int incx){
         dscal_(&N, &alpha, x, &incx);
     }
-    //! \brief BLAS dgemv
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief BLAS dgemv
+     */
     inline void gemv(char trans, int M, int N, double alpha, double const A[], int lda, double const x[], int incx,
                      double beta, double y[], int incy){
         dgemv_(&trans, &M, &N, &alpha, A, &lda, x, &incx, &beta, y, &incy);
     }
-    //! \brief BLAS dtrsv
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief BLAS dtrsv
+     */
     inline void trsv(char uplo, char trans, char diag, int N, double const A[], int lda, double x[], int incx){
         dtrsv_(&uplo, &trans, &diag, &N, A, &lda, x, &incx);
     }
-    //! \brief BLAS gemm
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief BLAS gemm
+     */
     inline void gemm(char transa, char transb, int M, int N, int K, double alpha, double const A[], int lda, double const B[], int ldb,
                      double beta, double C[], int ldc){
         dgemm_(&transa, &transb, &M, &N, &K, &alpha, A, &lda, B, &ldb, &beta, C, &ldc);
     }
-    //! \brief BLAS dtrsm
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief BLAS dtrsm
+     */
     inline void trsm(char side, char uplo, char trans, char diag, int M, int N, double alpha, double const A[], int lda, double B[], int ldb){
         dtrsm_(&side, &uplo, &trans, &diag, &M, &N, &alpha, A, &lda, B, &ldb);
     }
-    //! \brief BLAS ztrsm
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief BLAS ztrsm
+     */
     inline void trsm(char side, char uplo, char trans, char diag, int M, int N, std::complex<double> alpha,
                      std::complex<double> const A[], int lda, std::complex<double> B[], int ldb){
         ztrsm_(&side, &uplo, &trans, &diag, &M, &N, &alpha, A, &lda, B, &ldb);
     }
-    //! \brief LAPACK dgetrf
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief LAPACK dgetrf
+     */
     inline void getrf(int M, int N, double A[], int lda, int ipiv[]){
         int info = 0;
         dgetrf_(&M, &N, A, &lda, ipiv, &info);
         if (info != 0) throw std::runtime_error(std::string("Lapack dgetrf_ exited with code: ") + std::to_string(info));
     }
-    //! \brief LAPACK dgetrs
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief LAPACK dgetrs
+     */
     inline void getrs(char trans, int N, int nrhs, double const A[], int lda, int const ipiv[], double B[], int ldb){
         int info = 0;
         dgetrs_(&trans, &N, &nrhs, A, &lda, ipiv, B, &ldb, &info);
         if (info != 0) throw std::runtime_error(std::string("Lapack dgetrs_ exited with code: ") + std::to_string(info));
     }
-    //! \brief LAPACK dgels
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief LAPACK dgels
+     */
     inline void gels(char trans, int M, int N, int nrhs, double A[], int lda, double B[], int ldb, double work[], int lwork){
         int info = 0;
         dgels_(&trans, &M, &N, &nrhs, A, &lda, B, &ldb, work, &lwork, &info);
@@ -147,7 +182,10 @@ namespace TasBLAS{
                 throw std::runtime_error(std::string("Lapack dgels_ infer-worksize-stage exited with code: ") + std::to_string(info));
         }
     }
-    //! \brief LAPACK zgels
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief LAPACK zgels
+     */
     inline void gels(char trans, int M, int N, int nrhs, std::complex<double> A[], int lda, std::complex<double> B[], int ldb, std::complex<double> work[], int lwork){
         int info = 0;
         zgels_(&trans, &M, &N, &nrhs, A, &lda, B, &ldb, work, &lwork, &info);
@@ -159,7 +197,10 @@ namespace TasBLAS{
         }
     }
     #ifdef Tasmanian_BLAS_HAS_ZGELQ
-    //! \brief LAPACK dgeql
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief LAPACK dgeql
+     */
     inline void geql(int M, int N, double A[], int lda, double T[], int Tsize, double work[], int lwork){
         int info = 0;
         dgelq_(&M, &N, A, &lda, T, &Tsize, work, &lwork, &info);
@@ -170,7 +211,10 @@ namespace TasBLAS{
                 throw std::runtime_error(std::string("Lapack dgeql_ infer-worksize-stage exited with code: ") + std::to_string(info));
         }
     }
-    //! \brief LAPACK dgemlq
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief LAPACK dgemlq
+     */
     inline void gemlq(char side, char trans, int M, int N, int K, double const A[], int lda, double const T[], int Tsize,
                        double C[], int ldc, double work[], int lwork){
         int info = 0;
@@ -182,7 +226,10 @@ namespace TasBLAS{
                 throw std::runtime_error(std::string("Lapack dgemlq_ infer-worksize-stage exited with code: ") + std::to_string(info));
         }
     }
-        //! \brief LAPACK zgeql
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief LAPACK zgeql
+     */
     inline void geql(int M, int N, std::complex<double> A[], int lda, std::complex<double> T[], int Tsize, std::complex<double> work[], int lwork){
         int info = 0;
         zgelq_(&M, &N, A, &lda, T, &Tsize, work, &lwork, &info);
@@ -193,7 +240,10 @@ namespace TasBLAS{
                 throw std::runtime_error(std::string("Lapack zgeql_ infer-worksize-stage exited with code: ") + std::to_string(info));
         }
     }
-    //! \brief LAPACK zgemlq
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief LAPACK zgemlq
+     */
     inline void gemlq(char side, char trans, int M, int N, int K, std::complex<double> const A[], int lda, std::complex<double> const T[], int Tsize,
                        std::complex<double> C[], int ldc, std::complex<double> work[], int lwork){
         int info = 0;
@@ -209,13 +259,17 @@ namespace TasBLAS{
 
     // higher-level methods building on top of one or more BLAS/LAPACK Methods
 
-    //! \brief Returns the square of the norm of the vector.
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief Returns the square of the norm of the vector.
+     */
     template<typename T>
     inline T norm2_2(int N, T const x[]){
         T nrm = norm2(N, x, 1);
         return nrm * nrm;
     }
     /*!
+     * \ingroup TasmanianTPLWrappers
      * \brief Combination of BLAS gemm and gemv
      *
      * Computes \f$ C = \alpha A B + \beta C \f$ where A is M by K, B is K by N, and C is M by N.
@@ -233,17 +287,30 @@ namespace TasBLAS{
             gemv('T', K, N, alpha, B, K, A, 1, beta, C, 1);
         }
     }
-    //! \brief Conjugates a matrix, no op in the real case.
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief Conjugates a matrix, no op in the real case.
+     */
     inline void conj_matrix(int, int, double[]){}
-    //! \brief Conjugates the matrix, used in the case when 'T' operation is needed by only 'C' is available in the LAPACK standard.
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief Conjugates the matrix, used in the case when 'T' operation is needed by only 'C' is available in the LAPACK standard.
+     */
     inline void conj_matrix(int N, int M, std::complex<double> A[]){
         for(size_t i=0; i<static_cast<size_t>(N) * static_cast<size_t>(M); i++) A[i] = std::conj(A[i]);
     }
-    //! \brief Returns the transpose symbol, 'T' in the real case.
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief Returns the transpose symbol, 'T' in the real case.
+     */
     constexpr inline char get_trans(double){ return 'T'; }
-    //! \brief Returns the conjugate-transpose symbol, 'C' in the complex case.
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief Returns the conjugate-transpose symbol, 'C' in the complex case.
+     */
     constexpr inline char get_trans(std::complex<double>){ return 'C'; }
     /*!
+     * \ingroup TasmanianTPLWrappers
      * \brief Solves the over-determined least squares problem with single right-hand-side.
      *
      * Note that trans must be a capital letter N or T.
@@ -260,6 +327,7 @@ namespace TasBLAS{
         TasBLAS::gels(effective_trans, n, m, nrhs, A, n, b, N, work.data(), static_cast<int>(work.size()));
     }
     /*!
+     * \ingroup TasmanianTPLWrappers
      * \brief Compute the LQ factorization of the matrix \b A.
      *
      * The assumption here is that the matrix is in column major format, otherwise this computes the QR factorization.
@@ -275,6 +343,7 @@ namespace TasBLAS{
         geql(rows, cols, A, rows, T.data(), static_cast<int>(T.size()), work.data(), static_cast<int>(work.size()));
     }
     /*!
+     * \ingroup TasmanianTPLWrappers
      * \brief Multiplies C by the Q factor computed with factorizeLQ.
      *
      * Computes \f$ C = C Q^T \f$ where Q comes from the call to factorizeLQ.
@@ -287,7 +356,10 @@ namespace TasBLAS{
         work.resize(static_cast<int>(std::real(work[0])));
         gemlq('R', get_trans(static_cast<scalar_type>(0.0)), M, N, K, A, K, T.data(), static_cast<int>(T.size()), C, M, work.data(), static_cast<int>(work.size()));
     }
-    //! \brief Solves the least-squares assuming row-major format, see TasmanianDenseSolver::solvesLeastSquares()
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief Solves the least-squares assuming row-major format, see TasmanianDenseSolver::solvesLeastSquares()
+     */
     template<typename scalar_type>
     void solveLSmulti(int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
         if (nrhs == 1){

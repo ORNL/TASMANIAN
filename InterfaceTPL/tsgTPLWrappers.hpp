@@ -32,12 +32,14 @@
 #define __TASMANIAN_TPL_WRAPPERS_HPP
 
 /*!
+ * \internal
  * \file tsgTPLWrappers.hpp
  * \brief Wrappers to the enabled TPL functionality.
  * \author Miroslav Stoyanov
  * \ingroup TasmanianTPLWrappers
  *
  * The header that includes all TPL headers defined by TasmanianConfig.hpp.
+ * \endinternal
  */
 
 /*!
