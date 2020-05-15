@@ -230,8 +230,14 @@ python -m pip install Tasmanian                         # will install Tasmanian
 python -m Tasmanian                                     # print the install log
 ./tasmanian_virtual_env/bin/tasgrid -v                  # print the available CUDA devices
 ```
-**Note:** under MS Windows the environment variables can be set from Advanced System Settings,
-but the paths should use Linux style of back-slashes, e.g., `C:/Program Files/CUDA/bin/nvcc.exe`
+
+Additional notes:
+* under MS Windows the environment variables can be set from Advanced System Settings,
+  but the paths should use Linux style of back-slashes, e.g., `C:/Program Files/CUDA/bin/nvcc.exe`
+* scikit build does not support the latest `Visual Studio 16 2019`, regular CMake install works fine
+* under OSX some users have reported segfaults when using a pip install, the problem does not
+  appear when using CMake or the install script, the issue is under investigation
+
 
 ### Install with Spack
 
