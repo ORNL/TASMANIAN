@@ -56,14 +56,18 @@
 #include "TasmanianConfig.hpp" // contains build options passed down from CMake
 #include "tsgUtils.hpp" // contains array wrapper and size_mult for int-to-size_t
 
-//! \file tsgEnumerates.hpp
-//! \brief Omnipresent enumerate types.
-//! \author Miroslav Stoyanov
-//! \ingroup TasmanianEnumerates
-//!
-//! Contains the enumerate types that are used throughout Tasmanian.
-//! This header is included directly or transitively in every other
-//! file of the project including \b TasmanianSparseGrids.hpp
+/*!
+ * \internal
+ * \file tsgEnumerates.hpp
+ * \brief Omnipresent enumerate types.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianEnumerates
+ *
+ * Contains the enumerate types that are used throughout Tasmanian.
+ * This header is included directly or transitively in every other
+ * file of the project including \b TasmanianSparseGrids.hpp
+ * \endinternal
+ */
 
 /*!
  * \ingroup TasmanianSG

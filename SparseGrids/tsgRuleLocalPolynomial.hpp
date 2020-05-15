@@ -31,7 +31,7 @@
 #ifndef __TSG_RULE_LOCAL_POLYNOMIAL_HPP
 #define __TSG_RULE_LOCAL_POLYNOMIAL_HPP
 
-#include "tsgEnumerates.hpp"
+#include "tsgCoreOneDimensional.hpp"
 
 namespace TasGrid{
 
