@@ -255,7 +255,7 @@ inline void loadUnstructuredDataL2tmpl(double const data_points[], int num_data,
  * \param tolerance if positive, will add regularization to the least-squares problem, must be less than the accuracy
  *                  of the surrogate so that it will not affect the approximation error;
  *                  if set to zero or less, no regularization will be used but depending on the type of grid and
- *                  the distribution of the points, the problem may not be well poses
+ *                  the distribution of the points, the problem may not be well posed
  * \param grid is a non-empty grid, if a refinement has been set, it will be merged with the existing points before inference
  *
  * \throws std::runtime_error if the grid is empty or \b accel_none is used
