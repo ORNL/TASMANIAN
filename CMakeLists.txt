@@ -28,15 +28,6 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D Tasmanian_EXTRA_INCLUDE_DIRS:LIST="appends more include paths"
 #    -D Tasmanian_EXTRA_LINK_DIRS:PATH="appends more link paths"
 #
-# xSDK options: (USE_XSDK_DEFAULTS must be ON to use the other XSDK options)
-#    -D USE_XSDK_DEFAULTS:BOOL=OFF
-#    -D XSDK_ENABLE_OPENMP:BOOL=OFF
-#    -D TPL_ENABLE_BLAS:BOOL=OFF
-#    -D TPL_ENABLE_MAGMA:BOOL=OFF
-#    -D XSDK_ENABLE_PYTHON:BOOL=OFF
-#    -D XSDK_ENABLE_FORTRAN:BOOL=OFF
-#    -D XSDK_ENABLE_CUDA:BOOL=OFF
-#
 # Selecting specific packages for find_package()
 #     -D PYTHON_EXECUTABLE:PATH
 #     -D CMAKE_CUDA_COMPILER:PATH
@@ -61,7 +52,6 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 # The build process follows these steps:
 # 1. Define all options and assign default values
 # 2. Perform sanity check
-#    - compliance with XSDK build policies
 #    - resolve conflicts, e.g., Python requires shared libs
 #    - call find_package() for options that need packages
 #    - fail or fallback if find_package() fails for some option
@@ -179,6 +169,5 @@ endif()
 ########################################################################
 # Setup Message
 ########################################################################
-if (NOT USE_XSDK_DEFAULTS)
-    include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/setup_message.cmake")
-endif()
+include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/setup_message.cmake")
+
