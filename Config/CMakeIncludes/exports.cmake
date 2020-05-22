@@ -38,25 +38,27 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/Config/Tasmanian.h"
         DESTINATION "include"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
+
 # TasmanianMake.in for GNU Make include/link
-get_target_property(Tasmanian_list Tasmanian_libsparsegrid INTERFACE_LINK_LIBRARIES)
+get_target_property(Tasmanian_list Tasmanian_dependencies INTERFACE_LINK_LIBRARIES)
 foreach(Tasmanian_lib_ ${Tasmanian_list})
     set(Tasmanian_libs "${Tasmanian_libs} ${Tasmanian_lib_}")
 endforeach()
 unset(Tasmanian_lib_)
+unset(Tasmanian_list)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/TasmanianMakefile.in" "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianMakefile.in" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianMakefile.in"
         DESTINATION "share/Tasmanian/"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
-# cmake file for the examples, to be used post-install
-set(Tasmanian_components "")
-foreach(_tsglibtype ${Tasmanian_libs_type})
-    string(TOUPPER ${_tsglibtype} Tasmanian_ltype)
-    set(Tasmanian_components "${Tasmanian_components} ${Tasmanian_ltype}")
-endforeach()
-unset(_tsglibtype)
-unset(Tasmanian_ltype)
+
+# configure the cmake file for the examples, to be used post-install
+if (BUILD_SHARED_LIBS)
+    set(Tasmanian_components " SHARED")
+else()
+    set(Tasmanian_components " STATIC")
+endif()
+
 foreach(_comp OPENMP BLAS PYTHON CUDA HIP MAGMA FORTRAN MPI)
     if (Tasmanian_ENABLE_${_comp})
         set(Tasmanian_components "${Tasmanian_components} ${_comp}")

@@ -2,39 +2,24 @@
 # Fortran librareis and command line tools
 ########################################################################
 
-macro(Tasmanian_macro_add_libdfortran Tasmanian_shared_or_static)
+add_library(Tasmanian_libfortran90 TasmanianSG.f90
+                                   tsgC2FortranBridge.f90
+                                   tsgC2Fortran.cpp)
 
-if (${Tasmanian_shared_or_static} STREQUAL SHARED)
-    set(Tasmanian_libfor_target_name "Tasmanian_libfortran90_shared")
-else()
-    set(Tasmanian_libfor_target_name "Tasmanian_libfortran90_static")
-endif()
+target_include_directories(Tasmanian_libfortran90 PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
+target_link_libraries(Tasmanian_libfortran90  Tasmanian_addons)
 
-add_library(${Tasmanian_libfor_target_name} ${Tasmanian_shared_or_static} TasmanianSG.f90
-                                                                          tsgC2FortranBridge.f90
-                                                                          tsgC2Fortran.cpp)
+set_target_properties(Tasmanian_libfortran90 PROPERTIES OUTPUT_NAME "tasmanianfortran90"
+                                             INSTALL_RPATH "${Tasmanian_rpath}"
+                                             SOVERSION ${Tasmanian_VERSION_MAJOR}
+                                             VERSION   ${PROJECT_VERSION})
 
-target_link_libraries(${Tasmanian_libfor_target_name} Tasmanian_addons)
-set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES OUTPUT_NAME "tasmanianfortran90"
-                                                                 INSTALL_RPATH "${Tasmanian_rpath}"
-                                                                 SOVERSION ${Tasmanian_VERSION_MAJOR}
-                                                                 VERSION   ${PROJECT_VERSION})
-
-target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
-
-if (Tasmanian_ENABLE_MPI)
-    # see the comments in the Addons/CMakeLists.txt
-    target_link_libraries(${Tasmanian_libfor_target_name} MPI::MPI_Fortran)
-endif()
-
-install(TARGETS ${Tasmanian_libfor_target_name}
+install(TARGETS Tasmanian_libfortran90
         EXPORT "${Tasmanian_export_name}"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")
 
-unset(Tasmanian_libfor_target_name)
-endmacro()
 
 ########################################################################
 # add the fortran tester and examples executables
@@ -43,34 +28,21 @@ add_executable(Tasmanian_fortester fortester.f90)
 
 set_target_properties(Tasmanian_fortester  PROPERTIES OUTPUT_NAME "fortester" LINKER_LANGUAGE Fortran)
 
+target_link_libraries(Tasmanian_fortester  Tasmanian_libfortran90)
+
+
 ########################################################################
-# add the libraries
+# handle the MPI dependence and MPI tests
 ########################################################################
-foreach(_tsglibtype ${Tasmanian_libs_type})
-    string(TOUPPER ${_tsglibtype} Tasmanian_ltype)
-    Tasmanian_macro_add_libdfortran(${Tasmanian_ltype})
-
-    target_link_libraries(Tasmanian_libfortran90_${_tsglibtype} Tasmanian_libdream_${_tsglibtype})
-endforeach()
-unset(_tsglibtype)
-unset(Tasmanian_ltype)
-
-target_link_libraries(Tasmanian_fortester  Tasmanian_libfortran90_${Tasmanian_lib_default})
-
 if (Tasmanian_ENABLE_MPI)
+    target_link_libraries(Tasmanian_libfortran90 MPI::MPI_Fortran)
+
     add_executable(Tasmanian_mpif90    mpitester.f90)
     set_target_properties(Tasmanian_mpif90     PROPERTIES OUTPUT_NAME "mpitester" LINKER_LANGUAGE Fortran)
-    target_link_libraries(Tasmanian_mpif90     Tasmanian_libfortran90_${Tasmanian_lib_default})
+    target_link_libraries(Tasmanian_mpif90     Tasmanian_libfortran90)
     add_test(MPIFortranGridIO ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS} ${CMAKE_CURRENT_BINARY_DIR}/mpitester ${MPIEXEC_POSTFLAGS})
     set_tests_properties(MPIFortranGridIO PROPERTIES RUN_SERIAL ON)
     list(APPEND Tasmanian_fortranmpi_test "MPIFortranGridIO")
-endif()
-
-########################################################################
-# Windows specific support (DLL export/import directives and names)
-########################################################################
-if ((${CMAKE_SYSTEM_NAME} STREQUAL "Windows") AND (TARGET Tasmanian_libfortran90_static))
-    set_target_properties(Tasmanian_libfortran90_static PROPERTIES OUTPUT_NAME "tasmanianfortran90_static")
 endif()
 
 
@@ -93,6 +65,3 @@ unset(Tasmanian_fortranmpi_test)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/tasmaniansg.mod"
         DESTINATION include
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
-# install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/Examples/example_sparse_grids.f90"
-#         DESTINATION "share/Tasmanian/examples/"
-#         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)

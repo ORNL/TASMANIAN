@@ -65,6 +65,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    - resolve conflicts, e.g., Python requires shared libs
 #    - call find_package() for options that need packages
 #    - fail or fallback if find_package() fails for some option
+#    - add Tasmanian_dependencies target with all TPLs
 # 3. Enable testing and set the master config file
 # 4. Add all subdirectories in the correct order
 #    - SparseGirds, DREAM, Addons
@@ -80,6 +81,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 ########################################################################
 
 option(USE_XSDK_DEFAULTS            "Enable xSDK compatibility"              OFF)
+option(BUILD_SHARED_LIBS            "Specify shared or static libraries for Tasmanian"  ON)
 option(Tasmanian_ENABLE_RECOMMENDED "Enable (if found) OpenMP, BLAS, and Python, also set optimization flags" OFF)
 option(Tasmanian_ENABLE_OPENMP      "Enable OpenMP support for Tasmanian (recommended)"    OFF)
 option(Tasmanian_ENABLE_BLAS        "Enable CPU Blas support for Tasmanian (recommended)"  OFF)
@@ -112,8 +114,10 @@ endif()
 # done in one place for consistency
 # after this call, every enabled option comes with proper found set of
 # find_package() provided libraries, includes, etc.
+# Also adds Tasmanian_dependencies that links to all dependencies
 ########################################################################
 include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/sanity_check_and_xsdk.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/add_dependencies_target.cmake")
 
 
 ########################################################################

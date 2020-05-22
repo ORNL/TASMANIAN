@@ -73,34 +73,14 @@ if (SKBUILD) # get extra options from the ENV variables (pip-installer)
     endif()
 endif()
 
-# when choosing shared/static libraries, pick the first mode that applies
-# - BUILD_SHARED_LIBS=OFF: build only static libs regardless of USE_XSDK_DEFAULTS
-# - BUILD_SHARED_LIBS=ON or USE_XSDK_DEFAULTS=ON: build only shared libs
-# - BUILD_SHARED_LIBS=Undefined and USE_XSDK_DEFAULTS=OFF: build both types
-if ((NOT "${BUILD_SHARED_LIBS}" STREQUAL "") AND (NOT BUILD_SHARED_LIBS)) # BUILD_SHARED_LIBS is defined and not an empty string
-    list(APPEND Tasmanian_libs_type "static")
-    set(Tasmanian_lib_default "static") # build static libs and default to static
-elseif (BUILD_SHARED_LIBS OR USE_XSDK_DEFAULTS)
-    list(APPEND Tasmanian_libs_type "shared")
-    set(Tasmanian_lib_default "shared") # build shared libs and default to shared
-else()
-    list(APPEND Tasmanian_libs_type "static" "shared")
-    set(Tasmanian_lib_default "static") # build both types of libs and default to static
-endif()
-
 # check for Fortran, note that enable_language always gives FATAL_ERROR if the compiler is missing
 if (Tasmanian_ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
 
 # swig requires Fortran and cannot handle both types of libs
-if (Tasmanian_ENABLE_SWIG)
-    if (NOT Tasmanian_ENABLE_FORTRAN)
-        message(FATAL_ERROR "Tasmanian_ENABLE_SWIG=ON requires Tasmanian_ENABLE_FORTRAN=ON")
-    endif()
-    if ("${BUILD_SHARED_LIBS}" STREQUAL "")
-        message(FATAL_ERROR "Tasmanian_ENABLE_SWIG=ON requires BUILD_SHARED_LIBS to be defined (ON or OFF)")
-    endif()
+if (Tasmanian_ENABLE_SWIG AND NOT Tasmanian_ENABLE_FORTRAN)
+    message(FATAL_ERROR "Tasmanian_ENABLE_SWIG=ON requires Tasmanian_ENABLE_FORTRAN=ON")
 endif()
 
 # OpenMP setup
@@ -113,7 +93,7 @@ if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
     endif()
 endif()
 
-# fallback threads library if OpenMP is disabled, needed for Addons
+# multi-threading is required by the Addons module even if OpenMP is not enabled
 if (NOT Tasmanian_ENABLE_OPENMP)
     find_package(Threads REQUIRED)
 endif()
@@ -146,12 +126,12 @@ if (Tasmanian_ENABLE_BLAS OR Tasmanian_ENABLE_RECOMMENDED)
 endif()
 
 # Python module requires a shared library
-if (Tasmanian_ENABLE_PYTHON AND (NOT "shared" IN_LIST Tasmanian_libs_type))
+if (Tasmanian_ENABLE_PYTHON AND NOT BUILD_SHARED_LIBS)
     message(FATAL_ERROR "BUILD_SHARED_LIBS is OFF, but shared libraries are required by the Tasmanian Python module")
 endif()
 
 # Python setup, look for python
-if (Tasmanian_ENABLE_PYTHON OR (Tasmanian_ENABLE_RECOMMENDED AND ("shared" IN_LIST Tasmanian_libs_type)))
+if (Tasmanian_ENABLE_PYTHON OR (Tasmanian_ENABLE_RECOMMENDED AND BUILD_SHARED_LIBS))
     find_package(PythonInterp)
 
     if (PYTHONINTERP_FOUND)
@@ -200,7 +180,7 @@ if (Tasmanian_ENABLE_MAGMA)
 
     if (Tasmanian_MAGMA_FOUND)
         message(STATUS "Tasmanian will use UTK MAGMA libraries (static link): ${Tasmanian_MAGMA_LIBRARIES}")
-        if ("shared" IN_LIST Tasmanian_libs_type) # requesting shared libraries for Tasmanian
+        if (BUILD_SHARED_LIBS) # requesting shared libraries for Tasmanian
             message(STATUS "Tasmanian will use UTK MAGMA libraries (shared link): ${Tasmanian_MAGMA_SHARED_LIBRARIES}")
             if (NOT Tasmanian_MAGMA_SHARED_FOUND)
                 message(WARNING "Setting up build with shared libraries for Tasmanian but the UTK MAGMA appears to provide static libraries only \n attempting to link anyway, but this is likely to fail\nif encountering a problem call cmake again with -D BUILD_SHARED_LIBS=OFF")
