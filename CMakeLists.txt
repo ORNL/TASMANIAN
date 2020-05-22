@@ -31,7 +31,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 # Selecting specific packages for find_package()
 #     -D PYTHON_EXECUTABLE:PATH
 #     -D CMAKE_CUDA_COMPILER:PATH
-#     -D Tasmanian_MAGMA_ROOT_DIR:PATH (or just MAGMA_ROOT_DIR)
+#     -D Tasmanian_MAGMA_ROOT:PATH (or just MAGMA_ROOT)
 #     -D MPI_CXX_COMPILER
 #     -D MPI_Fortran_COMPILER (must be compatible with the MPI_CXX_COMPILER)
 #     -D MPIEXEC_EXECUTABLE   (must be compatible with the MPI_CXX_COMPILER)
@@ -40,8 +40,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #
 # Directly specifying libraries and bypassing find_package()
 #     -D BLAS_LIBRARIES
-#     -D Tasmanian_MAGMA_LIBRARIES
-#     -D Tasmanian_MAGMA_INCLUDE_DIRS
+#     -D LAPACK_LIBRARIES
 #
 # Note: directly specifying libraries still requires the corresponding
 #       Tasmanian_ENABLE_ option
@@ -106,6 +105,7 @@ endif()
 # find_package() provided libraries, includes, etc.
 # Also adds Tasmanian_dependencies that links to all dependencies
 ########################################################################
+include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/helper_macros.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/sanity_check_and_xsdk.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/add_dependencies_target.cmake")
 

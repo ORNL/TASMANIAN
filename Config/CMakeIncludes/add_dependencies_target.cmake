@@ -3,31 +3,34 @@
 ########################################################################
 
 add_library(Tasmanian_dependencies INTERFACE)
+list(APPEND Tasmanian_rpath "${Tasmanian_final_install_path}/lib")
 
 if (Tasmanian_ENABLE_OPENMP)
     target_link_libraries(Tasmanian_dependencies INTERFACE ${OpenMP_CXX_LIBRARIES})
+    Tasmanian_find_rpath(LIBRARIES ${OpenMP_CXX_LIBRARIES} LIST rpath)
 else()
     target_link_libraries(Tasmanian_dependencies INTERFACE ${CMAKE_THREAD_LIBS_INIT})
+    Tasmanian_find_rpath(LIBRARIES ${CMAKE_THREAD_LIBS_INIT} LIST rpath)
 endif()
 
 if (Tasmanian_ENABLE_BLAS)
     target_link_libraries(Tasmanian_dependencies INTERFACE ${BLAS_LIBRARIES})
     target_link_libraries(Tasmanian_dependencies INTERFACE ${LAPACK_LIBRARIES})
+    Tasmanian_find_rpath(LIBRARIES ${BLAS_LIBRARIES}   LIST rpath)
+    Tasmanian_find_rpath(LIBRARIES ${LAPACK_LIBRARIES} LIST rpath)
 endif()
 
 if (Tasmanian_ENABLE_CUDA)
     target_link_libraries(Tasmanian_dependencies INTERFACE ${Tasmanian_cudamathlibs})
+    Tasmanian_find_rpath(LIBRARIES ${Tasmanian_cublas} ${Tasmanian_cusparse} ${Tasmaniana_cusolver} LIST rpath)
 endif()
 
 if (Tasmanian_ENABLE_MAGMA)
-    if (BUILD_SHARED_LIBS)
-        target_link_libraries(Tasmanian_dependencies INTERFACE ${Tasmanian_MAGMA_SHARED_LIBRARIES})
-    else()
-        target_link_libraries(Tasmanian_dependencies INTERFACE ${Tasmanian_MAGMA_LIBRARIES})
-    endif()
+    target_link_libraries(Tasmanian_dependencies INTERFACE ${Tasmanian_magmalibs})
+    Tasmanian_find_rpath(LIBRARIES ${Tasmanian_magma} LIST rpath)
 
-    target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${Tasmanian_MAGMA_INCLUDE_DIRS}/>)
-    target_include_directories(Tasmanian_dependencies INTERFACE $<INSTALL_INTERFACE:${Tasmanian_MAGMA_INCLUDE_DIRS}/>)
+    target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${Tasmanian_magma_h}/>)
+    target_include_directories(Tasmanian_dependencies INTERFACE $<INSTALL_INTERFACE:${Tasmanian_magma_h}/>)
 endif()
 
 target_include_directories(Tasmanian_dependencies INTERFACE $<INSTALL_INTERFACE:${Tasmanian_final_install_path}/include>)
@@ -40,8 +43,6 @@ target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${
 # for example, on some systems (e.g., OLCF) find_package(BLAS) fails to
 # recognize that libacml_mp requires libgomp, so the build fails with either clang or ENABLE_OPENMP=OFF
 # -D Tasmanian_EXTRA_LIBRARIES=/path/to/libgomp.so circumvents the issue
-# NOTE: adding Tasmanian_EXTRA_LIBRARIES to SparseGrids will propagate to all other targets
-# same holds for Tasmanian_EXTRA_INCLUDE_DIRS
 target_link_libraries(Tasmanian_dependencies ${Tasmanian_EXTRA_LIBRARIES})
 
 foreach(_tsg_include ${Tasmanian_EXTRA_INCLUDE_DIRS})
@@ -51,28 +52,5 @@ endforeach()
 
 install(TARGETS Tasmanian_dependencies EXPORT "${Tasmanian_export_name}")
 
-########################################################################
-# Create an RPATH list for all dependencies
-########################################################################
-list(APPEND Tasmanian_rpath "${Tasmanian_final_install_path}/lib")
-
-if (Tasmanian_ENABLE_BLAS)
-    foreach(_tsg_lib ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
-        get_filename_component(_tsg_libpath ${_tsg_lib} DIRECTORY)
-        list(APPEND Tasmanian_rpath ${_tsg_libpath})
-    endforeach()
-    unset(_tsg_lib)
-    unset(_tsg_libpath)
-endif()
-
-if (Tasmanian_ENABLE_CUDA)
-    list(APPEND Tasmanian_rpath ${Tasmanian_cuda_rpath})
-    unset(Tasmanian_cuda_rpath)
-endif()
-
-if (Tasmanian_ENABLE_MAGMA)
-    list(APPEND Tasmanian_rpath "${Tasmanian_libmagma_dir}")
-    unset(Tasmanian_libmagma_dir)
-endif()
-
-# message(STATUS "Tasmanian RPATH: ${Tasmanian_rpath}")
+list(REMOVE_DUPLICATES Tasmanian_rpath)
+#message(STATUS "Tasmanian RPATH: ${Tasmanian_rpath}")

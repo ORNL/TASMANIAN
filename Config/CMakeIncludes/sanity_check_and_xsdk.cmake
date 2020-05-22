@@ -18,7 +18,7 @@ if (SKBUILD)
     endif()
     if (NOT "$ENV{Tasmanian_ENABLE_MAGMA}" STREQUAL "")
         set(Tasmanian_ENABLE_MAGMA ON)
-        set(MAGMA_ROOT_DIR "$ENV{Tasmanian_ENABLE_MAGMA}")
+        set(MAGMA_ROOT "$ENV{Tasmanian_ENABLE_MAGMA}")
     endif()
     if (NOT "$ENV{Tasmanian_ENABLE_MPI}" STREQUAL "")
         set(Tasmanian_ENABLE_MPI ON)
@@ -132,20 +132,7 @@ if (Tasmanian_ENABLE_MAGMA)
         message(FATAL_ERROR "Currently Tasmanian can use only CUDA related capability from MAGMA, hence Tasmanian_ENABLE_CUDA must be set ON")
     endif()
 
-    find_package(TasmanianMAGMA)
-
-    if (Tasmanian_MAGMA_FOUND)
-        message(STATUS "Tasmanian will use UTK MAGMA libraries (static link): ${Tasmanian_MAGMA_LIBRARIES}")
-        if (BUILD_SHARED_LIBS) # requesting shared libraries for Tasmanian
-            message(STATUS "Tasmanian will use UTK MAGMA libraries (shared link): ${Tasmanian_MAGMA_SHARED_LIBRARIES}")
-            if (NOT Tasmanian_MAGMA_SHARED_FOUND)
-                message(WARNING "Setting up build with shared libraries for Tasmanian but the UTK MAGMA appears to provide static libraries only \n attempting to link anyway, but this is likely to fail\nif encountering a problem call cmake again with -D BUILD_SHARED_LIBS=OFF")
-            endif()
-        endif()
-        message(STATUS "Tasmanian will use UTK MAGMA include: ${Tasmanian_MAGMA_INCLUDE_DIRS}")
-    else()
-        message(FATAL_ERROR "Tasmanian_ENABLE_MAGMA is ON, but find_package(TasmanianMAGMA) failed\n please provide valid Tasmanian_MAGMA_ROOT:PATH or Tasmanian_MAGMA_LIBRARIES with Tasmanian_MAGMA_INCLUDE_DIRS:PATH")
-    endif()
+    find_package(TasmanianMagma REQUIRED)
 endif()
 
 # check for MPI
@@ -162,13 +149,6 @@ if (SKBUILD)
 else()
     set(Tasmanian_final_install_path "${CMAKE_INSTALL_PREFIX}")
 endif()
-
-
-########################################################################
-# Needed for TasmanianConfig.cmake and TasmanianConfigVersion.cmake
-# enables the use of "find_package(Tasmanian <version>)"
-########################################################################
-include(CMakePackageConfigHelpers)
 
 
 ########################################################################
