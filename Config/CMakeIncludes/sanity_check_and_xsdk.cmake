@@ -5,52 +5,8 @@ if ((NOT DEFINED CMAKE_BUILD_TYPE) OR (NOT CMAKE_BUILD_TYPE))
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-# XSDK mode:
-#   - Never overwrite user preferences, Tasmanian_ENABLE_RECOMMENDED OFF
-#   - All Tasmanian_ENABLE options are disabled (by default)
-#   - Options are enabled with XSDK switches, e.g., XSDK_ENABLE_FORTRAN
-if (USE_XSDK_DEFAULTS)
-    set(Tasmanian_ENABLE_RECOMMENDED OFF)
-    set(Tasmanian_ENABLE_OPENMP      OFF)
-    set(Tasmanian_ENABLE_BLAS        OFF)
-    set(Tasmanian_ENABLE_MPI         OFF)
-    set(Tasmanian_ENABLE_PYTHON      OFF)
-    set(Tasmanian_ENABLE_FORTRAN     OFF)
-    set(Tasmanian_ENABLE_SWIG        OFF)
-    set(Tasmanian_ENABLE_CUDA        OFF)
-    set(Tasmanian_ENABLE_MAGMA       OFF)
-    if (DEFINED XSDK_ENABLE_OPENMP)
-        set(Tasmanian_ENABLE_OPENMP ${XSDK_ENABLE_OPENMP})
-    endif()
-    if (DEFINED TPL_ENABLE_MPI)
-        set(Tasmanian_ENABLE_MPI ${TPL_ENABLE_MPI})
-    endif()
-    if (DEFINED TPL_ENABLE_BLAS)
-        set(Tasmanian_ENABLE_BLAS ${TPL_ENABLE_BLAS})
-    endif()
-    if (DEFINED TPL_ENABLE_MAGMA)
-        set(Tasmanian_ENABLE_MAGMA ${TPL_ENABLE_MAGMA})
-        # don't really like the xSDK "TPL" convention, prefer to work
-        # with Tasmanian_ variables to avoid confusion on who defined what
-        if (TPL_MAGMA_LIBRARIES)
-            set(Tasmanian_MAGMA_LIBRARIES ${TPL_MAGMA_LIBRARIES})
-        endif()
-        if (TPL_MAGMA_INCLUDE_DIRS)
-            set(Tasmanian_MAGMA_INCLUDE_DIRS ${TPL_MAGMA_INCLUDE_DIRS})
-        endif()
-    endif()
-    if (DEFINED XSDK_ENABLE_PYTHON)
-        set(Tasmanian_ENABLE_PYTHON ${XSDK_ENABLE_PYTHON})
-    endif()
-    if (DEFINED XSDK_ENABLE_FORTRAN)
-        set(Tasmanian_ENABLE_FORTRAN ${XSDK_ENABLE_FORTRAN})
-    endif()
-    if (DEFINED XSDK_ENABLE_CUDA)
-        set(Tasmanian_ENABLE_CUDA ${XSDK_ENABLE_CUDA})
-    endif()
-endif()
-
-if (SKBUILD) # get extra options from the ENV variables (pip-installer)
+# get extra options from the ENV variables (pip-installer)
+if (SKBUILD)
     if (NOT "$ENV{Tasmanian_ENABLE_BLAS}" STREQUAL "")
         set(Tasmanian_ENABLE_BLAS ON)
         set(BLAS_LIBRARIES   "$ENV{Tasmanian_ENABLE_BLAS}")
@@ -62,7 +18,7 @@ if (SKBUILD) # get extra options from the ENV variables (pip-installer)
     endif()
     if (NOT "$ENV{Tasmanian_ENABLE_MAGMA}" STREQUAL "")
         set(Tasmanian_ENABLE_MAGMA ON)
-        set(MAGMA_ROOT_DIR "$ENV{Tasmanian_ENABLE_MAGMA}")
+        set(MAGMA_ROOT "$ENV{Tasmanian_ENABLE_MAGMA}")
     endif()
     if (NOT "$ENV{Tasmanian_ENABLE_MPI}" STREQUAL "")
         set(Tasmanian_ENABLE_MPI ON)
@@ -73,34 +29,14 @@ if (SKBUILD) # get extra options from the ENV variables (pip-installer)
     endif()
 endif()
 
-# when choosing shared/static libraries, pick the first mode that applies
-# - BUILD_SHARED_LIBS=OFF: build only static libs regardless of USE_XSDK_DEFAULTS
-# - BUILD_SHARED_LIBS=ON or USE_XSDK_DEFAULTS=ON: build only shared libs
-# - BUILD_SHARED_LIBS=Undefined and USE_XSDK_DEFAULTS=OFF: build both types
-if ((NOT "${BUILD_SHARED_LIBS}" STREQUAL "") AND (NOT BUILD_SHARED_LIBS)) # BUILD_SHARED_LIBS is defined and not an empty string
-    list(APPEND Tasmanian_libs_type "static")
-    set(Tasmanian_lib_default "static") # build static libs and default to static
-elseif (BUILD_SHARED_LIBS OR USE_XSDK_DEFAULTS)
-    list(APPEND Tasmanian_libs_type "shared")
-    set(Tasmanian_lib_default "shared") # build shared libs and default to shared
-else()
-    list(APPEND Tasmanian_libs_type "static" "shared")
-    set(Tasmanian_lib_default "static") # build both types of libs and default to static
-endif()
-
 # check for Fortran, note that enable_language always gives FATAL_ERROR if the compiler is missing
 if (Tasmanian_ENABLE_FORTRAN)
     enable_language(Fortran)
 endif()
 
 # swig requires Fortran and cannot handle both types of libs
-if (Tasmanian_ENABLE_SWIG)
-    if (NOT Tasmanian_ENABLE_FORTRAN)
-        message(FATAL_ERROR "Tasmanian_ENABLE_SWIG=ON requires Tasmanian_ENABLE_FORTRAN=ON")
-    endif()
-    if ("${BUILD_SHARED_LIBS}" STREQUAL "")
-        message(FATAL_ERROR "Tasmanian_ENABLE_SWIG=ON requires BUILD_SHARED_LIBS to be defined (ON or OFF)")
-    endif()
+if (Tasmanian_ENABLE_SWIG AND NOT Tasmanian_ENABLE_FORTRAN)
+    message(FATAL_ERROR "Tasmanian_ENABLE_SWIG=ON requires Tasmanian_ENABLE_FORTRAN=ON")
 endif()
 
 # OpenMP setup
@@ -113,7 +49,7 @@ if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
     endif()
 endif()
 
-# fallback threads library if OpenMP is disabled, needed for Addons
+# multi-threading is required by the Addons module even if OpenMP is not enabled
 if (NOT Tasmanian_ENABLE_OPENMP)
     find_package(Threads REQUIRED)
 endif()
@@ -146,12 +82,12 @@ if (Tasmanian_ENABLE_BLAS OR Tasmanian_ENABLE_RECOMMENDED)
 endif()
 
 # Python module requires a shared library
-if (Tasmanian_ENABLE_PYTHON AND (NOT "shared" IN_LIST Tasmanian_libs_type))
+if (Tasmanian_ENABLE_PYTHON AND NOT BUILD_SHARED_LIBS)
     message(FATAL_ERROR "BUILD_SHARED_LIBS is OFF, but shared libraries are required by the Tasmanian Python module")
 endif()
 
 # Python setup, look for python
-if (Tasmanian_ENABLE_PYTHON OR (Tasmanian_ENABLE_RECOMMENDED AND ("shared" IN_LIST Tasmanian_libs_type)))
+if (Tasmanian_ENABLE_PYTHON OR (Tasmanian_ENABLE_RECOMMENDED AND BUILD_SHARED_LIBS))
     find_package(PythonInterp)
 
     if (PYTHONINTERP_FOUND)
@@ -196,20 +132,7 @@ if (Tasmanian_ENABLE_MAGMA)
         message(FATAL_ERROR "Currently Tasmanian can use only CUDA related capability from MAGMA, hence Tasmanian_ENABLE_CUDA must be set ON")
     endif()
 
-    find_package(TasmanianMAGMA)
-
-    if (Tasmanian_MAGMA_FOUND)
-        message(STATUS "Tasmanian will use UTK MAGMA libraries (static link): ${Tasmanian_MAGMA_LIBRARIES}")
-        if ("shared" IN_LIST Tasmanian_libs_type) # requesting shared libraries for Tasmanian
-            message(STATUS "Tasmanian will use UTK MAGMA libraries (shared link): ${Tasmanian_MAGMA_SHARED_LIBRARIES}")
-            if (NOT Tasmanian_MAGMA_SHARED_FOUND)
-                message(WARNING "Setting up build with shared libraries for Tasmanian but the UTK MAGMA appears to provide static libraries only \n attempting to link anyway, but this is likely to fail\nif encountering a problem call cmake again with -D BUILD_SHARED_LIBS=OFF")
-            endif()
-        endif()
-        message(STATUS "Tasmanian will use UTK MAGMA include: ${Tasmanian_MAGMA_INCLUDE_DIRS}")
-    else()
-        message(FATAL_ERROR "Tasmanian_ENABLE_MAGMA is ON, but find_package(TasmanianMAGMA) failed\n please provide valid Tasmanian_MAGMA_ROOT:PATH or Tasmanian_MAGMA_LIBRARIES with Tasmanian_MAGMA_INCLUDE_DIRS:PATH")
-    endif()
+    find_package(TasmanianMagma REQUIRED)
 endif()
 
 # check for MPI
@@ -226,16 +149,6 @@ if (SKBUILD)
 else()
     set(Tasmanian_final_install_path "${CMAKE_INSTALL_PREFIX}")
 endif()
-
-# set Tasmanian_rpath with all options
-include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/rpath_list.cmake")
-
-
-########################################################################
-# Needed for TasmanianConfig.cmake and TasmanianConfigVersion.cmake
-# enables the use of "find_package(Tasmanian <version>)"
-########################################################################
-include(CMakePackageConfigHelpers)
 
 
 ########################################################################

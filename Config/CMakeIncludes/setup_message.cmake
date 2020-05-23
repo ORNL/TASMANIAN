@@ -13,11 +13,8 @@ endif()
 if (Tasmanian_ENABLE_CUDA)
     message(STATUS " -D CMAKE_CUDA_FLAGS:STRING=${CMAKE_CUDA_FLAGS}")
 endif()
-if (DEFINED BUILD_SHARED_LIBS)
-    message(STATUS " -D BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
-else()
-    message(STATUS " -D BUILD_SHARED_LIBS=Undefined (builds both shared and static)")
-endif()
+message(STATUS " -D BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
+
 foreach(Tasmanian_option Tasmanian_ENABLE_OPENMP  Tasmanian_ENABLE_BLAS
                          Tasmanian_ENABLE_MPI     Tasmanian_ENABLE_PYTHON
                          Tasmanian_ENABLE_CUDA    Tasmanian_ENABLE_MAGMA
@@ -29,6 +26,7 @@ foreach(Tasmanian_option Tasmanian_ENABLE_OPENMP  Tasmanian_ENABLE_BLAS
         message(STATUS " -D ${Tasmanian_option}:BOOL=OFF")
     endif()
 endforeach()
+
 if (Tasmanian_MAGMA AND Tasmanian_MAGMA_ROOT)
     message(STATUS " -D Tasmanian_MAGMA_ROOT:PATH=${Tasmanian_MAGMA_ROOT}")
 endif()

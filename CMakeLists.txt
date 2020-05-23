@@ -28,19 +28,10 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D Tasmanian_EXTRA_INCLUDE_DIRS:LIST="appends more include paths"
 #    -D Tasmanian_EXTRA_LINK_DIRS:PATH="appends more link paths"
 #
-# xSDK options: (USE_XSDK_DEFAULTS must be ON to use the other XSDK options)
-#    -D USE_XSDK_DEFAULTS:BOOL=OFF
-#    -D XSDK_ENABLE_OPENMP:BOOL=OFF
-#    -D TPL_ENABLE_BLAS:BOOL=OFF
-#    -D TPL_ENABLE_MAGMA:BOOL=OFF
-#    -D XSDK_ENABLE_PYTHON:BOOL=OFF
-#    -D XSDK_ENABLE_FORTRAN:BOOL=OFF
-#    -D XSDK_ENABLE_CUDA:BOOL=OFF
-#
 # Selecting specific packages for find_package()
 #     -D PYTHON_EXECUTABLE:PATH
 #     -D CMAKE_CUDA_COMPILER:PATH
-#     -D Tasmanian_MAGMA_ROOT_DIR:PATH (or just MAGMA_ROOT_DIR)
+#     -D Tasmanian_MAGMA_ROOT:PATH (or just MAGMA_ROOT)
 #     -D MPI_CXX_COMPILER
 #     -D MPI_Fortran_COMPILER (must be compatible with the MPI_CXX_COMPILER)
 #     -D MPIEXEC_EXECUTABLE   (must be compatible with the MPI_CXX_COMPILER)
@@ -49,8 +40,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #
 # Directly specifying libraries and bypassing find_package()
 #     -D BLAS_LIBRARIES
-#     -D Tasmanian_MAGMA_LIBRARIES
-#     -D Tasmanian_MAGMA_INCLUDE_DIRS
+#     -D LAPACK_LIBRARIES
 #
 # Note: directly specifying libraries still requires the corresponding
 #       Tasmanian_ENABLE_ option
@@ -61,10 +51,10 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 # The build process follows these steps:
 # 1. Define all options and assign default values
 # 2. Perform sanity check
-#    - compliance with XSDK build policies
 #    - resolve conflicts, e.g., Python requires shared libs
 #    - call find_package() for options that need packages
 #    - fail or fallback if find_package() fails for some option
+#    - add Tasmanian_dependencies target with all TPLs
 # 3. Enable testing and set the master config file
 # 4. Add all subdirectories in the correct order
 #    - SparseGirds, DREAM, Addons
@@ -80,6 +70,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 ########################################################################
 
 option(USE_XSDK_DEFAULTS            "Enable xSDK compatibility"              OFF)
+option(BUILD_SHARED_LIBS            "Specify shared or static libraries for Tasmanian"  ON)
 option(Tasmanian_ENABLE_RECOMMENDED "Enable (if found) OpenMP, BLAS, and Python, also set optimization flags" OFF)
 option(Tasmanian_ENABLE_OPENMP      "Enable OpenMP support for Tasmanian (recommended)"    OFF)
 option(Tasmanian_ENABLE_BLAS        "Enable CPU Blas support for Tasmanian (recommended)"  OFF)
@@ -112,8 +103,11 @@ endif()
 # done in one place for consistency
 # after this call, every enabled option comes with proper found set of
 # find_package() provided libraries, includes, etc.
+# Also adds Tasmanian_dependencies that links to all dependencies
 ########################################################################
+include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/helper_macros.cmake")
 include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/sanity_check_and_xsdk.cmake")
+include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/add_dependencies_target.cmake")
 
 
 ########################################################################
@@ -175,6 +169,5 @@ endif()
 ########################################################################
 # Setup Message
 ########################################################################
-if (NOT USE_XSDK_DEFAULTS)
-    include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/setup_message.cmake")
-endif()
+include("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/setup_message.cmake")
+

@@ -51,42 +51,34 @@ function(tasmanian_add_swig_module tsg_name)
             ARCHIVE DESTINATION "lib")
 endfunction()
 
-macro(Tasmanian_macro_add_libdfortran03 Tasmanian_shared_or_static)
+macro(Tasmanian_macro_add_libdfortran03)
 #
 # Build the Fortran module from an existing generated source file
 #
 
-    if (${Tasmanian_shared_or_static} STREQUAL SHARED)
-        set(Tasmanian_libfor_target_name "Tasmanian_libfortran03_shared")
-    else()
-        set(Tasmanian_libfor_target_name "Tasmanian_libfortran03_static")
-    endif()
+    add_library(Tasmanian_libfortran03  "${Tasmanian_GENERATE_DIR}/tasmanian.f90"
+                                        "${Tasmanian_GENERATE_DIR}/tasmanianFORTRAN_wrap.cxx")
 
-    add_library(${Tasmanian_libfor_target_name} ${Tasmanian_shared_or_static}
-                                                    "${Tasmanian_GENERATE_DIR}/tasmanian.f90"
-                                                    "${Tasmanian_GENERATE_DIR}/tasmanianFORTRAN_wrap.cxx")
+    target_link_libraries(Tasmanian_libfortran03  Tasmanian_addons)
+    set_target_properties(Tasmanian_libfortran03  PROPERTIES OUTPUT_NAME "tasmanianfortran"
+                                                             INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
+                                                             SOVERSION ${Tasmanian_VERSION_MAJOR}
+                                                             VERSION   ${PROJECT_VERSION}
+                                                             LINKER_LANGUAGE Fortran)
 
-    target_link_libraries(${Tasmanian_libfor_target_name} Tasmanian_addons)
-    set_target_properties(${Tasmanian_libfor_target_name} PROPERTIES OUTPUT_NAME "tasmanianfortran"
-                                                                    INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
-                                                                    SOVERSION ${Tasmanian_VERSION_MAJOR}
-                                                                    VERSION   ${PROJECT_VERSION}
-                                                                    LINKER_LANGUAGE Fortran)
-
-    target_include_directories(${Tasmanian_libfor_target_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
+    target_include_directories(Tasmanian_libfortran03 PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
 
     if (Tasmanian_ENABLE_MPI)
         # see the comments in the Addons/CMakeLists.txt
-        target_link_libraries(${Tasmanian_libfor_target_name} MPI::MPI_Fortran)
+        target_link_libraries(Tasmanian_libfortran03  MPI::MPI_Fortran)
     endif()
 
-    install(TARGETS ${Tasmanian_libfor_target_name}
+    install(TARGETS Tasmanian_libfortran03
             EXPORT "${Tasmanian_export_name}"
             RUNTIME DESTINATION "bin"
             LIBRARY DESTINATION "lib"
             ARCHIVE DESTINATION "lib")
 
-    unset(Tasmanian_libfor_target_name)
 endmacro()
 
 ########################################################################
@@ -109,20 +101,11 @@ if (Tasmanian_ENABLE_SWIG)
 
     target_link_libraries(Tasmanian_fortran_swig_tester  tasmanian)
 
-    add_library(Tasmanian_libfortran03_${Tasmanian_lib_default} ALIAS tasmanian)
+    add_library(Tasmanian_libfortran03 ALIAS tasmanian)
 else()
-    # build the currently generated interface
-    foreach(_tsglibtype ${Tasmanian_libs_type})
-        string(TOUPPER ${_tsglibtype} Tasmanian_ltype)
-        Tasmanian_macro_add_libdfortran03(${Tasmanian_ltype})
+    Tasmanian_macro_add_libdfortran03()
 
-        set_source_files_properties("${Tasmanian_GENERATE_DIR}/tasmanian.f90" PROPERTIES LANGUAGE Fortran)
-        target_link_libraries(Tasmanian_libfortran03_${_tsglibtype} Tasmanian_libdream_${_tsglibtype})
-    endforeach()
-    unset(_tsglibtype)
-    unset(Tasmanian_ltype)
-
-    target_link_libraries(Tasmanian_fortran_swig_tester  Tasmanian_libfortran03_${Tasmanian_lib_default})
+    target_link_libraries(Tasmanian_fortran_swig_tester  Tasmanian_libfortran03)
 endif()
 
 add_test(Fortran2003 forswigtester)

@@ -20,14 +20,13 @@ endif()
 add_executable(Tasmanian::tasgrid IMPORTED)
 set_property(TARGET Tasmanian::tasgrid PROPERTY IMPORTED_LOCATION "@Tasmanian_final_install_path@/bin/tasgrid${CMAKE_EXECUTABLE_SUFFIX_CXX}")
 
-add_library(Tasmanian_libsparsegrid INTERFACE) # for backwards compatibility
-add_library(Tasmanian_libdream INTERFACE)
+add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL) # master target
+target_link_libraries(Tasmanian::Tasmanian INTERFACE Tasmanian_master)
 
-# define _static/_shared independent libraries, default to static if both types are present
-# backwards compatible code, prefer Tasmanian::(Tasmanian, shared, static, Fortran)
-if (TARGET Tasmanian_static)
-    target_link_libraries(Tasmanian_libsparsegrid INTERFACE Tasmanian_libsparsegrid_static)
-    target_link_libraries(Tasmanian_libdream INTERFACE Tasmanian_libdream_static)
+if (@BUILD_SHARED_LIBS@)
+    set(Tasmanian_SHARED_FOUND "ON")
+else()
+    set(Tasmanian_STATIC_FOUND "ON")
 
     if (@Tasmanian_ENABLE_CUDA@)
     # Since Tasmanian does not transitively include <cuda.h> and since all CUDA calls are wrapped in CXX API,
@@ -36,58 +35,29 @@ if (TARGET Tasmanian_static)
     # then overwrite the CMake generated extraneous CUDA requirements and link with the CXX compiler only.
     # This hack is not necessary when building shared libraries.
         if (NOT CMAKE_CUDA_COMPILER)
-            set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES IMPORTED_LINK_INTERFACE_LANGUAGES_DEBUG "CXX")
-            set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "CXX")
-            get_target_property(TasLibs Tasmanian_libsparsegrid_static INTERFACE_LINK_LIBRARIES)
+            set_target_properties(Tasmanian_libsparsegrid PROPERTIES IMPORTED_LINK_INTERFACE_LANGUAGES_DEBUG "CXX")
+            set_target_properties(Tasmanian_libsparsegrid PROPERTIES IMPORTED_LINK_INTERFACE_LANGUAGES_RELEASE "CXX")
+            get_target_property(_TasLibs Tasmanian_libsparsegrid INTERFACE_LINK_LIBRARIES)
             if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-                set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES INTERFACE_LINK_LIBRARIES "${TasLibs};@Tasmanian_cudaruntime@")
+                set_target_properties(Tasmanian_libsparsegrid PROPERTIES INTERFACE_LINK_LIBRARIES "${_TasLibs};@Tasmanian_cudaruntime@")
             else()
-                set_target_properties(Tasmanian_libsparsegrid_static PROPERTIES INTERFACE_LINK_LIBRARIES "${TasLibs};@Tasmanian_cudaruntime@;dl")
+                set_target_properties(Tasmanian_libsparsegrid PROPERTIES INTERFACE_LINK_LIBRARIES "${_TasLibs};@Tasmanian_cudaruntime@;dl")
             endif()
+            unset(_TasLibs)
         endif()
     endif()
-else()
-    target_link_libraries(Tasmanian_libsparsegrid INTERFACE Tasmanian_libsparsegrid_shared)
-    target_link_libraries(Tasmanian_libdream INTERFACE Tasmanian_libdream_shared)
 endif()
 
 if (TARGET tasmanian) # swig Tasmanian Fortran
-    if (TARGET Tasmanian_libsparsegrid_shared)
-        add_library(Tasmanian_libfortran03_shared INTERFACE IMPORTED GLOBAL)
-        target_link_libraries(Tasmanian_libfortran03_shared INTERFACE tasmanian)
-    else()
-        add_library(Tasmanian_libfortran03_static INTERFACE IMPORTED GLOBAL)
-        target_link_libraries(Tasmanian_libfortran03_static INTERFACE tasmanian)
-    endif()
+    add_library(Tasmanian_libfortran03 INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(Tasmanian_libfortran03 INTERFACE tasmanian)
 endif()
 
-# Add the Tasmanian::shared, Tasmanian::static, Tasmanian::Fortran::shared, Tasmanian::Fortran::shared
-foreach(_tsg_lib static shared)
-    if (TARGET Tasmanian_libfortran90_${_tsg_lib})
-        add_library(Tasmanian::Fortran::${_tsg_lib} INTERFACE IMPORTED GLOBAL)
-        target_link_libraries(Tasmanian::Fortran::${_tsg_lib} INTERFACE Tasmanian_libfortran90_${_tsg_lib})
-        target_link_libraries(Tasmanian::Fortran::${_tsg_lib} INTERFACE Tasmanian_libfortran03_${_tsg_lib})
-    endif()
-    if (TARGET Tasmanian_${_tsg_lib})
-        add_library(Tasmanian::${_tsg_lib} INTERFACE IMPORTED GLOBAL)
-        set_target_properties(Tasmanian::${_tsg_lib} PROPERTIES INTERFACE_LINK_LIBRARIES Tasmanian_${_tsg_lib})
-        string(TOUPPER ${_tsg_lib} _tsg_lib_upper)
-        set(Tasmanian_${_tsg_lib_upper}_FOUND "ON")
-        unset(_tsg_lib_upper)
-    endif()
-endforeach()
-unset(_tsg_lib)
-
-if (@Tasmanian_ENABLE_FORTRAN@)
-    add_library(Tasmanian_libfortran90 INTERFACE) # backwards compatible target
-    if (TARGET Tasmanian_libfortran90_static)
-        target_link_libraries(Tasmanian_libfortran90 INTERFACE Tasmanian_libfortran90_static)
-    else()
-        target_link_libraries(Tasmanian_libfortran90 INTERFACE Tasmanian_libfortran90_shared)
-    endif()
-    set(Tasmanian_FORTRAN_FOUND "ON")
-
+if (TARGET Tasmanian_libfortran03)
     add_library(Tasmanian::Fortran INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortran90 Tasmanian_libfortran03)
+
+    set(Tasmanian_FORTRAN_FOUND "ON")
 endif()
 
 # export the python path so other projects can configure python scripts
@@ -130,24 +100,3 @@ endforeach()
 unset(_tsg_comp)
 
 check_required_components(Tasmanian)
-
-add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL) # master target
-
-# if find_package(Tasmanian REQUIRED SHARED) is called without STATIC then default to shared libraries
-if ((SHARED IN_LIST Tasmanian_FIND_COMPONENTS) AND (NOT STATIC IN_LIST Tasmanian_FIND_COMPONENTS) AND (TARGET Tasmanian_shared))
-    target_link_libraries(Tasmanian::Tasmanian INTERFACE Tasmanian_shared)
-    if (TARGET Tasmanian::Fortran)
-        target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortran90_shared)
-        target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortran03_shared)
-    endif()
-else() # otherwise use the default (static if existing, else shared)
-    target_link_libraries(Tasmanian::Tasmanian INTERFACE Tasmanian_master)
-    if (TARGET Tasmanian::Fortran)
-        target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortran90)
-        if (TARGET Tasmanian_libfortran03_static)
-            target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortran03_static)
-        else()
-            target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortran03_shared)
-        endif()
-    endif()
-endif()

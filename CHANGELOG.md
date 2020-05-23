@@ -1,3 +1,12 @@
+Changelog for version 7.2
+--------------
+
+* removed the XSDK names for options
+    * the XSDK requirement was alleviated due to spack
+* CMake now builds only one type of library shared or static
+    * matlab interface works well with shared libs thanks to rpaths
+    * magma search is simpler looking for either shared or static libs
+
 Changelog for version 7.1
 --------------
 

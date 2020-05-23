@@ -2,39 +2,32 @@
 # Addon templates and related tests and interface options
 ########################################################################
 
-macro(Tasmanian_addon_sources)
-    cmake_parse_arguments(_tsg_sources "" "PATH" "FILES" ${ARGN} )
-    target_include_directories(Tasmanian_addons INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${_tsg_sources_PATH}>)
-    foreach(_tsg_file ${_tsg_sources_FILES})
-        target_sources(Tasmanian_addons INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${_tsg_sources_PATH}/${_tsg_file}>
-                                                  $<INSTALL_INTERFACE:${Tasmanian_final_install_path}/include/${_tsg_file}>)
-    endforeach()
-    unset(_tsg_file)
-    unset(_tsg_sources_FILES)
-    unset(_tsg_sources_PATH)
-endmacro(Tasmanian_addon_sources)
-
-# Tasmanian_addons target is not sufficient to use as a stand-alone as it requires dream_static or dream_shared
 add_library(Tasmanian_addons INTERFACE)
 
-Tasmanian_addon_sources(PATH .
-                        FILES tsgAddonsCommon.hpp
-                              tsgMPIScatterGrid.hpp
-                              tsgMPIScatterDream.hpp
-                              tsgMPISampleDream.hpp
-                              tsgLoadNeededValues.hpp
-                              tsgLoadUnstructuredPoints.hpp
-                              tsgCandidateManager.hpp
-                              tsgConstructSurrogate.hpp
-                              tsgMPIConstructGrid.hpp
-                              TasmanianAddons.hpp)
+foreach(_tsg_file tsgAddonsCommon.hpp
+                  tsgMPIScatterGrid.hpp
+                  tsgMPIScatterDream.hpp
+                  tsgMPISampleDream.hpp
+                  tsgLoadNeededValues.hpp
+                  tsgLoadUnstructuredPoints.hpp
+                  tsgCandidateManager.hpp
+                  tsgConstructSurrogate.hpp
+                  tsgMPIConstructGrid.hpp
+                  TasmanianAddons.hpp)
+    target_sources(Tasmanian_addons INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${_tsg_file}>
+                                              $<INSTALL_INTERFACE:${Tasmanian_final_install_path}/include/${_tsg_file}>)
+endforeach()
+
+target_include_directories(Tasmanian_addons INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+target_link_libraries(Tasmanian_addons INTERFACE Tasmanian_libdream)
 
 if (Tasmanian_ENABLE_PYTHON) # the C addons are used by Python
     add_library(Tasmanian_caddons SHARED tsgCLoadNeededValues.cpp tsgCConstructSurrogate.cpp tsgCLoadUnstructuredPoints.cpp)
 
+    target_link_libraries(Tasmanian_caddons  Tasmanian_addons)
+
     set_target_properties(Tasmanian_caddons PROPERTIES OUTPUT_NAME "tasmaniancaddons"
                                                        INSTALL_RPATH "${Tasmanian_rpath}"
-                                                       LINK_LIBRARIES "Tasmanian_addons;Tasmanian_libdream_shared"
                                                        SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                        VERSION   ${PROJECT_VERSION})
 
@@ -43,10 +36,6 @@ if (Tasmanian_ENABLE_PYTHON) # the C addons are used by Python
             RUNTIME DESTINATION "bin"
             LIBRARY DESTINATION "lib"
             ARCHIVE DESTINATION "lib")
-endif()
-
-if (NOT Tasmanian_ENABLE_OPENMP) # using threading without OpenMP
-    target_link_libraries(Tasmanian_addons INTERFACE ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 # The Tasmanian MPI capabilities are templated into the Addons
@@ -89,7 +78,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     if (TARGET Tasmanian_caddons)
         set_target_properties(Tasmanian_caddons PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
     endif()
-    if (NOT "static" IN_LIST Tasmanian_libs_type)
+    if (BUILD_SHARED_LIBS)
         set(Tasmanian_MSVC_PATH_STRING "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Release;${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Debug")
         set(Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING};${CMAKE_CURRENT_BINARY_DIR}/../DREAM/Release;${CMAKE_CURRENT_BINARY_DIR}/../DREAM/Debug;$ENV{PATH}")
         string(REPLACE ";" "\\;" Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING}")
