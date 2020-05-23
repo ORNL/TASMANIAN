@@ -3,6 +3,7 @@
 ########################################################################
 
 add_library(Tasmanian_dependencies INTERFACE)
+target_compile_features(Tasmanian_dependencies INTERFACE cxx_std_11)
 list(APPEND Tasmanian_rpath "${Tasmanian_final_install_path}/lib")
 
 if (Tasmanian_ENABLE_OPENMP)

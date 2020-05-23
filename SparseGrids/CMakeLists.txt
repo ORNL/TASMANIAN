@@ -103,7 +103,6 @@ target_link_libraries(Tasmanian_libsparsegrid  Tasmanian_dependencies)
 
 target_include_directories(Tasmanian_libsparsegrid PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
 
-target_compile_features(Tasmanian_libsparsegrid PUBLIC cxx_std_11)
 set_target_properties(Tasmanian_libsparsegrid PROPERTIES OUTPUT_NAME "tasmaniansparsegrid"
                                                          INSTALL_RPATH "${Tasmanian_rpath}"
                                                          SOVERSION ${Tasmanian_VERSION_MAJOR}

@@ -53,13 +53,10 @@ macro(Tasmanian_find_libraries)
 
     endforeach()
 
+    foreach(_tsg_lib default required NO_DEFAULT_PATH PREFIX LIST REQUIRED OPTIONAL) # cleanup
+        unset(Tasmanian_${_tsg_lib})
+    endforeach()
     unset(_tsg_lib)
-    unset(Tasmanian_findlibs_required)
-    unset(Tasmanian_findlibs_NO_DEFAULT_PATH)
-    unset(Tasmanian_findlibs_PREFIX)
-    unset(Tasmanian_findlibs_LIST)
-    unset(Tasmanian_findlibs_REQUIRED)
-    unset(Tasmanian_findlibs_OPTIONAL)
 endmacro()
 
 # usage: Tasmanian_find_header(FILE foo.h RESULT foo_h ROOT bar HINT saloon NO_DEFAULT_PATH)
@@ -93,13 +90,10 @@ macro(Tasmanian_find_header)
         message(STATUS "Tasmanian searching header: ${Tasmanian_findh_FILE} => ${Tasmanian_${Tasmanian_findh_RESULT}}")
     endif()
 
-    unset(Tasmanian_findh_dir)
-    unset(Tasmanian_findh_default)
-    unset(Tasmanian_findh_NO_DEFAULT_PATH)
-    unset(Tasmanian_findh_FILE)
-    unset(Tasmanian_findh_ROOT)
-    unset(Tasmanian_findh_HINT)
-    unset(Tasmanian_findh_RESULT)
+    foreach(_tsg_opts dir default NO_DEFAULT_PATH FILE ROOT HINT RESULT) # cleanup
+        unset(Tasmanian_${_tsg_opts})
+    endforeach()
+    unset(_tsg_opts)
 endmacro()
 
 # usage: Tasmanian_find_rpath(LIBRARIES ${BLAS_LIBRARIES} LIST rpath)
@@ -114,8 +108,9 @@ macro(Tasmanian_find_rpath)
         #message(STATUS "rpath for ${_tsg_lib} => ${_tsg_libpath}")
     endforeach()
 
+    foreach(_tsg_lib LIST LIBRARIES) # cleanup
+        unset(Tasmanian_${_tsg_lib})
+    endforeach()
     unset(_tsg_lib)
     unset(_tsg_libpath)
-    unset(Tasmanian_findrpath_LIST)
-    unset(Tasmanian_findrpath_LIBRARIES)
 endmacro()
