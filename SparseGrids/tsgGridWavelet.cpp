@@ -188,7 +188,7 @@ void GridWavelet::evaluate(const double x[], double y[]) const{
 }
 void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
     #ifdef Tasmanian_ENABLE_HIP
-    TypeAcceleration mode = (acceleration->mode == accel_none) ? accel_none : accel_cpu_blas;
+    TypeAcceleration mode = (acceleration->mode == accel_gpu_cuda) ? accel_gpu_cublas : acceleration->mode;
     switch(mode){
     #else
     switch(acceleration->mode){
