@@ -48,6 +48,15 @@ else()
     endif()
 endif()
 
+if (@Tasmanian_ENABLE_HIP@)
+    if (NOT "@Tasmanian_ROCM_ROOT@" STREQUAL "")
+        list(APPEND CMAKE_PREFIX_PATH "@Tasmanian_ROCM_ROOT@")
+    endif()
+    find_package(hip REQUIRED)
+    find_package(rocblas REQUIRED)
+    find_package(rocsparse REQUIRED)
+endif()
+
 if (TARGET tasmanian) # swig Tasmanian Fortran
     add_library(Tasmanian_libfortran03 INTERFACE IMPORTED GLOBAL)
     target_link_libraries(Tasmanian_libfortran03 INTERFACE tasmanian)

@@ -73,7 +73,7 @@ template void GpuVector<int>::unload(size_t, int*) const;
 
 GpuEngine::~GpuEngine(){}
 
-int AccelerationMeta::getNumCudaDevices(){ return 0; }
+int AccelerationMeta::getNumGpuDevices(){ return 0; }
 void AccelerationMeta::setDefaultCudaDevice(int){}
 unsigned long long AccelerationMeta::getTotalGPUMemory(int){ return 0; }
 std::string AccelerationMeta::getCudaDeviceName(int){ return std::string(); }

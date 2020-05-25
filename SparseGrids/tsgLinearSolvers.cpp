@@ -99,7 +99,12 @@ void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const *accelera
 
 template<typename scalar_type>
 void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
+    #ifdef Tasmanian_ENABLE_HIP
+    TypeAcceleration mode = (acceleration->mode == accel_none) ? accel_none : accel_cpu_blas;
+    switch(mode){
+    #else
     switch(acceleration->mode){
+    #endif
         case accel_gpu_magma:
             TasGpu::solveLSmultiOOC(acceleration, n, m, A, nrhs, B);
             break;
@@ -397,11 +402,13 @@ WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const *acceleration,
                 r[*ii++] = *vv++;
         }
 
+        #ifndef Tasmanian_ENABLE_HIP
         if (acceleration->mode != accel_cpu_blas){ // using GPU
             acceleration->setDevice();
             gpu_dense = GpuVector<double>(dense);
             dense = std::vector<double>();
         }
+        #endif
     }else{ // sparse mode
         pntr = std::vector<int>(num_rows+1, 0);
         for(int i=0; i<num_rows; i++)

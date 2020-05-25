@@ -128,6 +128,9 @@ bool testAccEval(std::vector<double> const &x, std::vector<double> const &y, int
 }
 
 inline bool canUseCudaKernels(TasmanianSparseGrid const &grid){
+    #ifdef Tasmanian_ENABLE_HIP
+    return false;
+    #endif
     if (!(grid.getAccelerationType() == accel_gpu_cuda || grid.getAccelerationType() == accel_gpu_magma)) return false;
     if (grid.isLocalPolynomial() && (grid.getOrder() > 2 || grid.getOrder() == -1)) return false;
     if (grid.isWavelet() && grid.getOrder() == 3) return false;

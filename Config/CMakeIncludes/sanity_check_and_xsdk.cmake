@@ -113,17 +113,21 @@ if (Tasmanian_ENABLE_CUDA AND Tasmanian_ENABLE_HIP)
     message(FATAL_ERROR "Tasmanian can only use one GPU backend at a time, pick either HIP or CUDA, not both")
 endif()
 
+# using the Tasmanian find modules requires the path
+if (Tasmanian_ENABLE_CUDA OR Tasmanian_ENABLE_HIP OR Tasmanian_ENABLE_MAGMA)
+    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/")
+endif()
+
 # Tasmanian_ENABLE_CUDA support
 if (Tasmanian_ENABLE_CUDA)
     enable_language(CUDA)
 
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/")
     find_package(TasmanianCudaMathLibs REQUIRED)
 endif()
 
 # AMD HIP support
 if (Tasmanian_ENABLE_HIP)
-    message(WARNING "The AMD HIP backend is currently a placeholder, all operations will fallback to the CPU, do NOT use in production")
+    find_package(TasmanianRocm REQUIRED)
 endif()
 
 # check for MAGMA

@@ -423,8 +423,12 @@ void GridSequence::evaluate(const double x[], double y[]) const{
     }
 }
 void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
+    #ifdef Tasmanian_ENABLE_HIP
+    TypeAcceleration mode = (acceleration->mode == accel_gpu_cuda) ? accel_gpu_cublas : acceleration->mode;
+    switch(mode){
+    #else
     switch(acceleration->mode){
-        #ifdef Tasmanian_ENABLE_CUDA
+    #endif
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
@@ -442,7 +446,6 @@ void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
                                        1.0, gpu_cache->surpluses, hweights.data(), 0.0, y);
             break;
         }
-        #endif
         case accel_cpu_blas: {
             int num_points = points.getNumIndexes();
             Data2D<double> weights(num_points, num_x);

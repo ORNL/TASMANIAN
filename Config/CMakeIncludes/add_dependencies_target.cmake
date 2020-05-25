@@ -26,12 +26,18 @@ if (Tasmanian_ENABLE_CUDA)
     Tasmanian_find_rpath(LIBRARIES ${Tasmanian_cublas} ${Tasmanian_cusparse} ${Tasmaniana_cusolver} LIST rpath)
 endif()
 
+if (Tasmanian_ENABLE_HIP)
+    target_link_libraries(Tasmanian_dependencies INTERFACE ${Tasmanian_hiplibs})
+    list(APPEND Tasmanian_rpath ${Tasmanian_hip_rpath})
+
+    target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${Tasmanian_hiproot}/include/>)
+endif()
+
 if (Tasmanian_ENABLE_MAGMA)
     target_link_libraries(Tasmanian_dependencies INTERFACE ${Tasmanian_magmalibs})
     Tasmanian_find_rpath(LIBRARIES ${Tasmanian_magma} LIST rpath)
 
     target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${Tasmanian_magma_h}/>)
-    target_include_directories(Tasmanian_dependencies INTERFACE $<INSTALL_INTERFACE:${Tasmanian_magma_h}/>)
 endif()
 
 target_include_directories(Tasmanian_dependencies INTERFACE $<INSTALL_INTERFACE:${Tasmanian_final_install_path}/include>)

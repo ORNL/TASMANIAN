@@ -110,10 +110,10 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
 
     // accel_gpu_default should always point to the potentially "best" option (currently MAGMA)
     if (accel == accel_gpu_default) accel = accel_gpu_magma;
-    #if !defined(Tasmanian_ENABLE_CUDA) || !defined(Tasmanian_ENABLE_MAGMA) || !defined(Tasmanian_ENABLE_BLAS)
+    #if !defined(Tasmanian_ENABLE_GPU) || !defined(Tasmanian_ENABLE_MAGMA) || !defined(Tasmanian_ENABLE_BLAS)
     // if any of the 3 acceleration modes is missing, then add a switch statement to guard against setting that mode
     switch(accel){
-        #ifndef Tasmanian_ENABLE_CUDA
+        #ifndef Tasmanian_ENABLE_GPU
         // if CUDA is missing: just use the CPU
         case accel_gpu_cublas:
         case accel_gpu_cuda:
@@ -123,11 +123,11 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
             accel = accel_none;
             #endif
             break;
-        #endif // Tasmanian_ENABLE_CUDA
+        #endif // Tasmanian_ENABLE_GPU
         #ifndef Tasmanian_ENABLE_MAGMA
         // MAGMA tries to use CUDA kernels with magma linear algebra, this CUDA is the next best thing
         case accel_gpu_magma:
-            #ifdef Tasmanian_ENABLE_CUDA
+            #ifdef Tasmanian_ENABLE_GPU
             accel = accel_gpu_cuda;
             #elif defined(Tasmanian_ENABLE_BLAS)
             accel = accel_cpu_blas;

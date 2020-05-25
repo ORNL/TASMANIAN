@@ -1646,7 +1646,7 @@ public:
      *     tasgrid -v
      * \endcode
      */
-    static int getNumGPUs();
+    static int getNumGPUs(){ return AccelerationMeta::getNumGpuDevices(); }
     /*!
      * \brief Return the available device memory, in units of MB.
      *

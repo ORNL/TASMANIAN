@@ -229,6 +229,10 @@ struct GpuEngine{
                   cusparseHandle(nullptr), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false),
                   called_magma_init(false)
     #endif
+    #ifdef Tasmanian_ENABLE_HIP
+                : rocblasHandle(nullptr), own_rocblas_handle(false),
+                  rocsparseHandle(nullptr), own_rocsparse_handle(false)
+    #endif
         {}
     //! \brief Destructor, clear all handles and queues.
     ~GpuEngine();
@@ -245,7 +249,17 @@ struct GpuEngine{
         called_magma_init(Utils::exchange(other.called_magma_init, false))
         {}
     #else
+    #ifdef Tasmanian_ENABLE_HIP
+    //! \brief Move construct the engine.
+    GpuEngine(GpuEngine &&other) :
+        rocblasHandle(Utils::exchange(other.rocblasHandle, nullptr)),
+        own_rocblas_handle(Utils::exchange(other.own_rocblas_handle, false)),
+        rocsparseHandle(Utils::exchange(other.rocsparseHandle, nullptr)),
+        own_rocsparse_handle(Utils::exchange(other.own_rocsparse_handle, false))
+        {}
+    #else
     GpuEngine(GpuEngine &&) = default;
+    #endif
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
@@ -262,7 +276,19 @@ struct GpuEngine{
         return *this;
     }
     #else
+    #ifdef Tasmanian_ENABLE_HIP
+    //! \brief Move assign the engine.
+    GpuEngine& operator= (GpuEngine &&other){
+        GpuEngine temp(std::move(other));
+        std::swap(rocblasHandle, temp.rocblasHandle);
+        std::swap(own_rocblas_handle, temp.own_rocblas_handle);
+        std::swap(rocsparseHandle, temp.rocsparseHandle);
+        std::swap(own_rocsparse_handle, temp.own_rocsparse_handle);
+        return *this;
+    }
+    #else
     GpuEngine& operator= (GpuEngine &&) = default;
+    #endif
     #endif
 
     #ifdef Tasmanian_ENABLE_CUDA
@@ -287,6 +313,17 @@ struct GpuEngine{
     bool own_cusolverdn_handle;
     //! \brief Remembers whether MAGMA init has been called.
     bool called_magma_init;
+    #endif
+
+    #ifdef Tasmanian_ENABLE_HIP
+    //! \brief Alias the rocBlas handle.
+    void *rocblasHandle;
+    //! \brief Remember the ownership of the handle.
+    bool own_rocblas_handle;
+    //! \brief Alias the rocSparse handle.
+    void *rocsparseHandle;
+    //! \brief Remember the ownership of the handle.
+    bool own_rocsparse_handle;
     #endif
 };
 
@@ -508,6 +545,10 @@ namespace AccelerationMeta{
             case accel_gpu_cuda: return true;
             case accel_gpu_cublas: return true;
             #endif
+            #ifdef Tasmanian_ENABLE_HIP
+            case accel_gpu_hip: return true;
+            case accel_gpu_rocblas: return true;
+            #endif
             #ifdef Tasmanian_ENABLE_BLAS
             case accel_cpu_blas: return true;
             #endif
@@ -529,27 +570,27 @@ namespace AccelerationMeta{
     //! \internal
     //! \brief Return the number of visible CUDA devices, uses cudaGetDeviceCount() (see the Nvidia documentation).
     //! \ingroup TasmanianAcceleration
-    int getNumCudaDevices();
+    int getNumGpuDevices();
 
     //! \internal
     //! \brief Selects the active device for this CPU thread using cudaSetDevice() (see the Nvidia documentation).
     //! \ingroup TasmanianAcceleration
 
-    //! The \b deviceID must be a valid ID (between 0 and getNumCudaDevices() -1).
+    //! The \b deviceID must be a valid ID (between 0 and getNumGpuDevices() -1).
     void setDefaultCudaDevice(int deviceID);
 
     //! \internal
     //! \brief Return the memory available in the device (in units of bytes), uses cudaGetDeviceProperties() (see the Nvidia documentation).
     //! \ingroup TasmanianAcceleration
 
-    //! The \b deviceID must be a valid ID (between 0 and getNumCudaDevices() -1).
+    //! The \b deviceID must be a valid ID (between 0 and getNumGpuDevices() -1).
     unsigned long long getTotalGPUMemory(int deviceID);
 
     //! \internal
     //! \brief Return a character array that is a copy of the CUDA device name, uses cudaGetDeviceProperties() (see the Nvidia documentation).
     //! \ingroup TasmanianAcceleration
 
-    //! The \b deviceID must be a valid ID (between 0 and getNumCudaDevices() -1).
+    //! The \b deviceID must be a valid ID (between 0 and getNumGpuDevices() -1).
     //! The character array has to be manually deleted to avoid memory leaks.
     //! This causes issues between different versions of CUDA, Nvidia uses fixed length character arrays and Tasmanian makes a copy;
     //! sometimes different versions of CUDA use different name length which causes unexpected crashes on the CUDA side.
@@ -674,7 +715,7 @@ struct AccelerationContext{
         // get the effective new acceleration mode (use the fallback if acc is not enabled)
         TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
         // if switching to a GPU mode, check if the device id is valid
-        if (AccelerationMeta::isAccTypeGPU(effective_acc) and ((new_gpu_id < 0 or new_gpu_id >= AccelerationMeta::getNumCudaDevices())))
+        if (AccelerationMeta::isAccTypeGPU(effective_acc) and ((new_gpu_id < 0 or new_gpu_id >= AccelerationMeta::getNumGpuDevices())))
             throw std::runtime_error("Invalid CUDA device ID, see ./tasgrid -v for list of detected devices.");
 
         // assign the new values for the mode and device, but remember the current gpu state and check whether something changed
