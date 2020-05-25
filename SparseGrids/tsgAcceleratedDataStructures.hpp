@@ -230,7 +230,8 @@ struct GpuEngine{
                   called_magma_init(false)
     #endif
     #ifdef Tasmanian_ENABLE_HIP
-                : rocblasHandle(nullptr), own_rocblas_handle(false)
+                : rocblasHandle(nullptr), own_rocblas_handle(false),
+                  rocsparseHandle(nullptr), own_rocsparse_handle(false)
     #endif
         {}
     //! \brief Destructor, clear all handles and queues.
@@ -252,7 +253,9 @@ struct GpuEngine{
     //! \brief Move construct the engine.
     GpuEngine(GpuEngine &&other) :
         rocblasHandle(Utils::exchange(other.rocblasHandle, nullptr)),
-        own_rocblas_handle(Utils::exchange(other.own_rocblas_handle, false))
+        own_rocblas_handle(Utils::exchange(other.own_rocblas_handle, false)),
+        rocsparseHandle(Utils::exchange(other.rocsparseHandle, nullptr)),
+        own_rocsparse_handle(Utils::exchange(other.own_rocsparse_handle, false))
         {}
     #else
     GpuEngine(GpuEngine &&) = default;
@@ -279,6 +282,8 @@ struct GpuEngine{
         GpuEngine temp(std::move(other));
         std::swap(rocblasHandle, temp.rocblasHandle);
         std::swap(own_rocblas_handle, temp.own_rocblas_handle);
+        std::swap(rocsparseHandle, temp.rocsparseHandle);
+        std::swap(own_rocsparse_handle, temp.own_rocsparse_handle);
         return *this;
     }
     #else
@@ -315,6 +320,10 @@ struct GpuEngine{
     void *rocblasHandle;
     //! \brief Remember the ownership of the handle.
     bool own_rocblas_handle;
+    //! \brief Alias the rocSparse handle.
+    void *rocsparseHandle;
+    //! \brief Remember the ownership of the handle.
+    bool own_rocsparse_handle;
     #endif
 };
 

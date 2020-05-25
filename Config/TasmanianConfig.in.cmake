@@ -54,6 +54,7 @@ if (@Tasmanian_ENABLE_HIP@)
     endif()
     find_package(hip REQUIRED)
     find_package(rocblas REQUIRED)
+    find_package(rocsparse REQUIRED)
 endif()
 
 if (TARGET tasmanian) # swig Tasmanian Fortran

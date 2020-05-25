@@ -40,6 +40,7 @@
 #define __HIP_PLATFORM_HCC__
 #include <hip/hip_runtime.h>
 #include <rocblas.h>
+#include <rocsparse.h>
 
 /*!
  * \file tsgHipWrappers.hpp
@@ -79,12 +80,32 @@ inline std::string hip_info_from(rocblas_status status){
             return "unknown";
     }
 }
+inline std::string hip_info_from(rocsparse_status status){
+    switch(status){
+        case rocsparse_status_success : return "success";
+        case rocsparse_status_invalid_handle : return "invlida handle";
+        case rocsparse_status_not_implemented : return "not implemented";
+        case rocsparse_status_invalid_pointer : return "invalid pointer";
+        case rocsparse_status_invalid_size : return "invalid size";
+        case rocsparse_status_memory_error : return "memory error";
+        case rocsparse_status_internal_error : return "internal error";
+        case rocsparse_status_invalid_value : return "passed argument not valid";
+        case rocsparse_status_arch_mismatch : return "architecture mismatch";
+        case rocsparse_status_zero_pivot : return "zero pivot";
+        default:
+            return "unknown";
+    }
+}
 inline void hipcheck(rocblas_status status, std::string info){
     if (status != rocblas_status_success)
         throw std::runtime_error(std::string("rocblas encountered an error with code: ") + hip_info_from(status) + ", at " + info);
 }
+inline void hipcheck(rocsparse_status status, std::string info){
+    if (status != rocsparse_status_success)
+        throw std::runtime_error(std::string("rocsparse encountered an error with code: ") + hip_info_from(status) + ", at " + info);
+}
 
-//! \brief Make cuBlas handle.
+//! \brief Make rocBlas handle.
 inline rocblas_handle getRocBlasHandle(AccelerationContext const *acceleration){
     if (acceleration->engine->rocblasHandle == nullptr){
         hipcheck( rocblas_create_handle(reinterpret_cast<rocblas_handle*>(&acceleration->engine->rocblasHandle)), "create handle" );
@@ -92,6 +113,56 @@ inline rocblas_handle getRocBlasHandle(AccelerationContext const *acceleration){
     }
     return reinterpret_cast<rocblas_handle>(acceleration->engine->rocblasHandle);
 }
+//! \brief Make rocSParse handle.
+inline rocsparse_handle getRocSparseHandle(AccelerationContext const *acceleration){
+    if (acceleration->engine->rocsparseHandle == nullptr){
+        hipcheck( rocsparse_create_handle(reinterpret_cast<rocsparse_handle*>(&acceleration->engine->rocsparseHandle)), "create handle" );
+        acceleration->engine->own_rocsparse_handle = true;
+    }
+    return reinterpret_cast<rocsparse_handle>(acceleration->engine->rocsparseHandle);
+}
+
+//! \brief Wrapper around rocsparse_mat_descr
+struct rocsparseMatDesc{
+    //! \brief An instance of rocsparse_mat_descr
+    rocsparse_mat_descr mat_desc;
+    //! \brief Create a general matrix description.
+    rocsparseMatDesc(){
+        hipcheck( rocsparse_create_mat_descr(&mat_desc), "rocsparse_create_mat_descr()");
+        rocsparse_set_mat_type(mat_desc, rocsparse_matrix_type_general);
+        rocsparse_set_mat_index_base(mat_desc, rocsparse_index_base_zero);
+        rocsparse_set_mat_diag_type(mat_desc, rocsparse_diag_type_non_unit);
+    }
+    //! \brief Use locally and internally, do not copy or move.
+    rocsparseMatDesc(rocsparseMatDesc const&) = delete;
+    //! \brief Release all used memory.
+    ~rocsparseMatDesc(){
+        rocsparse_destroy_mat_descr(mat_desc);
+    }
+    //! \brief Automatically convert to the wrapper description.
+    operator rocsparse_mat_descr (){ return mat_desc; }
+};
+
+//! \brief Wrapper around rocsparse_mat_info
+struct rocsparseMatInfo{
+    //! \brief An instance of rocsparse_mat_info
+    rocsparse_mat_info mat_info;
+    //! \brief Create a general matrix description.
+    rocsparseMatInfo(){
+        hipcheck( rocsparse_create_mat_info(&mat_info), "rocsparse_create_mat_info()");
+    }
+    //! \brief Use locally and internally, do not copy or move.
+    rocsparseMatInfo(rocsparseMatInfo const&) = delete;
+    //! \brief Move constructor is allowed
+    rocsparseMatInfo(rocsparseMatInfo &&other) : mat_info(Utils::exchange(other.mat_info, nullptr)){}
+    //! \brief Release all used memory.
+    ~rocsparseMatInfo(){
+        if (mat_info != nullptr)
+            rocsparse_destroy_mat_info(mat_info);
+    }
+    //! \brief Automatically convert to the wrapper description.
+    operator rocsparse_mat_info (){ return mat_info; }
+};
 
 }
 }

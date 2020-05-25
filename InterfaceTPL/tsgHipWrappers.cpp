@@ -94,6 +94,11 @@ GpuEngine::~GpuEngine(){
         rocblasHandle = nullptr;
         own_rocblas_handle = false;
     }
+    if (own_rocsparse_handle && rocsparseHandle != nullptr){
+        rocsparse_destroy_handle(reinterpret_cast<rocsparse_handle>(rocblasHandle));
+        rocsparseHandle = nullptr;
+        own_rocsparse_handle = false;
+    }
 }
 
 int AccelerationMeta::getNumGpuDevices(){
@@ -142,6 +147,18 @@ constexpr rocblas_operation cublas_trans(char trans){
     return (trans == 'N') ? rocblas_operation_none : ((trans == 'T') ? rocblas_operation_transpose : rocblas_operation_conjugate_transpose);
 }
 
+//! \brief Wrapper around sgeam().
+void geam(rocblas_handle handle, rocblas_operation transa, rocblas_operation transb,
+          int m, int n, float alpha, float const A[], int lda,
+          float beta, float const B[], int ldb, float C[], int ldc){
+    hipcheck(rocblas_sgeam(handle, transa, transb, m, n, &alpha, A, lda, &beta, B, ldb, C, ldc), "cublasSgeam()");
+}
+//! \brief Wrapper around dgeam().
+void geam(rocblas_handle handle, rocblas_operation transa, rocblas_operation transb,
+          int m, int n, double alpha, double const A[], int lda,
+          double beta, double const B[], int ldb, double C[], int ldc){
+    hipcheck(rocblas_dgeam(handle, transa, transb, m, n, &alpha, A, lda, &beta, B, ldb, C, ldc), "cublasDgeam()");
+}
 //! \brief Wrapper around sgemv().
 inline void gemv(rocblas_handle handle, rocblas_operation transa, int M, int N,
                  float alpha, float const A[], int lda, float const x[], int incx, float beta, float y[], int incy){
@@ -167,6 +184,39 @@ inline void gemm(rocblas_handle handle, rocblas_operation transa, rocblas_operat
 /*
  * rocSparse section
  */
+inline void sparse_gemv(rocsparse_handle handle, rocsparse_operation trans, int M, int N, int nnz,
+                        float alpha, float const vals[], int const pntr[], int const indx[],
+                        float const x[], float beta, float y[]){
+    rocsparseMatDesc desc;
+    rocsparseMatInfo info;
+    hipcheck( rocsparse_scsrmv_analysis(handle, trans, M, N, nnz, desc, vals, pntr, indx, info), "sgemv-info");
+    hipcheck( rocsparse_scsrmv(handle, trans, M, N, nnz, &alpha, desc, vals, pntr, indx, info, x, &beta, y), "sgemv");
+}
+inline void sparse_gemv(rocsparse_handle handle, rocsparse_operation trans, int M, int N, int nnz,
+                        double alpha, double const vals[], int const pntr[], int const indx[],
+                        double const x[], double beta, double y[]){
+    rocsparseMatDesc desc;
+    rocsparseMatInfo info;
+    hipcheck( rocsparse_dcsrmv_analysis(handle, trans, M, N, nnz, desc, vals, pntr, indx, info), "dgemv-info");
+    hipcheck( rocsparse_dcsrmv(handle, trans, M, N, nnz, &alpha, desc, vals, pntr, indx, info, x, &beta, y), "dgemv");
+}
+//! \brief Wrapper around dgemm().
+inline void sparse_gemm(rocsparse_handle handle, rocsparse_operation transa, rocsparse_operation transb,
+                        int M, int N, int K, int nnz, float alpha,
+                        float const vals[], int const pntr[], int const indx[],
+                        float const B[], int ldb, float beta, float C[], int ldc){
+    rocsparseMatDesc desc;
+    hipcheck( rocsparse_scsrmm(handle, transa, transb, M, N, K, nnz, &alpha, desc, vals, pntr, indx, B, ldb, &beta, C, ldc), "dgemm()");
+}
+//! \brief Wrapper around rocsparse_dcsrmm().
+inline void sparse_gemm(rocsparse_handle handle, rocsparse_operation transa, rocsparse_operation transb,
+                        int M, int N, int K, int nnz, double alpha,
+                        double const vals[], int const pntr[], int const indx[],
+                        double const B[], int ldb, double beta, double C[], int ldc){
+    rocsparseMatDesc desc;
+    hipcheck( rocsparse_dcsrmm(handle, transa, transb, M, N, K, nnz, &alpha, desc, vals, pntr, indx, B, ldb, &beta, C, ldc), "dgemm()");
+}
+
 
 /*
  * rocSolver section
@@ -214,9 +264,34 @@ template void denseMultiply<double>(AccelerationContext const*, int, int, int, d
                                     GpuVector<double> const&, GpuVector<double> const&, double, double[]);
 
 template<typename scalar_type>
-void sparseMultiply(AccelerationContext const*, int, int, int, typename GpuVector<scalar_type>::value_type,
-                    GpuVector<scalar_type> const&, GpuVector<int> const&, GpuVector<int> const&,
-                    GpuVector<scalar_type> const&, scalar_type[]){
+void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K, typename GpuVector<scalar_type>::value_type alpha,
+                    GpuVector<scalar_type> const &A, GpuVector<int> const &pntr, GpuVector<int> const &indx,
+                    GpuVector<scalar_type> const &vals, scalar_type C[]){
+
+    rocsparse_handle rocsparseh = getRocSparseHandle(acceleration);
+
+    if (N > 1){
+        if (M > 1){
+            GpuVector<scalar_type> tempC(M, N);
+            sparse_gemm(rocsparseh, rocsparse_operation_none, rocsparse_operation_transpose, N, M, K, static_cast<int>(indx.size()),
+                        alpha, vals.data(), pntr.data(), indx.data(), A.data(), M, 0.0, tempC.data(), N);
+
+            rocblas_handle rocblash = getRocBlasHandle(acceleration);
+            geam(rocblash, rocblas_operation_transpose, rocblas_operation_transpose, M, N, 1.0, tempC.data(), N, 0.0, tempC.data(), N, C, M);
+        }else{
+            sparse_gemv(rocsparseh, rocsparse_operation_none, N, K, static_cast<int>(indx.size()),
+                        alpha, vals.data(), pntr.data(), indx.data(), A.data(), 0.0, C);
+        }
+    }else{
+        GpuVector<scalar_type> tempC(M, N);
+        int nnz = static_cast<int>(indx.size());
+        GpuVector<int> temp_pntr(std::vector<int>{0, nnz});
+        sparse_gemm(rocsparseh, rocsparse_operation_none, rocsparse_operation_transpose, N, M, K, nnz,
+                    alpha, vals.data(), temp_pntr.data(), indx.data(), A.data(), M, 0.0, tempC.data(), N);
+
+        rocblas_handle rocblash = getRocBlasHandle(acceleration);
+        geam(rocblash, rocblas_operation_transpose, rocblas_operation_transpose, M, N, 1.0, tempC.data(), N, 0.0, tempC.data(), N, C, M);
+    }
 }
 
 template void sparseMultiply<float>(AccelerationContext const*, int, int, int, float, GpuVector<float> const &A,
