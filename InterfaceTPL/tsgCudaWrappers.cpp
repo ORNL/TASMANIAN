@@ -118,7 +118,7 @@ void GpuEngine::setCuSolverDnHandle(void *handle){
     cusolverDnHandle = handle;
 }
 
-int AccelerationMeta::getNumCudaDevices(){
+int AccelerationMeta::getNumGpuDevices(){
     int gpu_count = 0;
     cudaGetDeviceCount(&gpu_count);
     return gpu_count;
@@ -132,7 +132,7 @@ unsigned long long AccelerationMeta::getTotalGPUMemory(int deviceID){
     return prop.totalGlobalMem;
 }
 std::string AccelerationMeta::getCudaDeviceName(int deviceID){
-    if ((deviceID < 0) || (deviceID >= getNumCudaDevices())) return std::string();
+    if ((deviceID < 0) || (deviceID >= getNumGpuDevices())) return std::string();
 
     cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, deviceID);

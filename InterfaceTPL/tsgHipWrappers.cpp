@@ -32,24 +32,41 @@
 #define __TASMANIAN_CUDA_WRAPPERS_CPP
 
 #include "tsgGpuWrappers.hpp"
+#include "tsgHipWrappers.hpp"
 
 /*!
- * \file tsgGpuNull.cpp
- * \brief Wrappers to no-op functions with GPU signature.
+ * \file tsgHipWrappers.cpp
+ * \brief Wrappers to HIP functionality.
  * \author Miroslav Stoyanov
  * \ingroup TasmanianTPLWrappers
  *
- * Reduces the need for preprocessor macros by providing methods with GPU signature but no-op implementation.
+ * Realizations of the GPU algorithms using the HIP backend.
  */
 
 namespace TasGrid{
 /*
  * Meta methods
  */
-template<typename T> void GpuVector<T>::resize(size_t){}
-template<typename T> void GpuVector<T>::clear(){}
-template<typename T> void GpuVector<T>::load(size_t, const T[]){}
-template<typename T> void GpuVector<T>::unload(size_t, T[]) const{}
+template<typename T> void GpuVector<T>::resize(size_t count){
+    if (count != num_entries){ // if the current array is not big enough
+        clear(); // resets dynamic_mode
+        num_entries = count;
+        TasGpu::hipcheck( hipMalloc((void**) &gpu_data, num_entries * sizeof(T)), "hipMalloc()");
+    }
+}
+template<typename T> void GpuVector<T>::clear(){
+    num_entries = 0;
+    if (gpu_data != nullptr) // if I own the data and the data is not null
+        TasGpu::hipcheck( hipFree(gpu_data), "hipFree()");
+    gpu_data = nullptr;
+}
+template<typename T> void GpuVector<T>::load(size_t count, const T* cpu_data){
+    resize(count);
+    TasGpu::hipcheck( hipMemcpy(gpu_data, cpu_data, num_entries * sizeof(T), hipMemcpyHostToDevice), "hipMemcpy() to device");
+}
+template<typename T> void GpuVector<T>::unload(size_t num, T* cpu_data) const{
+    TasGpu::hipcheck( hipMemcpy(cpu_data, gpu_data, num * sizeof(T), hipMemcpyDeviceToHost), "hipMemcpy() from device");
+}
 
 template void GpuVector<double>::resize(size_t);
 template void GpuVector<double>::clear();
@@ -71,17 +88,44 @@ template void GpuVector<int>::clear();
 template void GpuVector<int>::load(size_t, const int*);
 template void GpuVector<int>::unload(size_t, int*) const;
 
-GpuEngine::~GpuEngine(){}
+GpuEngine::~GpuEngine(){
+    if (own_rocblas_handle && rocblasHandle != nullptr){
+        rocblas_destroy_handle(reinterpret_cast<rocblas_handle>(rocblasHandle));
+        rocblasHandle = nullptr;
+        own_rocblas_handle = false;
+    }
+}
 
-int AccelerationMeta::getNumGpuDevices(){ return 0; }
-void AccelerationMeta::setDefaultCudaDevice(int){}
-unsigned long long AccelerationMeta::getTotalGPUMemory(int){ return 0; }
-std::string AccelerationMeta::getCudaDeviceName(int){ return std::string(); }
-template<typename T> void AccelerationMeta::recvCudaArray(size_t, const T[], std::vector<T>&){}
-template<typename T> void AccelerationMeta::delCudaArray(T*){}
-
-void* AccelerationMeta::createCublasHandle(){ return nullptr; }
-void AccelerationMeta::deleteCublasHandle(void*){}
+int AccelerationMeta::getNumGpuDevices(){
+    int gpu_count = 0;
+    hipGetDeviceCount(&gpu_count);
+    return gpu_count;
+}
+void AccelerationMeta::setDefaultCudaDevice(int deviceID){
+    hipSetDevice(deviceID);
+}
+unsigned long long AccelerationMeta::getTotalGPUMemory(int){ // int deviceID
+//     cudaDeviceProp prop;
+//     cudaGetDeviceProperties(&prop, deviceID);
+//     return prop.totalGlobalMem;
+    return 0;
+}
+std::string AccelerationMeta::getCudaDeviceName(int deviceID){ // int deviceID
+    if ((deviceID < 0) || (deviceID >= getNumGpuDevices())) return std::string();
+//
+//     cudaDeviceProp prop;
+//     cudaGetDeviceProperties(&prop, deviceID);
+//
+//     return std::string(prop.name);
+    return std::string();
+}
+template<typename T> void AccelerationMeta::recvCudaArray(size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data){
+    cpu_data.resize(num_entries);
+    TasGpu::hipcheck( hipMemcpy(cpu_data.data(), gpu_data, num_entries * sizeof(T), hipMemcpyDeviceToHost), "hip receive");
+}
+template<typename T> void AccelerationMeta::delCudaArray(T *x){
+    TasGpu::hipcheck( hipFree(x), "hipFree()");
+}
 
 template void AccelerationMeta::recvCudaArray<double>(size_t num_entries, const double*, std::vector<double>&);
 template void AccelerationMeta::recvCudaArray<float>(size_t num_entries, const float*, std::vector<float>&);
@@ -93,12 +137,52 @@ template void AccelerationMeta::delCudaArray<int>(int*);
 
 namespace TasGpu{
 /*
- * Algorithm section
+ * rocBLAS section
  */
+//! \brief Converts character to cublas operation.
+constexpr rocblas_operation cublas_trans(char trans){
+    return (trans == 'N') ? rocblas_operation_none : ((trans == 'T') ? rocblas_operation_transpose : rocblas_operation_conjugate_transpose);
+}
+
+//! \brief Wrapper around sgemv().
+inline void gemv(rocblas_handle handle, rocblas_operation transa, int M, int N,
+                 float alpha, float const A[], int lda, float const x[], int incx, float beta, float y[], int incy){
+    hipcheck( rocblas_sgemv(handle, transa, M, N, &alpha, A, lda, x, incx, &beta, y, incy), "rocblas_sgemv()");
+}
+//! \brief Wrapper around dgemv().
+inline void gemv(rocblas_handle handle, rocblas_operation transa, int M, int N,
+                 double alpha, double const A[], int lda, double const x[], int incx, double beta, double y[], int incy){
+    hipcheck( rocblas_dgemv(handle, transa, M, N, &alpha, A, lda, x, incx, &beta, y, incy), "rocblas_sgemv()");
+}
+
+//! \brief Wrapper around sgemm().
+inline void gemm(rocblas_handle handle, rocblas_operation transa, rocblas_operation transb, int M, int N, int K,
+                 float alpha, float const A[], int lda, float const B[], int ldb, float beta, float C[], int ldc){
+    hipcheck( rocblas_sgemm(handle, transa, transb, M, N, K, &alpha, A, lda, B, ldb, &beta, C, ldc), "rocblas_sgemm()");
+}
+//! \brief Wrapper around dgemm().
+inline void gemm(rocblas_handle handle, rocblas_operation transa, rocblas_operation transb, int M, int N, int K,
+                 double alpha, double const A[], int lda, double const B[], int ldb, double beta, double C[], int ldc){
+    hipcheck( rocblas_dgemm(handle, transa, transb, M, N, K, &alpha, A, lda, B, ldb, &beta, C, ldc), "rocblas_dgemm()");
+}
+
+/*
+ * rocSparse section
+ */
+
+/*
+ * rocSolver section
+ */
+
+//! \brief Wrapper around cusolverDnDgetrf().
 void factorizePLU(AccelerationContext const*, int, double[], int[]){}
-void solvePLU(AccelerationContext const*, char, int, double const[], int const[], double[]){}
+
+void solvePLU(AccelerationContext const*, char, int, double const[], int const[], double []){}
 void solvePLU(AccelerationContext const*, char, int, double const[], int const[], int, double[]){}
 
+/*
+ * Algorithm section
+ */
 template<typename scalar_type>
 void solveLSmultiGPU(AccelerationContext const*, int, int, scalar_type[], int, scalar_type[]){}
 
@@ -112,8 +196,19 @@ template void solveLSmultiOOC<double>(AccelerationContext const*, int, int, doub
 template void solveLSmultiOOC<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);
 
 template<typename scalar_type>
-void denseMultiply(AccelerationContext const*, int, int, int, typename GpuVector<scalar_type>::value_type, GpuVector<scalar_type> const&,
-                   GpuVector<scalar_type> const&, typename GpuVector<scalar_type>::value_type, scalar_type[]){}
+void denseMultiply(AccelerationContext const *acceleration, int M, int N, int K, typename GpuVector<scalar_type>::value_type alpha, GpuVector<scalar_type> const &A,
+                   GpuVector<scalar_type> const &B, typename GpuVector<scalar_type>::value_type beta, scalar_type C[]){
+    rocblas_handle cublash = getRocBlasHandle(acceleration);
+    if (M > 1){
+        if (N > 1){ // matrix-matrix mode
+            gemm(cublash, rocblas_operation_none, rocblas_operation_none, M, N, K, alpha, A.data(), M, B.data(), K, beta, C, M);
+        }else{ // matrix vector, A * v = C
+            gemv(cublash, rocblas_operation_none, M, K, alpha, A.data(), M, B.data(), 1, beta, C, 1);
+        }
+    }else{ // matrix vector B^T * v = C
+        gemv(cublash, rocblas_operation_transpose, K, N, alpha, B.data(), K, A.data(), 1, beta, C, 1);
+    }
+}
 
 template void denseMultiply<float>(AccelerationContext const*, int, int, int, float,
                                    GpuVector<float> const&, GpuVector<float> const&, float, float[]);
@@ -123,13 +218,26 @@ template void denseMultiply<double>(AccelerationContext const*, int, int, int, d
 template<typename scalar_type>
 void sparseMultiply(AccelerationContext const*, int, int, int, typename GpuVector<scalar_type>::value_type,
                     GpuVector<scalar_type> const&, GpuVector<int> const&, GpuVector<int> const&,
-                    GpuVector<scalar_type> const&, scalar_type[]){}
+                    GpuVector<scalar_type> const&, scalar_type[]){
+}
 
 template void sparseMultiply<float>(AccelerationContext const*, int, int, int, float, GpuVector<float> const &A,
                                     GpuVector<int> const &pntr, GpuVector<int> const &indx, GpuVector<float> const &vals, float C[]);
 template void sparseMultiply<double>(AccelerationContext const*, int, int, int, double, GpuVector<double> const &A,
                                      GpuVector<int> const &pntr, GpuVector<int> const &indx, GpuVector<double> const &vals, double C[]);
 
+template<typename T> void load_n(T const *cpu_data, size_t num_entries, T *gpu_data){
+    TasGpu::hipcheck( hipMemcpy(gpu_data, cpu_data, num_entries * sizeof(T), hipMemcpyHostToDevice), "hipMemcpy() load_n to device");
+}
+
+template void load_n<int>(int const*, size_t, int*);
+template void load_n<float>(float const*, size_t, float*);
+template void load_n<double>(double const*, size_t, double*);
+template void load_n<std::complex<double>>(std::complex<double> const*, size_t, std::complex<double>*);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Placeholders for the kernels
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename T> void dtrans2can(bool, int, int, int, double const[], double const[], T const[], T[]){}
 template<typename T> void devalpwpoly(int, TypeOneDRule, int, int, int, const T[], const T[], const T[], T[]){}
 
@@ -181,13 +289,6 @@ template void devalglo<double>(bool, bool, int, int, int, int,
                                GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, double*);
-
-template<typename T> void load_n(T const*, size_t, T*){}
-
-template void load_n<int>(int const*, size_t, int*);
-template void load_n<float>(float const*, size_t, float*);
-template void load_n<double>(double const*, size_t, double*);
-template void load_n<std::complex<double>>(std::complex<double> const*, size_t, std::complex<double>*);
 
 }
 }

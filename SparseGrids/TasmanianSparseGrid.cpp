@@ -1524,7 +1524,7 @@ void TasmanianSparseGrid::favorSparseAcceleration(bool favor){
     if (not empty()) base->updateAccelerationData(change);
 }
 bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
-    #ifdef Tasmanian_ENABLE_CUDA
+    #ifdef Tasmanian_ENABLE_GPU
     if (acc == accel_gpu_default) return true;
     #endif
     return (acc == AccelerationMeta::getAvailableFallback(acc));
@@ -1541,16 +1541,8 @@ void TasmanianSparseGrid::setGPUID(int new_gpu_id){
     }
 }
 
-int TasmanianSparseGrid::getNumGPUs(){
-    #ifdef Tasmanian_ENABLE_CUDA
-    return AccelerationMeta::getNumCudaDevices();
-    #else
-    return 0;
-    #endif // Tasmanian_ENABLE_CUDA
-}
-
 int TasmanianSparseGrid::getGPUMemory(int gpu){
-    if ((gpu < 0) || (gpu >= AccelerationMeta::getNumCudaDevices())) return 0;
+    if ((gpu < 0) || (gpu >= AccelerationMeta::getNumGpuDevices())) return 0;
     return (int) (AccelerationMeta::getTotalGPUMemory(gpu) / 1048576);
 }
 std::string TasmanianSparseGrid::getGPUName(int gpu){

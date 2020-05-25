@@ -11,8 +11,8 @@ sLibPath = "@Tasmanian_libsparsegrid_path@"
 iGPUID = @Tasmanian_TESTS_GPU_ID@
 
 bHasBlas = ("@Tasmanian_ENABLE_BLAS@" == "ON")
-bHasCuBlas = ("@Tasmanian_ENABLE_CUDA@" == "ON")
-bHasCuda = ("@Tasmanian_ENABLE_CUDA@" == "ON")
+bHasCuBlas = ("@Tasmanian_ENABLE_CUDA@" == "ON") or ("@Tasmanian_ENABLE_HIP@" == "ON")
+bHasCuda = ("@Tasmanian_ENABLE_CUDA@" == "ON") or ("@Tasmanian_ENABLE_HIP@" == "ON")
 
 bUsingMSVC = ("@CMAKE_CXX_COMPILER_ID@" == "MSVC")
 

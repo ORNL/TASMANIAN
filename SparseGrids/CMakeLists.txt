@@ -94,6 +94,9 @@ if (Tasmanian_ENABLE_CUDA)
     set_source_files_properties(${Tasmanian_source_libsparsegrid_cuda} PROPERTIES LANGUAGE CUDA)
     add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid} ${Tasmanian_source_libsparsegrid_cuda})
     set_property(TARGET Tasmanian_libsparsegrid PROPERTY CUDA_STANDARD 11)
+elseif(Tasmanian_ENABLE_HIP)
+    add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgHipWrappers.cpp)
 else()
     add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgGpuNull.cpp)

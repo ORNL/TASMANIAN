@@ -173,14 +173,15 @@ subroutine test_eval_sequence()
         call tassert(grid2%getAccelerationType() == tsg_accel_none)
     endif
 
-    if (grid1%isAccelerationAvailable(tsg_accel_gpu_cuda)) then
-        call grid1%enableAcceleration(tsg_accel_gpu_cuda)
-        do i = 1, 4
-            xf(1,i) = x(1,i)
-            xf(2,i) = x(2,i)
-        enddo
-        call grid1%evaluateBatch(xf(:,1), 4, yf(:,1))
-    endif
+! Enable once we have the HIP kernels
+!    if (grid1%isAccelerationAvailable(tsg_accel_gpu_cuda)) then
+!        call grid1%enableAcceleration(tsg_accel_gpu_cuda)
+!        do i = 1, 4
+!            xf(1,i) = x(1,i)
+!            xf(2,i) = x(2,i)
+!        enddo
+!        call grid1%evaluateBatch(xf(:,1), 4, yf(:,1))
+!    endif
 
     deallocate(points, values)
     call grid%release()
