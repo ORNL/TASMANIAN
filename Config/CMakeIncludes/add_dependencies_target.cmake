@@ -27,8 +27,7 @@ if (Tasmanian_ENABLE_CUDA)
 endif()
 
 if (Tasmanian_ENABLE_HIP)
-    target_link_libraries(Tasmanian_dependencies INTERFACE roc::rocblas)
-    target_link_libraries(Tasmanian_dependencies INTERFACE roc::rocsparse)
+    target_link_libraries(Tasmanian_dependencies INTERFACE ${Tasmanian_hiplibs})
     list(APPEND Tasmanian_rpath ${Tasmanian_hip_rpath})
 
     target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${Tasmanian_hiproot}/include/>)
