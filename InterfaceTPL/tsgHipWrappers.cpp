@@ -104,20 +104,18 @@ int AccelerationMeta::getNumGpuDevices(){
 void AccelerationMeta::setDefaultCudaDevice(int deviceID){
     hipSetDevice(deviceID);
 }
-unsigned long long AccelerationMeta::getTotalGPUMemory(int){ // int deviceID
-//     cudaDeviceProp prop;
-//     cudaGetDeviceProperties(&prop, deviceID);
-//     return prop.totalGlobalMem;
-    return 0;
+unsigned long long AccelerationMeta::getTotalGPUMemory(int deviceID){ // int deviceID
+    hipDeviceProp_t prop;
+    hipGetDeviceProperties(&prop, deviceID);
+    return prop.totalGlobalMem;
 }
 std::string AccelerationMeta::getCudaDeviceName(int deviceID){ // int deviceID
     if ((deviceID < 0) || (deviceID >= getNumGpuDevices())) return std::string();
-//
-//     cudaDeviceProp prop;
-//     cudaGetDeviceProperties(&prop, deviceID);
-//
-//     return std::string(prop.name);
-    return std::string();
+
+    hipDeviceProp_t prop;
+    hipGetDeviceProperties(&prop, deviceID);
+
+    return std::string(prop.name);
 }
 template<typename T> void AccelerationMeta::recvCudaArray(size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data){
     cpu_data.resize(num_entries);
