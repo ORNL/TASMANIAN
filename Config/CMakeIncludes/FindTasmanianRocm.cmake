@@ -29,3 +29,19 @@ endforeach()
 unset(_tsg_roclib)
 
 find_package_handle_standard_args(TasmanianRocm DEFAULT_MSG Tasmanian_hiplibs)
+
+if (Tasmanian_ENABLE_OPENMP)
+    set(OpenMP_CXX_FLAGS "-fopenmp=libiomp5")
+    Tasmanian_find_libraries(REQUIRED iomp5
+                             OPTIONAL
+                             PREFIX /usr/lib/x86_64-linux-gnu
+                             LIST hipomp)
+    if (Tasmanian_hipomp)
+        set(OpenMP_CXX_LIBRARIES "${Tasmanian_hipomp}")
+        set(Tasmanian_ENABLE_OPENMP ON)
+    else()
+        if (Tasmanian_ENABLE_OPENMP)
+            message(FATAL_ERROR "Cannot find libiomp5 which is needed by HIP/Clang to enable OpenMP")
+        endif()
+    endif()
+endif()

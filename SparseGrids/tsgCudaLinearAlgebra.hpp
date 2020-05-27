@@ -200,7 +200,7 @@ __global__ void tasgpu_sparse_matmul(int M, int N, int num_nz, const int *pntr, 
 // each thread processes up to 4 entries of A increasing reuse of the cached vals and indx
 // NBLOCKS specifies how many entries
 template<typename T, int THREADS, int NBLOCKS>
-__global__ void tasgpu_sparse_matveci(int M, int N, int num_nz, const T *A, const int *indx, const T *vals, T *C){
+__global__ void tasgpu_sparse_matveci(int M, int num_nz, const T *A, const int *indx, const T *vals, T *C){
     __shared__ int cache_indx[THREADS];
     __shared__ T cache_vals[THREADS];
     int m = blockIdx.x * THREADS * NBLOCKS ; // m is the starting row of the block

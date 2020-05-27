@@ -64,6 +64,13 @@ __device__ inline double atomicAdd(double* address, double val)
 }
 #endif
 #endif
+#endif
+
+#ifdef Tasmanian_ENABLE_HIP
+#define __HIP_PLATFORM_HCC__
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
+#endif
 
 
 namespace TasGrid{
@@ -304,8 +311,7 @@ __device__ inline T tasgpu_devalpwpoly_support_pwc_multid(int dims, int i, int i
 // false only counts the non-zeros, sindx and svals are ignored
 // true fills the non-zeros in sindx and svals, sindx and svals must be pre-allocated
 template <typename T, int THREADS, int TOPLEVEL, int order, TypeOneDRule rule, bool fill>
-__global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, int num_points,
-                                          const T *x, const T *nodes, const T *support,
+__global__ void tasgpu_devalpwpoly_sparse(int dims, int num_x, const T *x, const T *nodes, const T *support,
                                           const int *hpntr, const int *hindx, int num_roots, const int *roots,
                                           int *spntr, int *sindx, T *svals){
     __shared__ int mcount[TOPLEVEL][THREADS];
@@ -658,7 +664,5 @@ __global__ void tasgpu_dglo_eval_sharedpoints(int num_dims, int num_x, int loop_
 }
 
 }
-
-#endif
 
 #endif

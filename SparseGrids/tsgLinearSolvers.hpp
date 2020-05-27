@@ -151,11 +151,11 @@ public:
     ~WaveletBasisMatrix() = default;
 
     //! \brief Cannot copy.
-    WaveletBasisMatrix(WaveletBasisMatrix const&) = default;
+    WaveletBasisMatrix(WaveletBasisMatrix const&) = delete;
     //! \brief Move constructor.
     WaveletBasisMatrix(WaveletBasisMatrix &&) = default;
     //! \brief Cannot copy.
-    WaveletBasisMatrix& operator =(WaveletBasisMatrix const&) = default;
+    WaveletBasisMatrix& operator =(WaveletBasisMatrix const&) = delete;
     //! \brief Move assignment.
     WaveletBasisMatrix& operator =(WaveletBasisMatrix &&) = default;
 

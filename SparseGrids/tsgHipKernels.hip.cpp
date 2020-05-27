@@ -28,29 +28,29 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_SPARSE_GRID_CUDA_KERNELS_CU
-#define __TASMANIAN_SPARSE_GRID_CUDA_KERNELS_CU
+#ifndef __TASMANIAN_SPARSE_GRID_HIP_KERNELS_HIP
+#define __TASMANIAN_SPARSE_GRID_HIP_KERNELS_HIP
 
 #include "tsgAcceleratedDataStructures.hpp"
-#include "tsgCudaLinearAlgebra.hpp"
 #include "tsgCudaBasisEvaluations.hpp"
+#include "tsgCudaLinearAlgebra.hpp"
 
 // several kernels assume a linear distribution of the threads and can be executed with "practically unlimited" number of threads
-// thus we can set this to the CUDA max number of threads, based on the current cuda version
-constexpr int _MAX_CUDA_THREADS  = 1024;
+// thus we can set this to the HIP max number of threads, based on the current cuda version
+constexpr int _MAX_HIP_THREADS  = 1024;
 
 // max number of blocks per grid direction
-constexpr int _MAX_CUDA_BLOCKS = 65535;
+constexpr int _MAX_HIP_BLOCKS = 65535;
 
 /*
- * Create a 1-D CUDA thread grid using the total_threads and number of threads per block.
+ * Create a 1-D HIP thread grid using the total_threads and number of threads per block.
  * Basically, computes the number of blocks but no more than _MAX_CUDA_BLOCKS.
  */
 struct ThreadGrid1d{
     // Compute the threads and blocks.
     ThreadGrid1d(long long total_threads, long long num_per_block) :
         threads(static_cast<int>(num_per_block)),
-        blocks(static_cast<int>(std::min(total_threads / threads + ((total_threads % threads == 0) ? 0 : 1), static_cast<long long>(_MAX_CUDA_BLOCKS))))
+        blocks(static_cast<int>(std::min(total_threads / threads + ((total_threads % threads == 0) ? 0 : 1), static_cast<long long>(_MAX_HIP_BLOCKS))))
     {}
     // number of threads
     int const threads;
@@ -62,10 +62,12 @@ namespace TasGrid{
 
 template<typename T>
 void TasGpu::dtrans2can(bool use01, int dims, int num_x, int pad_size, double const *gpu_trans_a, double const *gpu_trans_b, T const *gpu_x_transformed, T *gpu_x_canonical){
-    int num_blocks = (num_x * dims) / _MAX_CUDA_THREADS + (((num_x * dims) % _MAX_CUDA_THREADS == 0) ? 0 : 1);
-    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
-    tasgpu_transformed_to_canonical<T, double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS, (2*pad_size) * sizeof(double)>>>(dims, num_x, pad_size, gpu_trans_a, gpu_trans_b, gpu_x_transformed, gpu_x_canonical);
-    if (use01) tasgpu_m11_to_01<T, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>(dims * num_x, gpu_x_canonical);
+    ThreadGrid1d task(num_x * dims, _MAX_HIP_THREADS);
+    hipLaunchKernelGGL(tasgpu_transformed_to_canonical<T, double, _MAX_HIP_THREADS>,
+                       task.blocks, task.threads, (2*pad_size) * sizeof(double), 0,
+                       dims, num_x, pad_size, gpu_trans_a, gpu_trans_b, gpu_x_transformed, gpu_x_canonical);
+    if (use01) hipLaunchKernelGGL(tasgpu_m11_to_01<T, _MAX_HIP_THREADS>,
+                                  task.blocks, task.threads, 0, 0, dims * num_x, gpu_x_canonical);
 }
 
 template void TasGpu::dtrans2can<double>(bool, int, int, int, double const*, double const*, double const*, double*);
@@ -81,31 +83,31 @@ void TasGpu::devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int 
     if (rule == rule_localp){
         switch(order){
             case 0:
-                    tasgpu_devalpwpoly<T, 0, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 0, rule_localp, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
-            case 2: tasgpu_devalpwpoly<T, 2, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+            case 2: hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 2, rule_localp, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
             default:
-                    tasgpu_devalpwpoly<T, 1, rule_localp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 1, rule_localp, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
     }else if (rule == rule_localp0){
         switch(order){
-            case 2: tasgpu_devalpwpoly<T, 2, rule_localp0, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+            case 2: hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 2, rule_localp0, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
             default:
-                    tasgpu_devalpwpoly<T, 1, rule_localp0, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 1, rule_localp0, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
     }else if (rule == rule_localpb){
         switch(order){
-            case 2: tasgpu_devalpwpoly<T, 2, rule_localpb, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+            case 2: hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 2, rule_localpb, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
             default:
-                    tasgpu_devalpwpoly<T, 1, rule_localpb, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 1, rule_localpb, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
     }else if (rule == rule_semilocalp){
-        tasgpu_devalpwpoly<T, 2, rule_semilocalp, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+        hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 2, rule_semilocalp, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
     }else{ // rule == wavelet
-        tasgpu_devalpwpoly<T, 1, rule_wavelet, 32, 64><<<num_blocks, 1024>>>(dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+        hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 1, rule_wavelet, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
     }
 }
 
@@ -120,44 +122,44 @@ inline void devalpwpoly_sparse_realize_rule_order(int order, TypeOneDRule rule, 
                                           const int *hpntr, const int *hindx, int num_roots, const int *roots,
                                           int *spntr, int *sindx, T *svals){
     int num_blocks = num_x / THREADS + ((num_x % THREADS == 0) ? 0 : 1);
-    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
+    if (num_blocks >= _MAX_HIP_BLOCKS) num_blocks = _MAX_HIP_BLOCKS;
     if (rule == rule_localp){
         switch(order){
             case 0:
-                tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 0, rule_localp, fill><<<num_blocks, THREADS>>>
-                    (dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 0, rule_localp, fill>, num_blocks, THREADS, 0, 0,
+                    dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
                 break;
             case 2:
-                tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_localp, fill><<<num_blocks, THREADS>>>
-                    (dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_localp, fill>, num_blocks, THREADS, 0, 0,
+                    dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
                 break;
             default:
-                tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localp, fill><<<num_blocks, THREADS>>>
-                    (dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localp, fill>, num_blocks, THREADS, 0, 0,
+                    dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
         }
     }else if (rule == rule_localp0){
         switch(order){
             case 2:
-                tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_localp0, fill><<<num_blocks, THREADS>>>
-                    (dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_localp0, fill>, num_blocks, THREADS, 0, 0,
+                    dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
                 break;
             default:
-                tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localp0, fill><<<num_blocks, THREADS>>>
-                    (dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localp0, fill>, num_blocks, THREADS, 0, 0,
+                    dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
         }
     }else if (rule == rule_localpb){
         switch(order){
             case 2:
-                tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_localpb, fill><<<num_blocks, THREADS>>>
-                    (dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_localpb, fill>, num_blocks, THREADS, 0, 0,
+                    dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
                 break;
             default:
-                tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localpb, fill><<<num_blocks, THREADS>>>
-                    (dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localpb, fill>, num_blocks, THREADS, 0, 0,
+                    dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
         }
     }else{ // rule == rule_semilocalp
-        tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_semilocalp, fill><<<num_blocks, THREADS>>>
-            (dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+        hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_semilocalp, fill>, num_blocks, THREADS, 0, 0,
+            dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
     }
 }
 
@@ -209,18 +211,18 @@ void TasGpu::devalseq(int dims, int num_x, const std::vector<int> &max_levels, c
 
     GpuVector<int> gpu_offsets(offsets);
     GpuVector<T> cache1D(num_total);
-    int num_blocks = num_x / _MAX_CUDA_THREADS + ((num_x % _MAX_CUDA_THREADS == 0) ? 0 : 1);
 
-    tasgpu_dseq_build_cache<T, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
-        (dims, num_x, gpu_x, nodes.data(), coeffs.data(), maxl+1, gpu_offsets.data(), num_nodes.data(), cache1D.data());
+    ThreadGrid1d task(num_x, _MAX_HIP_THREADS);
+    hipLaunchKernelGGL(tasgpu_dseq_build_cache<T, _MAX_HIP_THREADS>, task.blocks, task.threads, 0, 0,
+            dims, num_x, gpu_x, nodes.data(), coeffs.data(), maxl+1, gpu_offsets.data(), num_nodes.data(), cache1D.data());
 
-    num_blocks = num_x / 32 + ((num_x % 32 == 0) ? 0 : 1);
-    tasgpu_dseq_eval_sharedpoints<T, 32><<<num_blocks, 1024>>>
-        (dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_result);
+    ThreadGrid1d task_compute(num_x, 32);
+    hipLaunchKernelGGL(tasgpu_dseq_eval_sharedpoints<T, 32>, task_compute.blocks, 1024, 0, 0,
+            dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_result);
 }
 
 template void TasGpu::devalseq<double>(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const GpuVector<int> &num_nodes,
-                                       const GpuVector<int> &points, const GpuVector<double> &nodes, const GpuVector<double> &coeffs, double *gpu_result);
+                                      const GpuVector<int> &points, const GpuVector<double> &nodes, const GpuVector<double> &coeffs, double *gpu_result);
 template void TasGpu::devalseq<float>(int dims, int num_x, const std::vector<int> &max_levels, const float *gpu_x, const GpuVector<int> &num_nodes,
                                       const GpuVector<int> &points, const GpuVector<float> &nodes, const GpuVector<float> &coeffs, float *gpu_result);
 
@@ -242,18 +244,18 @@ void TasGpu::devalfor(int dims, int num_x, const std::vector<int> &max_levels, c
 
     GpuVector<int> gpu_offsets(offsets);
     GpuVector<T> cache1D(num_total);
-    int num_blocks = num_x / _MAX_CUDA_THREADS + ((num_x % _MAX_CUDA_THREADS == 0) ? 0 : 1);
+    ThreadGrid1d task(num_x, _MAX_HIP_THREADS);
 
-    tasgpu_dfor_build_cache<T, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
-        (dims, num_x, gpu_x, gpu_offsets.data(), num_nodes.data(), cache1D.data());
+    hipLaunchKernelGGL(tasgpu_dfor_build_cache<T, _MAX_HIP_THREADS>, task.blocks, task.threads, 0, 0,
+            dims, num_x, gpu_x, gpu_offsets.data(), num_nodes.data(), cache1D.data());
 
-    num_blocks = num_x / 32 + ((num_x % 32 == 0) ? 0 : 1);
-    if (gpu_wimag == 0){
-        tasgpu_dfor_eval_sharedpoints<T, 32, true><<<num_blocks, 1024>>>
-            (dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_wreal, 0);
+    ThreadGrid1d task_compute(num_x, 32);
+    if (gpu_wimag == nullptr){
+        hipLaunchKernelGGL(tasgpu_dfor_eval_sharedpoints<T, 32, true>, task_compute.blocks, 1024, 0, 0,
+            dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_wreal, nullptr);
     }else{
-        tasgpu_dfor_eval_sharedpoints<T, 32, false><<<num_blocks, 1024>>>
-            (dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_wreal, gpu_wimag);
+        hipLaunchKernelGGL(tasgpu_dfor_eval_sharedpoints<T, 32, false>, task_compute.blocks, 1024, 0, 0,
+            dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_wreal, gpu_wimag);
     }
 }
 
@@ -268,36 +270,36 @@ void TasGpu::devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num
                       GpuVector<int> const &map_tensor, GpuVector<int> const &map_index, GpuVector<int> const &map_reference, T *gpu_result){
     GpuVector<T> cache(num_x, num_basis);
     int num_blocks = (int) map_dimension.size();
-    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
+    if (num_blocks >= _MAX_HIP_BLOCKS) num_blocks = _MAX_HIP_BLOCKS;
 
     if (is_nested){
         if (is_clenshawcurtis0){
-            tasgpu_dglo_build_cache<T, _MAX_CUDA_THREADS, true, true><<<num_blocks, _MAX_CUDA_THREADS>>>
-                (dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
+            hipLaunchKernelGGL(tasgpu_dglo_build_cache<T, _MAX_HIP_THREADS, true, true>, num_blocks, _MAX_HIP_THREADS, 0, 0,
+                 dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
                                         nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
                                         map_dimension.data(), map_level.data(), cache.data());
         }else{
-            tasgpu_dglo_build_cache<T, _MAX_CUDA_THREADS, true, false><<<num_blocks, _MAX_CUDA_THREADS>>>
-                (dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
+            hipLaunchKernelGGL(tasgpu_dglo_build_cache<T, _MAX_HIP_THREADS, true, false>, num_blocks, _MAX_HIP_THREADS, 0, 0,
+                 dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
                                         nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
                                         map_dimension.data(), map_level.data(), cache.data());
         }
     }else{
-        tasgpu_dglo_build_cache<T, _MAX_CUDA_THREADS, false, false><<<num_blocks, _MAX_CUDA_THREADS>>>
-            (dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
+        hipLaunchKernelGGL(tasgpu_dglo_build_cache<T, _MAX_HIP_THREADS, false, false>, num_blocks, _MAX_HIP_THREADS, 0, 0,
+             dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
                                     nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
                                     map_dimension.data(), map_level.data(), cache.data());
     }
 
     int mat_size = num_x * num_p;
-    num_blocks = num_x / _MAX_CUDA_THREADS + ((mat_size % _MAX_CUDA_THREADS == 0) ? 0 : 1);
-    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
-    tasgpu_dglo_eval_zero<T, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>(mat_size, gpu_result);
+    num_blocks = num_x / _MAX_HIP_THREADS + ((mat_size % _MAX_HIP_THREADS == 0) ? 0 : 1);
+    if (num_blocks >= _MAX_HIP_THREADS) num_blocks = _MAX_HIP_THREADS;
+    hipLaunchKernelGGL(tasgpu_dglo_eval_zero<T, _MAX_HIP_THREADS>, num_blocks, _MAX_HIP_THREADS, 0, 0, mat_size, gpu_result);
 
     num_blocks = (int) map_tensor.size();
-    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
-    tasgpu_dglo_eval_sharedpoints<T, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>
-        (dims, num_x, (int) map_tensor.size(), num_p, cache.data(),
+    if (num_blocks >= _MAX_HIP_BLOCKS) num_blocks = _MAX_HIP_BLOCKS;
+    hipLaunchKernelGGL(tasgpu_dglo_eval_sharedpoints<T, _MAX_HIP_THREADS>, num_blocks, _MAX_HIP_THREADS, 0, 0,
+        dims, num_x, (int) map_tensor.size(), num_p, cache.data(),
         tensor_weights.data(), offset_per_level.data(), dim_offsets.data(), active_tensors.data(), active_num_points.data(),
         map_tensor.data(), map_index.data(), map_reference.data(), gpu_result);
 }
@@ -315,57 +317,13 @@ template void TasGpu::devalglo<float>(bool, bool, int, int, int, int,
 
 void TasGpu::fillDataGPU(double value, long long n, long long stride, double data[]){
     if (stride == 1){
-        ThreadGrid1d tgrid(n, _MAX_CUDA_THREADS);
-        tascuda_vfill<double, _MAX_CUDA_THREADS><<<tgrid.blocks, tgrid.threads>>>(n, data, value);
+        ThreadGrid1d tgrid(n, _MAX_HIP_THREADS);
+        hipLaunchKernelGGL(tascuda_vfill<double, _MAX_HIP_THREADS>, tgrid.blocks, tgrid.threads, 0, 0, n, data, value);
     }else{
         ThreadGrid1d tgrid(n, 32);
-        tascuda_sfill<double, 32><<<tgrid.blocks, tgrid.threads>>>(n, stride, data, value);
+        hipLaunchKernelGGL(tascuda_sfill<double, 32>, tgrid.blocks, tgrid.threads, 0, 0, n, stride, data, value);
     }
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//       Linear Algebra
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__
-void TasCUDA::cudaDgemm(int M, int N, int K, const double *gpu_a, const double *gpu_b, double *gpu_c){ // gpu_c = gpu_a * gpu_b, gpu_c is M by N
-    int blocks = (N / 96) + (((N % 96) == 0) ? 0 : 1);
-    blocks *= (M / 96) + (((M % 96) == 0) ? 0 : 1);
-    while(blocks > _MAX_CUDA_BLOCKS) blocks = _MAX_CUDA_BLOCKS;
-    tasgpu_cudaTgemm<double, 32, 96><<<blocks, 1024>>>(M, N, K, gpu_a, gpu_b, gpu_c);
-}
-
-void TasCUDA::cudaSparseMatmul(int M, int N, int num_nz, const int* gpu_spntr, const int* gpu_sindx, const double* gpu_svals, const double *gpu_B, double *gpu_C){
-    int blocks = M / 64 + ((M % 64 == 0) ? 0 : 1);
-    tasgpu_sparse_matmul<double, 64><<<blocks, 64>>>(M, N, num_nz, gpu_spntr, gpu_sindx, gpu_svals, gpu_B, gpu_C);
-}
-
-void TasCUDA::cudaSparseVecDenseMat(int M, int N, int num_nz, const double *A, const int *indx, const double *vals, double *C){
-    int num_blocks = N / _MAX_CUDA_THREADS + ((N % _MAX_CUDA_THREADS == 0) ? 0 : 1);
-    if (num_blocks< _MAX_CUDA_BLOCKS){
-        tasgpu_sparse_matveci<double, _MAX_CUDA_THREADS, 1><<<num_blocks, _MAX_CUDA_THREADS>>>(M, N, num_nz, A, indx, vals, C);
-    }else{
-        num_blocks = N / (2 * _MAX_CUDA_THREADS) + ((N % (2 * _MAX_CUDA_THREADS) == 0) ? 0 : 1);
-        if (num_blocks< _MAX_CUDA_BLOCKS){
-            tasgpu_sparse_matveci<double, _MAX_CUDA_THREADS, 2><<<num_blocks, _MAX_CUDA_THREADS>>>(M, N, num_nz, A, indx, vals, C);
-        }else{
-            num_blocks = N / (3 * _MAX_CUDA_THREADS) + ((N % (3 * _MAX_CUDA_THREADS) == 0) ? 0 : 1);
-            if (num_blocks< _MAX_CUDA_BLOCKS){
-                tasgpu_sparse_matveci<double, _MAX_CUDA_THREADS, 3><<<num_blocks, _MAX_CUDA_THREADS>>>(M, N, num_nz, A, indx, vals, C);
-            }
-        }
-    }
-}
-
-void TasCUDA::convert_sparse_to_dense(int num_rows, int num_columns, const int *pntr, const int *indx, const double *vals, double *destination){
-    int n = num_rows * num_columns;
-    int num_blocks = n / _MAX_CUDA_THREADS + ((n % _MAX_CUDA_THREADS == 0) ? 0 : 1);
-    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
-    tascuda_fill<double, _MAX_CUDA_THREADS><<<num_blocks, _MAX_CUDA_THREADS>>>(n, 0.0, destination);
-    num_blocks = num_rows;
-    if (num_blocks >= _MAX_CUDA_BLOCKS) num_blocks = _MAX_CUDA_BLOCKS;
-    tascuda_sparse_to_dense<double, 64><<<num_blocks, 64>>>(num_rows, num_columns, pntr, indx, vals, destination);
-}
-#endif
 
 }
 

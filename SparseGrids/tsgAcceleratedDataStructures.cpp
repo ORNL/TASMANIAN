@@ -149,8 +149,6 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
     return accel;
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
-
 AccelerationDomainTransform::AccelerationDomainTransform(std::vector<double> const &transform_a, std::vector<double> const &transform_b){
     // The points are stored contiguously in a vector with stride equal to num_dimensions
     // Using the contiguous memory in a contiguous fashion on the GPU implies that thread 0 works on dimension 0, thread 1 on dim 1 ...
@@ -186,17 +184,6 @@ void AccelerationDomainTransform::getCanonicalPoints(bool use01, const T *gpu_tr
 
 template void AccelerationDomainTransform::getCanonicalPoints<float>(bool, float const[], int, GpuVector<float>&);
 template void AccelerationDomainTransform::getCanonicalPoints<double>(bool, double const[], int, GpuVector<double>&);
-#else
-
-AccelerationDomainTransform::AccelerationDomainTransform(std::vector<double> const&, std::vector<double> const&){}
-
-template<typename T> void AccelerationDomainTransform::getCanonicalPoints(bool, const T*, int, GpuVector<T>&){}
-
-template void AccelerationDomainTransform::getCanonicalPoints<float>(bool, float const[], int, GpuVector<float>&);
-template void AccelerationDomainTransform::getCanonicalPoints<double>(bool, double const[], int, GpuVector<double>&);
-
-#endif // Tasmanian_ENABLE_CUDA
-
 
 }
 

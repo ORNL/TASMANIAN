@@ -115,7 +115,7 @@ void *tsgMakeLikelihoodGaussAnisotropic(int num_outputs, double const variance[]
 void tsgGetLikelihood(void *likelihood, int form, double const model[], int num_samples, double likely[]){
     ((TasmanianLikelihood*) likelihood)->getLikelihood(IO::intToForm(form), model, num_samples, likely);
 }
-int tsgGetNumOutputs(void *likelihood){
+int tsgGetNumOutputsLikelihood(void *likelihood){
     return ((TasmanianLikelihood*) likelihood)->getNumOutputs();
 }
 void tsgDeleteLikelihood(void *likelihood){
