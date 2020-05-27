@@ -371,7 +371,7 @@ void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[])
     base->evaluateBatch(formCanonicalPoints(x, x_tmp, num_x), num_x, y);
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
+#ifdef Tasmanian_ENABLE_GPU
 void TasmanianSparseGrid::evaluateBatch(const float x[], int num_x, float y[]) const{
     if (!( (getAccelerationType() == accel_gpu_cuda) || (getAccelerationType() == accel_gpu_magma) ))
         throw std::runtime_error("ERROR: batch evaluations in single precision require CUDA or MAGMA acceleration to be enabled");
@@ -390,10 +390,10 @@ template<typename FloatType> void TasmanianSparseGrid::evaluateBatchGPU(const Fl
 }
 #else
 template<typename FloatType> void TasmanianSparseGrid::evaluateBatchGPU(const FloatType[], int, FloatType[]) const{
-    throw std::runtime_error("ERROR: batch evaluations GPU to GPU require Tasmanian_ENABLE_CUDA");
+    throw std::runtime_error("ERROR: batch evaluations GPU to GPU require Tasmanian_ENABLE_CUDA or Tasmanian_ENABLE_HIP");
 }
 void TasmanianSparseGrid::evaluateBatch(const float[], int, float[]) const{
-    throw std::runtime_error("ERROR: batch evaluations in single precision require Tasmanian_ENABLE_CUDA");
+    throw std::runtime_error("ERROR: batch evaluations in single precision require Tasmanian_ENABLE_CUDA or Tasmanian_ENABLE_HIP");
 }
 #endif
 template void TasmanianSparseGrid::evaluateBatchGPU<float>(const float[], int, float[]) const;
@@ -431,7 +431,7 @@ void TasmanianSparseGrid::setDomainTransform(const double a[], const double b[])
     int num_dimensions = base->getNumDimensions();
     domain_transform_a.resize(num_dimensions); std::copy(a, a + num_dimensions, domain_transform_a.data());
     domain_transform_b.resize(num_dimensions); std::copy(b, b + num_dimensions, domain_transform_b.data());
-    #ifdef Tasmanian_ENABLE_CUDA
+    #ifdef Tasmanian_ENABLE_GPU
     acc_domain.reset();
     #endif
 }
@@ -441,7 +441,7 @@ bool TasmanianSparseGrid::isSetDomainTransfrom() const{
 void TasmanianSparseGrid::clearDomainTransform(){
     domain_transform_a.resize(0);
     domain_transform_b.resize(0);
-    #ifdef Tasmanian_ENABLE_CUDA
+    #ifdef Tasmanian_ENABLE_GPU
     acc_domain.reset();
     #endif
 }
@@ -460,7 +460,7 @@ void TasmanianSparseGrid::setDomainTransform(const std::vector<double> &a, const
     }
     domain_transform_a = a; // copy assignment
     domain_transform_b = b;
-    #ifdef Tasmanian_ENABLE_CUDA
+    #ifdef Tasmanian_ENABLE_GPU
     acc_domain.reset();
     #endif
 }
@@ -993,7 +993,7 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double
 template<typename T>
 void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
     if (not AccelerationMeta::isAvailable(accel_gpu_cuda))
-        throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() called, but the library was not compiled with Tasmanian_ENABLE_CUDA=ON");
+        throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() called, but the library was not compiled without Tasmanian_ENABLE_CUDA=ON and Tasmanian_ENABLE_HIP=ON");
     if (not acceleration->on_gpu()) throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
     acceleration->setDevice();
     GpuVector<T> gpu_temp_x;
@@ -1002,7 +1002,7 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const T gpu_x[], int 
 template<typename T>
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const T gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, T* &gpu_vals, int &num_nz) const{
     if (not AccelerationMeta::isAvailable(accel_gpu_cuda))
-        throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() called, but the library was not compiled with Tasmanian_ENABLE_CUDA=ON");
+        throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() called, but the library was not compiled without Tasmanian_ENABLE_CUDA=ON and Tasmanian_ENABLE_HIP=ON");
     if (!isLocalPolynomial()) throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() is allowed only for local polynomial grid.");
     if (not acceleration->on_gpu()) throw std::runtime_error("ERROR: evaluateSparseHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
     acceleration->setDevice();

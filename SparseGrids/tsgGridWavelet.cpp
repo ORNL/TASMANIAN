@@ -187,12 +187,7 @@ void GridWavelet::evaluate(const double x[], double y[]) const{
     }
 }
 void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
-    #ifdef Tasmanian_ENABLE_HIP
-    TypeAcceleration mode = (acceleration->mode == accel_gpu_cuda) ? accel_gpu_cublas : acceleration->mode;
-    switch(mode){
-    #else
     switch(acceleration->mode){
-    #endif
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
@@ -344,6 +339,7 @@ void GridWavelet::buildInterpolationMatrix() const{
 
     int num_points = work.getNumIndexes();
 
+    #ifndef Tasmanian_ENABLE_HIP
     if (order == 1 and TasSparse::WaveletBasisMatrix::useDense(acceleration, num_points)
                    and acceleration->useKernels()){ // using the GPU algorithm
         std::vector<double> pnts(Utils::size_mult(num_dimensions, num_points));
@@ -354,6 +350,7 @@ void GridWavelet::buildInterpolationMatrix() const{
         inter_matrix = TasSparse::WaveletBasisMatrix(acceleration, num_points, std::move(gpu_basis));
         return;
     }
+    #endif
 
     int num_chunk = 32;
     int num_blocks = num_points / num_chunk + ((num_points % num_chunk == 0) ? 0 : 1);

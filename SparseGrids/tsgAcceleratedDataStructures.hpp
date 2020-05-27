@@ -412,7 +412,7 @@ namespace TasGpu{
     //! The output vectors \b gpu_spntr, \b gpu_sindx and \b gpu_svals form a row compressed matrix,
     //! e.g., in format that can directly interface with Nvidia cusparseDcsrmm2().
     template<typename T>
-    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const T *gpu_x,
+    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, const T *gpu_x,
                             const GpuVector<T> &gpu_nodes, const GpuVector<T> &gpu_support,
                             const GpuVector<int> &gpu_hpntr, const GpuVector<int> &gpu_hindx, const GpuVector<int> &gpu_hroots,
                             GpuVector<int> &gpu_spntr, GpuVector<int> &gpu_sindx, GpuVector<T> &gpu_svals);

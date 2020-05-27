@@ -379,7 +379,12 @@ WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const *acceleration,
 
     if (num_rows == 0) return; // make an empty matrix
 
+    // hip doesn't have rocsolver yet, so BLAS is required for dense operations
+    #ifdef Tasmanian_ENABLE_HIP
+    if (acceleration->blasCompatible() and useDense(acceleration, num_rows)){ // dense mode
+    #else
     if (acceleration->mode != accel_none and useDense(acceleration, num_rows)){ // dense mode
+    #endif
         dense = std::vector<double>(Utils::size_mult(num_rows, num_rows));
         Utils::Wrapper2D<double> dense_rows(num_rows, dense.data());
 

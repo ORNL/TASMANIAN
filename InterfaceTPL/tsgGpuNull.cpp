@@ -134,7 +134,7 @@ template<typename T> void dtrans2can(bool, int, int, int, double const[], double
 template<typename T> void devalpwpoly(int, TypeOneDRule, int, int, int, const T[], const T[], const T[], T[]){}
 
 template<typename T>
-void devalpwpoly_sparse(int, TypeOneDRule, int, int, int, const T[], GpuVector<T> const&, GpuVector<T> const&,
+void devalpwpoly_sparse(int, TypeOneDRule, int, int, const T[], GpuVector<T> const&, GpuVector<T> const&,
                                 GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, GpuVector<int>&, GpuVector<int>&, GpuVector<T>&){}
 
 template<typename T>
@@ -156,10 +156,10 @@ template void dtrans2can<double>(bool, int, int, int, double const*, double cons
 template void devalpwpoly<float>(int, TypeOneDRule, int, int, int, float const*, float const*, float const*, float*);
 template void devalpwpoly<double>(int, TypeOneDRule, int, int, int, double const*, double const*, double const*, double*);
 
-template void devalpwpoly_sparse<float>(int, TypeOneDRule, int, int, int, float const*, GpuVector<float> const&, GpuVector<float> const&,
+template void devalpwpoly_sparse<float>(int, TypeOneDRule, int, int, float const*, GpuVector<float> const&, GpuVector<float> const&,
                                         GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                         GpuVector<int>&, GpuVector<int>&, GpuVector<float>&);
-template void devalpwpoly_sparse<double>(int, TypeOneDRule, int, int, int, double const*, GpuVector<double> const&, GpuVector<double> const&,
+template void devalpwpoly_sparse<double>(int, TypeOneDRule, int, int, double const*, GpuVector<double> const&, GpuVector<double> const&,
                                          GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                          GpuVector<int>&, GpuVector<int>&, GpuVector<double>&);
 

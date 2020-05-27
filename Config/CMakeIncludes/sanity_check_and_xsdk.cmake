@@ -40,7 +40,7 @@ if (Tasmanian_ENABLE_SWIG AND NOT Tasmanian_ENABLE_FORTRAN)
 endif()
 
 # OpenMP setup
-if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
+if ((Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED) AND NOT Tasmanian_ENABLE_HIP)
     if (Tasmanian_ENABLE_OPENMP)
         find_package(OpenMP REQUIRED) # OpenMP requested explicitly, require regardless of ENABLE_RECOMMENDED
     else()

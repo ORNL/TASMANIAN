@@ -1969,7 +1969,7 @@ bool ExternalTester::testCudaCaching() const{
 }
 
 bool ExternalTester::testGPU2GPUevaluations() const{
-    #ifdef Tasmanian_ENABLE_CUDA
+    #ifdef Tasmanian_ENABLE_GPU
     // check back basis evaluations, x and result both sit on the GPU (using CUDA acceleration)
     TasGrid::TasmanianSparseGrid grid;
     int num_tests = 9;
@@ -2073,7 +2073,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
     #else
     return true;
-    #endif // Tasmanian_ENABLE_CUDA
+    #endif // Tasmanian_ENABLE_GPU
 }
 
 bool ExternalTester::testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const{
@@ -2107,12 +2107,14 @@ bool ExternalTester::testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const
         if (rule == rule_fourier) num_coeffs *= 2;
         if (grid_acc.getNumLoaded() != grid_ref.getNumLoaded()){
             cout << "ERROR: accelerated loadNeededPoints() loaded wrong number of points." << endl;
+            grid_acc.printStats();
             return false;
         }
         if (!testPass(err1(wrap_array<double const>(grid_acc.getHierarchicalCoefficients(), num_coeffs),
                            wrap_array<double const>(grid_ref.getHierarchicalCoefficients(), num_coeffs)),
                       Maths::num_tol, "accelerated loadNeededPoints()")){
             cout << "Failed for " << OneDimensionalMeta::getHumanString(rule) << " at gpu: " << g << endl;
+            grid_acc.printStats();
             pass = false;
         }
     }
@@ -2194,7 +2196,7 @@ bool ExternalTester::testAllAcceleration() const{
         cout << "      Accelerated" << setw(wsecond) << "caching" << setw(wthird) << "FAIL" << endl;
     }
 
-    #ifdef Tasmanian_ENABLE_CUDA
+    #ifdef Tasmanian_ENABLE_GPU
     pass = pass && testGPU2GPUevaluations();
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "gpu-to-gpu" << setw(wthird) << "Pass" << endl;
@@ -2203,9 +2205,9 @@ bool ExternalTester::testAllAcceleration() const{
     }
     #else
     if (verbose) cout << "      Accelerated" << setw(wsecond) << "gpu-to-gpu" << setw(wthird) << "Skipped (needs Tasmanian_ENABLE_CUDA=ON)" << endl;
-    #endif // Tasmanian_ENABLE_CUDA
+    #endif // Tasmanian_ENABLE_GPU
 
-    #ifdef Tasmanian_ENABLE_CUDA
+    #ifdef Tasmanian_ENABLE_GPU
     pass = pass && testAcceleratedLoadValues(rule_clenshawcurtis) && testAcceleratedLoadValues(rule_rleja) &&
                    testAcceleratedLoadValues(rule_localp) && testAcceleratedLoadValues(rule_fourier) && testAcceleratedLoadValues(rule_wavelet);
     if (pass){

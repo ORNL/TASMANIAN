@@ -151,12 +151,7 @@ void GridLocalPolynomial::evaluateBatchOpenMP(const double x[], int num_x, doubl
         evaluate(xwrap.getStrip(i), ywrap.getStrip(i));
 }
 void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
-    #ifdef Tasmanian_ENABLE_HIP
-    TypeAcceleration mode = (acceleration->mode == accel_gpu_cuda) ? accel_gpu_cublas : acceleration->mode;
-    switch(mode){
-    #else
     switch(acceleration->mode){
-    #endif
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
@@ -313,7 +308,7 @@ void GridLocalPolynomial::evaluateHierarchicalFunctionsGPU(const double gpu_x[],
 void GridLocalPolynomial::buildSparseBasisMatrixGPU(const double gpu_x[], int cpu_num_x, GpuVector<int> &gpu_spntr, GpuVector<int> &gpu_sindx, GpuVector<double> &gpu_svals) const{
     loadGpuBasis<double>();
     loadGpuHierarchy<double>();
-    TasGpu::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, getNumPoints(), gpu_x, gpu_cache->nodes, gpu_cache->support,
+    TasGpu::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, gpu_x, gpu_cache->nodes, gpu_cache->support,
                                gpu_cache->hpntr, gpu_cache->hindx, gpu_cache->hroots, gpu_spntr, gpu_sindx, gpu_svals);
 }
 void GridLocalPolynomial::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const{
@@ -323,7 +318,7 @@ void GridLocalPolynomial::evaluateHierarchicalFunctionsGPU(const float gpu_x[], 
 void GridLocalPolynomial::buildSparseBasisMatrixGPU(const float gpu_x[], int cpu_num_x, GpuVector<int> &gpu_spntr, GpuVector<int> &gpu_sindx, GpuVector<float> &gpu_svals) const{
     loadGpuBasis<float>();
     loadGpuHierarchy<float>();
-    TasGpu::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, getNumPoints(), gpu_x, gpu_cachef->nodes, gpu_cachef->support,
+    TasGpu::devalpwpoly_sparse(order, rule->getType(), num_dimensions, cpu_num_x, gpu_x, gpu_cachef->nodes, gpu_cachef->support,
                                gpu_cachef->hpntr, gpu_cachef->hindx, gpu_cachef->hroots, gpu_spntr, gpu_sindx, gpu_svals);
 }
 template<typename T> void GridLocalPolynomial::loadGpuBasis() const{

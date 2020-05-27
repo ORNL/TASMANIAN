@@ -37,10 +37,10 @@ from TasmanianConfig import TasmanianInputError as InputError
 
 pLibDTSG = cdll.LoadLibrary(__path_libdream__)
 
-pLibDTSG.tsgGetNumOutputs.restype = c_int
+pLibDTSG.tsgGetNumOutputsLikelihood.restype = c_int
 
 pLibDTSG.tsgDeleteLikelihood.argtypes = [c_void_p]
-pLibDTSG.tsgGetNumOutputs.argtypes = [c_void_p]
+pLibDTSG.tsgGetNumOutputsLikelihood.argtypes = [c_void_p]
 pLibDTSG.tsgGetLikelihood.argtypes = [c_void_p, c_int, POINTER(c_double), c_int, POINTER(c_double)]
 
 pLibDTSG.tsgMakeLikelihoodGaussIsotropic.restype = c_void_p
