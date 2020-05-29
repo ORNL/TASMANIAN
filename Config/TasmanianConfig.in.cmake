@@ -52,9 +52,10 @@ if (@Tasmanian_ENABLE_HIP@)
     if (NOT "@Tasmanian_ROCM_ROOT@" STREQUAL "")
         list(APPEND CMAKE_PREFIX_PATH "@Tasmanian_ROCM_ROOT@")
     endif()
-    find_package(hip REQUIRED)
-    find_package(rocblas REQUIRED)
-    find_package(rocsparse REQUIRED)
+    list(APPEND CMAKE_PREFIX_PATH "@Tasmanian_hiproot@")
+    foreach(_tsg_package hip rocblas rocsparse rocsolver)
+        find_package(${_tsg_package} REQUIRED)
+    endforeach()
 endif()
 
 if (TARGET tasmanian) # swig Tasmanian Fortran

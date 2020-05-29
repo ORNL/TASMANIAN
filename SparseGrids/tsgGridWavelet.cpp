@@ -339,7 +339,6 @@ void GridWavelet::buildInterpolationMatrix() const{
 
     int num_points = work.getNumIndexes();
 
-    #ifndef Tasmanian_ENABLE_HIP
     if (order == 1 and TasSparse::WaveletBasisMatrix::useDense(acceleration, num_points)
                    and acceleration->useKernels()){ // using the GPU algorithm
         std::vector<double> pnts(Utils::size_mult(num_dimensions, num_points));
@@ -350,7 +349,6 @@ void GridWavelet::buildInterpolationMatrix() const{
         inter_matrix = TasSparse::WaveletBasisMatrix(acceleration, num_points, std::move(gpu_basis));
         return;
     }
-    #endif
 
     int num_chunk = 32;
     int num_blocks = num_points / num_chunk + ((num_points % num_chunk == 0) ? 0 : 1);
@@ -947,12 +945,10 @@ void GridWavelet::setSurplusRefinement(double tolerance, TypeRefinement criteria
 
 void GridWavelet::updateAccelerationData(AccelerationContext::ChangeType change) const{
     switch(change){
-        #ifdef Tasmanian_ENABLE_CUDA
         case AccelerationContext::change_gpu_device:
             gpu_cache.reset();
             gpu_cachef.reset();
             break;
-        #endif
         case AccelerationContext::change_sparse_dense:
             if ((acceleration->algorithm_select == AccelerationContext::algorithm_dense and inter_matrix.isSparse())
                 or (acceleration->algorithm_select == AccelerationContext::algorithm_sparse and inter_matrix.isDense()))

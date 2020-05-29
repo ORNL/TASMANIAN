@@ -41,6 +41,7 @@
 #include <hip/hip_runtime.h>
 #include <rocblas.h>
 #include <rocsparse.h>
+#include <rocsolver.h>
 
 /*!
  * \file tsgHipWrappers.hpp

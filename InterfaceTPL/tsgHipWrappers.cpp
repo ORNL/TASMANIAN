@@ -180,6 +180,20 @@ inline void gemm(rocblas_handle handle, rocblas_operation transa, rocblas_operat
                  double alpha, double const A[], int lda, double const B[], int ldb, double beta, double C[], int ldc){
     hipcheck( rocblas_dgemm(handle, transa, transb, M, N, K, &alpha, A, lda, B, ldb, &beta, C, ldc), "rocblas_dgemm()");
 }
+//! \brief Wrapper around dtrsm().
+inline void trsm(rocblas_handle handle, rocblas_side side, rocblas_fill uplo,
+                 rocblas_operation trans, rocblas_diagonal diag, int m, int n,
+                 double alpha, double const A[], int lda, double B[], int ldb){
+    hipcheck(rocblas_dtrsm(handle, side, uplo, trans, diag, m, n, &alpha, A, lda, B, ldb), "rocblas_dtrsm()");
+}
+//! \brief Wrapper around ztrsm().
+inline void trsm(rocblas_handle handle, rocblas_side side, rocblas_fill uplo,
+                 rocblas_operation trans, rocblas_diagonal diag, int m, int n,
+                 std::complex<double> alpha, std::complex<double> const A[], int lda, std::complex<double> B[], int ldb){
+    hipcheck(rocblas_ztrsm(handle, side, uplo, trans, diag, m, n, reinterpret_cast<rocblas_double_complex*>(&alpha),
+                           reinterpret_cast<rocblas_double_complex const*>(A), lda,
+                           reinterpret_cast<rocblas_double_complex*>(B), ldb), "rocblas_ztrsm()");
+}
 
 /*
  * rocSparse section
@@ -221,12 +235,35 @@ inline void sparse_gemm(rocsparse_handle handle, rocsparse_operation transa, roc
 /*
  * rocSolver section
  */
+//! \brief Wrapper around rocsolver_dgetrs().
+void getrs(rocblas_handle handle, rocblas_operation trans, int n, int nrhs, double const A[], int lda, int const ipiv[], double B[], int ldb){
+    hipcheck(rocblas_set_pointer_mode(handle, rocblas_pointer_mode_device), "rocblas_set_pointer_mode()");
+    hipcheck(rocsolver_dgetrs(handle, trans, n, nrhs, const_cast<double*>(A), lda, ipiv, B, ldb), "rocsolver_dgetrs()");
+    rocblas_set_pointer_mode(handle, rocblas_pointer_mode_host);
+}
 
-//! \brief Wrapper around cusolverDnDgetrf().
-void factorizePLU(AccelerationContext const*, int, double[], int[]){}
+//! \brief Wrapper around rocsolver_dgetrf().
+void factorizePLU(AccelerationContext const *acceleration, int n, double A[], int ipiv[]){
+    rocblas_handle rochandle = getRocBlasHandle(acceleration);
+    GpuVector<int> info(std::vector<int>(4, 0));
+    hipcheck(rocblas_set_pointer_mode(rochandle, rocblas_pointer_mode_device), "rocblas_set_pointer_mode()");
+    hipcheck(rocsolver_dgetrf(rochandle, n, n, A, n, ipiv, info.data()), "rocsolver_dgetrf()");
+    rocblas_set_pointer_mode(rochandle, rocblas_pointer_mode_host);
+    if (info.unload()[0] != 0)
+        throw std::runtime_error("rocsolver_dgetrf() returned non-zero status: " + std::to_string(info.unload()[0]));
+}
 
-void solvePLU(AccelerationContext const*, char, int, double const[], int const[], double []){}
-void solvePLU(AccelerationContext const*, char, int, double const[], int const[], int, double[]){}
+void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int const ipiv[], double b[]){
+    rocblas_handle rochandle = getRocBlasHandle(acceleration);
+    getrs(rochandle, (trans == 'T') ? rocblas_operation_transpose: rocblas_operation_none, n, 1, A, n, ipiv, b, n);
+}
+void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int const ipiv[], int nrhs, double B[]){
+    rocblas_handle rochandle = getRocBlasHandle(acceleration);
+    GpuVector<double> BT(n, nrhs);
+    geam(rochandle, rocblas_operation_transpose, rocblas_operation_transpose, n, nrhs, 1.0, B, nrhs, 0.0, B, nrhs, BT.data(), n);
+    getrs(rochandle, (trans == 'T') ? rocblas_operation_transpose: rocblas_operation_none, n, nrhs, A, n, ipiv, BT.data(), n);
+    geam(rochandle, rocblas_operation_transpose, rocblas_operation_transpose, nrhs, n, 1.0, BT.data(), n, 0.0, BT.data(), n, B, nrhs);
+}
 
 /*
  * Algorithm section
