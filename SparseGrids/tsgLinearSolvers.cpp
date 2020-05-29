@@ -380,11 +380,7 @@ WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const *acceleration,
     if (num_rows == 0) return; // make an empty matrix
 
     // hip doesn't have rocsolver yet, so BLAS is required for dense operations
-    #ifdef Tasmanian_ENABLE_HIP
-    if (acceleration->blasCompatible() and useDense(acceleration, num_rows)){ // dense mode
-    #else
     if (acceleration->mode != accel_none and useDense(acceleration, num_rows)){ // dense mode
-    #endif
         dense = std::vector<double>(Utils::size_mult(num_rows, num_rows));
         Utils::Wrapper2D<double> dense_rows(num_rows, dense.data());
 
@@ -407,13 +403,11 @@ WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const *acceleration,
                 r[*ii++] = *vv++;
         }
 
-        #ifndef Tasmanian_ENABLE_HIP
         if (acceleration->mode != accel_cpu_blas){ // using GPU
             acceleration->setDevice();
             gpu_dense = GpuVector<double>(dense);
             dense = std::vector<double>();
         }
-        #endif
     }else{ // sparse mode
         pntr = std::vector<int>(num_rows+1, 0);
         for(int i=0; i<num_rows; i++)

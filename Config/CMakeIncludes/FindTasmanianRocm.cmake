@@ -5,10 +5,21 @@
 #
 #
 
+execute_process(COMMAND ${CMAKE_CXX_COMPILER} --version OUTPUT_VARIABLE Tasmanian_hip_compiler_version)
+string(REGEX MATCH "^HIP" Tasmanian_haship "${Tasmanian_hip_compiler_version}")
+
+if (NOT Tasmanian_haship)
+    message(WARNING "Tasmanian_ENABLE_HIP requires that the CMAKE_CXX_COMPILER is set to the Rocm hipcc compiler.")
+endif()
+
+get_filename_component(Tasmanian_hipccroot ${CMAKE_CXX_COMPILER} DIRECTORY)  # convert <path>/bin/hipcc to <path>/bin
+get_filename_component(Tasmanian_hipccroot ${Tasmanian_hipccroot} DIRECTORY)  # convert <path>/bin to <path>
+
 set(Tasmanian_ROCM_ROOT "${ROCM_ROOT}" CACHE PATH "The root folder for the Rocm framework installation")
 list(APPEND CMAKE_PREFIX_PATH "${Tasmanian_ROCM_ROOT}")
+list(APPEND CMAKE_PREFIX_PATH "${Tasmanian_hipccroot}")
 
-foreach(_tsg_roclib hip rocblas rocsparse)
+foreach(_tsg_roclib hip rocblas rocsparse rocsolver)
     find_package(${_tsg_roclib} REQUIRED)
 endforeach()
 
@@ -21,7 +32,7 @@ Tasmanian_find_libraries(REQUIRED hip_hcc
                          LIST hiplibs)
 Tasmanian_find_rpath(LIBRARIES ${Tasmanian_hiplibs} LIST hip_rpath)
 
-foreach(_tsg_roclib rocblas rocsparse)
+foreach(_tsg_roclib rocblas rocsparse rocsolver)
     get_filename_component(Tasmanian_roclib_root ${${_tsg_roclib}_INCLUDE_DIR} DIRECTORY)
     list(APPEND Tasmanian_hiplibs roc::${_tsg_roclib})
     list(APPEND Tasmanian_hip_rpath "${Tasmanian_roclib_root}/lib")
