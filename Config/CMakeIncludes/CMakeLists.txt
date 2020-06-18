@@ -25,6 +25,7 @@ foreach(_tsgtarget Tasmanian_libsparsegrid Tasmanian_libdream Tasmanian_libfortr
 endforeach()
 unset(TSGLTYPE)
 unset(_tsgtarget)
+unset(Tasmanian_fortran_target)
 
 if (Tasmanian_ENABLE_FORTRAN)
     set(Tasmanian_post_install "${Tasmanian_post_install}Fortran module:\n")

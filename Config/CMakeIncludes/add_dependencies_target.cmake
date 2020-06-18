@@ -53,8 +53,8 @@ target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${
 target_link_libraries(Tasmanian_dependencies ${Tasmanian_EXTRA_LIBRARIES})
 
 foreach(_tsg_include ${Tasmanian_EXTRA_INCLUDE_DIRS})
-    target_include_directories(Tasmanian_dependencies PUBLIC $<BUILD_INTERFACE:${_tsg_include}>)
-    target_include_directories(Tasmanian_dependencies PUBLIC $<INSTALL_INTERFACE:${_tsg_include}>)
+    target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${_tsg_include}>)
+    target_include_directories(Tasmanian_dependencies INTERFACE $<INSTALL_INTERFACE:${_tsg_include}>)
 endforeach()
 
 install(TARGETS Tasmanian_dependencies EXPORT "${Tasmanian_export_name}")
