@@ -1764,15 +1764,7 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_0(SwigClassWr
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_1(SwigClassWrapper *, int const *, int const *, void const **, void const **) {
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_2(SwigClassWrapper *, int const *, int const *, void const **) {
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
+SWIGEXPORT void _wrap_TasmanianSparseGrid_enableAcceleration__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   TasGrid::TypeAcceleration arg2 ;
   int arg3 ;
