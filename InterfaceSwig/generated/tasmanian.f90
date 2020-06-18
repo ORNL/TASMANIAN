@@ -242,8 +242,6 @@ module tasmanian
   procedure, private :: swigf_TasmanianSparseGrid_printStats__SWIG_1
   procedure, private :: swigf_TasmanianSparseGrid_enableAcceleration__SWIG_0
   procedure, private :: swigf_TasmanianSparseGrid_enableAcceleration__SWIG_1
-  procedure, private :: swigf_TasmanianSparseGrid_enableAcceleration__SWIG_2
-  procedure, private :: swigf_TasmanianSparseGrid_enableAcceleration__SWIG_3
   procedure :: favorSparseAcceleration => swigf_TasmanianSparseGrid_favorSparseAcceleration
   procedure :: getAccelerationType => swigf_TasmanianSparseGrid_getAccelerationType
   procedure, nopass :: isAccelerationAvailable => swigf_TasmanianSparseGrid_isAccelerationAvailable
@@ -307,8 +305,7 @@ module tasmanian
   generic :: loadNeededPoints => swigf_TasmanianSparseGrid_loadNeededPoints__SWIG_1
   generic :: loadConstructedPoints => swigf_TasmanianSparseGrid_loadConstructedPoints__SWIG_1
   generic :: enableAcceleration => swigf_TasmanianSparseGrid_enableAcceleration__SWIG_0, &
-    swigf_TasmanianSparseGrid_enableAcceleration__SWIG_1, swigf_TasmanianSparseGrid_enableAcceleration__SWIG_2, &
-    swigf_TasmanianSparseGrid_enableAcceleration__SWIG_3
+    swigf_TasmanianSparseGrid_enableAcceleration__SWIG_1
  end type TasmanianSparseGrid
  public :: TasmanianReadGrid
  interface TasmanianSparseGrid
@@ -1241,29 +1238,8 @@ type(SwigClassWrapper), intent(in) :: farg1
 integer(C_INT), intent(in) :: farg2
 end subroutine
 
-subroutine swigc_TasmanianSparseGrid_enableAcceleration__SWIG_1(farg1, farg2, farg3, farg4, farg5) &
+subroutine swigc_TasmanianSparseGrid_enableAcceleration__SWIG_1(farg1, farg2, farg3) &
 bind(C, name="_wrap_TasmanianSparseGrid_enableAcceleration__SWIG_1")
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-type(SwigClassWrapper), intent(in) :: farg1
-integer(C_INT), intent(in) :: farg2
-integer(C_INT), intent(in) :: farg3
-type(C_PTR), intent(in) :: farg4
-type(C_PTR), intent(in) :: farg5
-end subroutine
-
-subroutine swigc_TasmanianSparseGrid_enableAcceleration__SWIG_2(farg1, farg2, farg3, farg4) &
-bind(C, name="_wrap_TasmanianSparseGrid_enableAcceleration__SWIG_2")
-use, intrinsic :: ISO_C_BINDING
-import :: swigclasswrapper
-type(SwigClassWrapper), intent(in) :: farg1
-integer(C_INT), intent(in) :: farg2
-integer(C_INT), intent(in) :: farg3
-type(C_PTR), intent(in) :: farg4
-end subroutine
-
-subroutine swigc_TasmanianSparseGrid_enableAcceleration__SWIG_3(farg1, farg2, farg3) &
-bind(C, name="_wrap_TasmanianSparseGrid_enableAcceleration__SWIG_3")
 use, intrinsic :: ISO_C_BINDING
 import :: swigclasswrapper
 type(SwigClassWrapper), intent(in) :: farg1
@@ -3236,46 +3212,7 @@ farg2 = acc
 call swigc_TasmanianSparseGrid_enableAcceleration__SWIG_0(farg1, farg2)
 end subroutine
 
-subroutine swigf_TasmanianSparseGrid_enableAcceleration__SWIG_1(self, acc, new_gpu_id, backend_handle, cusparse_handle)
-use, intrinsic :: ISO_C_BINDING
-class(TasmanianSparseGrid), intent(in) :: self
-integer(tsg_TypeAcceleration), intent(in) :: acc
-integer(C_INT), intent(in) :: new_gpu_id
-type(C_PTR), intent(in) :: backend_handle
-type(C_PTR), intent(in) :: cusparse_handle
-type(SwigClassWrapper) :: farg1 
-integer(C_INT) :: farg2 
-integer(C_INT) :: farg3 
-type(C_PTR) :: farg4 
-type(C_PTR) :: farg5 
-
-farg1 = self%swigdata
-farg2 = acc
-farg3 = new_gpu_id
-farg4 = backend_handle
-farg5 = cusparse_handle
-call swigc_TasmanianSparseGrid_enableAcceleration__SWIG_1(farg1, farg2, farg3, farg4, farg5)
-end subroutine
-
-subroutine swigf_TasmanianSparseGrid_enableAcceleration__SWIG_2(self, acc, new_gpu_id, backend_handle)
-use, intrinsic :: ISO_C_BINDING
-class(TasmanianSparseGrid), intent(in) :: self
-integer(tsg_TypeAcceleration), intent(in) :: acc
-integer(C_INT), intent(in) :: new_gpu_id
-type(C_PTR), intent(in) :: backend_handle
-type(SwigClassWrapper) :: farg1 
-integer(C_INT) :: farg2 
-integer(C_INT) :: farg3 
-type(C_PTR) :: farg4 
-
-farg1 = self%swigdata
-farg2 = acc
-farg3 = new_gpu_id
-farg4 = backend_handle
-call swigc_TasmanianSparseGrid_enableAcceleration__SWIG_2(farg1, farg2, farg3, farg4)
-end subroutine
-
-subroutine swigf_TasmanianSparseGrid_enableAcceleration__SWIG_3(self, acc, new_gpu_id)
+subroutine swigf_TasmanianSparseGrid_enableAcceleration__SWIG_1(self, acc, new_gpu_id)
 use, intrinsic :: ISO_C_BINDING
 class(TasmanianSparseGrid), intent(in) :: self
 integer(tsg_TypeAcceleration), intent(in) :: acc
@@ -3287,7 +3224,7 @@ integer(C_INT) :: farg3
 farg1 = self%swigdata
 farg2 = acc
 farg3 = new_gpu_id
-call swigc_TasmanianSparseGrid_enableAcceleration__SWIG_3(farg1, farg2, farg3)
+call swigc_TasmanianSparseGrid_enableAcceleration__SWIG_1(farg1, farg2, farg3)
 end subroutine
 
 subroutine swigf_TasmanianSparseGrid_favorSparseAcceleration(self, favor)
