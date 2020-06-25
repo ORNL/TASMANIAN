@@ -255,6 +255,8 @@ module tasmanian
   procedure, private :: swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_2
   procedure :: evaluateSparseHierarchicalFunctionsGetNZ => swigf_TasmanianSparseGrid_evaluateSparseHierarchicalFunct1CQM1I
   procedure :: evaluateSparseHierarchicalFunctionsStatic => swigf_TasmanianSparseGrid_evaluateSparseHierarchicalFunct1HRJEE
+  procedure, private :: swigf_TasmanianSparseGrid_evaluateFast__SWIG_2
+  procedure, private :: swigf_TasmanianSparseGrid_evaluateFast__SWIG_4
   procedure, private :: swigf_TasmanianSparseGrid_op_assign__
   generic :: setDomainTransform => swigf_TasmanianSparseGrid_setDomainTransform__SWIG_1
   generic :: getDomainTransform => swigf_TasmanianSparseGrid_getDomainTransform__SWIG_1
@@ -286,6 +288,7 @@ module tasmanian
   generic :: evaluate => swigf_TasmanianSparseGrid_evaluate__SWIG_1
   generic :: evaluateBatch => swigf_TasmanianSparseGrid_evaluateBatch__SWIG_1, swigf_TasmanianSparseGrid_evaluateBatch__SWIG_2
   generic :: printStats => swigf_TasmanianSparseGrid_printStats__SWIG_1
+  generic :: evaluateFast => swigf_TasmanianSparseGrid_evaluateFast__SWIG_2, swigf_TasmanianSparseGrid_evaluateFast__SWIG_4
   generic :: setHierarchicalCoefficients => swigf_TasmanianSparseGrid_setHierarchicalCoefficients__SWIG_1
   generic :: copyGrid => swigf_TasmanianSparseGrid_copyGrid__SWIG_0, swigf_TasmanianSparseGrid_copyGrid__SWIG_1, &
     swigf_TasmanianSparseGrid_copyGrid__SWIG_2
@@ -1361,6 +1364,24 @@ integer(C_INT), intent(in) :: farg3
 type(C_PTR), value :: farg4
 type(C_PTR), value :: farg5
 type(C_PTR), value :: farg6
+end subroutine
+
+subroutine swigc_TasmanianSparseGrid_evaluateFast__SWIG_2(farg1, farg2, farg3) &
+bind(C, name="_wrap_TasmanianSparseGrid_evaluateFast__SWIG_2")
+use, intrinsic :: ISO_C_BINDING
+import :: swigclasswrapper
+type(SwigClassWrapper), intent(in) :: farg1
+type(C_PTR), value :: farg2
+type(C_PTR), value :: farg3
+end subroutine
+
+subroutine swigc_TasmanianSparseGrid_evaluateFast__SWIG_4(farg1, farg2, farg3) &
+bind(C, name="_wrap_TasmanianSparseGrid_evaluateFast__SWIG_4")
+use, intrinsic :: ISO_C_BINDING
+import :: swigclasswrapper
+type(SwigClassWrapper), intent(in) :: farg1
+type(C_PTR), value :: farg2
+type(C_PTR), value :: farg3
 end subroutine
 
 subroutine swigc_TasmanianSparseGrid_op_assign__(farg1, farg2) &
@@ -3413,6 +3434,36 @@ farg4 = c_loc(pntr)
 farg5 = c_loc(indx)
 farg6 = c_loc(vals)
 call swigc_TasmanianSparseGrid_evaluateSparseHierarchicalFunct1HRJEE(farg1, farg2, farg3, farg4, farg5, farg6)
+end subroutine
+
+subroutine swigf_TasmanianSparseGrid_evaluateFast__SWIG_2(self, x, y)
+use, intrinsic :: ISO_C_BINDING
+class(TasmanianSparseGrid), intent(in) :: self
+real(C_DOUBLE), dimension(*), target :: x
+real(C_DOUBLE), dimension(*), target :: y
+type(SwigClassWrapper) :: farg1 
+type(C_PTR) :: farg2 
+type(C_PTR) :: farg3 
+
+farg1 = self%swigdata
+farg2 = c_loc(x)
+farg3 = c_loc(y)
+call swigc_TasmanianSparseGrid_evaluateFast__SWIG_2(farg1, farg2, farg3)
+end subroutine
+
+subroutine swigf_TasmanianSparseGrid_evaluateFast__SWIG_4(self, x, y)
+use, intrinsic :: ISO_C_BINDING
+class(TasmanianSparseGrid), intent(in) :: self
+real(C_FLOAT), dimension(*), target :: x
+real(C_FLOAT), dimension(*), target :: y
+type(SwigClassWrapper) :: farg1 
+type(C_PTR) :: farg2 
+type(C_PTR) :: farg3 
+
+farg1 = self%swigdata
+farg2 = c_loc(x)
+farg3 = c_loc(y)
+call swigc_TasmanianSparseGrid_evaluateFast__SWIG_4(farg1, farg2, farg3)
 end subroutine
 
 subroutine swigf_TasmanianSparseGrid_op_assign__(self, other)

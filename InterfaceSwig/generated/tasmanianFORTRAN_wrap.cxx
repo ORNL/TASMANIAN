@@ -1952,6 +1952,32 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateSparseHierarchicalFunctionsSta
 }
 
 
+SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateFast__SWIG_2(SwigClassWrapper *farg1, double *farg2, double *farg3) {
+  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  double *arg2 ;
+  double *arg3 ;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::evaluateFast< double >(double const [],double []) const", return );
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (double *)(farg2);
+  arg3 = (double *)(farg3);
+  ((TasGrid::TasmanianSparseGrid const *)arg1)->SWIGTEMPLATEDISAMBIGUATOR evaluateFast< double >((double const (*))arg2,arg3);
+}
+
+
+SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateFast__SWIG_4(SwigClassWrapper *farg1, float *farg2, float *farg3) {
+  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  float *arg2 ;
+  float *arg3 ;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::evaluateFast< float >(float const [],float []) const", return );
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (float *)(farg2);
+  arg3 = (float *)(farg3);
+  ((TasGrid::TasmanianSparseGrid const *)arg1)->SWIGTEMPLATEDISAMBIGUATOR evaluateFast< float >((float const (*))arg2,arg3);
+}
+
+
 SWIGEXPORT void _wrap_TasmanianSparseGrid_op_assign__(SwigClassWrapper *farg1, SwigClassWrapper *farg2) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   TasGrid::TasmanianSparseGrid *arg2 = 0 ;

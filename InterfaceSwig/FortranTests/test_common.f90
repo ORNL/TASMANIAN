@@ -57,6 +57,22 @@ subroutine approx1d(n, x, y)
     enddo
 end subroutine
 
+! Same as approx2d() but works in single precision
+subroutine approx2df(n, m, A, B)
+    integer :: n, m
+    integer :: i, j
+    real, dimension(n,m) :: A, B
+
+    do j = 1, m
+        do i = 1, n
+            if ( abs(A(i, j) - B(i, j)) > 1.E-4 ) then
+                write(*,*) "Error exceeds tolerance"
+                error stop
+            endif
+        enddo
+    enddo
+end subroutine
+
 ! similar to cassert, exits with "error stop" if the variable is false
 subroutine tassert(x)
     logical :: x
