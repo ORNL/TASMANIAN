@@ -256,3 +256,10 @@ end function
 
 // Wrap clases/methods found in this file
 %include "TasmanianSparseGrid.hpp"
+
+namespace TasGrid {
+    %rename(evaluateFast) TasmanianSparseGrid::evaluateFast<double>;
+    %template(evaluateFastDbl) TasmanianSparseGrid::evaluateFast<double>;
+    %rename(evaluateFast) TasmanianSparseGrid::evaluateFast<float>;
+    %template(evaluateFastFlt) TasmanianSparseGrid::evaluateFast<float>;
+}

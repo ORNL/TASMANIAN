@@ -61,6 +61,10 @@ subroutine test_exact_eval_linear()
     call grid%evaluate(x(:,1), y(:,1))
     call approx2d(2, 1, y, y_ref)
 
+    y = 0.0D-0
+    call grid%evaluateFast(x(:,1), y(:,1))
+    call approx2d(2, 1, y, y_ref)
+
     y(1, 1) = 0.0D-0
     y(2, 1) = 0.0D-0
     call grid%evaluateBatch(x(:,1), 3, y(:,1))
@@ -127,7 +131,7 @@ subroutine test_eval_sequence()
     real(C_DOUBLE), dimension(:,:), pointer :: points
     real(C_DOUBLE), dimension(:,:), allocatable :: values
     real(C_DOUBLE) :: x(2, 4), y1(1, 4), y2(2, 4), y_ref1(1, 4), y_ref2(2, 4)
-    real(C_FLOAT) :: xf(2, 4), yf(1, 4)
+    real(C_FLOAT) :: xf(2, 4), yf(1, 4), y_ref1f(1, 4)
     integer :: i, num_points
 
     grid  = TasmanianSparseGrid()
@@ -154,6 +158,7 @@ subroutine test_eval_sequence()
         y_ref1(1, i) = 1.0D-0 + x(1, i)
         y_ref2(1, i) = 2.0D-0 * x(2, i)
         y_ref2(2, i) = x(1, i)**2 + x(2, i)**4 + x(1, i) * x(2, i)
+        y_ref1f(1, i) = y_ref1(1, i)
     enddo
 
     call grid1%evaluate(x(:,1), y1(:,1))
@@ -173,15 +178,15 @@ subroutine test_eval_sequence()
         call tassert(grid2%getAccelerationType() == tsg_accel_none)
     endif
 
-! Enable once we have the HIP kernels
-!    if (grid1%isAccelerationAvailable(tsg_accel_gpu_cuda)) then
-!        call grid1%enableAcceleration(tsg_accel_gpu_cuda)
-!        do i = 1, 4
-!            xf(1,i) = x(1,i)
-!            xf(2,i) = x(2,i)
-!        enddo
-!        call grid1%evaluateBatch(xf(:,1), 4, yf(:,1))
-!    endif
+    if (grid1%isAccelerationAvailable(tsg_accel_gpu_cuda)) then
+        call grid1%enableAcceleration(tsg_accel_gpu_cuda)
+        do i = 1, 4
+            xf(1,i) = x(1,i)
+            xf(2,i) = x(2,i)
+        enddo
+        call grid1%evaluateBatch(xf(:,1), 4, yf(:,1))
+        call approx2df(1, 4, yf, y_ref1f)
+    endif
 
     deallocate(points, values)
     call grid%release()
