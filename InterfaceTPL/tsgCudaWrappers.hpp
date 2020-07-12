@@ -175,6 +175,73 @@ struct cusparseMatDesc{
     //! \brief Automatically convert to the wrapper description.
     operator cusparseMatDescr_t (){ return mat_desc; }
 };
+
+#if (CUDART_VERSION >= 11000)
+template<typename T>
+struct cusparseStructDescription{
+    //! \brief Construct a null description.
+    cusparseStructDescription() : desc(nullptr){}
+    //! \brief Destructor, deletes the description.
+    ~cusparseStructDescription(){
+        if (std::is_same<T, cusparseSpMatDescr_t>::value){
+            if (desc != nullptr) cusparseDestroySpMat(reinterpret_cast<cusparseSpMatDescr_t>(desc));
+        }else if (std::is_same<T, cusparseDnVecDescr_t>::value){
+            if (desc != nullptr) cusparseDestroyDnVec(reinterpret_cast<cusparseDnVecDescr_t>(desc));
+        }else if (std::is_same<T, cusparseDnMatDescr_t>::value){
+            if (desc != nullptr) cusparseDestroyDnMat(reinterpret_cast<cusparseDnMatDescr_t>(desc));
+        }
+    }
+    //! \brief Move constructor.
+    cusparseStructDescription(cusparseStructDescription &&other) : desc(other.desc){
+        other.desc = nullptr;
+    }
+
+    //! \brief Returns the description, automatic conversion.
+    operator T () const{ return desc; }
+    //! \brief Holds the description pointer.
+    T desc;
+};
+template<typename scalar_type>
+cusparseStructDescription<cusparseSpMatDescr_t>
+makeSparseMatDesc(int rows, int cols, int nnz, int const pntr[], int const indx[], scalar_type const vals[]){
+    cusparseStructDescription<cusparseSpMatDescr_t> result;
+    cudaDataType_t cuda_type = (std::is_same<scalar_type, float>::value) ? CUDA_R_32F : CUDA_R_64F;
+    cucheck(
+        cusparseCreateCsr(&result.desc, (int64_t) rows, (int64_t) cols, (int64_t) nnz,
+                          const_cast<void*>(reinterpret_cast<void const*>(pntr)),
+                          const_cast<void*>(reinterpret_cast<void const*>(indx)),
+                          const_cast<void*>(reinterpret_cast<void const*>(vals)),
+                          CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I, CUSPARSE_INDEX_BASE_ZERO, cuda_type),
+        "cusparseCreateCsr()"
+    );
+    return result;
+}
+template<typename scalar_type>
+cusparseStructDescription<cusparseDnVecDescr_t>
+makeSparseDenseVecDesc(int size, scalar_type const vals[]){
+    cusparseStructDescription<cusparseDnVecDescr_t> result;
+    cudaDataType_t cuda_type = (std::is_same<scalar_type, float>::value) ? CUDA_R_32F : CUDA_R_64F;
+    cucheck(
+        cusparseCreateDnVec(&result.desc, static_cast<int64_t>(size),
+                            const_cast<void*>(reinterpret_cast<void const*>(vals)), cuda_type),
+        "cusparseCreateDnVec()"
+    );
+    return result;
+}
+template<typename scalar_type>
+cusparseStructDescription<cusparseDnMatDescr_t>
+makeSparseDenseMatDesc(int rows, int cols, int lda, scalar_type const vals[]){
+    cusparseStructDescription<cusparseDnMatDescr_t> result;
+    cudaDataType_t cuda_type = (std::is_same<scalar_type, float>::value) ? CUDA_R_32F : CUDA_R_64F;
+    cucheck(
+        cusparseCreateDnMat(&result.desc, static_cast<int64_t>(rows), static_cast<int64_t>(cols), static_cast<int64_t>(lda),
+                            const_cast<void*>(reinterpret_cast<void const*>(vals)), cuda_type, CUSPARSE_ORDER_COL),
+        "cusparseCreateDnMat()"
+    );
+    return result;
+}
+#endif
+
 //! \brief Make cuSolver handle.
 inline cusolverDnHandle_t getCuSolverDnHandle(AccelerationContext const *acceleration){
     if (acceleration->engine->cusolverDnHandle == nullptr){
