@@ -35,7 +35,6 @@
 
 #ifdef Tasmanian_ENABLE_MAGMA
 #include "magma_v2.h"
-#include "magmasparse.h"
 #else
 #error "Cannot use tsgMagmaWrappers.hpp without Tasmanian_ENABLE_MAGMA"
 #endif

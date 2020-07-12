@@ -271,6 +271,7 @@ inline void sparse_gemvi(cusparseHandle_t handle, cusparseOperation_t  transa,
     cucheck( cusparseDgemvi(handle, transa, M, N, &alpha, A, lda, nnz, x, indx, &beta, y, CUSPARSE_INDEX_BASE_ZERO, buff.data()), "cusparseDgemvi()");
 }
 
+#if (CUDART_VERSION < 11000)
 //! \brief Wrapper around sgemv().
 inline void sparse_gemv(cusparseHandle_t handle, cusparseOperation_t transa, int M, int N, int nnz,
                         float alpha, cusparseMatDesc &matdesc, float const vals[], int const pntr[], int const indx[],
@@ -298,6 +299,50 @@ inline void sparse_gemm(cusparseHandle_t handle, cusparseOperation_t transa, cus
                         double const B[], int ldb, double beta, double C[], int ldc){
     cucheck( cusparseDcsrmm2(handle, transa, transb, M, N, K, nnz, &alpha, matdesc, vals, pntr, indx, B, ldb, &beta, C, ldc), "cusparseDcsrmm2()");
 }
+#else
+//! \brief Wrapper around sgemv().
+template<typename scalar_type>
+inline void sparse_gemv(cusparseHandle_t handle, int M, int N, int nnz, typename GpuVector<scalar_type>::value_type alpha,
+                        scalar_type const vals[], int const pntr[], int const indx[], scalar_type const x[],
+                        typename GpuVector<scalar_type>::value_type beta, scalar_type y[]){
+    auto matdesc = makeSparseMatDesc(M, N, nnz, pntr, indx, vals);
+    auto xdesc = makeSparseDenseVecDesc(N, x);
+    auto ydesc = makeSparseDenseVecDesc(M, y);
+    cudaDataType_t cuda_type = (std::is_same<scalar_type, float>::value) ? CUDA_R_32F : CUDA_R_64F;
+
+    size_t bsize = 0;
+    cucheck( cusparseSpMV_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matdesc, xdesc, &beta, ydesc, cuda_type, CUSPARSE_MV_ALG_DEFAULT, &bsize),
+        "cusparseSpMV_bufferSize()"
+    );
+
+    GpuVector<scalar_type> buffer(bsize / sizeof(scalar_type));
+
+    cucheck( cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matdesc, xdesc, &beta, ydesc, cuda_type, CUSPARSE_MV_ALG_DEFAULT, buffer.data()),
+        "cusparseSpMV()"
+    );
+}
+//! \brief Wrapper around dgemm().
+template<typename scalar_type>
+inline void sparse_gemm(cusparseHandle_t handle, int M, int N, int K, int nnz, typename GpuVector<scalar_type>::value_type alpha,
+                        scalar_type const vals[], int const pntr[], int const indx[],
+                        scalar_type const B[], int ldb, typename GpuVector<scalar_type>::value_type beta, scalar_type C[], int ldc){
+    auto matdesc = makeSparseMatDesc(M, K, nnz, pntr, indx, vals);
+    auto bdesc = makeSparseDenseMatDesc(N, K, ldb, B);
+    auto cdesc = makeSparseDenseMatDesc(M, N, ldc, C);
+    cudaDataType_t cuda_type = (std::is_same<scalar_type, float>::value) ? CUDA_R_32F : CUDA_R_64F;
+
+    size_t bsize = 0;
+    cucheck( cusparseSpMM_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE,
+                                     &alpha, matdesc, bdesc, &beta, cdesc, cuda_type, CUSPARSE_SPMM_ALG_DEFAULT, &bsize), "cusparseSpMM_bufferSize()");
+
+    GpuVector<scalar_type> buffer(bsize / sizeof(scalar_type));
+
+    cucheck( cusparseSpMM(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, &alpha, matdesc, bdesc, &beta, cdesc,
+                          cuda_type, CUSPARSE_SPMM_ALG_DEFAULT, buffer.data()),
+        "cusparseSpMM()"
+    );
+}
+#endif
 
 /*
  * cuSolver section
@@ -484,6 +529,7 @@ template void denseMultiply<float>(AccelerationContext const*, int, int, int, fl
 template void denseMultiply<double>(AccelerationContext const*, int, int, int, double,
                                     GpuVector<double> const&, GpuVector<double> const&, double, double[]);
 
+#if (CUDART_VERSION < 11000)
 template<typename scalar_type>
 void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K, typename GpuVector<scalar_type>::value_type alpha,
                     GpuVector<scalar_type> const &A, GpuVector<int> const &pntr, GpuVector<int> const &indx,
@@ -511,6 +557,29 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
         sparse_gemvi(cusparseh, CUSPARSE_OPERATION_NON_TRANSPOSE, M, K, alpha, A.data(), M, (int) indx.size(), vals.data(), indx.data(), 0.0, C);
     }
 }
+#else
+template<typename scalar_type>
+void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K, typename GpuVector<scalar_type>::value_type alpha,
+                    GpuVector<scalar_type> const &A, GpuVector<int> const &pntr, GpuVector<int> const &indx,
+                    GpuVector<scalar_type> const &vals, scalar_type C[]){
+
+    cusparseHandle_t cusparseh = getCuSparseHandle(acceleration);
+
+    if (N > 1){ // dense matrix has many columns
+        if (M > 1){ // dense matrix has many rows, use matrix-matrix algorithm
+            GpuVector<scalar_type> tempC(M, N);
+            sparse_gemm(cusparseh, N, M, K, (int) indx.size(), alpha, vals.data(), pntr.data(), indx.data(), A.data(), M, 0.0, tempC.data(), N);
+
+            cublasHandle_t cublash = getCuBlasHandle(acceleration);
+            geam(cublash, CUBLAS_OP_T, CUBLAS_OP_T, M, N, 1.0, tempC.data(), N, 0.0, tempC.data(), N, C, M);
+        }else{ // dense matrix has only one row, use sparse matrix times dense vector
+            sparse_gemv(cusparseh, N, K, (int) indx.size(), alpha, vals.data(), pntr.data(), indx.data(), A.data(), 0.0, C);
+        }
+    }else{
+        sparse_gemvi(cusparseh, CUSPARSE_OPERATION_NON_TRANSPOSE, M, K, alpha, A.data(), M, (int) indx.size(), vals.data(), indx.data(), 0.0, C);
+    }
+}
+#endif
 
 template void sparseMultiply<float>(AccelerationContext const*, int, int, int, float, GpuVector<float> const &A,
                                     GpuVector<int> const &pntr, GpuVector<int> const &indx, GpuVector<float> const &vals, float C[]);
