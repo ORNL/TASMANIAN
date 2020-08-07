@@ -265,11 +265,37 @@ void solvePLU(AccelerationContext const *acceleration, char trans, int n, double
     geam(rochandle, rocblas_operation_transpose, rocblas_operation_transpose, nrhs, n, 1.0, BT.data(), n, 0.0, BT.data(), n, B, nrhs);
 }
 
+//! \brief Wrapper around rocsolver_dgelqf().
+inline void gelqf(rocblas_handle handle, int m, int n, double A[], double tau[]){
+    hipcheck(rocsolver_dgelqf(handle, m, n, A, m, tau), "rocsolver_dgelqf()");
+}
+//! \brief Wrapper around rocsolver_zgelqf().
+inline void gelqf(rocblas_handle handle, int m, int n, std::complex<double> A[], std::complex<double> tau[]){
+    hipcheck(rocsolver_zgelqf(handle, m, n, reinterpret_cast<rocblas_double_complex*>(A), m, reinterpret_cast<rocblas_double_complex*>(tau)), "rocsolver_zgelqf()");
+}
+
+//! \brief Wrapper around rocsolver_dormlq(), does Q^T times C.
+inline void gemlq(rocblas_handle handle, int m, int n, int k, double A[], double tau[], double C[]){
+    hipcheck(rocsolver_dormlq(handle, rocblas_side_right, rocblas_operation_transpose, m, n, k, A, k, tau, C, m), "rocsolver_dormlq()");
+}
+//! \brief Wrapper around rocsolver_dunmlq(), does Q^T times C.
+inline void gemlq(rocblas_handle, int, int, int, std::complex<double>[], std::complex<double>[], std::complex<double>[]){
+}
+// inline void gemlq(rocblas_handle handle, int m, int n, int k, std::complex<double> A[], std::complex<double> tau[], std::complex<double> C[]){
+//     hipcheck(rocsolver_dunmlq(handle, rocblas_side_right, rocblas_operation_conjugate_transpose, m, n, k, reinterpret_cast<rocblas_double_complex*>(A), k, reinterpret_cast<rocblas_double_complex*>(tau), reinterpret_cast<rocblas_double_complex*>(C), m), "rocsolver_dunmlq()");
+// }
+
 /*
  * Algorithm section
  */
 template<typename scalar_type>
-void solveLSmultiGPU(AccelerationContext const*, int, int, scalar_type[], int, scalar_type[]){}
+void solveLSmultiGPU(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
+    rocblas_handle rochandle = getRocBlasHandle(acceleration);
+    GpuVector<scalar_type> tau(std::min(n, m));
+    gelqf(rochandle, m, n, A, tau.data());
+    gemlq(rochandle, nrhs, n, m, A, tau.data(), B);
+    trsm(rochandle, rocblas_side_right, rocblas_fill_lower, rocblas_operation_none, rocblas_diagonal_non_unit, nrhs, m, 1.0, A, m, B, nrhs);
+}
 
 template void solveLSmultiGPU<double>(AccelerationContext const*, int, int, double[], int, double[]);
 template void solveLSmultiGPU<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);
