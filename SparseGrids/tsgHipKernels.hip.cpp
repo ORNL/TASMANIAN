@@ -63,10 +63,10 @@ namespace TasGrid{
 template<typename T>
 void TasGpu::dtrans2can(bool use01, int dims, int num_x, int pad_size, double const *gpu_trans_a, double const *gpu_trans_b, T const *gpu_x_transformed, T *gpu_x_canonical){
     ThreadGrid1d task(num_x * dims, _MAX_HIP_THREADS);
-    hipLaunchKernelGGL(tasgpu_transformed_to_canonical<T, double, _MAX_HIP_THREADS>,
+    hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_transformed_to_canonical<T, double, _MAX_HIP_THREADS>),
                        task.blocks, task.threads, (2*pad_size) * sizeof(double), 0,
                        dims, num_x, pad_size, gpu_trans_a, gpu_trans_b, gpu_x_transformed, gpu_x_canonical);
-    if (use01) hipLaunchKernelGGL(tasgpu_m11_to_01<T, _MAX_HIP_THREADS>,
+    if (use01) hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_m11_to_01<T, _MAX_HIP_THREADS>),
                                   task.blocks, task.threads, 0, 0, dims * num_x, gpu_x_canonical);
 }
 
@@ -83,31 +83,31 @@ void TasGpu::devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int 
     if (rule == rule_localp){
         switch(order){
             case 0:
-                    hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 0, rule_localp, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly<T, 0, rule_localp, 32, 64>), num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
-            case 2: hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 2, rule_localp, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+            case 2: hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly<T, 2, rule_localp, 32, 64>), num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
             default:
-                    hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 1, rule_localp, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly<T, 1, rule_localp, 32, 64>), num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
     }else if (rule == rule_localp0){
         switch(order){
-            case 2: hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 2, rule_localp0, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+            case 2: hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly<T, 2, rule_localp0, 32, 64>), num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
             default:
-                    hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 1, rule_localp0, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly<T, 1, rule_localp0, 32, 64>), num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
     }else if (rule == rule_localpb){
         switch(order){
-            case 2: hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 2, rule_localpb, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+            case 2: hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly<T, 2, rule_localpb, 32, 64>), num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
                     break;
             default:
-                    hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 1, rule_localpb, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly<T, 1, rule_localpb, 32, 64>), num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
         }
     }else if (rule == rule_semilocalp){
-        hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 2, rule_semilocalp, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+        hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly<T, 2, rule_semilocalp, 32, 64>), num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
     }else{ // rule == wavelet
-        hipLaunchKernelGGL(tasgpu_devalpwpoly<T, 1, rule_wavelet, 32, 64>, num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+        hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly<T, 1, rule_wavelet, 32, 64>), num_blocks, 1024, 0, 0, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
     }
 }
 
@@ -126,39 +126,39 @@ inline void devalpwpoly_sparse_realize_rule_order(int order, TypeOneDRule rule, 
     if (rule == rule_localp){
         switch(order){
             case 0:
-                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 0, rule_localp, fill>, num_blocks, THREADS, 0, 0,
+                hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 0, rule_localp, fill>), num_blocks, THREADS, 0, 0,
                     dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
                 break;
             case 2:
-                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_localp, fill>, num_blocks, THREADS, 0, 0,
+                hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_localp, fill>), num_blocks, THREADS, 0, 0,
                     dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
                 break;
             default:
-                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localp, fill>, num_blocks, THREADS, 0, 0,
+                hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localp, fill>), num_blocks, THREADS, 0, 0,
                     dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
         }
     }else if (rule == rule_localp0){
         switch(order){
             case 2:
-                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_localp0, fill>, num_blocks, THREADS, 0, 0,
+                hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_localp0, fill>), num_blocks, THREADS, 0, 0,
                     dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
                 break;
             default:
-                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localp0, fill>, num_blocks, THREADS, 0, 0,
+                hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localp0, fill>), num_blocks, THREADS, 0, 0,
                     dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
         }
     }else if (rule == rule_localpb){
         switch(order){
             case 2:
-                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_localpb, fill>, num_blocks, THREADS, 0, 0,
+                hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_localpb, fill>), num_blocks, THREADS, 0, 0,
                     dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
                 break;
             default:
-                hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localpb, fill>, num_blocks, THREADS, 0, 0,
+                hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 1, rule_localpb, fill>), num_blocks, THREADS, 0, 0,
                     dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
         }
     }else{ // rule == rule_semilocalp
-        hipLaunchKernelGGL(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_semilocalp, fill>, num_blocks, THREADS, 0, 0,
+        hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_devalpwpoly_sparse<T, THREADS, TOPLEVEL, 2, rule_semilocalp, fill>), num_blocks, THREADS, 0, 0,
             dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
     }
 }
@@ -213,11 +213,11 @@ void TasGpu::devalseq(int dims, int num_x, const std::vector<int> &max_levels, c
     GpuVector<T> cache1D(num_total);
 
     ThreadGrid1d task(num_x, _MAX_HIP_THREADS);
-    hipLaunchKernelGGL(tasgpu_dseq_build_cache<T, _MAX_HIP_THREADS>, task.blocks, task.threads, 0, 0,
+    hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_dseq_build_cache<T, _MAX_HIP_THREADS>), task.blocks, task.threads, 0, 0,
             dims, num_x, gpu_x, nodes.data(), coeffs.data(), maxl+1, gpu_offsets.data(), num_nodes.data(), cache1D.data());
 
     ThreadGrid1d task_compute(num_x, 32);
-    hipLaunchKernelGGL(tasgpu_dseq_eval_sharedpoints<T, 32>, task_compute.blocks, 1024, 0, 0,
+    hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_dseq_eval_sharedpoints<T, 32>), task_compute.blocks, 1024, 0, 0,
             dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_result);
 }
 
@@ -246,15 +246,15 @@ void TasGpu::devalfor(int dims, int num_x, const std::vector<int> &max_levels, c
     GpuVector<T> cache1D(num_total);
     ThreadGrid1d task(num_x, _MAX_HIP_THREADS);
 
-    hipLaunchKernelGGL(tasgpu_dfor_build_cache<T, _MAX_HIP_THREADS>, task.blocks, task.threads, 0, 0,
+    hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_dfor_build_cache<T, _MAX_HIP_THREADS>), task.blocks, task.threads, 0, 0,
             dims, num_x, gpu_x, gpu_offsets.data(), num_nodes.data(), cache1D.data());
 
     ThreadGrid1d task_compute(num_x, 32);
     if (gpu_wimag == nullptr){
-        hipLaunchKernelGGL(tasgpu_dfor_eval_sharedpoints<T, 32, true>, task_compute.blocks, 1024, 0, 0,
+        hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_dfor_eval_sharedpoints<T, 32, true>), task_compute.blocks, 1024, 0, 0,
             dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_wreal, nullptr);
     }else{
-        hipLaunchKernelGGL(tasgpu_dfor_eval_sharedpoints<T, 32, false>, task_compute.blocks, 1024, 0, 0,
+        hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_dfor_eval_sharedpoints<T, 32, false>), task_compute.blocks, 1024, 0, 0,
             dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_wreal, gpu_wimag);
     }
 }
@@ -274,18 +274,18 @@ void TasGpu::devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num
 
     if (is_nested){
         if (is_clenshawcurtis0){
-            hipLaunchKernelGGL(tasgpu_dglo_build_cache<T, _MAX_HIP_THREADS, true, true>, num_blocks, _MAX_HIP_THREADS, 0, 0,
+            hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_dglo_build_cache<T, _MAX_HIP_THREADS, true, true>), num_blocks, _MAX_HIP_THREADS, 0, 0,
                  dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
                                         nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
                                         map_dimension.data(), map_level.data(), cache.data());
         }else{
-            hipLaunchKernelGGL(tasgpu_dglo_build_cache<T, _MAX_HIP_THREADS, true, false>, num_blocks, _MAX_HIP_THREADS, 0, 0,
+            hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_dglo_build_cache<T, _MAX_HIP_THREADS, true, false>), num_blocks, _MAX_HIP_THREADS, 0, 0,
                  dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
                                         nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
                                         map_dimension.data(), map_level.data(), cache.data());
         }
     }else{
-        hipLaunchKernelGGL(tasgpu_dglo_build_cache<T, _MAX_HIP_THREADS, false, false>, num_blocks, _MAX_HIP_THREADS, 0, 0,
+        hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_dglo_build_cache<T, _MAX_HIP_THREADS, false, false>), num_blocks, _MAX_HIP_THREADS, 0, 0,
              dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
                                     nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
                                     map_dimension.data(), map_level.data(), cache.data());
@@ -294,11 +294,11 @@ void TasGpu::devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num
     int mat_size = num_x * num_p;
     num_blocks = num_x / _MAX_HIP_THREADS + ((mat_size % _MAX_HIP_THREADS == 0) ? 0 : 1);
     if (num_blocks >= _MAX_HIP_THREADS) num_blocks = _MAX_HIP_THREADS;
-    hipLaunchKernelGGL(tasgpu_dglo_eval_zero<T, _MAX_HIP_THREADS>, num_blocks, _MAX_HIP_THREADS, 0, 0, mat_size, gpu_result);
+    hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_dglo_eval_zero<T, _MAX_HIP_THREADS>), num_blocks, _MAX_HIP_THREADS, 0, 0, mat_size, gpu_result);
 
     num_blocks = (int) map_tensor.size();
     if (num_blocks >= _MAX_HIP_BLOCKS) num_blocks = _MAX_HIP_BLOCKS;
-    hipLaunchKernelGGL(tasgpu_dglo_eval_sharedpoints<T, _MAX_HIP_THREADS>, num_blocks, _MAX_HIP_THREADS, 0, 0,
+    hipLaunchKernelGGL(HIP_KERNEL_NAME(tasgpu_dglo_eval_sharedpoints<T, _MAX_HIP_THREADS>), num_blocks, _MAX_HIP_THREADS, 0, 0,
         dims, num_x, (int) map_tensor.size(), num_p, cache.data(),
         tensor_weights.data(), offset_per_level.data(), dim_offsets.data(), active_tensors.data(), active_num_points.data(),
         map_tensor.data(), map_index.data(), map_reference.data(), gpu_result);
@@ -318,10 +318,10 @@ template void TasGpu::devalglo<float>(bool, bool, int, int, int, int,
 void TasGpu::fillDataGPU(double value, long long n, long long stride, double data[]){
     if (stride == 1){
         ThreadGrid1d tgrid(n, _MAX_HIP_THREADS);
-        hipLaunchKernelGGL(tascuda_vfill<double, _MAX_HIP_THREADS>, tgrid.blocks, tgrid.threads, 0, 0, n, data, value);
+        hipLaunchKernelGGL(HIP_KERNEL_NAME(tascuda_vfill<double, _MAX_HIP_THREADS>), tgrid.blocks, tgrid.threads, 0, 0, n, data, value);
     }else{
         ThreadGrid1d tgrid(n, 32);
-        hipLaunchKernelGGL(tascuda_sfill<double, 32>, tgrid.blocks, tgrid.threads, 0, 0, n, stride, data, value);
+        hipLaunchKernelGGL(HIP_KERNEL_NAME(tascuda_sfill<double, 32>), tgrid.blocks, tgrid.threads, 0, 0, n, stride, data, value);
     }
 }
 
