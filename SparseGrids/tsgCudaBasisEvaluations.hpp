@@ -67,7 +67,9 @@ __device__ inline double atomicAdd(double* address, double val)
 #endif
 
 #ifdef Tasmanian_ENABLE_HIP
+#ifndef __HIP_PLATFORM_HCC__
 #define __HIP_PLATFORM_HCC__
+#endif
 #include <hip/hip_runtime.h>
 #include <hip/hip_runtime_api.h>
 #endif

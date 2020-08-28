@@ -37,7 +37,9 @@
 #error "Cannot use tsgHipWrappers.cpp without Tasmanian_ENABLE_HIP"
 #endif
 
+#ifndef __HIP_PLATFORM_HCC__
 #define __HIP_PLATFORM_HCC__
+#endif
 #include <hip/hip_runtime.h>
 #include <rocblas.h>
 #include <rocsparse.h>
