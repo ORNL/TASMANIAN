@@ -109,6 +109,45 @@ cmake \
                         }
                     }
                 }
+                stage('ROCm HIPCC') {
+                    agent {
+                        dockerfile {
+                            filename 'Dockerfile.rocm'
+                            dir 'docker'
+                            additionalBuildArgs '--build-arg BASE=rocm/dev-ubuntu-20.04:3.7'
+                            args '--device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined --group-add video --env HIP_VISIBLE_DEVICES=${HIP_VISIBLE_DEVICES:-0}'
+                            label 'rocm-docker && vega'
+                        }
+                    }
+                    steps {
+                        sh '''rm -rf build && mkdir -p build && cd build &&
+cmake \
+  -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
+  -D CMAKE_BUILD_TYPE=Release \
+  -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow" \
+  -D CMAKE_CXX_COMPILER=/opt/rocm/bin/hipcc \
+  -D Tasmanian_ENABLE_OPENMP=ON \
+  -D Tasmanian_ENABLE_BLAS=ON \
+  -D Tasmanian_ENABLE_CUDA=OFF \
+  -D Tasmanian_ENABLE_HIP=ON \
+  -D Tasmanian_ENABLE_MAGMA=OFF \
+  -D Tasmanian_ENABLE_PYTHON=ON \
+  -D Tasmanian_ENABLE_MPI=OFF \
+  -D Tasmanian_ENABLE_FORTRAN=OFF \
+  -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
+.. &&
+                              make -j4 &&
+                              ctest -j4 -V --no-compress-output -T Test &&
+                              make install &&
+                              make test_install
+                        '''
+                    }
+                    post {
+                        always {
+                            xunit([CTest(deleteOutputFiles: true, failIfNotNew: true, pattern: 'build/Testing/**/Test.xml', skipNoTestFiles: false, stopProcessingIfError: true)])
+                        }
+                    }
+                }
             }
         }
         stage('Deploy documentation') {
