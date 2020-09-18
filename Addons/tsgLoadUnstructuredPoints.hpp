@@ -209,9 +209,6 @@ inline void loadUnstructuredDataL2tmpl(double const data_points[], int num_data,
 
     Data2D<scalar_type> coefficients =
         [&]()->Data2D<scalar_type>{
-            #ifdef Tasmanian_ENABLE_HIP
-            if (grid.isFourier()) return generateCoefficients<scalar_type>(data_points, num_data, model_values, tolerance, grid);
-            #endif
             if (acceleration->mode == accel_gpu_cuda and hasGPUBasis(grid)){
                 acceleration->setDevice();
                 GpuVector<double> gpu_points(num_dimensions, num_data, data_points);

@@ -99,14 +99,7 @@ void TasmanianDenseSolver::solveLeastSquares(AccelerationContext const *accelera
 
 template<typename scalar_type>
 void TasmanianDenseSolver::solvesLeastSquares(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
-    #ifdef Tasmanian_ENABLE_HIP
-    // complex LQ (specifically zunmlq) is not yet supported on the AMD GPUs
-    TypeAcceleration mode = (std::is_same<scalar_type, std::complex<double>>::value) ?
-         ((acceleration->mode == accel_none) ? accel_none : accel_cpu_blas) : acceleration->mode;
-    switch(mode){
-    #else
     switch(acceleration->mode){
-    #endif
         case accel_gpu_magma:
             TasGpu::solveLSmultiOOC(acceleration, n, m, A, nrhs, B);
             break;

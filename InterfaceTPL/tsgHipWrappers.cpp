@@ -279,11 +279,12 @@ inline void gemlq(rocblas_handle handle, int m, int n, int k, double A[], double
     hipcheck(rocsolver_dormlq(handle, rocblas_side_right, rocblas_operation_transpose, m, n, k, A, k, tau, C, m), "rocsolver_dormlq()");
 }
 //! \brief Wrapper around rocsolver_dunmlq(), does Q^T times C.
-inline void gemlq(rocblas_handle, int, int, int, std::complex<double>[], std::complex<double>[], std::complex<double>[]){
+inline void gemlq(rocblas_handle handle, int m, int n, int k, std::complex<double> A[], std::complex<double> tau[], std::complex<double> C[]){
+    hipcheck(rocsolver_zunmlq(handle, rocblas_side_right, rocblas_operation_conjugate_transpose, m, n, k,
+                              reinterpret_cast<rocblas_double_complex*>(A), k,
+                              reinterpret_cast<rocblas_double_complex*>(tau), reinterpret_cast<rocblas_double_complex*>(C), m),
+             "rocsolver_zunmlq()");
 }
-// inline void gemlq(rocblas_handle handle, int m, int n, int k, std::complex<double> A[], std::complex<double> tau[], std::complex<double> C[]){
-//     hipcheck(rocsolver_dunmlq(handle, rocblas_side_right, rocblas_operation_conjugate_transpose, m, n, k, reinterpret_cast<rocblas_double_complex*>(A), k, reinterpret_cast<rocblas_double_complex*>(tau), reinterpret_cast<rocblas_double_complex*>(C), m), "rocsolver_dunmlq()");
-// }
 
 /*
  * Algorithm section
