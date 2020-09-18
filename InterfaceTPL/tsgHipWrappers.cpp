@@ -300,8 +300,10 @@ void solveLSmultiGPU(AccelerationContext const *acceleration, int n, int m, scal
 template void solveLSmultiGPU<double>(AccelerationContext const*, int, int, double[], int, double[]);
 template void solveLSmultiGPU<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);
 
+#ifndef Tasmanian_ENABLE_MAGMA
 template<typename scalar_type>
 void solveLSmultiOOC(AccelerationContext const*, int, int, scalar_type[], int, scalar_type[]){}
+#endif
 
 template void solveLSmultiOOC<double>(AccelerationContext const*, int, int, double[], int, double[]);
 template void solveLSmultiOOC<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);

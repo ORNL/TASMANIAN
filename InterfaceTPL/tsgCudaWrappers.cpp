@@ -488,19 +488,7 @@ void solveLSmultiGPU(AccelerationContext const *acceleration, int n, int m, scal
 template void solveLSmultiGPU<double>(AccelerationContext const*, int, int, double[], int, double[]);
 template void solveLSmultiGPU<std::complex<double>>(AccelerationContext const*, int, int, std::complex<double>[], int, std::complex<double>[]);
 
-#ifdef Tasmanian_ENABLE_MAGMA
-template<typename scalar_type>
-void solveLSmultiOOC(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
-    initMagma(acceleration);
-    std::vector<scalar_type> tau(m);
-    auto AT = Utils::transpose(m, n, A);
-    auto BT = Utils::transpose(nrhs, n, B);
-    geqrf_ooc(n, m, AT.data(), n, tau.data());
-    gemqr_ooc(MagmaLeft, (std::is_same<scalar_type, double>::value) ? MagmaTrans : MagmaConjTrans, n, nrhs, m, AT.data(), n, tau.data(), BT.data(), n);
-    trsm_ooc(MagmaLeft, MagmaUpper, MagmaNoTrans, MagmaNonUnit, m, nrhs, 1.0, AT.data(), n, BT.data(), n);
-    Utils::transpose(n, nrhs, BT.data(), B);
-}
-#else
+#ifndef Tasmanian_ENABLE_MAGMA
 template<typename scalar_type>
 void solveLSmultiOOC(AccelerationContext const*, int, int, scalar_type[], int, scalar_type[]){}
 #endif
