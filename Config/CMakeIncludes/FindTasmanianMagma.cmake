@@ -11,6 +11,10 @@
 #    Tasmanian_magma_h: path to the folder containing magma.h
 #    Tasmanian_magma: the libmagma library
 
+if (NOT MAGMA_ROOT)
+    set(MAGMA_ROOT "$ENV{MAGMA_ROOT}")
+endif()
+
 set(Tasmanian_MAGMA_ROOT "${MAGMA_ROOT}" CACHE PATH "The root folder for the MAGMA installation, e.g., containing lib and include folders")
 
 if (Tasmanian_MAGMA_ROOT)
@@ -34,3 +38,4 @@ endif()
 find_package_handle_standard_args(TasmanianMagma DEFAULT_MSG Tasmanian_magma Tasmanian_magma_h)
 
 unset(Tasmanian_magma_nodefault)
+unset(MAGMA_ROOT)
