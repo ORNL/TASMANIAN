@@ -1,5 +1,7 @@
 # Installation
 
+[TOC]
+
 ### Document Sections
 * Requirements
 * Install using CMake: the preferred way
