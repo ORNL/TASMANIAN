@@ -226,12 +226,14 @@ struct GpuEngine{
     GpuEngine()
     #ifdef Tasmanian_ENABLE_CUDA
                 : cublasHandle(nullptr), own_cublas_handle(false),
-                  cusparseHandle(nullptr), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false),
-                  called_magma_init(false)
+                  cusparseHandle(nullptr), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false)
     #endif
     #ifdef Tasmanian_ENABLE_HIP
                 : rocblasHandle(nullptr), own_rocblas_handle(false),
                   rocsparseHandle(nullptr), own_rocsparse_handle(false)
+    #endif
+    #ifdef Tasmanian_ENABLE_MAGMA
+                  , called_magma_init(false)
     #endif
         {}
     //! \brief Destructor, clear all handles and queues.
@@ -245,8 +247,10 @@ struct GpuEngine{
         cusparseHandle(Utils::exchange(other.cusparseHandle, nullptr)),
         own_cusparse_handle(Utils::exchange(other.own_cusparse_handle, false)),
         cusolverDnHandle(Utils::exchange(other.cusolverDnHandle, nullptr)),
-        own_cusolverdn_handle(Utils::exchange(other.own_cusolverdn_handle, false)),
-        called_magma_init(Utils::exchange(other.called_magma_init, false))
+        own_cusolverdn_handle(Utils::exchange(other.own_cusolverdn_handle, false))
+        #ifdef Tasmanian_ENABLE_MAGMA
+        , called_magma_init(Utils::exchange(other.called_magma_init, false))
+        #endif
         {}
     #else
     #ifdef Tasmanian_ENABLE_HIP
@@ -272,7 +276,9 @@ struct GpuEngine{
         std::swap(own_cusparse_handle, temp.own_cusparse_handle);
         std::swap(cusolverDnHandle, temp.cusolverDnHandle);
         std::swap(own_cusolverdn_handle, temp.own_cusolverdn_handle);
+        #ifdef Tasmanian_ENABLE_MAGMA
         std::swap(called_magma_init, temp.called_magma_init);
+        #endif
         return *this;
     }
     #else
@@ -284,6 +290,9 @@ struct GpuEngine{
         std::swap(own_rocblas_handle, temp.own_rocblas_handle);
         std::swap(rocsparseHandle, temp.rocsparseHandle);
         std::swap(own_rocsparse_handle, temp.own_rocsparse_handle);
+        #ifdef Tasmanian_ENABLE_MAGMA
+        std::swap(called_magma_init, temp.called_magma_init);
+        #endif
         return *this;
     }
     #else
@@ -311,8 +320,6 @@ struct GpuEngine{
     void *cusolverDnHandle;
     //! \brief Remembers the ownership of the handle.
     bool own_cusolverdn_handle;
-    //! \brief Remembers whether MAGMA init has been called.
-    bool called_magma_init;
     #endif
 
     #ifdef Tasmanian_ENABLE_HIP
@@ -324,6 +331,11 @@ struct GpuEngine{
     void *rocsparseHandle;
     //! \brief Remember the ownership of the handle.
     bool own_rocsparse_handle;
+    #endif
+
+    #ifdef Tasmanian_ENABLE_MAGMA
+    //! \brief Remembers whether MAGMA init has been called.
+    bool called_magma_init;
     #endif
 };
 

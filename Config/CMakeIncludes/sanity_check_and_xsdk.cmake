@@ -132,8 +132,8 @@ endif()
 
 # check for MAGMA
 if (Tasmanian_ENABLE_MAGMA)
-    if (NOT Tasmanian_ENABLE_CUDA)
-        message(FATAL_ERROR "Currently Tasmanian can use only CUDA related capability from MAGMA, hence Tasmanian_ENABLE_CUDA must be set ON")
+    if (NOT Tasmanian_ENABLE_CUDA AND NOT Tasmanian_ENABLE_HIP)
+        message(FATAL_ERROR "Tasmanian uses the GPU capabilities of MAGMA thus either CUDA or HIP must be enabled too.")
     endif()
 
     find_package(TasmanianMagma REQUIRED)

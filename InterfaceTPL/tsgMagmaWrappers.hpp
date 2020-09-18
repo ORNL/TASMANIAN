@@ -95,12 +95,12 @@ inline void geqrf_ooc(int m, int n, std::complex<double> A[], int lda, std::comp
 inline void gemqr_ooc(magma_side_t side, magma_trans_t trans, int m, int n, int k, double A[], int lda, double tau[], double C[], int ldc){
     int info = 0;
     std::vector<double> workspace(1);
-    magma_dormqr(side, trans, m, n, k, A, lda, tau, C, lda, workspace.data(), -1, &info);
+    magma_dormqr(side, trans, m, n, k, A, lda, tau, C, ldc, workspace.data(), -1, &info);
     if (info != 0)
         throw std::runtime_error("magma_dormqr() returned non-zero status: " + std::to_string(info) + " at size-query stage");
     int wsize = static_cast<int>(workspace[0]);
     workspace.resize(static_cast<size_t>(wsize));
-    magma_dormqr(side, trans, m, n, k, A, lda, tau, C, lda, workspace.data(), wsize, &info);
+    magma_dormqr(side, trans, m, n, k, A, lda, tau, C, ldc, workspace.data(), wsize, &info);
     if (info != 0)
         throw std::runtime_error("magma_dormqr() returned non-zero status: " + std::to_string(info) + " at execute stage");
 }
@@ -110,13 +110,13 @@ inline void gemqr_ooc(magma_side_t side, magma_trans_t trans, int m, int n, int 
     int info = 0;
     std::vector<std::complex<double>> workspace(1);
     magma_zunmqr(side, trans, m, n, k, reinterpret_cast<magmaDoubleComplex*>(A), lda, reinterpret_cast<magmaDoubleComplex*>(tau),
-                 reinterpret_cast<magmaDoubleComplex*>(C), lda, reinterpret_cast<magmaDoubleComplex*>(workspace.data()), -1, &info);
+                 reinterpret_cast<magmaDoubleComplex*>(C), ldc, reinterpret_cast<magmaDoubleComplex*>(workspace.data()), -1, &info);
     if (info != 0)
         throw std::runtime_error("magma_zunmqr() returned non-zero status: " + std::to_string(info) + " at size-query stage");
     int wsize = static_cast<int>(std::real(workspace[0]));
     workspace.resize(static_cast<size_t>(wsize));
     magma_zunmqr(side, trans, m, n, k, reinterpret_cast<magmaDoubleComplex*>(A), lda, reinterpret_cast<magmaDoubleComplex*>(tau),
-                 reinterpret_cast<magmaDoubleComplex*>(C), lda, reinterpret_cast<magmaDoubleComplex*>(workspace.data()), wsize, &info);
+                 reinterpret_cast<magmaDoubleComplex*>(C), ldc, reinterpret_cast<magmaDoubleComplex*>(workspace.data()), wsize, &info);
     if (info != 0)
         throw std::runtime_error("magma_zunmqr() returned non-zero status: " + std::to_string(info) + " at execute stage");
 }
@@ -133,6 +133,19 @@ inline void trsm_ooc(magma_side_t side, magma_uplo_t uplo,
                  std::complex<double> alpha, std::complex<double> const A[], int lda, std::complex<double> B[], int ldb){
     magma_ztrsm_m(1, side, uplo, trans, diag, m, n, *reinterpret_cast<magmaDoubleComplex*>(&alpha),
                   reinterpret_cast<magmaDoubleComplex const*>(A), lda, reinterpret_cast<magmaDoubleComplex*>(B), ldb);
+}
+
+//! \brief Performsthe entire transpose operation.
+template<typename scalar_type>
+void solveLSmultiOOC(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
+    initMagma(acceleration);
+    std::vector<scalar_type> tau(m);
+    auto AT = Utils::transpose(m, n, A);
+    auto BT = Utils::transpose(nrhs, n, B);
+    geqrf_ooc(n, m, AT.data(), n, tau.data());
+    gemqr_ooc(MagmaLeft, (std::is_same<scalar_type, double>::value) ? MagmaTrans : MagmaConjTrans, n, nrhs, m, AT.data(), n, tau.data(), BT.data(), n);
+    trsm_ooc(MagmaLeft, MagmaUpper, MagmaNoTrans, MagmaNonUnit, m, nrhs, 1.0, AT.data(), n, BT.data(), n);
+    Utils::transpose(n, nrhs, BT.data(), B);
 }
 
 }

@@ -45,6 +45,11 @@
 #include <rocsparse.h>
 #include <rocsolver.h>
 
+#ifdef Tasmanian_ENABLE_MAGMA
+#define HAVE_HIP
+#include "tsgMagmaWrappers.hpp"
+#endif
+
 /*!
  * \file tsgHipWrappers.hpp
  * \brief Wrappers to HIP functionality.
