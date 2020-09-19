@@ -27,6 +27,7 @@ Recommended additional features:
 
 Optional features:
 * Acceleration using Nvidia [linear algebra libraries](https://developer.nvidia.com/cublas) and custom [CUDA kernels](https://developer.nvidia.com/cuda-zone)
+* Acceleration using AMD ROCm [linear algebra libraries](https://rocsparse.readthedocs.io/en/master/) and custom [HIP kernels](https://rocmdocs.amd.com/en/latest/ROCm_API_References/HIP-API.html)
 * GPU accelerated linear algebra using [UTK MAGMA library](http://icl.cs.utk.edu/magma/)
 * Basic [Python matplotlib](https://matplotlib.org/) support
 * Fully featured [MATLAB/Octave](https://www.gnu.org/software/octave/) interface via wrappers around the command-line tool
@@ -50,6 +51,7 @@ Optional features:
 | ATLAS   | 3.10                | 3.10             |
 | ESSL    | 6.2                 | 6.2              |
 | CUDA    | 8.0 - 10.2          | 10.2             |
+| ROCm    | 3.7                 | 3.7              |
 | libiomp | 5.0                 | 5.0              |
 | MAGMA   | 2.5.1 - 2.5.3       | 2.5.3            |
 | Doxygen | 1.8.13              | 1.8.13           |
@@ -87,6 +89,7 @@ The preferred way to install Tasmanian is to use the included CMake build script
   -D Tasmanian_ENABLE_PYTHON:BOOL=<ON/OFF>      (recommended)
   -D Tasmanian_ENABLE_RECOMMENDED:BOOL=<ON/OFF> (enable the above and the -O3 flag)
   -D Tasmanian_ENABLE_CUDA:BOOL=<ON/OFF>        (stable)
+  -D Tasmanian_ENABLE_ROCM:BOOL=<ON/OFF>        (stable)
   -D Tasmanian_ENABLE_MAGMA:BOOL=<ON/OFF>       (stable)
   -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""       (stable)
   -D Tasmanian_ENABLE_DOXYGEN:BOOL=<ON/OFF>     (stable)
@@ -104,7 +107,8 @@ The preferred way to install Tasmanian is to use the included CMake build script
       within Tasmanian, the name BLAS in CMake or run-time options indicate the dependence and usage of both BLAS and LAPACK
     * CUDA is a C++ language extension that allows Tasmanian to leverage the computing power of Nvidia GPU devices,
       which greatly enhances the performance of `evaluateFast()` and `evaluateBatch()` and a few other calls
-    * Matrix Algebra on GPU and Multicore Architectures (MAGMA) is a library for CUDA accelerated linear
+    * ROCm is very similar to CUDA but uses AMD GPU devices instead, Tasmanian works with both backends
+    * Matrix Algebra on GPU and Multicore Architectures (MAGMA) is a library for GPU accelerated linear
       algebra developed at the University of Tennessee at Knoxville
     * MPI allows the use of distributed memory in Bayesian inference, parallel model construction, and send/receive grid through an MPI comm
 * The **Tasmanian_ENABLE_RECOMMENDED** option searches for OpenMP, BLAS, and Python, enables the options (if possible) and also sets the `-O3` flag
@@ -125,11 +129,16 @@ The preferred way to install Tasmanian is to use the included CMake build script
   -D PYTHON_EXECUTABLE:PATH            (specify the Python interpreter)
   -D CMAKE_CUDA_COMPILER:PATH          (specify the CUDA nvcc compiler)
   -D CMAKE_Fortran_COMPILER:PATH       (specify the Fortran compiler)
-  -D Tasmanian_MAGMA_ROOT:PATH        (specify the path to the MAGMA installation)
+  -D Tasmanian_ROCM_ROOT:PATH          (specify the path to the ROCm installation)
+  -D Tasmanian_MAGMA_ROOT:PATH         (specify the path to the MAGMA installation)
   -D MPI_CXX_COMPILER:PATH=<path>      (specify the MPI compiler wrapper)
   -D MPI_Fortran_COMPILER:PATH=<path>  (needed for MPI with Fortran)
   -D MPIEXEC_EXECUTABLE:PATH=<path>    (needed for MPI testing)
 ```
+
+* The ROCm and MAGMA options can be passed without the *Tasmanian_* prefix and if not specified explicitly those will be read from the OS environment.
+
+* The **ROCm** capabilities require that the CMake CXX compiler is set to *hipcc*.
 
 * Alternatives allowing to directly specify libraries and bypass `find_package()` altogether:
 ```
@@ -149,7 +158,7 @@ The preferred way to install Tasmanian is to use the included CMake build script
   -D DOXYGEN_INTERNAL_DOCS=YES  (include the documentation of the Tasmanian internals)
 ```
 
-### Install with the `install` script-wrapper around CMake
+### Install with the install script-wrapper around CMake
 
 Tasmanian also includes an `install` script that wraps around CMake and automatically calls the build commands.
 The script uses `Tasmanian_ENABLE_RECOMMENDED` option and allows for other options to be enabled/disabled
