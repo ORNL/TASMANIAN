@@ -25,8 +25,12 @@ target_link_libraries(Tasmanian::Tasmanian INTERFACE Tasmanian_master)
 
 if (@BUILD_SHARED_LIBS@)
     set(Tasmanian_SHARED_FOUND "ON")
+    add_library(Tasmanian::shared INTERFACE IMPORTED GLOBAL) # master target
+    target_link_libraries(Tasmanian::shared INTERFACE Tasmanian_master)
 else()
     set(Tasmanian_STATIC_FOUND "ON")
+    add_library(Tasmanian::static INTERFACE IMPORTED GLOBAL) # master target
+    target_link_libraries(Tasmanian::static INTERFACE Tasmanian_master)
 
     if (@Tasmanian_ENABLE_CUDA@)
     # Since Tasmanian does not transitively include <cuda.h> and since all CUDA calls are wrapped in CXX API,
