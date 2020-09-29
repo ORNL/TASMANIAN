@@ -32,8 +32,8 @@
 #define __TASMANIAN_CONFIG_HPP
 
 #define TASMANIAN_VERSION_MAJOR 7
-#define TASMANIAN_VERSION_MINOR 2
-#define TASMANIAN_VERSION_STRING "7.2"
+#define TASMANIAN_VERSION_MINOR 3
+#define TASMANIAN_VERSION_STRING "7.3"
 #define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclaimer"
 
 #define TASMANIAN_GIT_COMMIT_HASH "Tasmanian git hash is not available here"
@@ -42,10 +42,8 @@
 ////////////////////////////////////////////////////////////////////////
 // In order to enable advanced options for Tasmanian,
 // the corresponding #define line below has to be uncommented
-// Note: cmake takes care of this automatically, use the lines
-// below only for simple GNU-Make
-// The lines below are for references purposes mostly,
-// advanced options are officially supported though cmake only
+// Note: CMake takes care of this automatically
+//       the GNU Make build system does not support options
 ////////////////////////////////////////////////////////////////////////
 
 /* #undef Tasmanian_ENABLE_BLAS */

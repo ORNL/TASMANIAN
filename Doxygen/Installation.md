@@ -39,19 +39,19 @@ Optional features:
 
 | Feature | Tested versions     | Recommended      |
 |----|----|----|
-| gcc     | 5 - 8               | any              |
-| clang   | 4 - 8               | 4 or 5           |
+| gcc     | 5 - 10              | any              |
+| clang   | 4 - 10              | any              |
 | icc     | 18.0                | 18.0             |
 | xl      | 16.1                | 16.1             |
 | pgi     | 19.10               | 19.10            |
-| cmake   | 3.10 - 3.15         | 3.10             |
+| cmake   | 3.10 - 3.17         | 3.10             |
 | python  | 2.7, 3.5, 3.6       | 3.5 or 3.6       |
 | anaconda| 5.3                 | 5.3              |
-| OpenBlas| 0.2.18, 0.2.20      | 0.2.18 or 0.2.20 |
+| OpenBlas| 0.2.18 - 3.08       | any              |
 | ATLAS   | 3.10                | 3.10             |
 | ESSL    | 6.2                 | 6.2              |
-| CUDA    | 8.0 - 10.2          | 10.2             |
-| ROCm    | 3.7                 | 3.7              |
+| CUDA    | 8.0 - 11            | 10.2             |
+| ROCm    | 3.8                 | 3.8              |
 | libiomp | 5.0                 | 5.0              |
 | MAGMA   | 2.5.1 - 2.5.3       | 2.5.3            |
 | Doxygen | 1.8.13              | 1.8.13           |
@@ -60,6 +60,8 @@ Optional features:
 ### Install using CMake: the preferred way
 
 The preferred way to install Tasmanian is to use the included CMake build script, which requires CMake version 3.10 or newer.
+Note that as of 7.3 Tasmanian CMake no longer builds both shared and static libraries, only one type of libraries
+will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` following the CMake and xSDK guidelines.
 
 * The commands for an out-of-source CMake build:
 ```
@@ -76,8 +78,8 @@ The preferred way to install Tasmanian is to use the included CMake build script
 ```
   -D CMAKE_INSTALL_PREFIX:PATH=<install-prefix> (install folder for the make install command)
   -D CMAKE_BUILD_TYPE:STRING=<Debug/Release>    (set debug flags or default optimization flags)
-  -D BUILD_SHARED_LIBS:BOOL=<ON/OFF>            (pick shared/static libs, undefined builds both)
-  -D CMAKE_CXX_COMPILER:PATH=<path>             (specify the C++ compiler)
+  -D BUILD_SHARED_LIBS:BOOL=<ON/OFF>            (pick shared/static libs)
+  -D CMAKE_CXX_COMPILER:PATH=<path>             (specify the C++ compiler, or HIP/ROCm compiler)
   -D CMAKE_CUDA_COMPILER:PATH=<path>            (specify the CUDA nvcc compiler)
   -D CMAKE_CXX_FLAGS:STING=<flags>              (set additional flags)
 ```
@@ -89,7 +91,7 @@ The preferred way to install Tasmanian is to use the included CMake build script
   -D Tasmanian_ENABLE_PYTHON:BOOL=<ON/OFF>      (recommended)
   -D Tasmanian_ENABLE_RECOMMENDED:BOOL=<ON/OFF> (enable the above and the -O3 flag)
   -D Tasmanian_ENABLE_CUDA:BOOL=<ON/OFF>        (stable)
-  -D Tasmanian_ENABLE_ROCM:BOOL=<ON/OFF>        (stable)
+  -D Tasmanian_ENABLE_HIP:BOOL=<ON/OFF>         (stable)
   -D Tasmanian_ENABLE_MAGMA:BOOL=<ON/OFF>       (stable)
   -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""       (stable)
   -D Tasmanian_ENABLE_DOXYGEN:BOOL=<ON/OFF>     (stable)
@@ -107,7 +109,7 @@ The preferred way to install Tasmanian is to use the included CMake build script
       within Tasmanian, the name BLAS in CMake or run-time options indicate the dependence and usage of both BLAS and LAPACK
     * CUDA is a C++ language extension that allows Tasmanian to leverage the computing power of Nvidia GPU devices,
       which greatly enhances the performance of `evaluateFast()` and `evaluateBatch()` and a few other calls
-    * ROCm is very similar to CUDA but uses AMD GPU devices instead, Tasmanian works with both backends
+    * HIP/ROCm is very similar to CUDA but uses AMD GPU devices instead, Tasmanian works with both backends
     * Matrix Algebra on GPU and Multicore Architectures (MAGMA) is a library for GPU accelerated linear
       algebra developed at the University of Tennessee at Knoxville
     * MPI allows the use of distributed memory in Bayesian inference, parallel model construction, and send/receive grid through an MPI comm
@@ -279,7 +281,7 @@ a location inside the user home folder to avoid potential system-wide conflicts.
 * Install folder structure:
 ```
   <install-path>/bin/                       (tagrid executable tool)
-  <install-path>/lib/                       (shared and static libraries)
+  <install-path>/lib/                       (shared or static libraries)
   <install-path>/lib/Tasmanian/             (cmake package-config files)
   <install-path>/lib/pythonX.Y/             (python module)
   <install-path>/include/                   (headers .h and .hpp, and Fortran .mod)
@@ -321,15 +323,13 @@ The correct `find_package()` command is displayed in the log (see the previous s
 
 The imported targets will be named:
 ```
-  Tasmanian::shared     (link to all shared libraries, if shared libraries were build)
-  Tasmanian::static     (link to all static libraries, if static libraries were build)
-  Tasmanian::Tasmanian  (always available and equivalent to either static or shared)
+  Tasmanian::Tasmanian  (links to the C++ libraries)
   Tasmanian::tasgrid    (imported executable pointing to the command line tool)
-  Tasmanian::Fortran::shared   (shared libraries for Fortran)
-  Tasmanian::Fortran::static   (static libraries for Fortran)
-  Tasmanian::Fortran           (equivalent to Tasmanian::Tasmanian but using Fortran)
+  Tasmanian::Fortran    (links to the C++ libraries and the Fortran wrappers)
 ```
-Note that the `Tasmanian::Tasmanian` and `Tasmanian::Fortran` targets are no longer equivalent (as of 7.1).
+* `Tasmanian::Tasmanian` and `Tasmanian::Fortran` targets are no longer equivalent, as of version 7.1
+* `::shared` and `::static` targets are deprecated since Tasmanian builds only one type of libraries now
+
 
 In addition, the following variables will be set:
 ```
@@ -340,33 +340,22 @@ In addition, the following variables will be set:
 ```
 The possible components are:
 ```
-  SHARED STATIC OPENMP BLAS CUDA MAGMA MPI PYTHON MATLAB FORTRAN
+  SHARED STATIC OPENMP BLAS CUDA HIP MAGMA MPI PYTHON MATLAB FORTRAN
 ```
 The modules correspond to shared and static libraries and the cmake options used during build.
 
 All available components will be included even if the component is not explicitly requested.
-Requesting components can alter the behavior of `Tasmanian::Tasmanian`,
-and help catch errors early in the build process,
+Requesting components can help catch errors early in the build process
 and/or print useful log messages. For example:
 ```
   find_package(Tasmanian 7.0 REQUIRED SHARED PYTHON CUDA OPTIONAL_COMPONENTS OPENMP)
 ```
 In the above example:
-* an error will be generated if Tasmanian was build without shared libraries, CUDA or Python support
-* the `Tasmanian::Tasmanian` target will be set to the shared libraries
+* an error will be generated if Tasmanian was build with static libraries, no CUDA or no Python support
 * a status message will report whether Tasmanian was build with OpenMP support
 
-The `Tasmanian::Tasmanian` target will point to the shared libraries if only shared libraries are available,
-or if the `SHARED` component is available and requested without the `STATIC` component.
-Otherwise, `Tasmanian::Tasmanian` will point to the `STATIC` libraries.
-For example:
-```
-  # suppose both shared and static libraries are available, then
-  find_package(... REQUIRED SHARED)                            # Tasmanian::Tasmanian is shared
-  find_package(... OPTIONAL_COMPONENTS SHARED)                 # Tasmanian::Tasmanian is shared
-  find_package(... REQUIRED SHARED OPTIONAL_COMPONENTS STATIC) # Tasmanian::Tasmanian is static
-  find_package(... <no SHARED/STATIC component specified>)     # Tasmanian::Tasmanian is static
-```
+**Note** that as of version 7.3, Tasmanian no longer builds both static and shared libraries,
+only one type will be build at a time.
 
 ### Known Issues
 

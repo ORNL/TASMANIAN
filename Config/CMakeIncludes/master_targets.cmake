@@ -11,6 +11,14 @@ install(TARGETS Tasmanian_master EXPORT "${Tasmanian_export_name}")
 add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL)
 target_link_libraries(Tasmanian::Tasmanian INTERFACE Tasmanian_master)
 
+if (BUILD_SHARED_LIBS) # for backwards compatibility
+    add_library(Tasmanian::shared INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(Tasmanian::shared INTERFACE Tasmanian_master)
+else()
+    add_library(Tasmanian::static INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(Tasmanian::static INTERFACE Tasmanian_master)
+endif()
+
 if (Tasmanian_ENABLE_FORTRAN)
     add_library(Tasmanian::Fortran INTERFACE IMPORTED GLOBAL)
     target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortran90)

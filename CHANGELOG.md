@@ -1,11 +1,16 @@
-Changelog for version 7.2
+Changelog for version 7.3
 --------------
 
+* added AMD HIP/ROCm backend
+    * all CUDA capabilities have an AMD HIP/ROCm equivalent
+    * this includes MAGMA-HIP capabilities
+    * capabilities are accessed with accel_gpu_cuda and accel_gpu_cublas
 * removed the XSDK names for options
     * the XSDK requirement was alleviated due to spack
 * CMake now builds only one type of library shared or static
     * matlab interface works well with shared libs thanks to rpaths
     * magma search is simpler looking for either shared or static libs
+    * ::shared and ::static targets are deprecated
 
 Changelog for version 7.1
 --------------
