@@ -370,5 +370,6 @@ Several known issues and work-around fixes:
 * The older versions of the PGI compiler fails when using optimization `-O2`
     * use the `-O1` instead, or the newest version of the compiler
 * XL with OpenMP segfaults if the OMP_NUM_THREADS is not set correctly
+* in version 7.3 documentation has to be build with `make Tasmanian_doxygen` as it is not added to all
 * Older versions of CUDA do not work with newer versions of some compilers, e.g., `gcc`
     * consult the CUDA manual for a list of acceptable compilers
