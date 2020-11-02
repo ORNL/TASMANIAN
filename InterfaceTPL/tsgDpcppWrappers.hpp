@@ -28,33 +28,30 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_CONFIG_HPP
-#define __TASMANIAN_CONFIG_HPP
+#ifndef __TASMANIAN_DPCPP_WRAPPERS_HPP
+#define __TASMANIAN_DPCPP_WRAPPERS_HPP
 
-#define TASMANIAN_VERSION_MAJOR @Tasmanian_VERSION_MAJOR@
-#define TASMANIAN_VERSION_MINOR @Tasmanian_VERSION_MINOR@
-#define TASMANIAN_VERSION_STRING "@Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@@Tasmanian_version_comment@"
-#define TASMANIAN_LICENSE "@Tasmanian_license@"
+#include "tsgGpuWrappers.hpp"
 
-#define TASMANIAN_GIT_COMMIT_HASH "@Tasmanian_git_hash@"
-#define TASMANIAN_CXX_FLAGS "@Tasmanian_cxx_flags@"
-
-// cmake options propagated to the source code
-#cmakedefine Tasmanian_ENABLE_BLAS
-#cmakedefine Tasmanian_ENABLE_CUDA
-#cmakedefine Tasmanian_ENABLE_HIP
-#cmakedefine Tasmanian_ENABLE_DPCPP
-#cmakedefine Tasmanian_ENABLE_MAGMA
-#cmakedefine Tasmanian_ENABLE_MPI
-
-#if defined(Tasmanian_ENABLE_CUDA) || defined(Tasmanian_ENABLE_HIP) || defined(Tasmanian_ENABLE_DPCPP)
-#define Tasmanian_ENABLE_GPU // One GPU definition
+#ifndef Tasmanian_ENABLE_DPCPP
+#error "Cannot use tsgDpcppWrappers.cpp without Tasmanian_ENABLE_DPCPP"
 #endif
 
-// used mostly to suppress default cerr messages
-#cmakedefine USE_XSDK_DEFAULTS
 
-// handle variations in library standards
-#cmakedefine Tasmanian_BLAS_HAS_ZGELQ
+/*!
+ * \file tsgDpcppWrappers.hpp
+ * \brief Wrappers to DPC++ functionality.
+ * \author Miroslav Stoyanov
+ * \ingroup TasmanianTPLWrappers
+ *
+ * Helper methods for the DPC++ backend.
+ */
+
+namespace TasGrid{
+namespace TasGpu{
+
+
+}
+}
 
 #endif

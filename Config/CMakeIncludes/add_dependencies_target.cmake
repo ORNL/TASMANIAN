@@ -14,6 +14,11 @@ else()
     Tasmanian_find_rpath(LIBRARIES ${CMAKE_THREAD_LIBS_INIT} LIST rpath)
 endif()
 
+if (Tasmanian_ENABLE_DPCPP)  # must come before BLAS to pick MKL libraries
+    target_link_libraries(Tasmanian_dependencies INTERFACE ${Tasmanian_mklsycl})
+    list(APPEND Tasmanian_rpath ${Tasmanian_mklsycl_rpath})
+endif()
+
 if (Tasmanian_ENABLE_BLAS)
     target_link_libraries(Tasmanian_dependencies INTERFACE ${BLAS_LIBRARIES})
     target_link_libraries(Tasmanian_dependencies INTERFACE ${LAPACK_LIBRARIES})
