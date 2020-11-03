@@ -109,12 +109,14 @@ if (Tasmanian_ENABLE_PYTHON OR (Tasmanian_ENABLE_RECOMMENDED AND BUILD_SHARED_LI
 endif()
 
 # CUDA and HIP cannot be used simultaneously
-if (Tasmanian_ENABLE_CUDA AND Tasmanian_ENABLE_HIP)
-    message(FATAL_ERROR "Tasmanian can only use one GPU backend at a time, pick either HIP or CUDA, not both")
+if ((Tasmanian_ENABLE_CUDA AND Tasmanian_ENABLE_HIP) OR
+    (Tasmanian_ENABLE_CUDA AND Tasmanian_ENABLE_DPCPP) OR
+    (Tasmanian_ENABLE_DPCPP AND Tasmanian_ENABLE_HIP))
+    message(FATAL_ERROR "Tasmanian can only use one GPU backend at a time, pick either CUDA, HIP or DPCPP")
 endif()
 
 # using the Tasmanian find modules requires the path
-if (Tasmanian_ENABLE_CUDA OR Tasmanian_ENABLE_HIP OR Tasmanian_ENABLE_MAGMA)
+if (Tasmanian_ENABLE_CUDA OR Tasmanian_ENABLE_HIP OR Tasmanian_ENABLE_DPCPP OR Tasmanian_ENABLE_MAGMA)
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/")
 endif()
 
@@ -128,6 +130,15 @@ endif()
 # AMD HIP support
 if (Tasmanian_ENABLE_HIP)
     find_package(TasmanianRocm REQUIRED)
+endif()
+
+# Intel DPC++ support
+if (Tasmanian_ENABLE_DPCPP)
+    find_package(TasmanianDpcpp REQUIRED)
+
+    if (NOT Tasmanian_ENABLE_BLAS)
+        message(FATAL_ERROR "Tasmanian DPC++ capabilities require Tasmanian_ENABLE_BLAS which must be set to MKL")
+    endif()
 endif()
 
 # check for MAGMA

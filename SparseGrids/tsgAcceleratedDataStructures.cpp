@@ -108,6 +108,13 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
     // *if CUDA is not simultaneously available with MAGMA, then MAGMA will use the CPU for stage 1
     // Note: using CUDA without either cuBlas or MAGMA is a bad idea (it will still work, just slow)
 
+    #ifdef Tasmanian_ENABLE_DPCPP
+    // temporary workaround
+    if (accel == accel_gpu_magma or accel == accel_gpu_cuda)
+        return accel_gpu_cublas;
+    return accel;
+    #endif
+
     // accel_gpu_default should always point to the potentially "best" option (currently MAGMA)
     if (accel == accel_gpu_default) accel = accel_gpu_magma;
     #if !defined(Tasmanian_ENABLE_GPU) || !defined(Tasmanian_ENABLE_MAGMA) || !defined(Tasmanian_ENABLE_BLAS)

@@ -98,6 +98,10 @@ elseif(Tasmanian_ENABLE_HIP)
     add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgHipWrappers.cpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/tsgHipKernels.hip.cpp)
+elseif(Tasmanian_ENABLE_DPCPP)
+    add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid}
+                ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgDpcppWrappers.cpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/tsgDpcppKernels.cpp)
 else()
     add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgGpuNull.cpp)

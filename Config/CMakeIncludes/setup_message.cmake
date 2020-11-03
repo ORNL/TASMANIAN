@@ -18,7 +18,8 @@ message(STATUS " -D BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
 foreach(Tasmanian_option Tasmanian_ENABLE_OPENMP  Tasmanian_ENABLE_BLAS
                          Tasmanian_ENABLE_MPI     Tasmanian_ENABLE_PYTHON
                          Tasmanian_ENABLE_CUDA    Tasmanian_ENABLE_MAGMA
-                         Tasmanian_ENABLE_HIP     Tasmanian_ENABLE_SWIG
+                         Tasmanian_ENABLE_HIP     Tasmanian_ENABLE_DPCPP
+                         Tasmanian_ENABLE_SWIG
                          Tasmanian_ENABLE_FORTRAN Tasmanian_ENABLE_DOXYGEN)
     if (${Tasmanian_option})
         message(STATUS " -D ${Tasmanian_option}:BOOL=ON")

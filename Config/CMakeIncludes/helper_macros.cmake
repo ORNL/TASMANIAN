@@ -25,11 +25,12 @@ macro(Tasmanian_find_libraries)
         set(Tasmanian_findlibs_default "NO_DEFAULT_PATH")
     endif()
 
-    foreach(_tsg_lib ${Tasmanian_findlibs_OPTIONAL} ${Tasmanian_findlibs_REQUIRED})
+    foreach(_tsg_lib ${Tasmanian_findlibs_REQUIRED} ${Tasmanian_findlibs_OPTIONAL})
 
         find_library(Tasmanian_${_tsg_lib} ${_tsg_lib}
                      HINTS "${Tasmanian_findlibs_PREFIX}"
                      HINTS "${Tasmanian_findlibs_PREFIX}/lib/"
+                     HINTS "${Tasmanian_findlibs_PREFIX}/lib/intel64"
                      HINTS "${Tasmanian_findlibs_PREFIX}/${CMAKE_LIBRARY_ARCHITECTURE}/lib/"
                      HINTS "${Tasmanian_findlibs_PREFIX}/lib/${CMAKE_LIBRARY_ARCHITECTURE}"
                      HINTS "${Tasmanian_findlibs_PREFIX}/lib64/"

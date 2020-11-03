@@ -728,7 +728,7 @@ struct AccelerationContext{
         TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
         // if switching to a GPU mode, check if the device id is valid
         if (AccelerationMeta::isAccTypeGPU(effective_acc) and ((new_gpu_id < 0 or new_gpu_id >= AccelerationMeta::getNumGpuDevices())))
-            throw std::runtime_error("Invalid CUDA device ID, see ./tasgrid -v for list of detected devices.");
+            throw std::runtime_error("Invalid GPU device ID, see ./tasgrid -v for list of detected devices.");
 
         // assign the new values for the mode and device, but remember the current gpu state and check whether something changed
         bool was_on_gpu = on_gpu();

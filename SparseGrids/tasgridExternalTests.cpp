@@ -35,6 +35,12 @@
 #include "tasgridExternalTests.hpp"
 #include "tasgridTestHelpers.hpp"
 
+#ifdef Tasmanian_ENABLE_DPCPP
+#include <CL/sycl.hpp>
+#include <CL/sycl/usm.hpp>
+#include "oneapi/mkl.hpp"
+#endif
+
 std::minstd_rand park_miller(10);
 std::vector<double> genRandom(int num_samples, std::vector<double> const &lower, std::vector<double> const &upper){
     if (lower.size() != upper.size()) throw std::runtime_error("Lower/Upper dimension mismatch in genRandom()");
@@ -2228,20 +2234,35 @@ void ExternalTester::debugTest(){
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
 
-    const BaseFunction *f = &f23Kexpsincos;
-    const BaseFunction *f1out = &f21expsincos;
-    TasmanianSparseGrid grid;
-    bool pass = true;
+#ifdef Tasmanian_ENABLE_DPCPP
+    sycl::default_selector d_selector;
+    sycl::queue q(d_selector);
+    float* d_A = sycl::malloc_device<float>(4, q);
+    auto d_X = sycl::malloc_device<float>(2, q);
+    auto d_Y = sycl::malloc_device<float>(2, q);
 
-    grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 3);
-    pass = pass && testAcceleration(f, grid);
-    grid.makeWaveletGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 4, 1);
-    pass = pass && testAcceleration(f1out, grid);
-    if (pass){
-        cout << "      Accelerated" << "  Pass" << endl;
-    }else{
-        cout << "      Accelerated" << "  FAIL" << endl;
-    }
+    std::vector<float> A = {1.0, 3.0, 2.0, 4.0};
+    std::vector<float> X = {1.0, 2.0};
+    std::vector<float> Y = {0.0, 0.0};
+
+    q.memcpy(d_A, A.data(), A.size() * sizeof(float));
+    q.memcpy(d_X, X.data(), X.size() * sizeof(float));
+    q.memcpy(d_Y, Y.data(), Y.size() * sizeof(float));
+
+    q.wait();
+
+    int M = 2, N = 2;
+    float alpha = 1.0, beta = 0.0;
+    cout << d_A[0] << endl;
+    oneapi::mkl::blas::column_major::gemv(q, oneapi::mkl::transpose::N, M, N, alpha, d_A, M, d_X, 1, beta, d_Y, 1);
+    q.wait();
+    cout << d_Y[0] << "   "  << d_Y[1] << endl;
+
+    q.memcpy(Y.data(), d_Y, Y.size() * sizeof(float));
+    q.wait();
+    cout << Y[0] << "  " << Y[1] << endl;
+#endif
+
 }
 
 void ExternalTester::debugTestII(){
