@@ -197,9 +197,9 @@ void GridWavelet::evaluateBatch(const double x[], int num_x, double y[]) const{
                 evaluateGpuMixed(x, num_x, y);
                 return;
             }
-            GpuVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
+            GpuVector<double> gpu_x(acceleration, num_dimensions, num_x, x), gpu_result(acceleration, num_x, num_outputs);
             evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
-            gpu_result.unload(y);
+            gpu_result.unload(acceleration, y);
             break;
         }
         case accel_gpu_cublas: {
@@ -238,7 +238,7 @@ template<typename T> void GridWavelet::evaluateBatchGPUtempl(const T *gpu_x, int
     loadGpuCoefficients<T>();
     int num_points = points.getNumIndexes();
 
-    GpuVector<T> gpu_basis(cpu_num_x, num_points);
+    GpuVector<T> gpu_basis(acceleration, cpu_num_x, num_points);
     evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
     TasGpu::denseMultiply(acceleration, num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->coefficients, gpu_basis, 0.0, gpu_y);
 }
@@ -250,11 +250,11 @@ void GridWavelet::evaluateBatchGPU(const float *gpu_x, int cpu_num_x, float gpu_
 }
 void GridWavelet::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int cpu_num_x, double *gpu_y) const{
     loadGpuBasis<double>();
-    TasGpu::devalpwpoly(order, rule_wavelet, num_dimensions, cpu_num_x, getNumPoints(), gpu_x, gpu_cache->nodes.data(), gpu_cache->support.data(), gpu_y);
+    TasGpu::devalpwpoly(acceleration, order, rule_wavelet, num_dimensions, cpu_num_x, getNumPoints(), gpu_x, gpu_cache->nodes.data(), gpu_cache->support.data(), gpu_y);
 }
 void GridWavelet::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_num_x, float *gpu_y) const{
     loadGpuBasis<float>();
-    TasGpu::devalpwpoly(order, rule_wavelet, num_dimensions, cpu_num_x, getNumPoints(), gpu_x, gpu_cachef->nodes.data(), gpu_cachef->support.data(), gpu_y);
+    TasGpu::devalpwpoly(acceleration, order, rule_wavelet, num_dimensions, cpu_num_x, getNumPoints(), gpu_x, gpu_cachef->nodes.data(), gpu_cachef->support.data(), gpu_y);
 }
 template<typename T> void GridWavelet::loadGpuBasis() const{
     auto &ccache = getGpuCache<T>();
@@ -272,8 +272,8 @@ template<typename T> void GridWavelet::loadGpuBasis() const{
         for(int j=0; j<num_dimensions; j++)
             rule1D.getShiftScale(p[j], scale[j], shift[j]);
     }
-    ccache->nodes.load(cpu_scale.begin(), cpu_scale.end());
-    ccache->support.load(cpu_shift.begin(), cpu_shift.end());
+    ccache->nodes.load(acceleration, cpu_scale.begin(), cpu_scale.end());
+    ccache->support.load(acceleration, cpu_shift.begin(), cpu_shift.end());
 }
 void GridWavelet::clearGpuBasis() const{
     if (gpu_cache) gpu_cache->clearNodes();
@@ -282,7 +282,7 @@ void GridWavelet::clearGpuBasis() const{
 template<typename T> void GridWavelet::loadGpuCoefficients() const{
     auto &ccache = getGpuCache<T>();
     if (!ccache) ccache = Utils::make_unique<CudaWaveletData<T>>();
-    if (ccache->coefficients.empty()) ccache->coefficients.load(coefficients.begin(), coefficients.end());
+    if (ccache->coefficients.empty()) ccache->coefficients.load(acceleration, coefficients.begin(), coefficients.end());
 }
 void GridWavelet::clearGpuCoefficients() const{
     if (gpu_cache) gpu_cache->coefficients.clear();
@@ -343,8 +343,8 @@ void GridWavelet::buildInterpolationMatrix() const{
                    and acceleration->useKernels()){ // using the GPU algorithm
         std::vector<double> pnts(Utils::size_mult(num_dimensions, num_points));
         getPoints(pnts.data());
-        GpuVector<double> gpu_pnts(pnts);
-        GpuVector<double> gpu_basis(num_points, num_points);
+        GpuVector<double> gpu_pnts(acceleration, pnts);
+        GpuVector<double> gpu_basis(acceleration, num_points, num_points);
         evaluateHierarchicalFunctionsGPU(gpu_pnts.data(), num_points, gpu_basis.data());
         inter_matrix = TasSparse::WaveletBasisMatrix(acceleration, num_points, std::move(gpu_basis));
         return;

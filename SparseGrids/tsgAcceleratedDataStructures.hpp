@@ -78,6 +78,8 @@
 
 namespace TasGrid{
 
+struct AccelerationContext; // forward declaration, CUDA and HIP GpuVector do not use the context, but DPC++ needs it
+
 /*!
  * \ingroup TasmanianAcceleration
  * \brief Template class that wraps around a single GPU array, providing functionality that mimics std::vector.
@@ -110,7 +112,7 @@ public:
     //! \brief Default constructor, creates an empty (null) array.
     GpuVector() : num_entries(0), gpu_data(nullptr){}
     //! \brief Construct a vector with \b count number of entries.
-    GpuVector(size_t count) : num_entries(0), gpu_data(nullptr){ resize(count); }
+    GpuVector(AccelerationContext const *acc, size_t count) : num_entries(0), gpu_data(nullptr){ resize(acc, count); }
 
     /*!
      * \brief Same as \b GpuVector(dim1 * dim2), but guards against overflow.
@@ -120,13 +122,13 @@ public:
      * and both integers are converted to size_t before multiplication which prevents overflow.
      * Note: the dimensions \b will \b not be stored, the underlying data is still one dimensional.
      */
-    GpuVector(int dim1, int dim2) : num_entries(0), gpu_data(nullptr){ resize(Utils::size_mult(dim1, dim2)); }
+    GpuVector(AccelerationContext const *acc, int dim1, int dim2) : num_entries(0), gpu_data(nullptr){ resize(acc, Utils::size_mult(dim1, dim2)); }
     //! \brief Create a vector with size that matches \b cpu_data and copy the data to the GPU device.
-    GpuVector(const std::vector<T> &cpu_data) : num_entries(0), gpu_data(nullptr){ load(cpu_data); }
+    GpuVector(AccelerationContext const *acc, const std::vector<T> &cpu_data) : num_entries(0), gpu_data(nullptr){ load(acc, cpu_data); }
     //! \brief Construct a vector and load with date provided on to the cpu.
-    GpuVector(int dim1, int dim2, T const *cpu_data) : num_entries(0), gpu_data(nullptr){ load(Utils::size_mult(dim1, dim2), cpu_data); }
+    GpuVector(AccelerationContext const *acc, int dim1, int dim2, T const *cpu_data) : num_entries(0), gpu_data(nullptr){ load(acc, Utils::size_mult(dim1, dim2), cpu_data); }
     //! \brief Construct a vector by loading from a given range.
-    template<typename IteratorLike> GpuVector(IteratorLike ibegin, IteratorLike iend) : GpuVector(){ load(ibegin, iend); }
+    template<typename IteratorLike> GpuVector(AccelerationContext const *acc, IteratorLike ibegin, IteratorLike iend) : GpuVector(){ load(acc, ibegin, iend); }
     //! \brief Destructor, release all allocated memory.
     ~GpuVector(){ clear(); }
 
@@ -138,19 +140,19 @@ public:
     const T* data() const{ return gpu_data; }
 
     //! \brief Clear all data currently stored in the vector and allocate a new array (unlike std::vector this does not relocate the old data).
-    void resize(size_t count);
+    void resize(AccelerationContext const *acc, size_t count);
     //! \brief Delete all allocated memory and reset the array to empty.
     void clear();
     //! \brief Return \b true if the \b size() is zero.
     bool empty() const{ return (num_entries == 0); }
 
     //! \brief Copy the content of \b cpu_data to the GPU device, all pre-existing data is deleted and the vector is resized to match \b cpu_data.
-    void load(const std::vector<T> &cpu_data){ load(cpu_data.size(), cpu_data.data()); }
+    void load(AccelerationContext const *acc, const std::vector<T> &cpu_data){ load(acc, cpu_data.size(), cpu_data.data()); }
 
     //! \brief Load from a range defined by the begin and end, converts if necessary.
     template<typename IteratorLike>
-    void load(IteratorLike ibegin, IteratorLike iend){
-        load(std::distance(ibegin, iend), &*ibegin);
+    void load(AccelerationContext const *acc, IteratorLike ibegin, IteratorLike iend){
+        load(acc, std::distance(ibegin, iend), &*ibegin);
     }
 
     /*!
@@ -159,8 +161,8 @@ public:
      * Used when the CPU vectors are stored in double-precision format while the GPU entries are prepared to work with single-precision.
      */
     template<typename U>
-    Utils::use_if<!std::is_same<U, T>::value> load(const std::vector<U> &cpu_data){
-        load(cpu_data.size(), cpu_data.data());
+    Utils::use_if<!std::is_same<U, T>::value> load(AccelerationContext const *acc, const std::vector<U> &cpu_data){
+        load(acc, cpu_data.size(), cpu_data.data());
     }
 
     /*!
@@ -171,33 +173,33 @@ public:
      * The final vector size will match \b count.
      * However, if \b count matches \b size(), the data is overwritten but no arrays will be allocated, deleted, or de-aliased.
      */
-    void load(size_t count, const T* cpu_data);
+    void load(AccelerationContext const *acc, size_t count, const T* cpu_data);
     /*!
      * \brief Takes a vector with entries of different precision, converts and loads.
      *
      * Used when the CPU data is stored in double-precision format while the GPU entries are prepared to work with single-precision.
      */
     template<typename U>
-    Utils::use_if<!std::is_same<U, T>::value> load(size_t count, const U* cpu_data){
+    Utils::use_if<!std::is_same<U, T>::value> load(AccelerationContext const *acc, size_t count, const U* cpu_data){
         std::vector<T> converted(count);
         std::transform(cpu_data, cpu_data + count, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
-        load(converted);
+        load(acc, converted);
     }
     //! \brief Copy the data from the GPU array to \b cpu_data, the \b cpu_data will be resized and overwritten.
-    void unload(std::vector<T> &cpu_data) const{
+    void unload(AccelerationContext const *acc, std::vector<T> &cpu_data) const{
         cpu_data.resize(num_entries);
-        unload(cpu_data.data());
+        unload(acc, cpu_data.data());
     }
     //! \brief Return a CPU vector holding the data of the GPU.
-    std::vector<T> unload() const{
+    std::vector<T> unload(AccelerationContext const *acc) const{
         std::vector<T> y;
-        unload(y);
+        unload(acc, y);
         return y;
     }
     //! \brief Copy the first \b num entries to the \b cpu_data buffer, assumes that the buffer is sufficiently large.
-    void unload(size_t num, T* cpu_data) const;
+    void unload(AccelerationContext const *acc, size_t num, T* cpu_data) const;
     //! \brief Copy the data from the GPU array to the \b cpu_data buffer, assumes that the buffer is sufficiently large.
-    void unload(T* cpu_data) const{ unload(num_entries, cpu_data); }
+    void unload(AccelerationContext const *acc, T* cpu_data) const{ unload(acc, num_entries, cpu_data); }
 
     //! \brief Move the data to the \b external array, the vector is set to empty (unlike move command on std::vector).
     T* eject(){
@@ -350,7 +352,7 @@ struct GpuEngine{
 class AccelerationDomainTransform{
 public:
     //! \brief Constructor, load the transform data to the GPU, the vectors are the same as used in the \b TasmanianSparseGrid class.
-    AccelerationDomainTransform(std::vector<double> const &transform_a, std::vector<double> const &transform_b);
+    AccelerationDomainTransform(AccelerationContext const *, std::vector<double> const &transform_a, std::vector<double> const &transform_b);
     //! \brief Destructor, clear all loaded data.
     ~AccelerationDomainTransform() = default;
 
@@ -371,6 +373,7 @@ private:
     // these actually store the rate and shift and not the hard upper/lower limits
     GpuVector<double> gpu_trans_a, gpu_trans_b;
     int num_dimensions, padded_size;
+    AccelerationContext const *acceleration;
 };
 
 //! \internal
@@ -394,7 +397,8 @@ namespace TasGpu{
     //!
     //! See the implementation of \b AccelerationDomainTransform::load() for more details.
     template<typename T>
-    void dtrans2can(bool use01, int dims, int num_x, int pad_size, const double *gpu_trans_a, const double *gpu_trans_b,
+    void dtrans2can(AccelerationContext const *acc, bool use01, int dims, int num_x, int pad_size,
+                    const double *gpu_trans_a, const double *gpu_trans_b,
                     const T *gpu_x_transformed, T *gpu_x_canonical);
 
     //! \internal
@@ -410,7 +414,7 @@ namespace TasGpu{
     //! where negative support is used to handle special cases such as global support on level 1 (rule semi-localp).
     //! The interpretation of the negative support must be synchronized between the kernel \b tasgpu_devalpwpoly_feval() and \b GridLocalPolynomial::encodeSupportForGPU().
     template<typename T>
-    void devalpwpoly(int order, TypeOneDRule rule, int num_dimensions, int num_x, int num_basis, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y);
+    void devalpwpoly(AccelerationContext const *acc, int order, TypeOneDRule rule, int num_dimensions, int num_x, int num_basis, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y);
 
     //! \internal
     //! \brief Evaluate the basis functions for a local polynomial grid using the \b SPARSE algorithm.
@@ -424,7 +428,7 @@ namespace TasGpu{
     //! The output vectors \b gpu_spntr, \b gpu_sindx and \b gpu_svals form a row compressed matrix,
     //! e.g., in format that can directly interface with Nvidia cusparseDcsrmm2().
     template<typename T>
-    void devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, const T *gpu_x,
+    void devalpwpoly_sparse(AccelerationContext const *acc, int order, TypeOneDRule rule, int dims, int num_x, const T *gpu_x,
                             const GpuVector<T> &gpu_nodes, const GpuVector<T> &gpu_support,
                             const GpuVector<int> &gpu_hpntr, const GpuVector<int> &gpu_hindx, const GpuVector<int> &gpu_hroots,
                             GpuVector<int> &gpu_spntr, GpuVector<int> &gpu_sindx, GpuVector<T> &gpu_svals);
@@ -442,7 +446,8 @@ namespace TasGpu{
     //!
     //! The output is \b gpu_result which must have dimension \b num_x by \b num_nodes.size() / \b dims.
     template<typename T>
-    void devalseq(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x, const GpuVector<int> &num_nodes,
+    void devalseq(AccelerationContext const *acc, int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x,
+                  const GpuVector<int> &num_nodes,
                   const GpuVector<int> &points, const GpuVector<T> &nodes, const GpuVector<T> &coeffs, T *gpu_result);
 
     //! \internal
@@ -452,7 +457,7 @@ namespace TasGpu{
     //! The logic is identical to \b devalseq(), except the Fourier polynomials do not require nodes or coefficients.
     //! The output is two real arrays of size \b num_x by \b num_nodes.size() / \b dims corresponding to the real and complex parts of the basis.
     template<typename T>
-    void devalfor(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x, const GpuVector<int> &num_nodes, const GpuVector<int> &points, T *gpu_wreal, typename GpuVector<T>::value_type *gpu_wimag);
+    void devalfor(AccelerationContext const *acc, int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x, const GpuVector<int> &num_nodes, const GpuVector<int> &points, T *gpu_wreal, typename GpuVector<T>::value_type *gpu_wimag);
 
     /*!
      * \internal
@@ -463,7 +468,7 @@ namespace TasGpu{
      * \endinternal
      */
     template<typename T>
-    void devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num_x, int num_p, int num_basis,
+    void devalglo(AccelerationContext const *acc, bool is_nested, bool is_clenshawcurtis0, int dims, int num_x, int num_p, int num_basis,
                   T const *gpu_x, GpuVector<T> const &nodes, GpuVector<T> const &coeff, GpuVector<T> const &tensor_weights,
                   GpuVector<int> const &nodes_per_level, GpuVector<int> const &offset_per_level, GpuVector<int> const &map_dimension, GpuVector<int> const &map_level,
                   GpuVector<int> const &active_tensors, GpuVector<int> const &active_num_points, GpuVector<int> const &dim_offsets,
@@ -474,7 +479,7 @@ namespace TasGpu{
      * \ingroup TasmanianAcceleration
      * \brief Fills the \b data with the provided real number at the given stride.
      */
-    void fillDataGPU(double value, long long N, long long stride, double data[]);
+    void fillDataGPU(AccelerationContext const *acc, double value, long long N, long long stride, double data[]);
 
     /*!
      * \ingroup TasmanianAcceleration

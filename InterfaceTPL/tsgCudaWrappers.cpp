@@ -47,7 +47,7 @@ namespace TasGrid{
 /*
  * Meta methods
  */
-template<typename T> void GpuVector<T>::resize(size_t count){
+template<typename T> void GpuVector<T>::resize(AccelerationContext const*, size_t count){
     if (count != num_entries){ // if the current array is not big enough
         clear(); // resets dynamic_mode
         num_entries = count;
@@ -60,33 +60,33 @@ template<typename T> void GpuVector<T>::clear(){
         TasGpu::cucheck( cudaFree(gpu_data), "cudaFree()");
     gpu_data = nullptr;
 }
-template<typename T> void GpuVector<T>::load(size_t count, const T* cpu_data){
-    resize(count);
+template<typename T> void GpuVector<T>::load(AccelerationContext const *acc, size_t count, const T* cpu_data){
+    resize(acc, count);
     TasGpu::cucheck( cudaMemcpy(gpu_data, cpu_data, num_entries * sizeof(T), cudaMemcpyHostToDevice), "cudaMemcpy() to device");
 }
-template<typename T> void GpuVector<T>::unload(size_t num, T* cpu_data) const{
+template<typename T> void GpuVector<T>::unload(AccelerationContext const*, size_t num, T* cpu_data) const{
     TasGpu::cucheck( cudaMemcpy(cpu_data, gpu_data, num * sizeof(T), cudaMemcpyDeviceToHost), "cudaMemcpy() from device");
 }
 
-template void GpuVector<double>::resize(size_t);
+template void GpuVector<double>::resize(AccelerationContext const*, size_t);
 template void GpuVector<double>::clear();
-template void GpuVector<double>::load(size_t, const double*);
-template void GpuVector<double>::unload(size_t, double*) const;
+template void GpuVector<double>::load(AccelerationContext const*, size_t, const double*);
+template void GpuVector<double>::unload(AccelerationContext const*, size_t, double*) const;
 
-template void GpuVector<std::complex<double>>::resize(size_t);
+template void GpuVector<std::complex<double>>::resize(AccelerationContext const*, size_t);
 template void GpuVector<std::complex<double>>::clear();
-template void GpuVector<std::complex<double>>::load(size_t, const std::complex<double>*);
-template void GpuVector<std::complex<double>>::unload(size_t, std::complex<double>*) const;
+template void GpuVector<std::complex<double>>::load(AccelerationContext const*, size_t, const std::complex<double>*);
+template void GpuVector<std::complex<double>>::unload(AccelerationContext const*, size_t, std::complex<double>*) const;
 
-template void GpuVector<float>::resize(size_t);
+template void GpuVector<float>::resize(AccelerationContext const*, size_t);
 template void GpuVector<float>::clear();
-template void GpuVector<float>::load(size_t, const float*);
-template void GpuVector<float>::unload(size_t, float*) const;
+template void GpuVector<float>::load(AccelerationContext const*, size_t, const float*);
+template void GpuVector<float>::unload(AccelerationContext const*, size_t, float*) const;
 
-template void GpuVector<int>::resize(size_t);
+template void GpuVector<int>::resize(AccelerationContext const*, size_t);
 template void GpuVector<int>::clear();
-template void GpuVector<int>::load(size_t, const int*);
-template void GpuVector<int>::unload(size_t, int*) const;
+template void GpuVector<int>::load(AccelerationContext const*, size_t, const int*);
+template void GpuVector<int>::unload(AccelerationContext const*, size_t, int*) const;
 
 GpuEngine::~GpuEngine(){
     if (own_cublas_handle && cublasHandle != nullptr){
@@ -260,14 +260,14 @@ size_t size_sparse_gemvi(cusparseHandle_t handle, cusparseOperation_t transa, in
 inline void sparse_gemvi(cusparseHandle_t handle, cusparseOperation_t  transa,
                int M, int N, float alpha, float const A[], int lda,
                int nnz, const float x[], int const indx[], float beta, float y[]){
-    GpuVector<float> buff( size_sparse_gemvi<float>(handle, transa, M, N, nnz) );
+    GpuVector<float> buff(nullptr, size_sparse_gemvi<float>(handle, transa, M, N, nnz) );
     cucheck( cusparseSgemvi(handle, transa, M, N, &alpha, A, lda, nnz, x, indx, &beta, y, CUSPARSE_INDEX_BASE_ZERO, buff.data()), "cusparseSgemvi()");
 }
 //! \brief Wrapper around dgemvi().
 inline void sparse_gemvi(cusparseHandle_t handle, cusparseOperation_t  transa,
                int M, int N, double alpha, double const A[], int lda,
                int nnz, const double x[], int const indx[], double beta, double y[]){
-    GpuVector<double> buff( size_sparse_gemvi<double>(handle, transa, M, N, nnz) );
+    GpuVector<double> buff(nullptr, size_sparse_gemvi<double>(handle, transa, M, N, nnz) );
     cucheck( cusparseDgemvi(handle, transa, M, N, &alpha, A, lda, nnz, x, indx, &beta, y, CUSPARSE_INDEX_BASE_ZERO, buff.data()), "cusparseDgemvi()");
 }
 
@@ -315,7 +315,7 @@ inline void sparse_gemv(cusparseHandle_t handle, int M, int N, int nnz, typename
         "cusparseSpMV_bufferSize()"
     );
 
-    GpuVector<scalar_type> buffer(bsize / sizeof(scalar_type));
+    GpuVector<scalar_type> buffer(nullptr, bsize / sizeof(scalar_type));
 
     cucheck( cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matdesc, xdesc, &beta, ydesc, cuda_type, CUSPARSE_MV_ALG_DEFAULT, buffer.data()),
         "cusparseSpMV()"
@@ -335,7 +335,7 @@ inline void sparse_gemm(cusparseHandle_t handle, int M, int N, int K, int nnz, t
     cucheck( cusparseSpMM_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE,
                                      &alpha, matdesc, bdesc, &beta, cdesc, cuda_type, CUSPARSE_SPMM_ALG_DEFAULT, &bsize), "cusparseSpMM_bufferSize()");
 
-    GpuVector<scalar_type> buffer(bsize / sizeof(scalar_type));
+    GpuVector<scalar_type> buffer(nullptr, bsize / sizeof(scalar_type));
 
     cucheck( cusparseSpMM(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, &alpha, matdesc, bdesc, &beta, cdesc,
                           cuda_type, CUSPARSE_SPMM_ALG_DEFAULT, buffer.data()),
@@ -362,21 +362,21 @@ inline size_t size_geqrf(cusolverDnHandle_t handle, int m, int n, std::complex<d
 
 //! \brief Wrapper around dgeqrf().
 inline void geqrf(cusolverDnHandle_t handle, int m, int n, double A[], int lda, double tau[]){
-    GpuVector<double> workspace( size_geqrf(handle, m, n, A, lda) );
-    GpuVector<int> info(std::vector<int>(1, 0));
+    GpuVector<double> workspace(nullptr, size_geqrf(handle, m, n, A, lda) );
+    GpuVector<int> info(nullptr, std::vector<int>(1, 0));
     cucheck(cusolverDnDgeqrf(handle, m, n, A, lda, tau, workspace.data(), static_cast<int>(workspace.size()), info.data()), "cusolverDnDgeqrf()");
-    if (info.unload()[0] != 0)
-        throw std::runtime_error("cusolverDnDgeqrf() returned non-zero status: " + std::to_string(info.unload()[0]));
+    if (info.unload(nullptr)[0] != 0)
+        throw std::runtime_error("cusolverDnDgeqrf() returned non-zero status: " + std::to_string(info.unload(nullptr)[0]));
 }
 //! \brief Wrapper around zgeqrf().
 inline void geqrf(cusolverDnHandle_t handle, int m, int n, std::complex<double> A[], int lda, std::complex<double> tau[]){
-    GpuVector<std::complex<double>> workspace( size_geqrf(handle, m, n, A, lda) );
-    GpuVector<int> info(std::vector<int>(1, 0));
+    GpuVector<std::complex<double>> workspace( nullptr, size_geqrf(handle, m, n, A, lda) );
+    GpuVector<int> info(nullptr, std::vector<int>(1, 0));
     cucheck(cusolverDnZgeqrf(handle, m, n, reinterpret_cast<cuDoubleComplex*>(A), lda,
                              reinterpret_cast<cuDoubleComplex*>(tau), reinterpret_cast<cuDoubleComplex*>(workspace.data()),
                              static_cast<int>(workspace.size()), info.data()), "cusolverDnZgeqrf()");
-    if (info.unload()[0] != 0)
-        throw std::runtime_error("cusolverDnZgeqrf() returned non-zero status: " + std::to_string(info.unload()[0]));
+    if (info.unload(nullptr)[0] != 0)
+        throw std::runtime_error("cusolverDnZgeqrf() returned non-zero status: " + std::to_string(info.unload(nullptr)[0]));
 }
 
 //! \brief Wrapper around dormqr() - get size.
@@ -401,33 +401,33 @@ inline size_t size_gemqr(cusolverDnHandle_t handle, cublasSideMode_t side, cubla
 //! \brief Wrapper around dormqr().
 inline void gemqr(cusolverDnHandle_t handle, cublasSideMode_t side, cublasOperation_t trans,
                   int m, int n, int k, double const A[], int lda, double const tau[], double C[], int ldc){
-    GpuVector<int> info(std::vector<int>(1, 0));
-    GpuVector<double> workspace( size_gemqr(handle, side, trans, m, n, k, A, lda, tau, C, ldc) );
+    GpuVector<int> info(nullptr, std::vector<int>(1, 0));
+    GpuVector<double> workspace( nullptr, size_gemqr(handle, side, trans, m, n, k, A, lda, tau, C, ldc) );
     cucheck(cusolverDnDormqr(handle, side, trans, m, n, k, A, lda, tau, C, ldc,
                              workspace.data(), static_cast<int>(workspace.size()), info.data()), "cusolverDnDormqr()");
-    if (info.unload()[0] != 0)
-        throw std::runtime_error("cusolverDnDormqr() returned non-zero status: " + std::to_string(info.unload()[0]));
+    if (info.unload(nullptr)[0] != 0)
+        throw std::runtime_error("cusolverDnDormqr() returned non-zero status: " + std::to_string(info.unload(nullptr)[0]));
 }
 //! \brief Wrapper around zunmqr().
 inline void gemqr(cusolverDnHandle_t handle, cublasSideMode_t side, cublasOperation_t trans,
                   int m, int n, int k, std::complex<double> const A[], int lda, std::complex<double> const tau[],
                   std::complex<double> C[], int ldc){
-    GpuVector<int> info(std::vector<int>(1, 0));
-    GpuVector<std::complex<double>> workspace( size_gemqr(handle, side, trans, m, n, k, A, lda, tau, C, ldc) );
+    GpuVector<int> info(nullptr, std::vector<int>(1, 0));
+    GpuVector<std::complex<double>> workspace( nullptr, size_gemqr(handle, side, trans, m, n, k, A, lda, tau, C, ldc) );
     cucheck(cusolverDnZunmqr(handle, side, trans, m, n, k, reinterpret_cast<cuDoubleComplex const*>(A), lda,
                              reinterpret_cast<cuDoubleComplex const*>(tau), reinterpret_cast<cuDoubleComplex*>(C), ldc,
                              reinterpret_cast<cuDoubleComplex*>(workspace.data()), static_cast<int>(workspace.size()), info.data()),
             "cusolverDnZunmqr()");
-    if (info.unload()[0] != 0)
-        throw std::runtime_error("cusolverDnZunmqr() returned non-zero status: " + std::to_string(info.unload()[0]));
+    if (info.unload(nullptr)[0] != 0)
+        throw std::runtime_error("cusolverDnZunmqr() returned non-zero status: " + std::to_string(info.unload(nullptr)[0]));
 }
 
 //! \brief Wrapper around cusolverDnDgetrs().
 void getrs(cusolverDnHandle_t handle, cublasOperation_t trans, int n, int nrhs, double const A[], int lda, int const ipiv[], double B[], int ldb){
-    GpuVector<int> info(std::vector<int>(1, 0));
+    GpuVector<int> info(nullptr, std::vector<int>(1, 0));
     cucheck(cusolverDnDgetrs(handle, trans, n, nrhs, A, lda, ipiv, B, ldb, info.data()), "cusolverDnDgetrs()");
-    if (info.unload()[0] != 0)
-        throw std::runtime_error("cusolverDnDgetrs() returned non-zero status: " + std::to_string(info.unload()[0]));
+    if (info.unload(nullptr)[0] != 0)
+        throw std::runtime_error("cusolverDnDgetrs() returned non-zero status: " + std::to_string(info.unload(nullptr)[0]));
 }
 
 //! \brief Wrapper around cusolverDnDgetrf().
@@ -435,11 +435,11 @@ void factorizePLU(AccelerationContext const *acceleration, int n, double A[], in
     cusolverDnHandle_t cusolverdnh = getCuSolverDnHandle(acceleration);
     int size = 0;
     cucheck(cusolverDnDgetrf_bufferSize(cusolverdnh, n, n, A, n, &size), "cusolverDnDgetrf_bufferSize()");
-    GpuVector<double> workspace(static_cast<size_t>(size));
-    GpuVector<int> info(std::vector<int>(1, 0));
+    GpuVector<double> workspace(nullptr, static_cast<size_t>(size));
+    GpuVector<int> info(nullptr, std::vector<int>(1, 0));
     cucheck(cusolverDnDgetrf(cusolverdnh, n, n, A, n, workspace.data(), ipiv, info.data()), "cusolverDnDgetrf()");
-    if (info.unload()[0] != 0)
-        throw std::runtime_error("cusolverDnDgetrf() returned non-zero status: " + std::to_string(info.unload()[0]));
+    if (info.unload(nullptr)[0] != 0)
+        throw std::runtime_error("cusolverDnDgetrf() returned non-zero status: " + std::to_string(info.unload(nullptr)[0]));
 }
 
 void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int const ipiv[], double b[]){
@@ -449,7 +449,7 @@ void solvePLU(AccelerationContext const *acceleration, char trans, int n, double
 void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int const ipiv[], int nrhs, double B[]){
     cublasHandle_t cublash = getCuBlasHandle(acceleration);
     cusolverDnHandle_t cusolverdnh = getCuSolverDnHandle(acceleration);
-    GpuVector<double> BT(n, nrhs);
+    GpuVector<double> BT(nullptr, n, nrhs);
     geam(cublash, CUBLAS_OP_T, CUBLAS_OP_T, n, nrhs, 1.0, B, nrhs, 0.0, B, nrhs, BT.data(), n);
     getrs(cusolverdnh, (trans == 'T') ? CUBLAS_OP_T: CUBLAS_OP_N, n, nrhs, A, n, ipiv, BT.data(), n);
     geam(cublash, CUBLAS_OP_T, CUBLAS_OP_T, nrhs, n, 1.0, BT.data(), n, 0.0, BT.data(), n, B, nrhs);
@@ -463,10 +463,10 @@ void solveLSmultiGPU(AccelerationContext const *acceleration, int n, int m, scal
     cublasHandle_t cublash = getCuBlasHandle(acceleration);
     cusolverDnHandle_t cusolverdnh = getCuSolverDnHandle(acceleration);
 
-    GpuVector<scalar_type> AT(n, m);
+    GpuVector<scalar_type> AT(nullptr, n, m);
     geam(cublash, CUBLAS_OP_T, CUBLAS_OP_T, n, m, 1.0, A, m, 0.0, A, m, AT.data(), n);
 
-    GpuVector<scalar_type> T(m);
+    GpuVector<scalar_type> T(nullptr, m);
     geqrf(cusolverdnh, n, m, AT.data(), n, T.data());
 
     cublasOperation_t trans = (std::is_same<scalar_type, double>::value) ? CUBLAS_OP_T : CUBLAS_OP_C;
@@ -475,7 +475,7 @@ void solveLSmultiGPU(AccelerationContext const *acceleration, int n, int m, scal
         gemqr(cusolverdnh, CUBLAS_SIDE_LEFT, trans, n, 1, m, AT.data(), n, T.data(), B, n);
         trsv(cublash, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, m, AT.data(), n, B, 1);
     }else{
-        GpuVector<scalar_type> BT(n, nrhs);
+        GpuVector<scalar_type> BT(nullptr, n, nrhs);
         geam(cublash, CUBLAS_OP_T, CUBLAS_OP_T, n, nrhs, 1.0, B, nrhs, 0.0, B, nrhs, BT.data(), n);
 
         gemqr(cusolverdnh, CUBLAS_SIDE_LEFT, trans, n, nrhs, m, AT.data(), n, T.data(), BT.data(), n);
@@ -528,7 +528,7 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
     if (N > 1){ // dense matrix has many columns
         cusparseMatDesc matdesc;
         if (M > 1){ // dense matrix has many rows, use matrix-matrix algorithm
-            GpuVector<scalar_type> tempC(M, N);
+            GpuVector<scalar_type> tempC(nullptr, M, N);
             sparse_gemm(cusparseh, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE, N, M, K, (int) indx.size(),
                         alpha, matdesc, vals.data(), pntr.data(), indx.data(), A.data(), M, 0.0, tempC.data(), N);
 
@@ -555,7 +555,7 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
 
     if (N > 1){ // dense matrix has many columns
         if (M > 1){ // dense matrix has many rows, use matrix-matrix algorithm
-            GpuVector<scalar_type> tempC(M, N);
+            GpuVector<scalar_type> tempC(nullptr, M, N);
             sparse_gemm(cusparseh, N, M, K, (int) indx.size(), alpha, vals.data(), pntr.data(), indx.data(), A.data(), M, 0.0, tempC.data(), N);
 
             cublasHandle_t cublash = getCuBlasHandle(acceleration);

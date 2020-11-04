@@ -46,30 +46,30 @@ namespace TasGrid{
 /*
  * Meta methods
  */
-template<typename T> void GpuVector<T>::resize(size_t){}
+template<typename T> void GpuVector<T>::resize(AccelerationContext const*, size_t){}
 template<typename T> void GpuVector<T>::clear(){}
-template<typename T> void GpuVector<T>::load(size_t, const T[]){}
-template<typename T> void GpuVector<T>::unload(size_t, T[]) const{}
+template<typename T> void GpuVector<T>::load(AccelerationContext const*, size_t, const T[]){}
+template<typename T> void GpuVector<T>::unload(AccelerationContext const*, size_t, T[]) const{}
 
-template void GpuVector<double>::resize(size_t);
+template void GpuVector<double>::resize(AccelerationContext const*, size_t);
 template void GpuVector<double>::clear();
-template void GpuVector<double>::load(size_t, const double*);
-template void GpuVector<double>::unload(size_t, double*) const;
+template void GpuVector<double>::load(AccelerationContext const*, size_t, const double*);
+template void GpuVector<double>::unload(AccelerationContext const*, size_t, double*) const;
 
-template void GpuVector<std::complex<double>>::resize(size_t);
+template void GpuVector<std::complex<double>>::resize(AccelerationContext const*, size_t);
 template void GpuVector<std::complex<double>>::clear();
-template void GpuVector<std::complex<double>>::load(size_t, const std::complex<double>*);
-template void GpuVector<std::complex<double>>::unload(size_t, std::complex<double>*) const;
+template void GpuVector<std::complex<double>>::load(AccelerationContext const*, size_t, const std::complex<double>*);
+template void GpuVector<std::complex<double>>::unload(AccelerationContext const*, size_t, std::complex<double>*) const;
 
-template void GpuVector<float>::resize(size_t);
+template void GpuVector<float>::resize(AccelerationContext const*, size_t);
 template void GpuVector<float>::clear();
-template void GpuVector<float>::load(size_t, const float*);
-template void GpuVector<float>::unload(size_t, float*) const;
+template void GpuVector<float>::load(AccelerationContext const*, size_t, const float*);
+template void GpuVector<float>::unload(AccelerationContext const*, size_t, float*) const;
 
-template void GpuVector<int>::resize(size_t);
+template void GpuVector<int>::resize(AccelerationContext const*, size_t);
 template void GpuVector<int>::clear();
-template void GpuVector<int>::load(size_t, const int*);
-template void GpuVector<int>::unload(size_t, int*) const;
+template void GpuVector<int>::load(AccelerationContext const*, size_t, const int*);
+template void GpuVector<int>::unload(AccelerationContext const*, size_t, int*) const;
 
 GpuEngine::~GpuEngine(){}
 
@@ -130,53 +130,56 @@ template void sparseMultiply<float>(AccelerationContext const*, int, int, int, f
 template void sparseMultiply<double>(AccelerationContext const*, int, int, int, double, GpuVector<double> const &A,
                                      GpuVector<int> const &pntr, GpuVector<int> const &indx, GpuVector<double> const &vals, double C[]);
 
-template<typename T> void dtrans2can(bool, int, int, int, double const[], double const[], T const[], T[]){}
-template<typename T> void devalpwpoly(int, TypeOneDRule, int, int, int, const T[], const T[], const T[], T[]){}
+template<typename T> void dtrans2can(AccelerationContext const*, bool, int, int, int, double const[], double const[], T const[], T[]){}
+template<typename T> void devalpwpoly(AccelerationContext const*, int, TypeOneDRule, int, int, int, const T[], const T[], const T[], T[]){}
 
 template<typename T>
-void devalpwpoly_sparse(int, TypeOneDRule, int, int, const T[], GpuVector<T> const&, GpuVector<T> const&,
+void devalpwpoly_sparse(AccelerationContext const*, int, TypeOneDRule, int, int, const T[], GpuVector<T> const&, GpuVector<T> const&,
                                 GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, GpuVector<int>&, GpuVector<int>&, GpuVector<T>&){}
 
 template<typename T>
-void devalseq(int, int, std::vector<int> const&, T const[], GpuVector<int> const&, GpuVector<int> const&, GpuVector<T> const&, GpuVector<T> const&, T[]){}
+void devalseq(AccelerationContext const*, int, int, std::vector<int> const&, T const[], GpuVector<int> const&, GpuVector<int> const&, GpuVector<T> const&, GpuVector<T> const&, T[]){}
 template<typename T>
-void devalfor(int, int, std::vector<int> const&, const T[], GpuVector<int> const&, GpuVector<int> const&, T[], typename GpuVector<T>::value_type[]){}
+void devalfor(AccelerationContext const*, int, int, std::vector<int> const&, const T[], GpuVector<int> const&, GpuVector<int> const&, T[], typename GpuVector<T>::value_type[]){}
 
 template<typename T>
-void devalglo(bool, bool, int, int, int, int, T const[], GpuVector<T> const&, GpuVector<T> const&, GpuVector<T> const&,
+void devalglo(AccelerationContext const*, bool, bool, int, int, int, int, T const[],
+              GpuVector<T> const&, GpuVector<T> const&, GpuVector<T> const&,
               GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
               GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
               GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, T[]){}
 
-void fillDataGPU(double, long long, long long, double[]){}
+void fillDataGPU(AccelerationContext const*, double, long long, long long, double[]){}
 
-template void dtrans2can<float>(bool, int, int, int, double const*, double const*, float const*, float*);
-template void dtrans2can<double>(bool, int, int, int, double const*, double const*, double const*, double*);
+template void dtrans2can<float>(AccelerationContext const*, bool, int, int, int, double const*, double const*, float const*, float*);
+template void dtrans2can<double>(AccelerationContext const*, bool, int, int, int, double const*, double const*, double const*, double*);
 
-template void devalpwpoly<float>(int, TypeOneDRule, int, int, int, float const*, float const*, float const*, float*);
-template void devalpwpoly<double>(int, TypeOneDRule, int, int, int, double const*, double const*, double const*, double*);
+template void devalpwpoly<float>(AccelerationContext const*, int, TypeOneDRule, int, int, int, float const*, float const*, float const*, float*);
+template void devalpwpoly<double>(AccelerationContext const*, int, TypeOneDRule, int, int, int, double const*, double const*, double const*, double*);
 
-template void devalpwpoly_sparse<float>(int, TypeOneDRule, int, int, float const*, GpuVector<float> const&, GpuVector<float> const&,
+template void devalpwpoly_sparse<float>(AccelerationContext const*, int, TypeOneDRule, int, int, float const*,
+                                        GpuVector<float> const&, GpuVector<float> const&,
                                         GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                         GpuVector<int>&, GpuVector<int>&, GpuVector<float>&);
-template void devalpwpoly_sparse<double>(int, TypeOneDRule, int, int, double const*, GpuVector<double> const&, GpuVector<double> const&,
+template void devalpwpoly_sparse<double>(AccelerationContext const*, int, TypeOneDRule, int, int, double const*,
+                                         GpuVector<double> const&, GpuVector<double> const&,
                                          GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                          GpuVector<int>&, GpuVector<int>&, GpuVector<double>&);
 
-template void devalfor<float>(int, int, std::vector<int> const&, float const*, GpuVector<int> const&, GpuVector<int> const&, float*, float*);
-template void devalfor<double>(int, int, std::vector<int> const&, double const*, GpuVector<int> const&, GpuVector<int> const&, double*, double*);
+template void devalfor<float>(AccelerationContext const*, int, int, std::vector<int> const&, float const*, GpuVector<int> const&, GpuVector<int> const&, float*, float*);
+template void devalfor<double>(AccelerationContext const*, int, int, std::vector<int> const&, double const*, GpuVector<int> const&, GpuVector<int> const&, double*, double*);
 
-template void devalseq<float>(int, int, std::vector<int> const&, float const*, GpuVector<int> const&,
+template void devalseq<float>(AccelerationContext const*, int, int, std::vector<int> const&, float const*, GpuVector<int> const&,
                               GpuVector<int> const&, GpuVector<float> const&, GpuVector<float> const&, float*);
-template void devalseq<double>(int, int, std::vector<int> const&, double const*, GpuVector<int> const&,
+template void devalseq<double>(AccelerationContext const*, int, int, std::vector<int> const&, double const*, GpuVector<int> const&,
                                GpuVector<int> const&, GpuVector<double> const&, GpuVector<double> const&, double*);
 
-template void devalglo<float>(bool, bool, int, int, int, int,
+template void devalglo<float>(AccelerationContext const*, bool, bool, int, int, int, int,
                               float const*, GpuVector<float> const&, GpuVector<float> const&, GpuVector<float> const&,
                               GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                               GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                               GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, float*);
-template void devalglo<double>(bool, bool, int, int, int, int,
+template void devalglo<double>(AccelerationContext const*, bool, bool, int, int, int, int,
                                double const*, GpuVector<double> const&, GpuVector<double> const&, GpuVector<double> const&,
                                GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
