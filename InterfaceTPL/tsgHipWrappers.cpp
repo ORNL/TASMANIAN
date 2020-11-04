@@ -47,7 +47,7 @@ namespace TasGrid{
 /*
  * Meta methods
  */
-template<typename T> void GpuVector<T>::resize(size_t count){
+template<typename T> void GpuVector<T>::resize(AccelerationContext const*, size_t count){
     if (count != num_entries){ // if the current array is not big enough
         clear(); // resets dynamic_mode
         num_entries = count;
@@ -60,33 +60,33 @@ template<typename T> void GpuVector<T>::clear(){
         TasGpu::hipcheck( hipFree(gpu_data), "hipFree()");
     gpu_data = nullptr;
 }
-template<typename T> void GpuVector<T>::load(size_t count, const T* cpu_data){
-    resize(count);
+template<typename T> void GpuVector<T>::load(AccelerationContext const*, size_t count, const T* cpu_data){
+    resize(nullptr, count);
     TasGpu::hipcheck( hipMemcpy(gpu_data, cpu_data, num_entries * sizeof(T), hipMemcpyHostToDevice), "hipMemcpy() to device");
 }
-template<typename T> void GpuVector<T>::unload(size_t num, T* cpu_data) const{
+template<typename T> void GpuVector<T>::unload(AccelerationContext const*, size_t num, T* cpu_data) const{
     TasGpu::hipcheck( hipMemcpy(cpu_data, gpu_data, num * sizeof(T), hipMemcpyDeviceToHost), "hipMemcpy() from device");
 }
 
-template void GpuVector<double>::resize(size_t);
+template void GpuVector<double>::resize(AccelerationContext const*, size_t);
 template void GpuVector<double>::clear();
-template void GpuVector<double>::load(size_t, const double*);
-template void GpuVector<double>::unload(size_t, double*) const;
+template void GpuVector<double>::load(AccelerationContext const*, size_t, const double*);
+template void GpuVector<double>::unload(AccelerationContext const*, size_t, double*) const;
 
-template void GpuVector<std::complex<double>>::resize(size_t);
+template void GpuVector<std::complex<double>>::resize(AccelerationContext const*, size_t);
 template void GpuVector<std::complex<double>>::clear();
-template void GpuVector<std::complex<double>>::load(size_t, const std::complex<double>*);
-template void GpuVector<std::complex<double>>::unload(size_t, std::complex<double>*) const;
+template void GpuVector<std::complex<double>>::load(AccelerationContext const*, size_t, const std::complex<double>*);
+template void GpuVector<std::complex<double>>::unload(AccelerationContext const*, size_t, std::complex<double>*) const;
 
-template void GpuVector<float>::resize(size_t);
+template void GpuVector<float>::resize(AccelerationContext const*, size_t);
 template void GpuVector<float>::clear();
-template void GpuVector<float>::load(size_t, const float*);
-template void GpuVector<float>::unload(size_t, float*) const;
+template void GpuVector<float>::load(AccelerationContext const*, size_t, const float*);
+template void GpuVector<float>::unload(AccelerationContext const*, size_t, float*) const;
 
-template void GpuVector<int>::resize(size_t);
+template void GpuVector<int>::resize(AccelerationContext const*, size_t);
 template void GpuVector<int>::clear();
-template void GpuVector<int>::load(size_t, const int*);
-template void GpuVector<int>::unload(size_t, int*) const;
+template void GpuVector<int>::load(AccelerationContext const*, size_t, const int*);
+template void GpuVector<int>::unload(AccelerationContext const*, size_t, int*) const;
 
 GpuEngine::~GpuEngine(){
     if (own_rocblas_handle && rocblasHandle != nullptr){
@@ -245,12 +245,12 @@ void getrs(rocblas_handle handle, rocblas_operation trans, int n, int nrhs, doub
 //! \brief Wrapper around rocsolver_dgetrf().
 void factorizePLU(AccelerationContext const *acceleration, int n, double A[], int ipiv[]){
     rocblas_handle rochandle = getRocBlasHandle(acceleration);
-    GpuVector<int> info(std::vector<int>(4, 0));
+    GpuVector<int> info(acceleration, std::vector<int>(4, 0));
     hipcheck(rocblas_set_pointer_mode(rochandle, rocblas_pointer_mode_device), "rocblas_set_pointer_mode()");
     hipcheck(rocsolver_dgetrf(rochandle, n, n, A, n, ipiv, info.data()), "rocsolver_dgetrf()");
     rocblas_set_pointer_mode(rochandle, rocblas_pointer_mode_host);
-    if (info.unload()[0] != 0)
-        throw std::runtime_error("rocsolver_dgetrf() returned non-zero status: " + std::to_string(info.unload()[0]));
+    if (info.unload(nullptr)[0] != 0)
+        throw std::runtime_error("rocsolver_dgetrf() returned non-zero status: " + std::to_string(info.unload(nullptr)[0]));
 }
 
 void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int const ipiv[], double b[]){
@@ -259,7 +259,7 @@ void solvePLU(AccelerationContext const *acceleration, char trans, int n, double
 }
 void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int const ipiv[], int nrhs, double B[]){
     rocblas_handle rochandle = getRocBlasHandle(acceleration);
-    GpuVector<double> BT(n, nrhs);
+    GpuVector<double> BT(nullptr, n, nrhs);
     geam(rochandle, rocblas_operation_transpose, rocblas_operation_transpose, n, nrhs, 1.0, B, nrhs, 0.0, B, nrhs, BT.data(), n);
     getrs(rochandle, (trans == 'T') ? rocblas_operation_transpose: rocblas_operation_none, n, nrhs, A, n, ipiv, BT.data(), n);
     geam(rochandle, rocblas_operation_transpose, rocblas_operation_transpose, nrhs, n, 1.0, BT.data(), n, 0.0, BT.data(), n, B, nrhs);
@@ -292,7 +292,7 @@ inline void gemlq(rocblas_handle handle, int m, int n, int k, std::complex<doubl
 template<typename scalar_type>
 void solveLSmultiGPU(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
     rocblas_handle rochandle = getRocBlasHandle(acceleration);
-    GpuVector<scalar_type> tau(std::min(n, m));
+    GpuVector<scalar_type> tau(acceleration, std::min(n, m));
     gelqf(rochandle, m, n, A, tau.data());
     gemlq(rochandle, nrhs, n, m, A, tau.data(), B);
     trsm(rochandle, rocblas_side_right, rocblas_fill_lower, rocblas_operation_none, rocblas_diagonal_non_unit, nrhs, m, 1.0, A, m, B, nrhs);
@@ -338,7 +338,7 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
 
     if (N > 1){
         if (M > 1){
-            GpuVector<scalar_type> tempC(M, N);
+            GpuVector<scalar_type> tempC(nullptr, M, N);
             sparse_gemm(rocsparseh, rocsparse_operation_none, rocsparse_operation_transpose, N, M, K, static_cast<int>(indx.size()),
                         alpha, vals.data(), pntr.data(), indx.data(), A.data(), M, 0.0, tempC.data(), N);
 
@@ -349,9 +349,9 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
                         alpha, vals.data(), pntr.data(), indx.data(), A.data(), 0.0, C);
         }
     }else{
-        GpuVector<scalar_type> tempC(M, N);
+        GpuVector<scalar_type> tempC(nullptr, M, N);
         int nnz = static_cast<int>(indx.size());
-        GpuVector<int> temp_pntr(std::vector<int>{0, nnz});
+        GpuVector<int> temp_pntr(nullptr, std::vector<int>{0, nnz});
         sparse_gemm(rocsparseh, rocsparse_operation_none, rocsparse_operation_transpose, N, M, K, nnz,
                     alpha, vals.data(), temp_pntr.data(), indx.data(), A.data(), M, 0.0, tempC.data(), N);
 

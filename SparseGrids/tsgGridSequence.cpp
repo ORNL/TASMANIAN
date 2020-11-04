@@ -427,9 +427,9 @@ void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
-            GpuVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_outputs, num_x);
+            GpuVector<double> gpu_x(acceleration, num_dimensions, num_x, x), gpu_result(acceleration, num_outputs, num_x);
             evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
-            gpu_result.unload(y);
+            gpu_result.unload(acceleration, y);
             break;
         }
         case accel_gpu_cublas: {
@@ -465,7 +465,7 @@ void GridSequence::evaluateBatch(const double x[], int num_x, double y[]) const{
 template<typename T> void GridSequence::evaluateBatchGPUtempl(const T gpu_x[], int cpu_num_x, T gpu_y[]) const{
     loadGpuSurpluses<T>();
 
-    GpuVector<T> gpu_basis(points.getNumIndexes(), cpu_num_x);
+    GpuVector<T> gpu_basis(acceleration, points.getNumIndexes(), cpu_num_x);
     evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
     TasGpu::denseMultiply(acceleration, num_outputs, cpu_num_x, points.getNumIndexes(),
                           1.0, getGpuCache<T>()->surpluses, gpu_basis, 0.0, gpu_y);
@@ -475,14 +475,14 @@ void GridSequence::evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double 
 }
 void GridSequence::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
     loadGpuNodes<double>();
-    TasGpu::devalseq(num_dimensions, num_x, max_levels, gpu_x, gpu_cache->num_nodes, gpu_cache->points, gpu_cache->nodes, gpu_cache->coeff, gpu_y);
+    TasGpu::devalseq(acceleration, num_dimensions, num_x, max_levels, gpu_x, gpu_cache->num_nodes, gpu_cache->points, gpu_cache->nodes, gpu_cache->coeff, gpu_y);
 }
 void GridSequence::evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu_y[]) const{
     evaluateBatchGPUtempl(gpu_x, cpu_num_x, gpu_y);
 }
 void GridSequence::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const{
     loadGpuNodes<float>();
-    TasGpu::devalseq(num_dimensions, num_x, max_levels, gpu_x, gpu_cachef->num_nodes, gpu_cachef->points, gpu_cachef->nodes, gpu_cachef->coeff, gpu_y);
+    TasGpu::devalseq(acceleration, num_dimensions, num_x, max_levels, gpu_x, gpu_cachef->num_nodes, gpu_cachef->points, gpu_cachef->nodes, gpu_cachef->coeff, gpu_y);
 }
 void GridSequence::clearGpuNodes() const{
     if (gpu_cache) gpu_cache->clearNodes();

@@ -165,12 +165,12 @@ private:
         if (!ccache) ccache = Utils::make_unique<CudaSequenceData<T>>();
         if (!ccache->num_nodes.empty()) return;
 
-        ccache->nodes.load(nodes);
-        ccache->coeff.load(coeff);
+        ccache->nodes.load(acceleration, nodes);
+        ccache->coeff.load(acceleration, coeff);
 
         std::vector<int> num_nodes(num_dimensions);
         std::transform(max_levels.begin(), max_levels.end(), num_nodes.begin(), [](int i)->int{ return i+1; });
-        ccache->num_nodes.load(num_nodes);
+        ccache->num_nodes.load(acceleration, num_nodes);
 
         const MultiIndexSet *work = (points.empty()) ? &needed : &points;
         int num_points = work->getNumIndexes();
@@ -180,12 +180,12 @@ private:
                 transpoints.getStrip(j)[i] = work->getIndex(i)[j];
             }
         }
-        ccache->points.load(transpoints.begin(), transpoints.end());
+        ccache->points.load(acceleration, transpoints.begin(), transpoints.end());
     }
     template<typename T> void loadGpuSurpluses() const{
         auto& ccache = getGpuCache<T>();
         if (!ccache) ccache = Utils::make_unique<CudaSequenceData<T>>();
-        if (ccache->surpluses.empty()) ccache->surpluses.load(surpluses.begin(), surpluses.end());
+        if (ccache->surpluses.empty()) ccache->surpluses.load(acceleration, surpluses.begin(), surpluses.end());
     }
     mutable std::unique_ptr<CudaSequenceData<double>> gpu_cache;
     mutable std::unique_ptr<CudaSequenceData<float>> gpu_cachef;

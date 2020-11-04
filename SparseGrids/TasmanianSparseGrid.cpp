@@ -378,9 +378,10 @@ void TasmanianSparseGrid::evaluateBatch(const float x[], int num_x, float y[]) c
     Data2D<float> x_tmp;
     float const *x_canonical = formCanonicalPoints(x, x_tmp, num_x);
     acceleration->setDevice();
-    GpuVector<float> gpu_x(getNumDimensions(), num_x, x_canonical), gpu_result(num_x, getNumOutputs());
+    GpuVector<float> gpu_x(acceleration.get(), getNumDimensions(), num_x, x_canonical),
+                     gpu_result(acceleration.get(), num_x, getNumOutputs());
     base->evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
-    gpu_result.unload(y);
+    gpu_result.unload(acceleration.get(), y);
 }
 template<typename FloatType> void TasmanianSparseGrid::evaluateBatchGPU(const FloatType gpu_x[], int cpu_num_x, FloatType gpu_y[]) const{
     if (not acceleration->on_gpu()) throw std::runtime_error("ERROR: evaluateBatchGPU() requires that a cuda gpu acceleration is enabled.");
@@ -747,7 +748,7 @@ template<typename T>
 const T* TasmanianSparseGrid::formCanonicalPointsGPU(const T *gpu_x, int num_x, GpuVector<T> &gpu_x_temp) const{
     if (!domain_transform_a.empty()){
         if (!acc_domain)
-            acc_domain = Utils::make_unique<AccelerationDomainTransform>(domain_transform_a, domain_transform_b);
+            acc_domain = Utils::make_unique<AccelerationDomainTransform>(acceleration.get(), domain_transform_a, domain_transform_b);
         acc_domain->getCanonicalPoints(isFourier(), gpu_x, num_x, gpu_x_temp);
         return gpu_x_temp.data();
     }else{

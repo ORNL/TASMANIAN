@@ -93,29 +93,29 @@ inline bool hasGPUBasis(TasmanianSparseGrid const &grid){
 template<typename scalar_type>
 void generateCoefficientsGPU(double const data_points[], int num_data, scalar_type model_values[],
                              double tolerance, TasmanianSparseGrid &grid){
+    AccelerationContext const *acceleration = grid.getAccelerationContext();
     int num_outputs = grid.getNumOutputs();
     int num_points = grid.getNumPoints();
     int num_equations = (tolerance > 0.0) ? num_data + num_points : num_data;
 
-    GpuVector<scalar_type> basis_matrix(num_equations, num_points);
+    GpuVector<scalar_type> basis_matrix(acceleration, num_equations, num_points);
     grid.evaluateHierarchicalFunctionsGPU(data_points, num_data, reinterpret_cast<double*>(basis_matrix.data()));
 
     if (tolerance > 0.0){
         double correction = std::sqrt(tolerance);
         constexpr long long esize = (std::is_same<scalar_type, double>::value) ? 1 : 2;
         long long num_total = static_cast<long long>(num_points) * static_cast<long long>(num_points) * esize;
-        TasGpu::fillDataGPU(0.0, num_total, 1,
+        TasGpu::fillDataGPU(acceleration, 0.0, num_total, 1,
                             reinterpret_cast<double*>(basis_matrix.data() + Utils::size_mult(num_data, num_points)));
 
         long long stride = static_cast<long long>(num_points + 1) * esize;
-        TasGpu::fillDataGPU(correction, num_points, stride,
+        TasGpu::fillDataGPU(acceleration, correction, num_points, stride,
                             reinterpret_cast<double*>(basis_matrix.data() + Utils::size_mult(num_data, num_points)));
 
-        TasGpu::fillDataGPU(0.0, esize * num_outputs * num_points, 1,
+        TasGpu::fillDataGPU(acceleration, 0.0, esize * num_outputs * num_points, 1,
                             reinterpret_cast<double*>(model_values + Utils::size_mult(num_data, num_outputs)));
     }
 
-    AccelerationContext const *acceleration = grid.getAccelerationContext();
     TasmanianDenseSolver::solvesLeastSquaresGPU(acceleration, num_equations, num_points,
                                                 basis_matrix.data(), num_outputs, model_values);
 }
@@ -152,13 +152,14 @@ Data2D<scalar_type> generateCoefficients(double const data_points[], int num_dat
             grid.evaluateHierarchicalFunctions(data_points, num_data, reinterpret_cast<double*>(basis_matrix.data()));
         }else{
             acceleration->setDevice();
-            GpuVector<double> gpu_points(num_dimensions, num_batch);
-            GpuVector<scalar_type> gpu_matrix(num_points, num_batch);
+            GpuVector<double> gpu_points(acceleration, num_dimensions, num_batch);
+            GpuVector<scalar_type> gpu_matrix(acceleration, num_points, num_batch);
             for(int i = 0; i < num_data; i += num_batch){
                 int num_this_batch = std::min(num_batch, num_data - i);
-                gpu_points.load(Utils::size_mult(num_this_batch, num_dimensions), data_points + Utils::size_mult(i, num_dimensions));
+                gpu_points.load(acceleration, Utils::size_mult(num_this_batch, num_dimensions),
+                                data_points + Utils::size_mult(i, num_dimensions));
                 grid.evaluateHierarchicalFunctionsGPU(gpu_points.data(), num_this_batch, reinterpret_cast<double*>(gpu_matrix.data()));
-                gpu_matrix.unload(Utils::size_mult(num_this_batch, num_points), basis_matrix.getStrip(i));
+                gpu_matrix.unload(acceleration, Utils::size_mult(num_this_batch, num_points), basis_matrix.getStrip(i));
             }
         }
     }else{
@@ -211,11 +212,11 @@ inline void loadUnstructuredDataL2tmpl(double const data_points[], int num_data,
         [&]()->Data2D<scalar_type>{
             if (acceleration->mode == accel_gpu_cuda and hasGPUBasis(grid)){
                 acceleration->setDevice();
-                GpuVector<double> gpu_points(num_dimensions, num_data, data_points);
-                GpuVector<scalar_type> gpu_values(num_outputs, num_equations);
+                GpuVector<double> gpu_points(acceleration, num_dimensions, num_data, data_points);
+                GpuVector<scalar_type> gpu_values(acceleration, num_outputs, num_equations);
                 TasGpu::load_n(model_values, Utils::size_mult(num_outputs, num_data), gpu_values.data());
                 generateCoefficientsGPU<scalar_type>(gpu_points.data(), num_data, gpu_values.data(), tolerance, grid);
-                return Data2D<scalar_type>(num_outputs, num_equations, gpu_values.unload());
+                return Data2D<scalar_type>(num_outputs, num_equations, gpu_values.unload(acceleration));
             }else{
                 return generateCoefficients<scalar_type>(data_points, num_data, model_values, tolerance, grid);
             }

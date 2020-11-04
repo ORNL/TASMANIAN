@@ -431,9 +431,9 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
-            GpuVector<double> gpu_x(num_dimensions, num_x, x), gpu_y(num_outputs, num_x);
+            GpuVector<double> gpu_x(acceleration, num_dimensions, num_x, x), gpu_y(acceleration, num_outputs, num_x);
             evaluateBatchGPU(gpu_x.data(), num_x, gpu_y.data());
-            gpu_y.unload(y);
+            gpu_y.unload(acceleration, y);
             break;
         }
         case accel_gpu_cublas: {
@@ -444,10 +444,12 @@ void GridFourier::evaluateBatch(const double x[], int num_x, double y[]) const{
             evaluateHierarchicalFunctionsInternal(x, num_x, wreal, wimag);
 
             int num_points = points.getNumIndexes();
-            GpuVector<double> gpu_real(wreal.begin(), wreal.end()), gpu_imag(wimag.begin(), wimag.end()), gpu_y(num_outputs, num_x);
+            GpuVector<double> gpu_real(acceleration, wreal.begin(), wreal.end()),
+                              gpu_imag(acceleration, wimag.begin(), wimag.end()),
+                              gpu_y(acceleration, num_outputs, num_x);
             TasGpu::denseMultiply(acceleration, num_outputs, num_x, num_points,  1.0, gpu_cache->real, gpu_real, 0.0, gpu_y.data());
             TasGpu::denseMultiply(acceleration, num_outputs, num_x, num_points, -1.0, gpu_cache->imag, gpu_imag, 1.0, gpu_y.data());
-            gpu_y.unload(y);
+            gpu_y.unload(acceleration, y);
             break;
         }
         case accel_cpu_blas: {
@@ -495,20 +497,20 @@ void GridFourier::evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu
 }
 void GridFourier::evaluateHierarchicalFunctionsGPU(const double gpu_x[], int num_x, double gpu_y[]) const{
     loadGpuNodes<double>();
-    TasGpu::devalfor(num_dimensions, num_x, max_levels, gpu_x, gpu_cache->num_nodes, gpu_cache->points, gpu_y, nullptr);
+    TasGpu::devalfor(acceleration, num_dimensions, num_x, max_levels, gpu_x, gpu_cache->num_nodes, gpu_cache->points, gpu_y, nullptr);
 }
 void GridFourier::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const{
     loadGpuNodes<float>();
-    TasGpu::devalfor(num_dimensions, num_x, max_levels, gpu_x, gpu_cachef->num_nodes, gpu_cachef->points, gpu_y, nullptr);
+    TasGpu::devalfor(acceleration, num_dimensions, num_x, max_levels, gpu_x, gpu_cachef->num_nodes, gpu_cachef->points, gpu_y, nullptr);
 }
 template<typename T>
 void GridFourier::evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int num_x, GpuVector<T> &wreal, GpuVector<T> &wimag) const{
     size_t num_weights = ((size_t) points.getNumIndexes()) * ((size_t) num_x);
-    if (wreal.size() != num_weights) wreal.resize(num_weights);
-    if (wimag.size() != num_weights) wimag.resize(num_weights);
+    if (wreal.size() != num_weights) wreal.resize(acceleration, num_weights);
+    if (wimag.size() != num_weights) wimag.resize(acceleration, num_weights);
     loadGpuNodes<T>();
     auto& ccache = getGpuCache<T>();
-    TasGpu::devalfor(num_dimensions, num_x, max_levels, gpu_x, ccache->num_nodes, ccache->points, wreal.data(), wimag.data());
+    TasGpu::devalfor(acceleration, num_dimensions, num_x, max_levels, gpu_x, ccache->num_nodes, ccache->points, wreal.data(), wimag.data());
 }
 template<typename T> void GridFourier::loadGpuNodes() const{
     auto& ccache = getGpuCache<T>();
@@ -517,7 +519,7 @@ template<typename T> void GridFourier::loadGpuNodes() const{
 
     std::vector<int> num_nodes(num_dimensions);
     std::transform(max_levels.begin(), max_levels.end(), num_nodes.begin(), [](int l)->int{ return OneDimensionalMeta::getNumPoints(l, rule_fourier); });
-    ccache->num_nodes.load(num_nodes);
+    ccache->num_nodes.load(acceleration, num_nodes);
 
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
@@ -525,7 +527,7 @@ template<typename T> void GridFourier::loadGpuNodes() const{
     for(int i=0; i<num_points; i++)
         for(int j=0; j<num_dimensions; j++)
             transpoints.getStrip(j)[i] = work.getIndex(i)[j];
-    ccache->points.load(transpoints.begin(), transpoints.end());
+    ccache->points.load(acceleration, transpoints.begin(), transpoints.end());
 }
 void GridFourier::clearGpuNodes() const{
     if (gpu_cache){
@@ -543,8 +545,8 @@ template<typename T> void GridFourier::loadGpuCoefficients() const{
     if (!ccache->real.empty()) return;
     int num_points = points.getNumIndexes();
     size_t num_coeff = Utils::size_mult(num_outputs, num_points);
-    ccache->real.load(num_coeff, fourier_coefs.getStrip(0));
-    ccache->imag.load(num_coeff, fourier_coefs.getStrip(num_points));
+    ccache->real.load(acceleration, num_coeff, fourier_coefs.getStrip(0));
+    ccache->imag.load(acceleration, num_coeff, fourier_coefs.getStrip(num_points));
 }
 void GridFourier::clearGpuCoefficients() const{
     if (gpu_cache){

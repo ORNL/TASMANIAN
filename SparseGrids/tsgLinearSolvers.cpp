@@ -400,7 +400,7 @@ WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const *acceleration,
 
         if (acceleration->mode != accel_cpu_blas){ // using GPU
             acceleration->setDevice();
-            gpu_dense = GpuVector<double>(dense);
+            gpu_dense = GpuVector<double>(acceleration, dense);
             dense = std::vector<double>();
         }
     }else{ // sparse mode
@@ -422,7 +422,7 @@ WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const *acceleration,
 
 void WaveletBasisMatrix::factorize(AccelerationContext const *acceleration){
     if (not gpu_dense.empty()){
-        gpu_ipiv = GpuVector<int>(num_rows);
+        gpu_ipiv = GpuVector<int>(acceleration, num_rows);
         TasGpu::factorizePLU(acceleration, num_rows, gpu_dense.data(), gpu_ipiv.data());
     }else if (not dense.empty()){
         ipiv = std::vector<int>(num_rows);
@@ -471,9 +471,9 @@ void WaveletBasisMatrix::computeILU(){
 
 void WaveletBasisMatrix::invertTransposed(AccelerationContext const *acceleration, double b[]) const{
     if (not gpu_dense.empty()){
-        GpuVector<double> gpu_b(num_rows, 1, b);
+        GpuVector<double> gpu_b(acceleration, num_rows, 1, b);
         TasGpu::solvePLU(acceleration, 'N', num_rows, gpu_dense.data(), gpu_ipiv.data(), gpu_b.data());
-        gpu_b.unload(b);
+        gpu_b.unload(acceleration, b);
     }else if (not dense.empty()){
         TasBLAS::getrs('N', num_rows, 1, dense.data(), num_rows, ipiv.data(), b, num_rows);
     }else{
@@ -487,13 +487,13 @@ void WaveletBasisMatrix::invertTransposed(AccelerationContext const *acceleratio
 
 void WaveletBasisMatrix::invert(AccelerationContext const *acceleration, int num_colums, double B[]){
     if (not gpu_dense.empty()){
-        GpuVector<double> gpu_b(num_rows, num_colums, B);
+        GpuVector<double> gpu_b(acceleration, num_rows, num_colums, B);
         if (num_colums == 1){
             TasGpu::solvePLU(acceleration, 'T', num_rows, gpu_dense.data(), gpu_ipiv.data(), gpu_b.data());
         }else{
             TasGpu::solvePLU(acceleration, 'T', num_rows, gpu_dense.data(), gpu_ipiv.data(), num_colums, gpu_b.data());
         }
-        gpu_b.unload(B);
+        gpu_b.unload(acceleration, B);
     }else if (not dense.empty()){
         if (num_colums == 1){
             TasBLAS::getrs('T', num_rows, 1, dense.data(), num_rows, ipiv.data(), B, num_rows);

@@ -68,10 +68,10 @@ void solveLSmultiOOC(AccelerationContext const *acceleration, int n, int m, scal
 //! \brief Identical to TasGpu::solveLSmultiGPU() but the data starts with the CPU and gets uploaded to the GPU first.
 template<typename scalar_type>
 void solveLSmulti(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
-    GpuVector<scalar_type> gpuA(m, n, A);
-    GpuVector<scalar_type> gpuB(nrhs, n, B);
+    GpuVector<scalar_type> gpuA(acceleration, m, n, A);
+    GpuVector<scalar_type> gpuB(acceleration, nrhs, n, B);
     solveLSmultiGPU(acceleration, n, m, gpuA.data(), nrhs, gpuB.data());
-    gpuB.unload(B);
+    gpuB.unload(acceleration, B);
 }
 
 //! \brief Factorize \f$ A = P L U \f$, arrays are on the GPU.
@@ -99,9 +99,9 @@ template<typename scalar_type>
 void denseMultiplyMixed(AccelerationContext const *acceleration, int M, int N, int K, typename GpuVector<scalar_type>::value_type alpha,
                         GpuVector<scalar_type> const &A, scalar_type const B[],
                         typename GpuVector<scalar_type>::value_type beta, scalar_type C[]){
-    GpuVector<scalar_type> gpuB(K, N, B), gpuC(M, N);
+    GpuVector<scalar_type> gpuB(acceleration, K, N, B), gpuC(acceleration, M, N);
     denseMultiply(acceleration, M, N, K, alpha, A, gpuB, beta, gpuC.data());
-    gpuC.unload(C);
+    gpuC.unload(acceleration, C);
 }
 
 /*!
@@ -119,10 +119,10 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
 template<typename T>
 void sparseMultiplyMixed(AccelerationContext const *acceleration, int M, int N, int K, typename GpuVector<T>::value_type alpha, const GpuVector<T> &A,
                          const std::vector<int> &pntr, const std::vector<int> &indx, const std::vector<T> &vals, T C[]){
-    GpuVector<int> gpu_pntr(pntr), gpu_indx(indx);
-    GpuVector<T> gpu_vals(vals), gpu_c(M, N);
+    GpuVector<int> gpu_pntr(acceleration, pntr), gpu_indx(acceleration, indx);
+    GpuVector<T> gpu_vals(acceleration, vals), gpu_c(acceleration, M, N);
     sparseMultiply(acceleration, M, N, K, alpha, A, gpu_pntr, gpu_indx, gpu_vals, gpu_c.data());
-    gpu_c.unload(C);
+    gpu_c.unload(acceleration, C);
 }
 
 }

@@ -504,9 +504,9 @@ void GridGlobal::evaluateBatch(const double x[], int num_x, double y[]) const{
         case accel_gpu_magma:
         case accel_gpu_cuda: {
             acceleration->setDevice();
-            GpuVector<double> gpu_x(num_dimensions, num_x, x), gpu_result(num_x, num_outputs);
+            GpuVector<double> gpu_x(acceleration, num_dimensions, num_x, x), gpu_result(acceleration, num_x, num_outputs);
             evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
-            gpu_result.unload(y);
+            gpu_result.unload(acceleration, y);
             break;
         }
         case accel_gpu_cublas: {
@@ -543,7 +543,7 @@ template<typename T> void GridGlobal::evaluateBatchGPUtempl(T const gpu_x[], int
     loadGpuValues<T>();
     int num_points = points.getNumIndexes();
 
-    GpuVector<T> gpu_basis(cpu_num_x, num_points);
+    GpuVector<T> gpu_basis(acceleration, cpu_num_x, num_points);
     evaluateHierarchicalFunctionsGPU(gpu_x, cpu_num_x, gpu_basis.data());
     TasGpu::denseMultiply(acceleration, num_outputs, cpu_num_x, num_points, 1.0, getGpuCache<T>()->values, gpu_basis, 0.0, gpu_y);
 }
@@ -556,7 +556,8 @@ void GridGlobal::evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu_
 template<typename T> void GridGlobal::evaluateHierarchicalFunctionsGPUtempl(T const gpu_x[], int cpu_num_x, T *gpu_y) const{
     auto& ccache = getGpuCache<T>();
     loadGpuNodes<T>();
-    TasGpu::devalglo(!OneDimensionalMeta::isNonNested(rule), (rule == rule_clenshawcurtis0), num_dimensions, cpu_num_x, getNumPoints(),
+    TasGpu::devalglo(acceleration,
+                     !OneDimensionalMeta::isNonNested(rule), (rule == rule_clenshawcurtis0), num_dimensions, cpu_num_x, getNumPoints(),
                       ccache->num_basis,
                       gpu_x, ccache->nodes, ccache->coeff, ccache->tensor_weights,
                       ccache->nodes_per_level, ccache->offset_per_level, ccache->map_dimension, ccache->map_level,
@@ -572,7 +573,7 @@ void GridGlobal::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_n
 template<typename T> void GridGlobal::loadGpuValues() const{
     auto& ccache = getGpuCache<T>();
     if (!ccache) ccache = Utils::make_unique<CudaGlobalData<T>>();
-    if (ccache->values.empty()) ccache->values.load(values.begin(), values.end());
+    if (ccache->values.empty()) ccache->values.load(acceleration, values.begin(), values.end());
 }
 void GridGlobal::clearGpuValues() const{ if (gpu_cache) gpu_cache->values.clear(); }
 template<typename T> void GridGlobal::loadGpuNodes() const{
@@ -580,10 +581,10 @@ template<typename T> void GridGlobal::loadGpuNodes() const{
     if (!ccache) ccache = Utils::make_unique<CudaGlobalData<T>>();
     if (!ccache->nodes.empty()) return; // already loaded
     // data for stage 1 (Lagrange caching)
-    ccache->nodes.load((OneDimensionalMeta::isNonNested(rule)) ? wrapper.getAllNodes() : wrapper.getUnique());
-    ccache->coeff.load(wrapper.getAllCoeff());
-    ccache->nodes_per_level.load(wrapper.getNumNodesPerLevel());
-    ccache->offset_per_level.load(wrapper.getOffsetNodesPerLevel());
+    ccache->nodes.load(acceleration, (OneDimensionalMeta::isNonNested(rule)) ? wrapper.getAllNodes() : wrapper.getUnique());
+    ccache->coeff.load(acceleration, wrapper.getAllCoeff());
+    ccache->nodes_per_level.load(acceleration, wrapper.getNumNodesPerLevel());
+    ccache->offset_per_level.load(acceleration, wrapper.getOffsetNodesPerLevel());
 
     std::vector<int> map_dims, map_level, dim_offsets;
     int num_basis = 0;
@@ -596,20 +597,20 @@ template<typename T> void GridGlobal::loadGpuNodes() const{
         }
     }
     ccache->num_basis = num_basis;
-    ccache->map_dimension.load(map_dims);
-    ccache->map_level.load(map_level);
+    ccache->map_dimension.load(acceleration, map_dims);
+    ccache->map_level.load(acceleration, map_level);
 
     std::vector<double> tweights(active_w.size());
     std::transform(active_w.begin(), active_w.end(), tweights.begin(), [](int i)->double{ return static_cast<double>(i); });
-    ccache->tensor_weights.load(tweights);
+    ccache->tensor_weights.load(acceleration, tweights);
 
-    ccache->active_tensors.load(active_tensors.begin(), active_tensors.end());
+    ccache->active_tensors.load(acceleration, active_tensors.begin(), active_tensors.end());
 
     std::vector<int> active_num_points(active_tensors.totalSize());
     std::transform(active_tensors.begin(), active_tensors.end(), active_num_points.begin(), [&](int i)->int{ return wrapper.getNumPoints(i); });
-    ccache->active_num_points.load(active_num_points);
+    ccache->active_num_points.load(acceleration, active_num_points);
 
-    ccache->dim_offsets.load(dim_offsets);
+    ccache->dim_offsets.load(acceleration, dim_offsets);
 
     std::vector<int> map_tensor, map_index, map_reference;
     auto inump = active_num_points.begin();
@@ -624,9 +625,9 @@ template<typename T> void GridGlobal::loadGpuNodes() const{
             map_reference.push_back(tensor_refs[n][i]);
         }
     }
-    ccache->map_tensor.load(map_tensor);
-    ccache->map_index.load(map_index);
-    ccache->map_reference.load(map_reference);
+    ccache->map_tensor.load(acceleration, map_tensor);
+    ccache->map_index.load(acceleration, map_index);
+    ccache->map_reference.load(acceleration, map_reference);
 }
 void GridGlobal::clearGpuNodes() const{
     if (gpu_cache) gpu_cache->clearNodes();
