@@ -36,26 +36,26 @@
 namespace TasGrid{
 
 template<typename T>
-void TasGpu::dtrans2can(bool use01, int dims, int num_x, int pad_size, double const *gpu_trans_a, double const *gpu_trans_b, T const *gpu_x_transformed, T *gpu_x_canonical){
+void TasGpu::dtrans2can(AccelerationContext const*, bool use01, int dims, int num_x, int pad_size, double const *gpu_trans_a, double const *gpu_trans_b, T const *gpu_x_transformed, T *gpu_x_canonical){
 
 }
 
-template void TasGpu::dtrans2can<double>(bool, int, int, int, double const*, double const*, double const*, double*);
-template void TasGpu::dtrans2can<float>(bool, int, int, int, double const*, double const*, float const*, float*);
+template void TasGpu::dtrans2can<double>(AccelerationContext const*, bool, int, int, int, double const*, double const*, double const*, double*);
+template void TasGpu::dtrans2can<float>(AccelerationContext const*, bool, int, int, int, double const*, double const*, float const*, float*);
 
 // local polynomial basis functions, DENSE algorithm
 template<typename T>
-void TasGpu::devalpwpoly(int order, TypeOneDRule rule, int dims, int num_x, int num_points, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y){
+void TasGpu::devalpwpoly(AccelerationContext const*, int order, TypeOneDRule rule, int dims, int num_x, int num_points, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y){
 
 }
 
-template void TasGpu::devalpwpoly<double>(int, TypeOneDRule, int, int, int, const double*, const double*, const double*, double*);
-template void TasGpu::devalpwpoly<float>(int, TypeOneDRule, int, int, int, const float*, const float*, const float*, float*);
+template void TasGpu::devalpwpoly<double>(AccelerationContext const*, int, TypeOneDRule, int, int, int, const double*, const double*, const double*, double*);
+template void TasGpu::devalpwpoly<float>(AccelerationContext const*, int, TypeOneDRule, int, int, int, const float*, const float*, const float*, float*);
 
 // there is a switch statement that realizes templates for each combination of rule/order
 // make one function that covers that switch, the rest is passed from devalpwpoly_sparse
 template<typename T, int THREADS, int TOPLEVEL, bool fill>
-inline void devalpwpoly_sparse_realize_rule_order(int order, TypeOneDRule rule, int dims, int num_x,
+inline void devalpwpoly_sparse_realize_rule_order(AccelerationContext const*, int order, TypeOneDRule rule, int dims, int num_x,
                                           const T *x, const T *nodes, const T *support,
                                           const int *hpntr, const int *hindx, int num_roots, const int *roots,
                                           int *spntr, int *sindx, T *svals){
@@ -64,43 +64,48 @@ inline void devalpwpoly_sparse_realize_rule_order(int order, TypeOneDRule rule, 
 
 // local polynomial basis functions, SPARSE algorithm (2 passes, one pass to compue the non-zeros and one pass to evaluate)
 template<typename T>
-void TasGpu::devalpwpoly_sparse(int order, TypeOneDRule rule, int dims, int num_x, const T *gpu_x,
+void TasGpu::devalpwpoly_sparse(AccelerationContext const*, int order, TypeOneDRule rule, int dims, int num_x, const T *gpu_x,
                                 const GpuVector<T> &gpu_nodes, const GpuVector<T> &gpu_support,
                                 const GpuVector<int> &gpu_hpntr, const GpuVector<int> &gpu_hindx, const GpuVector<int> &gpu_hroots,
                                 GpuVector<int> &gpu_spntr, GpuVector<int> &gpu_sindx, GpuVector<T> &gpu_svals){
 
 }
-template void TasGpu::devalpwpoly_sparse<double>(int, TypeOneDRule, int, int, const double*, const GpuVector<double>&, const GpuVector<double>&,
+template void TasGpu::devalpwpoly_sparse<double>(AccelerationContext const*, int, TypeOneDRule, int, int,
+                                                 const double*, const GpuVector<double>&, const GpuVector<double>&,
                                                  const GpuVector<int>&, const GpuVector<int>&, const GpuVector<int>&,
                                                  GpuVector<int>&, GpuVector<int>&, GpuVector<double>&);
-template void TasGpu::devalpwpoly_sparse<float>(int, TypeOneDRule, int, int, const float*, const GpuVector<float>&, const GpuVector<float>&,
+template void TasGpu::devalpwpoly_sparse<float>(AccelerationContext const*, int, TypeOneDRule, int, int, const float*,
+                                                const GpuVector<float>&, const GpuVector<float>&,
                                                 const GpuVector<int>&, const GpuVector<int>&, const GpuVector<int>&,
                                                 GpuVector<int>&, GpuVector<int>&, GpuVector<float>&);
 
 // Sequence Grid basis evaluations
 template<typename T>
-void TasGpu::devalseq(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x, const GpuVector<int> &num_nodes,
+void TasGpu::devalseq(AccelerationContext const*, int dims, int num_x, const std::vector<int> &max_levels,
+                      const T *gpu_x, const GpuVector<int> &num_nodes,
                       const GpuVector<int> &points, const GpuVector<T> &nodes, const GpuVector<T> &coeffs, T *gpu_result){
 
 }
 
-template void TasGpu::devalseq<double>(int dims, int num_x, const std::vector<int> &max_levels, const double *gpu_x, const GpuVector<int> &num_nodes,
+template void TasGpu::devalseq<double>(AccelerationContext const*, int dims, int num_x, const std::vector<int> &max_levels,
+                                       const double *gpu_x, const GpuVector<int> &num_nodes,
                                       const GpuVector<int> &points, const GpuVector<double> &nodes, const GpuVector<double> &coeffs, double *gpu_result);
-template void TasGpu::devalseq<float>(int dims, int num_x, const std::vector<int> &max_levels, const float *gpu_x, const GpuVector<int> &num_nodes,
+template void TasGpu::devalseq<float>(AccelerationContext const*, int dims, int num_x, const std::vector<int> &max_levels,
+                                      const float *gpu_x, const GpuVector<int> &num_nodes,
                                       const GpuVector<int> &points, const GpuVector<float> &nodes, const GpuVector<float> &coeffs, float *gpu_result);
 
 // Fourier Grid basis evaluations
 template<typename T>
-void TasGpu::devalfor(int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x,
+void TasGpu::devalfor(AccelerationContext const*, int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x,
                       const GpuVector<int> &num_nodes, const GpuVector<int> &points, T *gpu_wreal, typename GpuVector<T>::value_type *gpu_wimag){
 
 }
 
-template void TasGpu::devalfor<double>(int, int, const std::vector<int>&, const double*, const GpuVector<int>&, const GpuVector<int>&, double*, double*);
-template void TasGpu::devalfor<float>(int, int, const std::vector<int>&, const float*, const GpuVector<int>&, const GpuVector<int>&, float*, float*);
+template void TasGpu::devalfor<double>(AccelerationContext const*, int, int, const std::vector<int>&, const double*, const GpuVector<int>&, const GpuVector<int>&, double*, double*);
+template void TasGpu::devalfor<float>(AccelerationContext const*, int, int, const std::vector<int>&, const float*, const GpuVector<int>&, const GpuVector<int>&, float*, float*);
 
 template<typename T>
-void TasGpu::devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num_x, int num_p, int num_basis,
+void TasGpu::devalglo(AccelerationContext const*, bool is_nested, bool is_clenshawcurtis0, int dims, int num_x, int num_p, int num_basis,
                       T const *gpu_x, GpuVector<T> const &nodes, GpuVector<T> const &coeff, GpuVector<T> const &tensor_weights,
                       GpuVector<int> const &nodes_per_level, GpuVector<int> const &offset_per_level, GpuVector<int> const &map_dimension, GpuVector<int> const &map_level,
                       GpuVector<int> const &active_tensors, GpuVector<int> const &active_num_points, GpuVector<int> const &dim_offsets,
@@ -108,18 +113,18 @@ void TasGpu::devalglo(bool is_nested, bool is_clenshawcurtis0, int dims, int num
 
 }
 
-template void TasGpu::devalglo<double>(bool, bool, int, int, int, int,
+template void TasGpu::devalglo<double>(AccelerationContext const*, bool, bool, int, int, int, int,
                                        double const*, GpuVector<double> const&, GpuVector<double> const&, GpuVector<double> const&,
                                        GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                        GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                        GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, double*);
-template void TasGpu::devalglo<float>(bool, bool, int, int, int, int,
+template void TasGpu::devalglo<float>(AccelerationContext const*, bool, bool, int, int, int, int,
                                       float const*, GpuVector<float> const&, GpuVector<float> const&, GpuVector<float> const&,
                                       GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                       GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                       GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, float*);
 
-void TasGpu::fillDataGPU(double value, long long n, long long stride, double data[]){
+void TasGpu::fillDataGPU(AccelerationContext const*, double value, long long n, long long stride, double data[]){
 
 }
 

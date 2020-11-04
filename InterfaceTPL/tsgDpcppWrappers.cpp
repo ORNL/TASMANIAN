@@ -44,7 +44,7 @@
 
 namespace TasGrid{
 
-template<typename T> void GpuVector<T>::resize(size_t count){
+template<typename T> void GpuVector<T>::resize(AccelerationContext const *acc, size_t count){
 //     if (count != num_entries){ // if the current array is not big enough
 //         clear(); // resets dynamic_mode
 //         num_entries = count;
@@ -57,33 +57,33 @@ template<typename T> void GpuVector<T>::clear(){
 //         TasGpu::hipcheck( hipFree(gpu_data), "hipFree()");
 //     gpu_data = nullptr;
 }
-template<typename T> void GpuVector<T>::load(size_t count, const T* cpu_data){
+template<typename T> void GpuVector<T>::load(AccelerationContext const *acc, size_t count, const T* cpu_data){
 //     resize(count);
 //     TasGpu::hipcheck( hipMemcpy(gpu_data, cpu_data, num_entries * sizeof(T), hipMemcpyHostToDevice), "hipMemcpy() to device");
 }
-template<typename T> void GpuVector<T>::unload(size_t num, T* cpu_data) const{
+template<typename T> void GpuVector<T>::unload(AccelerationContext const *acc, size_t num, T* cpu_data) const{
 //    TasGpu::hipcheck( hipMemcpy(cpu_data, gpu_data, num * sizeof(T), hipMemcpyDeviceToHost), "hipMemcpy() from device");
 }
 
-template void GpuVector<double>::resize(size_t);
+template void GpuVector<double>::resize(AccelerationContext const*, size_t);
 template void GpuVector<double>::clear();
-template void GpuVector<double>::load(size_t, const double*);
-template void GpuVector<double>::unload(size_t, double*) const;
+template void GpuVector<double>::load(AccelerationContext const*, size_t, const double*);
+template void GpuVector<double>::unload(AccelerationContext const*, size_t, double*) const;
 
-template void GpuVector<std::complex<double>>::resize(size_t);
+template void GpuVector<std::complex<double>>::resize(AccelerationContext const*, size_t);
 template void GpuVector<std::complex<double>>::clear();
-template void GpuVector<std::complex<double>>::load(size_t, const std::complex<double>*);
-template void GpuVector<std::complex<double>>::unload(size_t, std::complex<double>*) const;
+template void GpuVector<std::complex<double>>::load(AccelerationContext const*, size_t, const std::complex<double>*);
+template void GpuVector<std::complex<double>>::unload(AccelerationContext const*, size_t, std::complex<double>*) const;
 
-template void GpuVector<float>::resize(size_t);
+template void GpuVector<float>::resize(AccelerationContext const*, size_t);
 template void GpuVector<float>::clear();
-template void GpuVector<float>::load(size_t, const float*);
-template void GpuVector<float>::unload(size_t, float*) const;
+template void GpuVector<float>::load(AccelerationContext const*, size_t, const float*);
+template void GpuVector<float>::unload(AccelerationContext const*, size_t, float*) const;
 
-template void GpuVector<int>::resize(size_t);
+template void GpuVector<int>::resize(AccelerationContext const*, size_t);
 template void GpuVector<int>::clear();
-template void GpuVector<int>::load(size_t, const int*);
-template void GpuVector<int>::unload(size_t, int*) const;
+template void GpuVector<int>::load(AccelerationContext const*, size_t, const int*);
+template void GpuVector<int>::unload(AccelerationContext const*, size_t, int*) const;
 
 GpuEngine::~GpuEngine(){
 }
