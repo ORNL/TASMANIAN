@@ -57,11 +57,13 @@ int main(int argc, char const **argv){
     cout << std::setw(40) << "Automated construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
     pass_all = pass_all && pass;
 
-    #if defined(Tasmanian_ENABLE_BLAS) || defined(Tasmanian_ENABLE_CUDA)
+    #if defined(Tasmanian_ENABLE_BLAS) || defined(Tasmanian_ENABLE_GPU)
+    #ifndef TASMANIAN_ENABLE_DPCPP
     pass = true;
     pass = testLoadUnstructuredL2(verbose, gpuid);
     cout << std::setw(40) << "Unstructured construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
     pass_all = pass_all && pass;
+    #endif
     #else
     cout << std::setw(40) << "Unstructured construction" << std::setw(10) << "skipping" << endl;
     gpuid *= 2; // no op to register the use of gpuid

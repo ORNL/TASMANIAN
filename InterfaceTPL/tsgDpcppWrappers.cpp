@@ -45,24 +45,34 @@
 namespace TasGrid{
 
 template<typename T> void GpuVector<T>::resize(AccelerationContext const *acc, size_t count){
-//     if (count != num_entries){ // if the current array is not big enough
-//         clear(); // resets dynamic_mode
-//         num_entries = count;
-//         TasGpu::hipcheck( hipMalloc((void**) &gpu_data, num_entries * sizeof(T)), "hipMalloc()");
-//     }
+    if (count != num_entries){ // if the current array is not big enoug
+        clear(); // resets dynamic_mode
+        num_entries = count;
+        sycl::queue *q = getSyclQueue(acc);
+        sycl_queue = acc->engine->internal_queue;
+        gpu_data = sycl::malloc_device<T>(num_entries, *q);
+        //std::cout << " Creating data: " << gpu_data << "   q = " << q << "\n";
+    }
 }
 template<typename T> void GpuVector<T>::clear(){
-//     num_entries = 0;
-//     if (gpu_data != nullptr) // if I own the data and the data is not null
-//         TasGpu::hipcheck( hipFree(gpu_data), "hipFree()");
-//     gpu_data = nullptr;
+    num_entries = 0;
+    if (gpu_data != nullptr){
+        sycl::queue *q = reinterpret_cast<sycl::queue*>(sycl_queue.get());
+        //std::cout << " deleting data: " << gpu_data << "   q = " << q << "\n";
+        sycl::free(gpu_data, *q);
+    }
+    gpu_data = nullptr;
 }
 template<typename T> void GpuVector<T>::load(AccelerationContext const *acc, size_t count, const T* cpu_data){
-//     resize(count);
-//     TasGpu::hipcheck( hipMemcpy(gpu_data, cpu_data, num_entries * sizeof(T), hipMemcpyHostToDevice), "hipMemcpy() to device");
+    resize(acc, count);
+    sycl::queue *q = getSyclQueue(acc);
+    q->memcpy(gpu_data, cpu_data, count * sizeof(T));
+    q->wait();
 }
 template<typename T> void GpuVector<T>::unload(AccelerationContext const *acc, size_t num, T* cpu_data) const{
-//    TasGpu::hipcheck( hipMemcpy(cpu_data, gpu_data, num * sizeof(T), hipMemcpyDeviceToHost), "hipMemcpy() from device");
+    sycl::queue *q = getSyclQueue(acc);
+    q->memcpy(cpu_data, gpu_data, num * sizeof(T));
+    q->wait();
 }
 
 template void GpuVector<double>::resize(AccelerationContext const*, size_t);
@@ -85,11 +95,20 @@ template void GpuVector<int>::clear();
 template void GpuVector<int>::load(AccelerationContext const*, size_t, const int*);
 template void GpuVector<int>::unload(AccelerationContext const*, size_t, int*) const;
 
-GpuEngine::~GpuEngine(){
+template void GpuVector<std::int64_t>::resize(AccelerationContext const*, size_t);
+template void GpuVector<std::int64_t>::clear();
+template void GpuVector<std::int64_t>::load(AccelerationContext const*, size_t, const std::int64_t*);
+template void GpuVector<std::int64_t>::unload(AccelerationContext const*, size_t, std::int64_t*) const;
+
+GpuEngine::~GpuEngine(){}
+
+void GpuEngine::setSyclQueue(void *queue){
+    sycl_gpu_queue = queue;
+    own_gpu_queue = false;
 }
 
 int AccelerationMeta::getNumGpuDevices(){
-    return 0;
+    return 1; // fake device for now, will actually use the CPU
 }
 void AccelerationMeta::setDefaultCudaDevice(int deviceID){
 }
@@ -116,43 +135,6 @@ template void AccelerationMeta::delCudaArray<int>(int*);
 
 namespace TasGpu{
 
-//! \brief Wrapper around sgeam().
-void geam(//rocblas_handle handle, rocblas_operation transa, rocblas_operation transb,
-          int m, int n, float alpha, float const A[], int lda,
-          float beta, float const B[], int ldb, float C[], int ldc){
-
-}
-//! \brief Wrapper around dgeam().
-void geam(//rocblas_handle handle, rocblas_operation transa, rocblas_operation transb,
-          int m, int n, double alpha, double const A[], int lda,
-          double beta, double const B[], int ldb, double C[], int ldc){
-
-}
-//! \brief Wrapper around sgemv().
-inline void gemv(//rocblas_handle handle, rocblas_operation transa,
-                 int M, int N,
-                 float alpha, float const A[], int lda, float const x[], int incx, float beta, float y[], int incy){
-
-}
-//! \brief Wrapper around dgemv().
-inline void gemv(//rocblas_handle handle, rocblas_operation transa,
-                 int M, int N,
-                 double alpha, double const A[], int lda, double const x[], int incx, double beta, double y[], int incy){
-
-}
-
-//! \brief Wrapper around sgemm().
-inline void gemm(//rocblas_handle handle, rocblas_operation transa, rocblas_operation transb,
-                 int M, int N, int K,
-                 float alpha, float const A[], int lda, float const B[], int ldb, float beta, float C[], int ldc){
-
-}
-//! \brief Wrapper around dgemm().
-inline void gemm(//rocblas_handle handle, rocblas_operation transa, rocblas_operation transb,
-                 int M, int N, int K,
-                 double alpha, double const A[], int lda, double const B[], int ldb, double beta, double C[], int ldc){
-
-}
 //! \brief Wrapper around dtrsm().
 inline void trsm(//rocblas_handle handle, rocblas_side side, rocblas_fill uplo,
                  //rocblas_operation trans, rocblas_diagonal diag,
@@ -168,48 +150,49 @@ inline void trsm(//rocblas_handle handle, rocblas_side side, rocblas_fill uplo,
 
 }
 
-inline void sparse_gemv(//rocsparse_handle handle, rocsparse_operation trans, int M, int N, int nnz,
-                        float alpha, float const vals[], int const pntr[], int const indx[],
-                        float const x[], float beta, float y[]){
-
-}
-inline void sparse_gemv(//rocsparse_handle handle, rocsparse_operation trans, int M, int N, int nnz,
-                        double alpha, double const vals[], int const pntr[], int const indx[],
-                        double const x[], double beta, double y[]){
-
-}
-
-inline void sparse_gemm(//rocsparse_handle handle, rocsparse_operation transa, rocsparse_operation transb,
-                        int M, int N, int K, int nnz, float alpha,
-                        float const vals[], int const pntr[], int const indx[],
-                        float const B[], int ldb, float beta, float C[], int ldc){
-
-}
-
-inline void sparse_gemm(//rocsparse_handle handle, rocsparse_operation transa, rocsparse_operation transb,
-                        int M, int N, int K, int nnz, double alpha,
-                        double const vals[], int const pntr[], int const indx[],
-                        double const B[], int ldb, double beta, double C[], int ldc){
-
-}
-
-
-//! \brief Wrapper around rocsolver_dgetrs().
-void getrs(//rocblas_handle handle, rocblas_operation trans,
-           int n, int nrhs, double const A[], int lda, int const ipiv[], double B[], int ldb){
-
+void transpose_matrix(sycl::queue *q, int m, int n, double const A[], double AT[]){
+    q->submit([&](sycl::handler& h) {
+            h.parallel_for<class tsg_transpose>(sycl::range<2>{static_cast<size_t>(m), static_cast<size_t>(n)}, [=](sycl::id<2> i){
+                AT[i[0] * n + i[1]] = A[i[0] + m * i[1]];
+            });
+        });
+    q->wait();
 }
 
 //! \brief Wrapper around rocsolver_dgetrf().
-void factorizePLU(AccelerationContext const *acceleration, int n, double A[], int ipiv[]){
-
+void factorizePLU(AccelerationContext const *acceleration, int n, double A[], int_gpu_lapack ipiv[]){
+    sycl::queue *q = getSyclQueue(acceleration);
+    size_t size = oneapi::mkl::lapack::getrf_scratchpad_size<double>(*q, n, n, n);
+    q->wait();
+    GpuVector<double> workspace(acceleration, size);
+    oneapi::mkl::lapack::getrf(*q, n, n, A, n, ipiv, workspace.data(), size);
+    q->wait();
 }
 
-void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int const ipiv[], double b[]){
-
+void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int_gpu_lapack const ipiv[], double b[]){
+    //std::cout << " Solving PLU one\n";
+    sycl::queue *q = getSyclQueue(acceleration);
+    size_t size = oneapi::mkl::lapack::getrs_scratchpad_size<double>(*q, (trans == 'T') ? oneapi::mkl::transpose::T :oneapi::mkl::transpose::N, n, 1, n, n);
+    q->wait();
+    GpuVector<double> workspace(acceleration, size);
+    oneapi::mkl::lapack::getrs(*q, (trans == 'T') ? oneapi::mkl::transpose::T :oneapi::mkl::transpose::N, n, 1,
+                               const_cast<double*>(A), n, const_cast<int_gpu_lapack*>(ipiv), b, n, workspace.data(), size);
+    q->wait();
+    //std::cout << " Solved PLU one\n";
 }
-void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int const ipiv[], int nrhs, double B[]){
-
+void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int_gpu_lapack const ipiv[], int nrhs, double B[]){
+    //std::cout << " Solving PLU many\n";
+    sycl::queue *q = getSyclQueue(acceleration);
+    size_t size = oneapi::mkl::lapack::getrs_scratchpad_size<double>(*q, (trans == 'T') ? oneapi::mkl::transpose::T :oneapi::mkl::transpose::N, n, nrhs, n, n);
+    q->wait();
+    GpuVector<double> workspace(acceleration, size);
+    GpuVector<double> BT(acceleration, n, nrhs);
+    transpose_matrix(q, nrhs, n, B, BT.data());
+    oneapi::mkl::lapack::getrs(*q, (trans == 'T') ? oneapi::mkl::transpose::T :oneapi::mkl::transpose::N, n, nrhs,
+                               const_cast<double*>(A), n, const_cast<int_gpu_lapack*>(ipiv), BT.data(), n, workspace.data(), size);
+    q->wait();
+    transpose_matrix(q, n, nrhs, BT.data(), B);
+    //std::cout << " Solved PLU many\n";
 }
 
 //! \brief Wrapper around rocsolver_dgelqf().
@@ -256,15 +239,17 @@ template void solveLSmultiOOC<std::complex<double>>(AccelerationContext const*, 
 template<typename scalar_type>
 void denseMultiply(AccelerationContext const *acceleration, int M, int N, int K, typename GpuVector<scalar_type>::value_type alpha, GpuVector<scalar_type> const &A,
                    GpuVector<scalar_type> const &B, typename GpuVector<scalar_type>::value_type beta, scalar_type C[]){
+    sycl::queue *q = getSyclQueue(acceleration);
     if (M > 1){
         if (N > 1){ // matrix-matrix mode
-            //gemm(cublash, rocblas_operation_none, rocblas_operation_none, M, N, K, alpha, A.data(), M, B.data(), K, beta, C, M);
+            oneapi::mkl::blas::column_major::gemm(*q, oneapi::mkl::transpose::N, oneapi::mkl::transpose::N, M, N, K, alpha, A.data(), M, B.data(), K, beta, C, M);
         }else{ // matrix vector, A * v = C
-            //gemv(cublash, rocblas_operation_none, M, K, alpha, A.data(), M, B.data(), 1, beta, C, 1);
+            oneapi::mkl::blas::column_major::gemv(*q, oneapi::mkl::transpose::N, M, K, alpha, A.data(), M, B.data(), 1, beta, C, 1);
         }
     }else{ // matrix vector B^T * v = C
-        //gemv(cublash, rocblas_operation_transpose, K, N, alpha, B.data(), K, A.data(), 1, beta, C, 1);
+        oneapi::mkl::blas::column_major::gemv(*q, oneapi::mkl::transpose::T, K, N, alpha, B.data(), K, A.data(), 1, beta, C, 1);
     }
+    q->wait();
 }
 
 template void denseMultiply<float>(AccelerationContext const*, int, int, int, float,
@@ -276,7 +261,38 @@ template<typename scalar_type>
 void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K, typename GpuVector<scalar_type>::value_type alpha,
                     GpuVector<scalar_type> const &A, GpuVector<int> const &pntr, GpuVector<int> const &indx,
                     GpuVector<scalar_type> const &vals, scalar_type C[]){
+    sycl::queue *q = getSyclQueue(acceleration);
+    oneapi::mkl::sparse::matrix_handle_t mat = nullptr;
+    oneapi::mkl::sparse::init_matrix_handle(&mat);
 
+    oneapi::mkl::sparse::set_csr_data(mat, N, K, oneapi::mkl::index_base::zero,
+                                      const_cast<int*>(pntr.data()), const_cast<int*>(indx.data()), const_cast<scalar_type*>(vals.data()));
+
+//     if (M > 1){
+//         oneapi::mkl::sparse::gemm(*q, oneapi::mkl::transpose::N, alpha, mat,
+//                                 const_cast<scalar_type*>(A.data()), M, M, 0.0, C, M);
+//     }else{
+//         oneapi::mkl::sparse::gemv(*q, oneapi::mkl::transpose::N, 1.0, mat, const_cast<scalar_type*>(A.data()), 0.0, C);
+//     }
+
+    Utils::Wrapper2D<scalar_type> ywrap(M, C);
+    Utils::Wrapper2D<scalar_type const> surpluses(M, A.data());
+    int const *spntr = pntr.data();
+    int const *sindx = indx.data();
+    scalar_type const *svals = vals.data();
+    #pragma omp parallel for
+    for(int i=0; i<N; i++){
+        scalar_type *this_y = ywrap.getStrip(i);
+        std::fill(this_y, this_y + M, 0.0);
+        for(int j=spntr[i]; j<spntr[i+1]; j++){
+            double v = svals[j];
+            scalar_type const *s = surpluses.getStrip(sindx[j]);
+            for(int k=0; k<M; k++) this_y[k] += v * s[k];
+        }
+    }
+
+    q->wait();
+    oneapi::mkl::sparse::release_matrix_handle(&mat);
 }
 
 template void sparseMultiply<float>(AccelerationContext const*, int, int, int, float, GpuVector<float> const &A,

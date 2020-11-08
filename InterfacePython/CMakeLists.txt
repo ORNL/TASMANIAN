@@ -23,7 +23,7 @@ endif()
 # Here we convert boolen true to "ON" so it can
 # be safely passed to Python as a string and interpreted via
 # python_boolean = ("@cmake_boolean@" == "ON")
-foreach(_tsg_opt Tasmanian_ENABLE_BLAS Tasmanian_ENABLE_CUDA)
+foreach(_tsg_opt Tasmanian_ENABLE_BLAS Tasmanian_ENABLE_CUDA Tasmanian_ENABLE_HIP Tasmanian_ENABLE_DPCPP)
     if (${_tsg_opt})
         set(${_tsg_opt} "ON")
     endif()

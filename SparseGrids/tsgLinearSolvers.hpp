@@ -211,7 +211,7 @@ private:
     std::vector<int> ipiv; // pivots for the dense factorize
 
     GpuVector<double> gpu_dense; // GPU factors
-    GpuVector<int> gpu_ipiv;
+    GpuVector<int_gpu_lapack> gpu_ipiv;
 };
 
 }
