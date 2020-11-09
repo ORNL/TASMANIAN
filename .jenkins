@@ -13,7 +13,6 @@ pipeline {
                         dockerfile {
                             filename 'Dockerfile_stack'
                             dir 'docker'
-                            additionalBuildArgs '--pull'
                             label 'docker'
                         }
                     }
@@ -44,7 +43,6 @@ cmake \
                         dockerfile {
                             filename 'Dockerfile_stack'
                             dir 'docker'
-                            additionalBuildArgs '--pull'
                             label 'docker'
                         }
                     }
@@ -78,7 +76,6 @@ cmake \
                         dockerfile {
                             filename 'Dockerfile_nvidia-cuda9.0-ubuntu16.04'
                             dir 'docker'
-                            additionalBuildArgs '--pull'
                             label 'nvidia-docker'
                         }
                     }
@@ -159,7 +156,6 @@ cmake \
                 dockerfile {
                     filename 'Dockerfile.doxygen'
                     dir 'docker'
-                    additionalBuildArgs '--pull'
                     label 'docker'
                 }
             }
