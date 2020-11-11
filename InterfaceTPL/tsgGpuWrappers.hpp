@@ -75,11 +75,11 @@ void solveLSmulti(AccelerationContext const *acceleration, int n, int m, scalar_
 }
 
 //! \brief Factorize \f$ A = P L U \f$, arrays are on the GPU.
-void factorizePLU(AccelerationContext const *acceleration, int n, double A[], int ipiv[]);
+void factorizePLU(AccelerationContext const *acceleration, int n, double A[], int_gpu_lapack ipiv[]);
 //! \brief Solve A x = b using a PLU factorization.
-void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int const ipiv[], double b[]);
+void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int_gpu_lapack const ipiv[], double b[]);
 //! \brief Solve A x = b using a PLU factorization, B is in row-major format.
-void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int const ipiv[], int nrhs, double B[]);
+void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int_gpu_lapack const ipiv[], int nrhs, double B[]);
 
 /*!
  * \brief Wrapper to GPU BLAS that multiplies dense matrices (e.g., cuBlas, MAGMA).

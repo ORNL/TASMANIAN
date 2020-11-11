@@ -36,6 +36,7 @@
 // without this MSVC++ is not compliant with the C++ sandard and does not accepts keywords such as "not" and "or"
 #include <iso646.h>
 #endif
+#include <cstdint>
 #include <map>
 #include <iostream>
 #include <iomanip>
@@ -79,6 +80,12 @@
  */
 
 namespace TasGrid{
+
+#ifdef Tasmanian_ENABLE_DPCPP
+    using int_gpu_lapack = std::int64_t;
+#else
+    using int_gpu_lapack = int;
+#endif
 
 //! \internal
 //! \brief Describes the relation between two multi-indexes when compared during sorting.

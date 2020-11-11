@@ -629,7 +629,7 @@ void GridFourier::integrateHierarchicalFunctions(double integrals[]) const{
     std::fill(integrals + 1, integrals + getNumPoints(), 0.0);
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
+#ifdef Tasmanian_ENABLE_GPU
 void GridFourier::updateAccelerationData(AccelerationContext::ChangeType change) const{
     if (change == AccelerationContext::change_gpu_device){
         gpu_cache.reset();

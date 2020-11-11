@@ -37,6 +37,10 @@
 #error "Cannot use tsgDpcppWrappers.cpp without Tasmanian_ENABLE_DPCPP"
 #endif
 
+#define MKL_INT int
+#include <CL/sycl.hpp>
+#include <CL/sycl/usm.hpp>
+#include "oneapi/mkl.hpp"
 
 /*!
  * \file tsgDpcppWrappers.hpp
@@ -48,6 +52,23 @@
  */
 
 namespace TasGrid{
+
+inline sycl::queue* getSyclQueue(AccelerationContext const *acceleration){
+    if (acceleration->engine->sycl_gpu_queue == nullptr){
+        //sycl::default_selector d_selector;
+        acceleration->engine->internal_queue = std::shared_ptr<int>(
+            reinterpret_cast<int*>(new sycl::queue()),
+            [](int* q_int){
+                sycl::queue *q = reinterpret_cast<sycl::queue*>(q_int);
+                delete q;
+            }
+        );
+        acceleration->engine->sycl_gpu_queue = acceleration->engine->internal_queue.get();
+        acceleration->engine->own_gpu_queue = true;
+    }
+    return reinterpret_cast<sycl::queue*>(acceleration->engine->sycl_gpu_queue);
+}
+
 namespace TasGpu{
 
 

@@ -274,6 +274,11 @@ void GridLocalPolynomial::evaluateGpuMixed(const double x[], int num_x, double y
         buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals);
     }else{
         walkTree<2>(points, x, sindx, svals, nullptr);
+        #ifdef Tasmanian_ENABLE_DPCPP
+        // CUDA and HIP have methods for sparse-vector times dense matrix or vector
+        // therefore, CUDA/HIP do not use spntr when num_x is equal to 1, but DPC++ needs to set it too
+        spntr = {0, static_cast<int>(sindx.size())};
+        #endif
     }
     TasGpu::sparseMultiplyMixed(acceleration, num_outputs, num_x, points.getNumIndexes(), 1.0, gpu_cache->surpluses, spntr, sindx, svals, y);
 }
@@ -402,7 +407,7 @@ void GridLocalPolynomial::updateValues(double const *vals){
     }
 }
 void GridLocalPolynomial::loadNeededPoints(const double *vals){
-    #ifdef Tasmanian_ENABLE_CUDA
+    #ifdef Tasmanian_ENABLE_GPU
     if (acceleration->on_gpu()){
         acceleration->setDevice();
         loadNeededPointsGPU(vals);
@@ -1398,7 +1403,7 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[]){
     values = StorageSet(num_outputs, points.getNumIndexes(), std::move(y));
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
+#ifdef Tasmanian_ENABLE_GPU
 void GridLocalPolynomial::updateAccelerationData(AccelerationContext::ChangeType change) const{
     switch(change){
         case AccelerationContext::change_gpu_device:

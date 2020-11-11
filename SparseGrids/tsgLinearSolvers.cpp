@@ -422,7 +422,7 @@ WaveletBasisMatrix::WaveletBasisMatrix(AccelerationContext const *acceleration,
 
 void WaveletBasisMatrix::factorize(AccelerationContext const *acceleration){
     if (not gpu_dense.empty()){
-        gpu_ipiv = GpuVector<int>(acceleration, num_rows);
+        gpu_ipiv = GpuVector<int_gpu_lapack>(acceleration, num_rows);
         TasGpu::factorizePLU(acceleration, num_rows, gpu_dense.data(), gpu_ipiv.data());
     }else if (not dense.empty()){
         ipiv = std::vector<int>(num_rows);

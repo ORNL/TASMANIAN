@@ -793,7 +793,7 @@ double GridGlobal::legendre(int n, double x){
     return l;
 }
 
-#ifdef Tasmanian_ENABLE_CUDA
+#ifdef Tasmanian_ENABLE_GPU
 void GridGlobal::updateAccelerationData(AccelerationContext::ChangeType change) const{
     if (change == AccelerationContext::change_gpu_device){
         gpu_cache.reset();

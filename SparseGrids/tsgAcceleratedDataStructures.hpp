@@ -100,12 +100,19 @@ public:
     GpuVector<T>& operator =(GpuVector<T> const &) = delete;
 
     //! \brief Allow for move-construction.
-    GpuVector(GpuVector<T> &&other) : num_entries(Utils::exchange(other.num_entries, 0)), gpu_data(Utils::exchange(other.gpu_data, nullptr)){}
+    GpuVector(GpuVector<T> &&other) : num_entries(Utils::exchange(other.num_entries, 0)), gpu_data(Utils::exchange(other.gpu_data, nullptr))
+    #ifdef Tasmanian_ENABLE_DPCPP
+        , sycl_queue(std::move(other.sycl_queue))
+    #endif
+    {}
     //! \brief Allow for move-assignment.
     GpuVector<T>& operator =(GpuVector<T> &&other){
         GpuVector<T> temp(std::move(other));
         std::swap(num_entries, temp.num_entries);
         std::swap(gpu_data, temp.gpu_data);
+        #ifdef Tasmanian_ENABLE_DPCPP
+        std::swap(sycl_queue, temp.sycl_queue);
+        #endif
         return *this;
     }
 
@@ -215,6 +222,9 @@ public:
 private:
     size_t num_entries; // keep track of the size, update on every call that changes the gpu_data
     T *gpu_data; // the GPU array
+    #ifdef Tasmanian_ENABLE_DPCPP
+    std::shared_ptr<int> sycl_queue ;
+    #endif
 };
 
 /*!
@@ -233,6 +243,9 @@ struct GpuEngine{
     #ifdef Tasmanian_ENABLE_HIP
                 : rocblasHandle(nullptr), own_rocblas_handle(false),
                   rocsparseHandle(nullptr), own_rocsparse_handle(false)
+    #endif
+    #ifdef Tasmanian_ENABLE_DPCPP
+                : sycl_gpu_queue(nullptr), own_gpu_queue(false)
     #endif
     #ifdef Tasmanian_ENABLE_MAGMA
                   , called_magma_init(false)
@@ -264,7 +277,14 @@ struct GpuEngine{
         own_rocsparse_handle(Utils::exchange(other.own_rocsparse_handle, false))
         {}
     #else
+    #ifdef Tasmanian_ENABLE_DPCPP
+    GpuEngine(GpuEngine &&other) :
+        sycl_gpu_queue(Utils::exchange(other.sycl_gpu_queue, nullptr)),
+        own_gpu_queue(Utils::exchange(other.own_gpu_queue, false))
+        {}
+    #else
     GpuEngine(GpuEngine &&) = default;
+    #endif
     #endif
     #endif
 
@@ -298,7 +318,19 @@ struct GpuEngine{
         return *this;
     }
     #else
+    #ifdef Tasmanian_ENABLE_HIP
+    GpuEngine& operator= (GpuEngine &&other){
+        GpuEngine temp(std::move(other));
+        std::swap(sycl_gpu_queue, other.sycl_gpu_queue);
+        std::swap(own_gpu_queue, other.own_gpu_queue);
+        #ifdef Tasmanian_ENABLE_MAGMA
+        std::swap(called_magma_init, temp.called_magma_init);
+        #endif
+        return *this;
+    }
+    #else
     GpuEngine& operator= (GpuEngine &&) = default;
+    #endif
     #endif
     #endif
 
@@ -333,6 +365,17 @@ struct GpuEngine{
     void *rocsparseHandle;
     //! \brief Remember the ownership of the handle.
     bool own_rocsparse_handle;
+    #endif
+
+    #ifdef Tasmanian_ENABLE_DPCPP
+    //! \brief Set a user provided sycl::queue.
+    void setSyclQueue(void *queue);
+    //! \brief Owns the sycl::queue instance for the acceleration.
+    void *sycl_gpu_queue;
+    //! \brief Remember the ownership of the queue.
+    bool own_gpu_queue;
+    //! \brief Holds the actual queue.
+    std::shared_ptr<int> internal_queue;
     #endif
 
     #ifdef Tasmanian_ENABLE_MAGMA
@@ -566,6 +609,10 @@ namespace AccelerationMeta{
             case accel_gpu_hip: return true;
             case accel_gpu_rocblas: return true;
             #endif
+            #ifdef Tasmanian_ENABLE_DPCPP
+            //case accel_gpu_hip: return true;
+            case accel_gpu_cublas: return true;
+            #endif
             #ifdef Tasmanian_ENABLE_BLAS
             case accel_cpu_blas: return true;
             #endif
@@ -691,6 +738,8 @@ struct AccelerationContext{
     #else
     AccelerationContext() : mode(accel_none), algorithm_select(algorithm_autoselect), device(0){}
     #endif
+
+    ~AccelerationContext(){}
 
     //! \brief Sets algorithm affinity in the direction of sparse.
     ChangeType favorSparse(bool favor){
