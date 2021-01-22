@@ -7,13 +7,19 @@ function [sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilen
 
 [sFiles, sTasGrid] = tsgGetPaths();
 
+if exist('getpid','builtin')
+    id = getpid();
+else
+    id = feature('getpid');
+end
+
 sFileG = [sFiles, sGridName,'_FileG']; % the filename to store the grid
 
-sFileX = [sFiles, sGridName,'_FileX']; % file with points to evaluate the surrogate
+sFileX = [sFiles, sGridName,'_FileX',num2str(id)]; % file with points to evaluate the surrogate
 
 sFileV = [sFiles, sGridName,'_FileV']; % file with values to be loaded
 
-sFileO = [sFiles, sGridName,'_FileO']; % file for output
+sFileO = [sFiles, sGridName,'_FileO',num2str(id)]; % file for output
 
 sFileW = [sFiles, sGridName,'_FileW']; % file with anisotropic weights
 
