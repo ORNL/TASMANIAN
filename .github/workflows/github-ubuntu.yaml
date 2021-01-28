@@ -27,10 +27,10 @@ jobs:
         run: rm -rf build && mkdir -p build && cd build
       - name: Run cmake
         run: |
-          cmake \
-          -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
-          -D CMAKE_CXX_FLAGS="-O3 -Wall -Wextra -Wshadow -pedantic" \
-          -D CMAKE_CXX_COMPILER=clang++ \
-          -D Tasmanian_ENABLE_PYTHON=ON \
-          -D PYTHON_EXECUTABLE=/usr/bin/python3 \
-          -D Tasmanian_TESTS_OMP_NUM_THREADS=4 ..
+          cmake ..
+          # -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
+          # -D CMAKE_CXX_FLAGS="-O3 -Wall -Wextra -Wshadow -pedantic" \
+          # -D CMAKE_CXX_COMPILER=clang++ \
+          # -D Tasmanian_ENABLE_PYTHON=ON \
+          # -D PYTHON_EXECUTABLE=/usr/bin/python3 \
+          # -D Tasmanian_TESTS_OMP_NUM_THREADS=4 ..
