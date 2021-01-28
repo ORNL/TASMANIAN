@@ -41,7 +41,7 @@ jobs:
           openssh-client
       - name: Create build dirs
         run: rm -rf build && mkdir -p build
-      - name: Run cmake
+      - name: Cmake
         run: >
           cd build && cmake
           -D CMAKE_INSTALL_PREFIX=./TasmanianInstall
@@ -52,10 +52,6 @@ jobs:
           -D Tasmanian_TESTS_OMP_NUM_THREADS=4
           ..
       - name: Build
-        run: >
-          make -j4 &&
-          ctest -j4 -V --no-compress-output -T Test
+        run: cd build && make -j4 && ctest -j4 -V --no-compress-output -T Test
       - name: Install
-        run: >
-          make install
-          # make test_install
+        run: cd build && make install && make test_install
