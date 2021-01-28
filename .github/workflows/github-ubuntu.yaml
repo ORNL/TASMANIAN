@@ -14,7 +14,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  python3:
+  test:
     runs-on: ${{ matrix.runner }}
     continue-on-error: false
     strategy:
@@ -51,7 +51,7 @@ jobs:
           -D Tasmanian_ENABLE_PYTHON=ON
           -D PYTHON_EXECUTABLE=/usr/bin/${{ matrix.python }}
           -D Tasmanian_ENABLE_FORTRAN=ON
-          -D Tasmanian_TESTS_OMP_NUM_THREADS=4 .. $$
+          -D Tasmanian_TESTS_OMP_NUM_THREADS=4 .. &&
           make -j4
       - name: Test
         run: cd build && ctest -j4 -V --no-compress-output -T Test
