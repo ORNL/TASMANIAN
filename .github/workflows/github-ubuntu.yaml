@@ -14,7 +14,7 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  Clang50-Python3:
+  Clang-Python3:
     runs-on: ${{ matrix.runner }}
     continue-on-error: false
     strategy:
