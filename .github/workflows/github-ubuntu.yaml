@@ -1,0 +1,27 @@
+name: github-ubuntu
+
+
+# Controls when the action will run
+on:
+  # trigger the workflow manually
+  workflow_dispatch:
+  # # trigger the workflow on schedule
+  # # https://docs.github.com/en/free-pro-team@latest/actions/reference/events-that-trigger-workflows#scheduled-events
+  # schedule:
+  #   - cron:  '* * * * *'
+
+
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  Clang50-Python3:
+    runs-on: ${{ matrix.runner }}
+    continue-on-error: false
+    strategy:
+      matrix:
+        runner: [ubuntu-16.04, ubuntu-18.04, ubuntu-20.04]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Create build dirs
+        run: sh '''rm -rf build && mkdir -p build && cd build'''
