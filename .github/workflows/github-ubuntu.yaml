@@ -54,6 +54,6 @@ jobs:
       - name: Build
         run: >
           make -j4 &&
-          ctest -j4 -V --no-compress-output -T Test &&
-          make install &&
-          make test_install
+          ctest -j4 -V --no-compress-output -T Test
+          # make install &&
+          # make test_install
