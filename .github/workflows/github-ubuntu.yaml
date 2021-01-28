@@ -5,8 +5,7 @@ name: github-ubuntu
 on:
   push:
   pull_request:
-  # trigger the workflow manually
-  workflow_dispatch:
+  workflow_dispatch: # trigger the workflow manually
   # # trigger the workflow on schedule
   # # https://docs.github.com/en/free-pro-team@latest/actions/reference/events-that-trigger-workflows#scheduled-events
   # schedule:
