@@ -26,7 +26,7 @@ jobs:
       - name: Create build dirs
         run: rm -rf build && mkdir -p build && cd build
       - name: Run cmake
-        run: pwd
+        run: pwd && ls
           # cmake ..
           # -D CMAKE_INSTALL_PREFIX=./TasmanianInstall \
           # -D CMAKE_CXX_FLAGS="-O3 -Wall -Wextra -Wshadow -pedantic" \
