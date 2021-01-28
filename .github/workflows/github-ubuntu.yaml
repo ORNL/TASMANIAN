@@ -51,3 +51,9 @@ jobs:
           -D PYTHON_EXECUTABLE=/usr/bin/python3
           -D Tasmanian_TESTS_OMP_NUM_THREADS=4
           ..
+      - name: Build
+        run: >
+          make -j4 &&
+          ctest -j4 -V --no-compress-output -T Test &&
+          make install &&
+          make test_install
