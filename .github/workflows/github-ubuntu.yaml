@@ -2,7 +2,13 @@ name: github-ubuntu
 
 
 # Controls when the action will run
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
   # trigger the workflow manually
   workflow_dispatch:
   # # trigger the workflow on schedule
