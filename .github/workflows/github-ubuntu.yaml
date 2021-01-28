@@ -24,4 +24,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Create build dirs
-        run: sh '''rm -rf build && mkdir -p build && cd build'''
+        run: rm -rf build && mkdir -p build && cd build
