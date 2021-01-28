@@ -1,4 +1,4 @@
-![build](https://github.com/vreshniak/TASMANIAN/workflows/github-ubuntu/badge.svg?branch=master)
+![build](https://github.com/vreshniak/TASMANIAN/workflows/build-ubuntu/badge.svg?branch=master)
 
 # Tasmanian
 
