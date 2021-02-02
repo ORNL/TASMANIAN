@@ -51,14 +51,12 @@ template<typename T> void GpuVector<T>::resize(AccelerationContext const *acc, s
         sycl::queue *q = getSyclQueue(acc);
         sycl_queue = acc->engine->internal_queue;
         gpu_data = sycl::malloc_device<T>(num_entries, *q);
-        //std::cout << " Creating data: " << gpu_data << "   q = " << q << "\n";
     }
 }
 template<typename T> void GpuVector<T>::clear(){
     num_entries = 0;
     if (gpu_data != nullptr){
         sycl::queue *q = reinterpret_cast<sycl::queue*>(sycl_queue.get());
-        //std::cout << " deleting data: " << gpu_data << "   q = " << q << "\n";
         sycl::free(gpu_data, *q);
     }
     gpu_data = nullptr;
@@ -170,7 +168,6 @@ void factorizePLU(AccelerationContext const *acceleration, int n, double A[], in
 }
 
 void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int_gpu_lapack const ipiv[], double b[]){
-    //std::cout << " Solving PLU one\n";
     sycl::queue *q = getSyclQueue(acceleration);
     size_t size = oneapi::mkl::lapack::getrs_scratchpad_size<double>(*q, (trans == 'T') ? oneapi::mkl::transpose::T :oneapi::mkl::transpose::N, n, 1, n, n);
     q->wait();
@@ -178,10 +175,8 @@ void solvePLU(AccelerationContext const *acceleration, char trans, int n, double
     oneapi::mkl::lapack::getrs(*q, (trans == 'T') ? oneapi::mkl::transpose::T :oneapi::mkl::transpose::N, n, 1,
                                const_cast<double*>(A), n, const_cast<int_gpu_lapack*>(ipiv), b, n, workspace.data(), size);
     q->wait();
-    //std::cout << " Solved PLU one\n";
 }
 void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int_gpu_lapack const ipiv[], int nrhs, double B[]){
-    //std::cout << " Solving PLU many\n";
     sycl::queue *q = getSyclQueue(acceleration);
     size_t size = oneapi::mkl::lapack::getrs_scratchpad_size<double>(*q, (trans == 'T') ? oneapi::mkl::transpose::T :oneapi::mkl::transpose::N, n, nrhs, n, n);
     q->wait();
@@ -192,7 +187,6 @@ void solvePLU(AccelerationContext const *acceleration, char trans, int n, double
                                const_cast<double*>(A), n, const_cast<int_gpu_lapack*>(ipiv), BT.data(), n, workspace.data(), size);
     q->wait();
     transpose_matrix(q, n, nrhs, BT.data(), B);
-    //std::cout << " Solved PLU many\n";
 }
 
 //! \brief Wrapper around rocsolver_dgelqf().
@@ -267,13 +261,6 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
 
     oneapi::mkl::sparse::set_csr_data(mat, N, K, oneapi::mkl::index_base::zero,
                                       const_cast<int*>(pntr.data()), const_cast<int*>(indx.data()), const_cast<scalar_type*>(vals.data()));
-
-//     if (M > 1){
-//         oneapi::mkl::sparse::gemm(*q, oneapi::mkl::transpose::N, alpha, mat,
-//                                 const_cast<scalar_type*>(A.data()), M, M, 0.0, C, M);
-//     }else{
-//         oneapi::mkl::sparse::gemv(*q, oneapi::mkl::transpose::N, 1.0, mat, const_cast<scalar_type*>(A.data()), 0.0, C);
-//     }
 
     Utils::Wrapper2D<scalar_type> ywrap(M, C);
     Utils::Wrapper2D<scalar_type const> surpluses(M, A.data());
