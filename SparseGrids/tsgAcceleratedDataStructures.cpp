@@ -105,8 +105,7 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
     // MAGMA  |      GPU*      |     GPU        | UTK magma and magma_sparse
     // BLAS   |      CPU       |     CPU        | BLAS
     // none   | all done on CPU, still using OpenMP (if available)
-    // *if CUDA is not simultaneously available with MAGMA, then MAGMA will use the CPU for stage 1
-    // Note: using CUDA without either cuBlas or MAGMA is a bad idea (it will still work, just slow)
+    // note that CUDA, HIP and DPCPP are interchangeable based on the selected backend at compiler time
 
     #ifdef Tasmanian_ENABLE_DPCPP
     // temporary workaround
