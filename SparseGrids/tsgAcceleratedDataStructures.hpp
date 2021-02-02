@@ -318,7 +318,7 @@ struct GpuEngine{
         return *this;
     }
     #else
-    #ifdef Tasmanian_ENABLE_HIP
+    #ifdef Tasmanian_ENABLE_DPCPP
     GpuEngine& operator= (GpuEngine &&other){
         GpuEngine temp(std::move(other));
         std::swap(sycl_gpu_queue, other.sycl_gpu_queue);
@@ -769,7 +769,7 @@ struct AccelerationContext{
 
     //!  \brief Returns true if the current mode implies the use of custom GPU kernels.
     bool useKernels() const{
-        #ifdef Tasmanian_ENABLE_CUDA
+        #if defined(Tasmanian_ENABLE_CUDA) || defined(Tasmanian_ENABLE_HIP)
         return ((mode == accel_gpu_cuda) or (mode == accel_gpu_magma));
         #else
         return false;
