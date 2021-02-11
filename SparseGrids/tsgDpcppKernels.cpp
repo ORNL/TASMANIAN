@@ -101,10 +101,25 @@ template void TasGpu::devalpwpoly_sparse<float>(AccelerationContext const*, int,
 
 // Sequence Grid basis evaluations
 template<typename T>
-void TasGpu::devalseq(AccelerationContext const*, int dims, int num_x, const std::vector<int> &max_levels,
+void TasGpu::devalseq(AccelerationContext const *acc, int dims, int num_x, const std::vector<int> &max_levels,
                       const T *gpu_x, const GpuVector<int> &num_nodes,
                       const GpuVector<int> &points, const GpuVector<T> &nodes, const GpuVector<T> &coeffs, T *gpu_result){
+    sycl::queue *q = syclQueue(acc);
 
+    std::vector<int> offsets(dims);
+    offsets[0] = 0;
+    for(int d=1; d<dims; d++) offsets[d] = offsets[d-1] + num_x * (max_levels[d-1] + 1);
+    size_t num_total = offsets[dims-1] + num_x * (max_levels[dims-1] + 1);
+
+    int maxl = max_levels[0]; for(auto l : max_levels) if (maxl < l) maxl = l;
+
+    GpuVector<int> gpu_offsets(acc, offsets);
+    GpuVector<T> cache1D(acc, num_total);
+
+    tasgpu_dseq_build_cache<T>
+        (q, dims, num_x, gpu_x, nodes.data(), coeffs.data(), maxl+1, gpu_offsets.data(), num_nodes.data(), cache1D.data());
+    tasgpu_dseq_eval_sharedpoints<T>
+        (q, dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_result);
 }
 
 template void TasGpu::devalseq<double>(AccelerationContext const*, int dims, int num_x, const std::vector<int> &max_levels,

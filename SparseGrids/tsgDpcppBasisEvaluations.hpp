@@ -44,18 +44,54 @@
 
 namespace TasGrid{
 
+template <typename T>
+void tasgpu_dseq_build_cache(sycl::queue *q, int dims, int num_x, const T *gpuX, const T *nodes, const T *coeffs, int max_num_nodes, const int *offsets, const int *num_nodes, T *result){
+
+    q->submit([&](sycl::handler& h) {
+        h.parallel_for<class tsg_seq_build_cache_kernel>(sycl::range<1>{static_cast<size_t>(num_x), }, [=](sycl::id<1> threadId){
+            int i = threadId[0];
+            for(int d=0; d<dims; d++){
+                int offset = offsets[d] + i;
+                T x = gpuX[i * dims + d];
+
+                T v = 1.0; // v holds newton polynomial corresponding to x in direction d and node j
+                result[offset] = 1.0;
+                offset += num_x;
+                for(int j=1; j<num_nodes[d]; j++){
+                    v *= (x - nodes[j-1]); // everybody in the block will read the same shared node value
+                    result[offset] = v / coeffs[j];
+                    offset += num_x;
+                }
+            }
+        });
+    });
+    q->wait();
+}
+
+template <typename T>
+void tasgpu_dseq_eval_sharedpoints(sycl::queue *q, int dims, int num_x, int num_points, const int *points, const int *offsets, const T *cache, T *result){
+
+    q->submit([&](sycl::handler& h) {
+        h.parallel_for<class tsg_seq_eval_sharedpoints_kernel>(sycl::range<2>{static_cast<size_t>(num_points), static_cast<size_t>(num_x)}, [=](sycl::id<2> threadId){
+            int id_p = threadId[0];
+            int id_x = threadId[1];
+
+            double v = cache[num_x * points[id_p] + id_x];
+            for(int j=1; j<dims; j++){
+                v *= cache[offsets[j] + num_x * points[j * num_points + id_p] + id_x];
+            }
+
+            result[num_points * id_x + id_p] = v;
+        });
+    });
+    q->wait();
+}
+
 template<typename T, int NUM_THREADS, bool nested, bool is_cc0>
 void tasgpu_dglo_build_cache(sycl::queue *q,
                              int num_dims, int num_x, int cache_lda, T const *gpu_x, T const *nodes, T const *coeff,
                              int const *nodes_per_level, int const *offset_per_level, int const *dim_offsets,
                              int const *map_dimension, int const *map_level, T *cache){
-
-//     q->submit([&](sycl::handler& h) {
-//             h.parallel_for<class tsg_transpose>(sycl::range<2>{static_cast<size_t>(m), static_cast<size_t>(n)}, [=](sycl::id<2> i){
-//                 AT[i[0] * n + i[1]] = A[i[0] + m * i[1]];
-//             });
-//         });
-//     q->wait();
 
     q->submit([&](sycl::handler& h) {
         h.parallel_for<class tsg_glo_build_cache_kernel>(sycl::range<2>{static_cast<size_t>(cache_lda), static_cast<size_t>(NUM_THREADS)}, [=](sycl::id<2> i){
@@ -96,50 +132,12 @@ void tasgpu_dglo_build_cache(sycl::queue *q,
         });
     });
     q->wait();
-
-//     int blkid = blockIdx.x;
-//
-//     while(blkid < cache_lda){ // loop over all dim-level pairs
-//         int idx = threadIdx.x;
-//
-//         int dim = map_dimension[blkid]; // get the dim for this thread block
-//         int lvl = map_level[blkid]; // get the level for the thread block
-//         int num_nodes = nodes_per_level[lvl];
-//         int opl = offset_per_level[lvl];
-//
-//         while(idx < num_x){ // loop over all num_x
-//             T x = gpu_x[idx * num_dims + dim]; // get the local x
-//
-//             int cache_offset = (dim_offsets[dim] + opl) * num_x;
-//
-//             T c = 1.0;
-//             cache[cache_offset + idx] = c;
-//             for(int j=0; j<num_nodes-1; j++){
-//                 c *= (nested) ? (x - nodes[j]) : (x - nodes[opl + j]);
-//                 cache_offset += num_x;
-//                 cache[cache_offset + idx] = c;
-//             }
-//
-//             c = (is_cc0) ? (x * x - 1.0) : 1.0;
-//             cache[cache_offset + idx] *= c * coeff[opl + num_nodes - 1];
-//             cache_offset -= num_x;
-//             for(int j=num_nodes-1; j>0; j--){
-//                 c *= (nested) ? (x - nodes[j]) : (x - nodes[opl + j]);
-//                 cache[cache_offset + idx] *= c * coeff[opl + j - 1];
-//                 cache_offset -= num_x;
-//             }
-//
-//             idx += NUM_THREADS;
-//         }
-//
-//         blkid += gridDim.x;
-//     }
 }
 
 template <typename T>
 void tasgpu_dglo_eval_zero(sycl::queue *q, int size, T *result){
     q->submit([&](sycl::handler& h) {
-        h.parallel_for<class tsg_glo_build_cache_kernel>(sycl::range<1>{static_cast<size_t>(size),}, [=](sycl::id<1> i){
+        h.parallel_for<class tsg_glo_eval_zero_kernel>(sycl::range<1>{static_cast<size_t>(size),}, [=](sycl::id<1> i){
             result[i[0]] = 0.0;
         });
     });
