@@ -32,8 +32,28 @@
 #define __TASMANIAN_SPARSE_GRID_HIP_KERNELS_HIP
 
 #include "tsgAcceleratedDataStructures.hpp"
+#include "tsgDpcppBasisEvaluations.hpp"
+
+#define _MAX_THREADS 1024
 
 namespace TasGrid{
+
+inline sycl::queue* syclQueue(AccelerationContext const *acceleration){
+    // temporary hack, the method is identical to the one used in the DPC++ methods
+    if (acceleration->engine->sycl_gpu_queue == nullptr){
+        //sycl::default_selector d_selector;
+        acceleration->engine->internal_queue = std::shared_ptr<int>(
+            reinterpret_cast<int*>(new sycl::queue()),
+            [](int* q_int){
+                sycl::queue *q = reinterpret_cast<sycl::queue*>(q_int);
+                delete q;
+            }
+        );
+        acceleration->engine->sycl_gpu_queue = acceleration->engine->internal_queue.get();
+        acceleration->engine->own_gpu_queue = true;
+    }
+    return reinterpret_cast<sycl::queue*>(acceleration->engine->sycl_gpu_queue);
+}
 
 template<typename T>
 void TasGpu::dtrans2can(AccelerationContext const*, bool use01, int dims, int num_x, int pad_size, double const *gpu_trans_a, double const *gpu_trans_b, T const *gpu_x_transformed, T *gpu_x_canonical){
@@ -105,11 +125,40 @@ template void TasGpu::devalfor<double>(AccelerationContext const*, int, int, con
 template void TasGpu::devalfor<float>(AccelerationContext const*, int, int, const std::vector<int>&, const float*, const GpuVector<int>&, const GpuVector<int>&, float*, float*);
 
 template<typename T>
-void TasGpu::devalglo(AccelerationContext const*, bool is_nested, bool is_clenshawcurtis0, int dims, int num_x, int num_p, int num_basis,
+void TasGpu::devalglo(AccelerationContext const *acc, bool is_nested, bool is_clenshawcurtis0, int dims, int num_x, int num_p, int num_basis,
                       T const *gpu_x, GpuVector<T> const &nodes, GpuVector<T> const &coeff, GpuVector<T> const &tensor_weights,
                       GpuVector<int> const &nodes_per_level, GpuVector<int> const &offset_per_level, GpuVector<int> const &map_dimension, GpuVector<int> const &map_level,
                       GpuVector<int> const &active_tensors, GpuVector<int> const &active_num_points, GpuVector<int> const &dim_offsets,
                       GpuVector<int> const &map_tensor, GpuVector<int> const &map_index, GpuVector<int> const &map_reference, T *gpu_result){
+
+    GpuVector<T> cache(acc, num_x, num_basis);
+    sycl::queue *q = syclQueue(acc);
+
+    if (is_nested){
+        if (is_clenshawcurtis0){
+            tasgpu_dglo_build_cache<T, _MAX_THREADS, true, true>
+                (q, dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
+                                        nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
+                                        map_dimension.data(), map_level.data(), cache.data());
+        }else{
+            tasgpu_dglo_build_cache<T, _MAX_THREADS, true, false>
+                (q, dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
+                                        nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
+                                        map_dimension.data(), map_level.data(), cache.data());
+        }
+    }else{
+        tasgpu_dglo_build_cache<T, _MAX_THREADS, false, false>
+            (q, dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
+                                    nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
+                                    map_dimension.data(), map_level.data(), cache.data());
+    }
+
+    tasgpu_dglo_eval_zero<T>(q, num_x * num_p, gpu_result);
+
+    tasgpu_dglo_eval_sharedpoints<T, _MAX_THREADS>
+        (q, dims, num_x, (int) map_tensor.size(), num_p, cache.data(),
+        tensor_weights.data(), offset_per_level.data(), dim_offsets.data(), active_tensors.data(), active_num_points.data(),
+        map_tensor.data(), map_index.data(), map_reference.data(), gpu_result);
 
 }
 
