@@ -56,8 +56,10 @@ inline sycl::queue* syclQueue(AccelerationContext const *acceleration){
 }
 
 template<typename T>
-void TasGpu::dtrans2can(AccelerationContext const*, bool use01, int dims, int num_x, int pad_size, double const *gpu_trans_a, double const *gpu_trans_b, T const *gpu_x_transformed, T *gpu_x_canonical){
-
+void TasGpu::dtrans2can(AccelerationContext const *acc, bool use01, int dims, int num_x, int pad_size, double const *gpu_trans_a, double const *gpu_trans_b, T const *gpu_x_transformed, T *gpu_x_canonical){
+    sycl::queue *q = syclQueue(acc);
+    tasgpu_transformed_to_canonical<T, double>(q, dims, num_x, pad_size, gpu_trans_a, gpu_trans_b, gpu_x_transformed, gpu_x_canonical);
+    if (use01) tasgpu_m11_to_01<T>(q, dims * num_x, gpu_x_canonical);
 }
 
 template void TasGpu::dtrans2can<double>(AccelerationContext const*, bool, int, int, int, double const*, double const*, double const*, double*);

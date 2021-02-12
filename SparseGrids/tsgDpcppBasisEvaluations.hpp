@@ -44,6 +44,34 @@
 
 namespace TasGrid{
 
+template<typename T, typename C> // transformed and canonical types
+void tasgpu_transformed_to_canonical(sycl::queue *q, int dims, int num_x, int size_a, const C *gpu_trans_a, const C *gpu_trans_b, const T *gpu_x_transformed, T *gpu_x_canonical){
+
+    q->submit([&](sycl::handler& h) {
+        h.parallel_for<class tsg_seq_build_cache_kernel>(sycl::range<1>{static_cast<size_t>(dims * num_x), }, [=](sycl::id<1> threadId){
+	    int i = threadId[0] % size_a;
+	    gpu_x_canonical[threadId[0]] = static_cast<T>(gpu_x_transformed[threadId[0]] * gpu_trans_a[i] - gpu_trans_b[i]);
+        });
+    });
+    q->wait();
+
+}
+
+// convert (-1, 1) to (0, 1)
+template<typename T>
+void tasgpu_m11_to_01(sycl::queue *q, int num_points, T *gpu_x){
+
+    q->submit([&](sycl::handler& h) {
+        h.parallel_for<class tsg_seq_build_cache_kernel>(sycl::range<1>{static_cast<size_t>(num_points), }, [=](sycl::id<1> threadId){
+            size_t i = threadId[0];
+            gpu_x[i] = ( gpu_x[i] + 1.0 ) / 2.0;
+        });
+    });
+    q->wait();
+
+}
+
+
 template <typename T>
 void tasgpu_dseq_build_cache(sycl::queue *q, int dims, int num_x, const T *gpuX, const T *nodes, const T *coeffs, int max_num_nodes, const int *offsets, const int *num_nodes, T *result){
 
