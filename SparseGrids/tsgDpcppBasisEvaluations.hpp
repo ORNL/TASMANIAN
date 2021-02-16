@@ -318,6 +318,76 @@ void tasgpu_devalpwpoly_sparse(sycl::queue *q, int dims, int num_x, const T *x, 
     q->wait();
 }
 
+template <typename T>
+void tasgpu_dfor_build_cache(sycl::queue *q, int dims, int num_x, const T *gpuX, const int *offsets, const int *num_nodes, T *result){
+
+    q->submit([&](sycl::handler& h) {
+        h.parallel_for<class tasgpu_dfor_build_cache_kernel>(sycl::range<1>{static_cast<size_t>(num_x),}, [=](sycl::id<1> threadId){
+            int i = threadId[0];
+            for(int d=0; d<dims; d++){
+                int offset = offsets[d] + i;
+                T x = gpuX[i * dims + d]; // non-strided read
+
+                T step_real = cos(-2.0 * 3.14159265358979323846 * x);
+                T step_imag = sin(-2.0 * 3.14159265358979323846 * x); // start with exp(-i x)
+
+                T vreal = 1.0; // start with 1.0 (holds the current power)
+                T vimag = 0.0;
+
+                result[offset] = 1.0;
+                offset += num_x;
+                result[offset] = 0.0;
+                offset += num_x;
+                for(int j=1; j<num_nodes[d]; j+=2){
+                    T v = vreal * step_real - vimag * step_imag;
+                    vimag = vreal * step_imag + vimag * step_real;
+                    vreal = v;
+
+                    result[offset] = vreal;
+                    offset += num_x;
+                    result[offset] = vimag; // exp(-((j+1)/2) * i * x)
+                    offset += num_x;
+                    result[offset] = vreal;
+                    offset += num_x;
+                    result[offset] = -vimag; // conjugate for exp( ((j+1)/2) * i * x)
+                    offset += num_x;
+                }
+            }
+        });
+    });
+    q->wait();
+}
+template <typename T, bool interlace>
+void tasgpu_dfor_eval_sharedpoints(sycl::queue *q, int dims, int num_x, int num_points, const int *points, const int *offsets, const T *cache, T *wreal, T *wimag){
+
+    q->submit([&](sycl::handler& h) {
+        h.parallel_for<class tasgpu_dfor_eval_sharedpoints_kernel>(sycl::range<2>{static_cast<size_t>(num_points), static_cast<size_t>(num_x)}, [=](sycl::id<2> threadId){
+            int id_p = threadId[0];
+            int id_x = threadId[1];
+
+            T vreal = cache[2 * num_x * points[id_p] + id_x];
+            T vimag = cache[2 * num_x * points[id_p] + num_x + id_x];
+            for(int j=1; j<dims; j++){
+                T sreal = cache[offsets[j] + 2 * num_x * points[j * num_points + id_p] + id_x];
+                T simag = cache[offsets[j] + 2 * num_x * points[j * num_points + id_p] + num_x + id_x];
+
+                T v = vreal * sreal - vimag * simag;
+                vimag = vreal * simag + vimag * sreal;
+                vreal = v;
+            }
+
+            if (interlace){
+                wreal[2 * (num_points * id_x + id_p)] = vreal;
+                wreal[2 * (num_points * id_x + id_p) + 1] = vimag;
+            }else{
+                wreal[num_points * id_x + id_p] = vreal;
+                wimag[num_points * id_x + id_p] = vimag;
+            }
+        });
+    });
+    q->wait();
+}
+
 template<typename T, int NUM_THREADS, bool nested, bool is_cc0>
 void tasgpu_dglo_build_cache(sycl::queue *q,
                              int num_dims, int num_x, int cache_lda, T const *gpu_x, T const *nodes, T const *coeff,
