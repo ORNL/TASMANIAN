@@ -108,13 +108,14 @@ void GpuEngine::setSyclQueue(void *queue){
 int AccelerationMeta::getNumGpuDevices(){
     return 1; // fake device for now, will actually use the CPU
 }
-void AccelerationMeta::setDefaultCudaDevice(int deviceID){
-}
+void AccelerationMeta::setDefaultCudaDevice(int){}
 unsigned long long AccelerationMeta::getTotalGPUMemory(int deviceID){ // int deviceID
-    return 0;
+    sycl::queue q;
+    return q.get_device().get_info<sycl::info::device::global_mem_size>();
 }
 std::string AccelerationMeta::getCudaDeviceName(int deviceID){ // int deviceID
-    return "";
+    sycl::queue q;
+    return q.get_device().get_info<sycl::info::device::name>();
 }
 template<typename T> void AccelerationMeta::recvCudaArray(size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data){
 
