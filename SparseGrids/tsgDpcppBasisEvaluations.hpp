@@ -114,6 +114,209 @@ void tasgpu_dseq_eval_sharedpoints(sycl::queue *q, int dims, int num_x, int num_
     });
     q->wait();
 }
+template<typename T>
+inline T linear_boundary_wavelet(T x){
+    if (fabs(x + 0.5) > 0.5) return 0.0;
+    if (x <= -0.75){
+        return 0.75 * (7.0 * x + 6.0);
+    }else if (x <= -0.5){
+        return -0.25 * (11.0 * x + 6.0);
+    }else{
+        return 0.25 * x;
+    }
+}
+template<typename T>
+inline T linear_central_wavelet(T x){
+    if (fabs(x + 0.25) > 0.75) return 0.0;
+    if (x <= -0.5){
+        return -0.5 * x - 0.5;
+    }else if (x >= 0.0){
+        return 0.5 * x - 0.25;
+    }else if (x <= -0.25){
+        return 4.0 * x + 1.75;
+    }else{
+        return -4.0 * x - 0.25;
+    }
+}
+template <typename T, int order, TypeOneDRule rule>
+inline T tasgpu_devalpwpoly_feval(const double x, const double node, const double support){ // <- arrays are cached
+    T v;
+    if (rule == rule_localp){
+        if (order == 0){
+            v = (fabs(x - node) > support) ? 0.0 : 1.0;
+        }else if (order == 1){
+            v = 1.0 - fabs(x - node) / support;
+            if (support == -1.0) v = 1.0;
+            if (v < 0.0) v = 0.0;
+        }else if (order == 2){
+            v = x - node;
+            v *= v;
+            v = 1.0 - v / support;
+            if (support == -1.0) v = 1.0;
+            if (support == -2.0) v = -x;
+            if (support == -3.0) v =  x;
+            if (v < 0.0) v = 0.0;
+        }
+    }else if (rule == rule_localp0){
+        if (order == 1){
+            v = 1.0 - fabs(x - node) / support;
+            if (v < 0.0) v = 0.0;
+        }else if (order == 2){
+            v = x - node;
+            v *= v;
+            v = 1.0 - v / support;
+            if (v < 0.0) v = 0.0;
+        }
+    }else if (rule == rule_localpb){
+        if (order == 1){
+            v = 1.0 - fabs(x - node) / support;
+            if (v < 0.0) v = 0.0;
+        }else if (order == 2){
+            if (support == -2.0){
+                v = 1.0 + fabs(x - node) / support;
+            }else{
+                v = x - node;
+                v *= v;
+                v = 1.0 - v / support;
+                if (v < 0.0) v = 0.0;
+            }
+        }
+    }else if (rule == rule_semilocalp){
+        if (order == 2){
+            v = x - node;
+            v *= v;
+            v = 1.0 - v / support;
+            if (v < 0.0) v = 0.0;
+            if (support == -1.0) v = 1.0;
+            if (support == -4.0) v = 0.5 * x * (x - 1.0);
+            if (support == -5.0) v = 0.5 * x * (x + 1.0);
+        }
+    }else{ // wavelet, node = scale, support = shift and encodes the type of wavelet
+        // sync with RuleWavelet::getShiftScale()
+        if (support == -1.0){ // level 0, using basic hat-functions
+            v = 1.0 - fabs(x - node);
+            if (v < 0.0) v = 0.0;
+        }else if (support == -2.0){ // left boundary
+            v = linear_boundary_wavelet(node * (x + 1.0) - 1.0);
+        }else if (support == -3.0){ // right boundary
+            v = linear_boundary_wavelet(node * (1.0 - x) - 1.);
+        }else{
+            v = linear_central_wavelet(node * (x + 1.0) - 1.0 - support);
+        }
+    }
+    return v;
+}
+template <typename T, int order, TypeOneDRule rule> // rule: localp0, localp, semilocalp
+void tasgpu_devalpwpoly(sycl::queue *q, int dims, int num_x, int num_points, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y){
+
+    q->submit([&](sycl::handler& h) {
+        h.parallel_for<class tasgpu_devalpwpoly_kernel>(sycl::range<2>{static_cast<size_t>(num_points), static_cast<size_t>(num_x)}, [=](sycl::id<2> threadId){
+
+            int id_p = threadId[0];
+            int id_x = threadId[1];
+
+            T v = 1.0;
+            for(int j=0; j<dims; j++)
+                v *= tasgpu_devalpwpoly_feval<T, order, rule>(gpu_x[id_x * dims + j], gpu_nodes[id_p * dims + j], gpu_support[id_p * dims + j]);
+
+            gpu_y[id_x * num_points + id_p] = v;
+        });
+    });
+    q->wait();
+}
+
+template <typename T, int order, TypeOneDRule rule>
+inline T tasgpu_devalpwpoly_basis_multid(int dims, int i, int ip, const T *x, const T *nodes, const T *support){
+    T p = 1.0;
+    for(int j=0; j<dims; j++){
+        const T this_x = x[i * dims + j];
+        const T this_node = nodes[ip * dims + j];
+        const T this_supp = support[ip * dims + j];
+        p *= tasgpu_devalpwpoly_feval<T, order, rule>(this_x, this_node, this_supp);
+    }
+    return p;
+}
+template<typename T>
+inline T tasgpu_devalpwpoly_support_pwc_multid(int dims, int i, int ip, const T *x, const T *nodes, const T *support){
+    T p = 1.0;
+    for(int j=0; j<dims; j++){
+        p *= ((fabs(x[i * dims + j] - nodes[ip * dims + j]) > 2.0 * support[ip * dims + j]) ? 0.0 : 1.0);
+    }
+    return p;
+}
+template <typename T, int TOPLEVEL, int order, TypeOneDRule rule, bool fill>
+void tasgpu_devalpwpoly_sparse(sycl::queue *q, int dims, int num_x, const T *x, const T *nodes, const T *support,
+                               const int *hpntr, const int *hindx, int num_roots, const int *roots,
+                               int *spntr, int *sindx, T *svals){
+
+    q->submit([&](sycl::handler& h) {
+        h.parallel_for<class tasgpu_devalpwpoly_sparse_kernel>(sycl::range<1>{static_cast<size_t>(num_x),}, [=](sycl::id<1> threadId){
+            int mcount[TOPLEVEL];
+            int mstop[TOPLEVEL];
+
+            int c = 0;
+            int i = threadId[0];
+
+            if (fill) c = spntr[i];
+
+            for(int r=0; r<num_roots; r++){
+                int ip = roots[r];
+                T p = (order > 0) ?
+                    tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support) :
+                    tasgpu_devalpwpoly_support_pwc_multid<T>(dims, i, ip, x, nodes, support);
+
+                if (p != 0.0){
+                    if (fill){
+                        sindx[c] = ip;
+                        if (order == 0){
+                            p = tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support);;
+                        }
+                        svals[c] = p;
+                    }
+                    c++;
+
+                    int current = 0;
+                    mstop[0] = hpntr[ip + 1];
+                    mcount[0] = hpntr[ip];
+
+                    while(mcount[0] < mstop[0]){
+                        if (mcount[current] < mstop[current]){
+                            ip = hindx[mcount[current]];
+                            if (order > 0){
+                                p = tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support);
+                            }else{
+                                p = tasgpu_devalpwpoly_support_pwc_multid<T>(dims, i, ip, x, nodes, support);
+                            }
+
+                            if (p != 0.0){
+                                if (fill){
+                                    sindx[c] = ip;
+                                    if (order == 0){
+                                        p = tasgpu_devalpwpoly_basis_multid<T, order, rule>(dims, i, ip, x, nodes, support);;
+                                    }
+                                    svals[c] = p;
+                                }
+                                c++;
+
+                                current++;
+                                mstop[current] = hpntr[ip + 1];
+                                mcount[current] = hpntr[ip];
+                            }else{
+                                mcount[current]++;
+                            }
+                        }else{
+                            current--;
+                            mcount[current]++;
+                        }
+                    }
+                }
+            }
+
+            if (not fill) spntr[i+1] = c;
+        });
+    });
+    q->wait();
+}
 
 template<typename T, int NUM_THREADS, bool nested, bool is_cc0>
 void tasgpu_dglo_build_cache(sycl::queue *q,

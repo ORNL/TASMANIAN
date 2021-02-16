@@ -67,8 +67,39 @@ template void TasGpu::dtrans2can<float>(AccelerationContext const*, bool, int, i
 
 // local polynomial basis functions, DENSE algorithm
 template<typename T>
-void TasGpu::devalpwpoly(AccelerationContext const*, int order, TypeOneDRule rule, int dims, int num_x, int num_points, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y){
-
+void TasGpu::devalpwpoly(AccelerationContext const *acc, int order, TypeOneDRule rule, int dims, int num_x, int num_points, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y){
+    sycl::queue *q = syclQueue(acc);
+    // order == 1 is considered "default" so that the compiler doesn't complain about missing default statement
+    // semilocalp cannot have order less than 2, only rule_localp can have order 0 (this gets overwrittein in makeLocalPolynomialGrid())
+    if (rule == rule_localp){
+        switch(order){
+            case 0:
+                    tasgpu_devalpwpoly<T, 0, rule_localp>(q, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    break;
+            case 2: tasgpu_devalpwpoly<T, 2, rule_localp>(q, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    break;
+            default:
+                    tasgpu_devalpwpoly<T, 1, rule_localp>(q, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+        }
+    }else if (rule == rule_localp0){
+        switch(order){
+            case 2: tasgpu_devalpwpoly<T, 2, rule_localp0>(q, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    break;
+            default:
+                    tasgpu_devalpwpoly<T, 1, rule_localp0>(q, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+        }
+    }else if (rule == rule_localpb){
+        switch(order){
+            case 2: tasgpu_devalpwpoly<T, 2, rule_localpb>(q, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+                    break;
+            default:
+                    tasgpu_devalpwpoly<T, 1, rule_localpb>(q, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+        }
+    }else if (rule == rule_semilocalp){
+        tasgpu_devalpwpoly<T, 2, rule_semilocalp>(q, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+    }else{ // rule == wavelet
+        tasgpu_devalpwpoly<T, 1, rule_wavelet>(q, dims, num_x, num_points, gpu_x, gpu_nodes, gpu_support, gpu_y);
+    }
 }
 
 template void TasGpu::devalpwpoly<double>(AccelerationContext const*, int, TypeOneDRule, int, int, int, const double*, const double*, const double*, double*);
@@ -76,20 +107,82 @@ template void TasGpu::devalpwpoly<float>(AccelerationContext const*, int, TypeOn
 
 // there is a switch statement that realizes templates for each combination of rule/order
 // make one function that covers that switch, the rest is passed from devalpwpoly_sparse
-template<typename T, int THREADS, int TOPLEVEL, bool fill>
-inline void devalpwpoly_sparse_realize_rule_order(AccelerationContext const*, int order, TypeOneDRule rule, int dims, int num_x,
+template<typename T, int TOPLEVEL, bool fill>
+inline void devalpwpoly_sparse_realize_rule_order(AccelerationContext const *acc, int order, TypeOneDRule rule, int dims, int num_x,
                                           const T *x, const T *nodes, const T *support,
                                           const int *hpntr, const int *hindx, int num_roots, const int *roots,
                                           int *spntr, int *sindx, T *svals){
+
+    sycl::queue *q = syclQueue(acc);
+    if (rule == rule_localp){
+        switch(order){
+            case 0:
+                tasgpu_devalpwpoly_sparse<T, TOPLEVEL, 0, rule_localp, fill>
+                    (q, dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+                break;
+            case 2:
+                tasgpu_devalpwpoly_sparse<T, TOPLEVEL, 2, rule_localp, fill>
+                    (q, dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+                break;
+            default:
+                tasgpu_devalpwpoly_sparse<T, TOPLEVEL, 1, rule_localp, fill>
+                    (q, dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+        }
+    }else if (rule == rule_localp0){
+        switch(order){
+            case 2:
+                tasgpu_devalpwpoly_sparse<T, TOPLEVEL, 2, rule_localp0, fill>
+                    (q, dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+                break;
+            default:
+                tasgpu_devalpwpoly_sparse<T, TOPLEVEL, 1, rule_localp0, fill>
+                    (q, dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+        }
+    }else if (rule == rule_localpb){
+        switch(order){
+            case 2:
+                tasgpu_devalpwpoly_sparse<T, TOPLEVEL, 2, rule_localpb, fill>
+                    (q, dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+                break;
+            default:
+                tasgpu_devalpwpoly_sparse<T, TOPLEVEL, 1, rule_localpb, fill>
+                    (q, dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+        }
+    }else{ // rule == rule_semilocalp
+        tasgpu_devalpwpoly_sparse<T, TOPLEVEL, 2, rule_semilocalp, fill>
+            (q, dims, num_x, x, nodes, support, hpntr, hindx, num_roots, roots, spntr, sindx, svals);
+    }
 
 }
 
 // local polynomial basis functions, SPARSE algorithm (2 passes, one pass to compue the non-zeros and one pass to evaluate)
 template<typename T>
-void TasGpu::devalpwpoly_sparse(AccelerationContext const*, int order, TypeOneDRule rule, int dims, int num_x, const T *gpu_x,
+void TasGpu::devalpwpoly_sparse(AccelerationContext const *acc, int order, TypeOneDRule rule, int dims, int num_x, const T *gpu_x,
                                 const GpuVector<T> &gpu_nodes, const GpuVector<T> &gpu_support,
                                 const GpuVector<int> &gpu_hpntr, const GpuVector<int> &gpu_hindx, const GpuVector<int> &gpu_hroots,
                                 GpuVector<int> &gpu_spntr, GpuVector<int> &gpu_sindx, GpuVector<T> &gpu_svals){
+
+    gpu_spntr.resize(acc, num_x + 1);
+    // call with fill == false to count the non-zeros per row of the matrix
+    devalpwpoly_sparse_realize_rule_order<T, 46, false>
+        (acc, order, rule, dims, num_x, gpu_x, gpu_nodes.data(), gpu_support.data(),
+        gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_hroots.size(), gpu_hroots.data(), gpu_spntr.data(), 0, 0);
+
+    std::vector<int> cpu_spntr;
+    gpu_spntr.unload(acc, cpu_spntr);
+    cpu_spntr[0] = 0;
+    int nz = 0;
+    for(auto &i : cpu_spntr){
+        i += nz;
+        nz = i;
+    }
+    gpu_spntr.load(acc, cpu_spntr);
+    gpu_sindx.resize(acc, nz);
+    gpu_svals.resize(acc, nz);
+    // call with fill == true to load the non-zeros
+    devalpwpoly_sparse_realize_rule_order<T, 46, true>
+        (acc, order, rule, dims, num_x, gpu_x, gpu_nodes.data(), gpu_support.data(),
+        gpu_hpntr.data(), gpu_hindx.data(), (int) gpu_hroots.size(), gpu_hroots.data(), gpu_spntr.data(), gpu_sindx.data(), gpu_svals.data());
 
 }
 template void TasGpu::devalpwpoly_sparse<double>(AccelerationContext const*, int, TypeOneDRule, int, int,
