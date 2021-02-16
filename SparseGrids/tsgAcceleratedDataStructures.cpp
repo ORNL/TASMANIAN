@@ -109,9 +109,9 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
 
     #ifdef Tasmanian_ENABLE_DPCPP
     // temporary workaround
-    if (accel == accel_gpu_magma or accel == accel_gpu_cuda)
-        return accel_gpu_cublas;
-    return accel;
+//     if (accel == accel_gpu_magma or accel == accel_gpu_cuda)
+//         return accel_gpu_cublas;
+//     return accel;
     #endif
 
     // accel_gpu_default should always point to the potentially "best" option (currently MAGMA)

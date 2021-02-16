@@ -17,6 +17,9 @@ endif()
 if (Tasmanian_ENABLE_DPCPP)  # must come before BLAS to pick MKL libraries
     target_link_libraries(Tasmanian_dependencies INTERFACE ${Tasmanian_mklsycl})
     list(APPEND Tasmanian_rpath ${Tasmanian_mklsycl_rpath})
+    if (Tasmanian_MKL_SYCL_ROOT)
+        target_include_directories(Tasmanian_dependencies INTERFACE ${Tasmanian_MKL_SYCL_ROOT}/include)
+    endif()
 endif()
 
 if (Tasmanian_ENABLE_BLAS)

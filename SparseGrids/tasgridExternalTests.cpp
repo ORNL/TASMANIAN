@@ -2157,6 +2157,9 @@ bool ExternalTester::testAllAcceleration() const{
     // for order 0, regardless of the selected rule, thegrid should switch to localp
     TasGrid::TypeOneDRule pwp_rule[4] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb};
     for(int t=0; t<12; t++){
+        #ifdef Tasmanian_ENABLE_DPCPP
+        if (verbose) cout << "            local-polynomial test: " << setw(2) << t + 1 << "/12" << "\n";
+        #endif
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), ((t / 4 == 0) ? 5 : 6), (t / 4), pwp_rule[t % 4]);
         pass = pass && testAcceleration(f, grid);
     }
