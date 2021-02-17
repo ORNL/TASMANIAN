@@ -22,6 +22,7 @@ jobs:
       matrix:
         runner: [macos-10.15]
         compiler: [clang++, g++]
+        fortran_compiler: [gfortran-10]
         python: [python3]
 
     steps:
@@ -35,6 +36,7 @@ jobs:
           -D CMAKE_INSTALL_PREFIX=./TasmanianInstall
           -D CMAKE_CXX_FLAGS="-O3 -Wall -Wextra -Wshadow -pedantic"
           -D CMAKE_CXX_COMPILER=${{ matrix.compiler }}
+          -D CMAKE_Fortran_COMPILER=${{ matrix.fortran_compiler }}
           -D Tasmanian_ENABLE_PYTHON=ON
           -D PYTHON_EXECUTABLE=/usr/bin/${{ matrix.python }}
           -D Tasmanian_ENABLE_FORTRAN=ON
