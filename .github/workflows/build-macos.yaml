@@ -24,6 +24,11 @@ jobs:
         compiler: [clang++, g++-9] # $(brew --prefix llvm)/bin/clang++ (clang-11)
         fortran_compiler: [gfortran-9]
         python: [python3]
+        include:
+          - compiler: clang++
+            omp: OFF
+          - compiler: g++-9
+            omp: ON
 
     steps:
       - uses: actions/checkout@v2
@@ -40,7 +45,7 @@ jobs:
           -D Tasmanian_ENABLE_PYTHON=ON
           -D PYTHON_EXECUTABLE=/usr/local/bin/${{ matrix.python }}
           -D Tasmanian_ENABLE_FORTRAN=ON
-          -D Tasmanian_ENABLE_OPENMP=ON
+          -D Tasmanian_ENABLE_OPENMP=${{ matrix.omp }}
           -D Tasmanian_TESTS_OMP_NUM_THREADS=4 .. &&
           make -j4
       - name: Test
