@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         runner: [macos-10.15]
-        compiler: [gcc-10]
+        compiler: [clang]
         fortran_compiler: [gfortran-10]
         python: [python3]
 
@@ -39,7 +39,7 @@ jobs:
           -D CMAKE_Fortran_COMPILER=${{ matrix.fortran_compiler }}
           -D Tasmanian_ENABLE_PYTHON=ON
           -D PYTHON_EXECUTABLE=/usr/local/bin/${{ matrix.python }}
-          -D Tasmanian_ENABLE_FORTRAN=ON
+          -D Tasmanian_ENABLE_FORTRAN=OFF
           -D Tasmanian_TESTS_OMP_NUM_THREADS=4 .. &&
           make -j4
       - name: Test
