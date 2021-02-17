@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install requirements
-        run: ${{ matrix.python }} -m pip install numpy
+        run: which python3 &&  ${{ matrix.python }} -m pip install numpy
       - name: Build
         run: >
           rm -rf build && mkdir -p build && cd build &&
