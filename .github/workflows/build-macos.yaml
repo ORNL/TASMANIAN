@@ -20,9 +20,9 @@ jobs:
     continue-on-error: false
     strategy:
       matrix:
-        runner: [macos-10.15, macos-11.0]
+        runner: [macos-10.15]
         compiler: [clang++, g++]
-        python: [python]
+        python: [python3]
 
     steps:
       - uses: actions/checkout@v2
