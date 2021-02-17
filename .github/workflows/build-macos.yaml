@@ -35,12 +35,7 @@ jobs:
           cmake
           -D CMAKE_INSTALL_PREFIX=./TasmanianInstall
           -D CMAKE_CXX_FLAGS="-O3 -Wall -Wextra -Wshadow -pedantic"
-# -D CMAKE_CXX_COMPILER=${{ matrix.compiler }}
-# -D CMAKE_Fortran_COMPILER=${{ matrix.fortran_compiler }}
           -D Tasmanian_ENABLE_PYTHON=OFF .. &&
-# -D PYTHON_EXECUTABLE=/usr/local/bin/${{ matrix.python }}
-# -D Tasmanian_ENABLE_FORTRAN=OFF
-# -D Tasmanian_TESTS_OMP_NUM_THREADS=4 .. &&
           make -j4
       - name: Test
         run: cd build && ctest -j4 -V --no-compress-output -T Test
