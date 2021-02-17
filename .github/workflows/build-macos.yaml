@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         runner: [macos-10.15]
-        compiler: [$(brew --prefix llvm)/bin/clang++]
+        compiler: [clang++, $(brew --prefix llvm)/bin/clang++, g++-9]
         fortran_compiler: [gfortran-9]
         python: [python3]
 
@@ -31,6 +31,7 @@ jobs:
         run: ${{ matrix.python }} -m pip install numpy
       - name: Build
         run: >
+          ls $(brew --prefix llvm)/bin/clang* &&
           rm -rf build && mkdir -p build && cd build &&
           cmake
           -D CMAKE_INSTALL_PREFIX=./TasmanianInstall
