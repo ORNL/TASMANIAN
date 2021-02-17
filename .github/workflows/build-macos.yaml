@@ -31,7 +31,7 @@ jobs:
         run: ${{ matrix.python }} -m pip install numpy
       - name: Build
         run: >
-          alias python="${{ matrix.python }}"
+          alias python="${{ matrix.python }}" &&
           rm -rf build && mkdir -p build && cd build &&
           cmake
           -D CMAKE_INSTALL_PREFIX=./TasmanianInstall
