@@ -22,12 +22,12 @@ jobs:
       matrix:
         runner: [macos-10.15, macos-11.0]
         compiler: [clang++, g++]
-        python: [python3]
+        python: [python]
 
     steps:
       - uses: actions/checkout@v2
       - name: Install requirements
-        run: python3 -m pip install numpy
+        run: matrix.python -m pip install numpy
       - name: Build
         run: >
           rm -rf build && mkdir -p build && cd build &&
