@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         runner: [macos-10.15]
-        compiler: [clang++]
+        compiler: [$(brew --prefix llvm)/bin/clang]
         fortran_compiler: [gfortran-9]
         python: [python3]
 
