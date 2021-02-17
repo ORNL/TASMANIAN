@@ -20,8 +20,8 @@ jobs:
     continue-on-error: false
     strategy:
       matrix:
-        runner: [macos-10.15, macos-11.0]
-        compiler: [clang++, g++]
+        runner: [macos-latest]
+        compiler: [clang]
         python: [python]
 
     steps:
