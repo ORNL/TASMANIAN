@@ -1,0 +1,48 @@
+name: build-ubuntu
+
+
+# Controls when the action will run
+on:
+  push:
+  pull_request:
+  workflow_dispatch: # trigger the workflow manually
+  # # trigger the workflow on schedule
+  # # https://docs.github.com/en/free-pro-team@latest/actions/reference/events-that-trigger-workflows#scheduled-events
+  # schedule:
+  #   - cron:  '* * * * *'
+
+
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    runs-on: ${{ matrix.runner }}
+    continue-on-error: false
+    strategy:
+      matrix:
+        runner: [ubuntu-18.04, ubuntu-20.04]
+        compiler: [clang++, g++]
+        fortran_compiler: [gfortran-9]
+        python: [python3]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install requirements
+        run: ${{ matrix.python }} -m pip install numpy
+      - name: Build
+        run: >
+          rm -rf build && mkdir -p build && cd build &&
+          cmake
+          -D CMAKE_INSTALL_PREFIX=./TasmanianInstall
+          -D CMAKE_CXX_FLAGS="-O3 -Wall -Wextra -Wshadow -pedantic"
+          -D CMAKE_CXX_COMPILER=${{ matrix.compiler }}
+          -D CMAKE_Fortran_COMPILER=${{ matrix.fortran_compiler }}
+          -D PYTHON_EXECUTABLE=/usr/bin/${{ matrix.python }}
+          -D Tasmanian_ENABLE_RECOMMENDED=ON
+          -D Tasmanian_ENABLE_FORTRAN=ON
+          -D Tasmanian_TESTS_OMP_NUM_THREADS=4 .. &&
+          make -j4
+      - name: Test
+        run: cd build && ctest -j4 -V --no-compress-output -T Test
+      - name: Install
+        run: cd build && make install && make test_install
