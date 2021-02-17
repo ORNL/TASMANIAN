@@ -38,7 +38,6 @@ jobs:
           -D CMAKE_CXX_COMPILER=${{ matrix.compiler }}
           -D CMAKE_Fortran_COMPILER=${{ matrix.fortran_compiler }}
           -D Tasmanian_ENABLE_PYTHON=ON
-          -D PYTHON_EXECUTABLE=${{ matrix.python }}
           -D Tasmanian_ENABLE_FORTRAN=ON
           -D Tasmanian_TESTS_OMP_NUM_THREADS=4 .. &&
           make -j4
