@@ -36,7 +36,7 @@ jobs:
           -D CMAKE_INSTALL_PREFIX=./TasmanianInstall
           -D CMAKE_CXX_FLAGS="-O3 -Wall -Wextra -Wshadow -pedantic"
           -D CMAKE_CXX_COMPILER=${{ matrix.compiler }}
-          -D CMAKE_fortran_COMPILER=${{ matrix.fortran_compiler }}
+          -D CMAKE_Fortran_COMPILER=${{ matrix.fortran_compiler }}
           -D Tasmanian_ENABLE_PYTHON=ON
           -D PYTHON_EXECUTABLE=/usr/local/bin/${{ matrix.python }}
           -D Tasmanian_ENABLE_FORTRAN=ON
