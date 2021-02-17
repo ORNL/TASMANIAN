@@ -28,9 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install requirements
-        run: which python3 &&  ${{ matrix.python }} -m pip install numpy
+        run: ${{ matrix.python }} -m pip install numpy
       - name: Build
         run: >
+          alias python="${{ matrix.python }}"
           rm -rf build && mkdir -p build && cd build &&
           cmake
           -D CMAKE_INSTALL_PREFIX=./TasmanianInstall
