@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         runner: [macos-10.15]
-        compiler: [clang++, g++]
+        compiler: [gcc-10]
         fortran_compiler: [gfortran-10]
         python: [python3]
 
