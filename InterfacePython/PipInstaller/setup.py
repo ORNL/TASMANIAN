@@ -20,7 +20,7 @@ with open('README.md', 'r') as fh:
      readme_file = fh.readlines()
 
 long_description = ""
-for line in readme_file:
+for line in readme_file[3:]:
     if line.rstrip() == "Quick Install":
         break
     else:
