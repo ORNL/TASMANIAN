@@ -28,6 +28,7 @@ Recommended additional features:
 Optional features:
 * Acceleration using Nvidia [linear algebra libraries](https://developer.nvidia.com/cublas) and custom [CUDA kernels](https://developer.nvidia.com/cuda-zone)
 * Acceleration using AMD ROCm [linear algebra libraries](https://rocsparse.readthedocs.io/en/master/) and custom [HIP kernels](https://rocmdocs.amd.com/en/latest/ROCm_API_References/HIP-API.html)
+* Acceleration using Intel OneAPI [oneMKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/components/onemkl.html) and custom [DPC++ kernels](https://software.intel.com/content/www/us/en/develop/tools/oneapi.html)
 * GPU accelerated linear algebra using [UTK MAGMA library](http://icl.cs.utk.edu/magma/)
 * Basic [Python matplotlib](https://matplotlib.org/) support
 * Fully featured [MATLAB/Octave](https://www.gnu.org/software/octave/) interface via wrappers around the command-line tool
@@ -92,6 +93,7 @@ will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` follo
   -D Tasmanian_ENABLE_RECOMMENDED:BOOL=<ON/OFF> (enable the above and the -O3 flag)
   -D Tasmanian_ENABLE_CUDA:BOOL=<ON/OFF>        (stable)
   -D Tasmanian_ENABLE_HIP:BOOL=<ON/OFF>         (stable)
+  -D Tasmanian_ENABLE_DPCPP:BOOL=<ON/OFF>       (experimental)
   -D Tasmanian_ENABLE_MAGMA:BOOL=<ON/OFF>       (stable)
   -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""       (stable)
   -D Tasmanian_ENABLE_DOXYGEN:BOOL=<ON/OFF>     (stable)
@@ -132,6 +134,7 @@ will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` follo
   -D CMAKE_CUDA_COMPILER:PATH          (specify the CUDA nvcc compiler)
   -D CMAKE_Fortran_COMPILER:PATH       (specify the Fortran compiler)
   -D Tasmanian_ROCM_ROOT:PATH          (specify the path to the ROCm installation)
+  -D Tasmanian_MKL_SYCL_ROOT:PATH      (specify the path to the oneMKL installation)
   -D Tasmanian_MAGMA_ROOT:PATH         (specify the path to the MAGMA installation)
   -D MPI_CXX_COMPILER:PATH=<path>      (specify the MPI compiler wrapper)
   -D MPI_Fortran_COMPILER:PATH=<path>  (needed for MPI with Fortran)
@@ -141,6 +144,11 @@ will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` follo
 * The ROCm and MAGMA options can be passed without the *Tasmanian_* prefix and if not specified explicitly those will be read from the OS environment.
 
 * The **ROCm** capabilities require that the CMake CXX compiler is set to *hipcc*.
+
+* The **OneAPI** capabilities require:
+    * the CMake CXX compiler is set to *dpcpp*
+    * `Tasmanian_ENABLE_BLAS` is set to **ON**
+    * BLAS is set to the CPU version of MKL, e.g., using `BLAS_LIBRARIES`
 
 * Alternatives allowing to directly specify libraries and bypass `find_package()` altogether:
 ```
