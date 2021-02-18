@@ -1,3 +1,13 @@
+Changelog for version 7.4 (development)
+--------------
+
+* added DPC++ backend using oneMKL
+    * added both kernels and calls to BLAS/LAPACK methods
+    * missing the kernels for the global grids due to the atomics
+    * missing tests on an actual GPU due to lack of hardware
+* added github CI covering a MacOSX build and basic Ubuntu build
+    * credit goes to Viktor Reshniak
+
 Changelog for version 7.3
 --------------
 
