@@ -774,7 +774,7 @@ function tsgGetConformalTransformASIN(grid) result(truncate)
   integer, allocatable :: truncate(:)
   N = tsgGetNumDimensions(grid)
   allocate(truncate(N))
-  call tsgcre(grid%pntr, truncate)
+  call tsggca(grid%pntr, truncate)
 end function tsgGetConformalTransformASIN
 !=======================================================================
 subroutine tsgPrintStats(grid)
