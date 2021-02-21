@@ -61,6 +61,9 @@ macro(Tasmanian_macro_add_libdfortran03)
   type(SwigClassWrapper), public :: swigdata
  contains
     procedure :: returnPoints => tsgGetPoints
+    procedure :: returnLoadedPoints => tsgGetLoadedPoints
+    procedure :: returnNeededPoints => tsgGetNeededPoints
+    procedure :: returnQuadratureWeights => tsgGetQuadratureWeights
     "
     Tasmanian_generated_f90 ${Tasmanian_generated_f90})
 

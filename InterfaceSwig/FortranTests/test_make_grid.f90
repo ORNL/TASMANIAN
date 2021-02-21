@@ -103,8 +103,8 @@ subroutine test_make_global_grid_custom()
     write(17,*) "1 1 2 3 3 5 4 7 5 9"
     do i = 0,4
         grid = TasmanianGlobalGrid(1, 0, i, tsg_type_level, tsg_rule_gausslegendre)
-        weights => tsgGetQuadratureWeights(grid)
-        points  => tsgGetPoints(grid)
+        weights => grid%returnQuadratureWeights()
+        points  => grid%returnPoints()
         do j = 1, grid%getNumPoints()
             write(17,*) weights(j), points(1,j)
         enddo

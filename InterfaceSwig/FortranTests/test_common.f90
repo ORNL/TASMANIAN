@@ -91,11 +91,11 @@ subroutine approx_grid_pw(grid, grid_ref)
     real(C_DOUBLE), dimension(:), pointer :: weights, weights_ref
     real(C_DOUBLE), dimension(:,:), pointer :: points, points_ref
 
-    weights => tsgGetQuadratureWeights(grid)
+    weights => grid%returnQuadratureWeights()
     points => grid%returnPoints()
 
-    weights_ref => tsgGetQuadratureWeights(grid_ref)
-    points_ref => tsgGetPoints(grid_ref)
+    weights_ref => grid_ref%returnQuadratureWeights()
+    points_ref => grid_ref%returnPoints()
 
     call approx1d(grid_ref%getNumPoints(), weights, weights_ref)
     call approx2d(grid_ref%getNumDimensions(), grid_ref%getNumPoints(), points, points_ref)
@@ -112,7 +112,7 @@ subroutine print_points(grid)
     integer :: i, j
     real(C_DOUBLE), dimension(:,:), pointer :: points
 
-    points => tsgGetPoints(grid)
+    points => grid%returnPoints()
     do i = 1, grid%getNumPoints()
         do j = 1, grid%getNumDimensions()
             write(*, "(ES15.4)", advance="no") points(j, i)

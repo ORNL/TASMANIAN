@@ -46,8 +46,8 @@ subroutine test_domain_range()
     call grid%setDomainTransform(lower, upper)
     call tassert(grid%isSetDomainTransfrom())
 
-    weights => tsgGetQuadratureWeights(grid)
-    points => tsgGetPoints(grid)
+    weights => grid%returnQuadratureWeights()
+    points => grid%returnPoints()
 
     call tassert(abs(sum(weights) - 58.0D-0) < 1.D-11)
     do i = 1, 3
@@ -75,7 +75,7 @@ subroutine test_domain_gauss_hermite()
     double precision, parameter :: pi = 4.0D+0 * atan(1.0D+0)
 
     grid = TasmanianGlobalGrid(1, 0, 4, tsg_type_level, tsg_rule_gausshermite, alpha=2.0D+0)
-    weights => tsgGetQuadratureWeights(grid)
+    weights => grid%returnQuadratureWeights()
 
     call tassert(abs(sum(weights) - 0.5D+0 * sqrt(pi)) < 1.D-11)
     call tassert(grid%getAlpha() == 2.0D-0)
@@ -93,7 +93,7 @@ subroutine test_domain_gauss_jacobi()
     real(C_DOUBLE), dimension(:), pointer :: weights
 
     grid = TasmanianGlobalGrid(1, 0, 4, tsg_type_level, tsg_rule_gaussjacobi, beta=1.0D+0)
-    weights => tsgGetQuadratureWeights(grid)
+    weights => grid%returnQuadratureWeights()
 
     call tassert(abs(sum(weights) - 2.0D-0) < 1.D-11)
     call tassert(grid%getAlpha() == 0.0D-0)
@@ -115,8 +115,8 @@ subroutine test_domain_aniso()
     points_ref = reshape([ 0.0D+0, 0.0D+0, 0.0D+0, 1.0D+0, 0.0D+0, -1.0D+0, 1.0D+0, 0.0D+0 ], [2, 4])
     grid = TasmanianGlobalGrid(2, 1, 2, tsg_type_level, tsg_rule_leja, [2, 1])
 
-    weights => tsgGetQuadratureWeights(grid)
-    points =>tsgGetNeededPoints(grid)
+    weights => grid%returnQuadratureWeights()
+    points => grid%returnNeededPoints()
 
     call tassert(abs(sum(weights) - 4.0D-0) < 1.E-11)
     call approx2d(points, points_ref)
