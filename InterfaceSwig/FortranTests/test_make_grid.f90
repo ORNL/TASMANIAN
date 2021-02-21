@@ -94,10 +94,10 @@ subroutine test_make_global_grid_custom()
     real(C_DOUBLE), dimension(:,:), pointer :: points
     character(len=:), allocatable :: description
     character(len=20) :: description_ref
-    integer :: i, j, ierr
+    integer :: i, j, ferr
 
-    open(unit=17, iostat=ierr, file='tasmanianFortranTestCustomRule.table',status='replace')
-    call tassert(ierr == 0)
+    open(unit=17, iostat=ferr, file='tasmanianFortranTestCustomRule.table',status='replace')
+    call tassert(ferr == 0)
     write(17,*) "description: test Gauss-Legendre"
     write(17,*) "levels: 5"
     write(17,*) "1 1 2 3 3 5 4 7 5 9"

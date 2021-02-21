@@ -33,7 +33,7 @@ function(tasmanian_add_swig_module tsg_name)
     )
 
     target_link_libraries(${tsg_name} Tasmanian_addons Tasmanian_libdream)
-    set_target_properties(${tsg_name} PROPERTIES OUTPUT_NAME "tasmanianfortran"
+    set_target_properties(${tsg_name} PROPERTIES OUTPUT_NAME "tasmanian_swig"
                                                  INSTALL_RPATH "${Tasmanian_rpath}"
                                                  SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                  VERSION   ${PROJECT_VERSION})
@@ -45,11 +45,6 @@ function(tasmanian_add_swig_module tsg_name)
         target_link_libraries(${tsg_name} MPI::MPI_Fortran)
     endif()
 
-    install(TARGETS ${tsg_name}
-            EXPORT "${Tasmanian_export_name}"
-            RUNTIME DESTINATION "bin"
-            LIBRARY DESTINATION "lib"
-            ARCHIVE DESTINATION "lib")
 endfunction()
 
 macro(Tasmanian_macro_add_libdfortran03)
@@ -57,7 +52,21 @@ macro(Tasmanian_macro_add_libdfortran03)
 # Build the Fortran module from an existing generated source file
 #
 
-    add_library(Tasmanian_libfortran03  "${Tasmanian_GENERATE_DIR}/tasmanian.f90"
+    file(READ "${Tasmanian_GENERATE_DIR}/tasmanian_swig.f90" Tasmanian_generated_f90)
+    string(REPLACE "module tasmanian_swig" "module tasmanian" Tasmanian_generated_f90 ${Tasmanian_generated_f90})
+    string(REPLACE " type, public :: TasmanianSparseGrid
+  type(SwigClassWrapper), public :: swigdata
+ contains"
+    "type, public :: TasmanianSparseGrid
+  type(SwigClassWrapper), public :: swigdata
+ contains
+    procedure :: returnPoints => tsgGetPoints
+    "
+    Tasmanian_generated_f90 ${Tasmanian_generated_f90})
+
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/regenerated/tasmanian.f90" "${Tasmanian_generated_f90}")
+
+    add_library(Tasmanian_libfortran03  "${CMAKE_CURRENT_BINARY_DIR}/regenerated/tasmanian.f90"
                                         "${Tasmanian_GENERATE_DIR}/tasmanianFORTRAN_wrap.cxx")
 
     target_link_libraries(Tasmanian_libfortran03  Tasmanian_addons)
@@ -98,16 +107,12 @@ set_target_properties(Tasmanian_fortran_swig_tester PROPERTIES OUTPUT_NAME "fors
 
 if (Tasmanian_ENABLE_SWIG)
     # generate the interface
-    tasmanian_add_swig_module(tasmanian)
-
-    target_link_libraries(Tasmanian_fortran_swig_tester  tasmanian)
-
-    add_library(Tasmanian_libfortran03 ALIAS tasmanian)
-else()
-    Tasmanian_macro_add_libdfortran03()
-
-    target_link_libraries(Tasmanian_fortran_swig_tester  Tasmanian_libfortran03)
+    tasmanian_add_swig_module(tasmanian_swig)
 endif()
+
+Tasmanian_macro_add_libdfortran03()
+
+target_link_libraries(Tasmanian_fortran_swig_tester  Tasmanian_libfortran03)
 
 add_test(Fortran2003 forswigtester)
 if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)

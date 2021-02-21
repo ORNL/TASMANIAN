@@ -5,7 +5,7 @@
  * Distributed under a BSD 3-Clause License: see LICENSE for details.
  */
 
-%module "tasmanian"
+%module "tasmanian_swig"
 
 /* -------------------------------------------------------------------------
  * Header definition macros

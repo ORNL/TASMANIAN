@@ -92,7 +92,7 @@ subroutine approx_grid_pw(grid, grid_ref)
     real(C_DOUBLE), dimension(:,:), pointer :: points, points_ref
 
     weights => tsgGetQuadratureWeights(grid)
-    points  => tsgGetPoints(grid)
+    points => grid%returnPoints()
 
     weights_ref => tsgGetQuadratureWeights(grid_ref)
     points_ref => tsgGetPoints(grid_ref)
