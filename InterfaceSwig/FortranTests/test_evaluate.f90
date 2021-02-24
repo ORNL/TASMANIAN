@@ -186,6 +186,11 @@ subroutine test_eval_sequence()
         enddo
         call grid1%evaluateBatch(xf(:,1), 4, yf(:,1))
         call approx2df(1, 4, yf, y_ref1f)
+
+        ! reset yf to call eval fast in single precision
+        yf(1, 1) = -333.33
+        call grid1%evaluateFast(xf(:,1), yf(:,1))
+        call approx2df(1, 1, yf, y_ref1f)
     endif
 
     deallocate(points, values)
