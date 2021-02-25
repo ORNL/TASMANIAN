@@ -70,7 +70,7 @@ macro(Tasmanian_macro_add_libdfortran03)
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/regenerated/tasmanian.f90" "${Tasmanian_generated_f90}")
 
     add_library(Tasmanian_libfortran03  "${CMAKE_CURRENT_BINARY_DIR}/regenerated/tasmanian.f90"
-                                        "${Tasmanian_GENERATE_DIR}/tasmanianFORTRAN_wrap.cxx")
+                                        "${Tasmanian_GENERATE_DIR}/tasmanian_swigFORTRAN_wrap.cxx")
 
     target_link_libraries(Tasmanian_libfortran03  Tasmanian_addons)
     set_target_properties(Tasmanian_libfortran03  PROPERTIES OUTPUT_NAME "tasmanianfortran"

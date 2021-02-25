@@ -263,3 +263,9 @@ namespace TasGrid {
     %rename(evaluateFast) TasmanianSparseGrid::evaluateFast<float>;
     %template(evaluateFastFlt) TasmanianSparseGrid::evaluateFast<float>;
 }
+
+%extend TasGrid::TasmanianSparseGrid{
+    void setConformalTransformASIN(int *truncation){
+        $self->setConformalTransformASIN( std::vector<int>(truncation, truncation + $self->getNumDimensions()) );
+    }
+};

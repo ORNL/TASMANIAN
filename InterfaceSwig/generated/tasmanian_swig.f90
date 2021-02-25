@@ -273,58 +273,60 @@ module tasmanian_swig
   procedure :: evaluateSparseHierarchicalFunctionsStatic => swigf_TasmanianSparseGrid_evaluateSparseHierarchicalFunct1HRJEE
   procedure, private :: swigf_TasmanianSparseGrid_evaluateFast__SWIG_2
   procedure, private :: swigf_TasmanianSparseGrid_evaluateFast__SWIG_4
+  procedure, private :: swigf_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1
   procedure, private :: swigf_TasmanianSparseGrid_op_assign__
-  generic :: setDomainTransform => swigf_TasmanianSparseGrid_setDomainTransform__SWIG_1
+  generic :: write => swigf_TasmanianSparseGrid_write__SWIG_0, swigf_TasmanianSparseGrid_write__SWIG_1
+  generic :: makeFourierGrid => swigf_TasmanianSparseGrid_makeFourierGrid__SWIG_2, &
+    swigf_TasmanianSparseGrid_makeFourierGrid__SWIG_3, swigf_TasmanianSparseGrid_makeFourierGrid__SWIG_4
+  generic :: updateFourierGrid => swigf_TasmanianSparseGrid_updateFourierGrid__SWIG_2, &
+    swigf_TasmanianSparseGrid_updateFourierGrid__SWIG_3, swigf_TasmanianSparseGrid_updateFourierGrid__SWIG_4
+  generic :: getInterpolationWeights => swigf_TasmanianSparseGrid_getInterpolationWeights__SWIG_3
+  generic :: getQuadratureWeights => swigf_TasmanianSparseGrid_getQuadratureWeights__SWIG_2
   generic :: getDomainTransform => swigf_TasmanianSparseGrid_getDomainTransform__SWIG_1
-  generic :: setAnisotropicRefinement => swigf_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_1, &
-    swigf_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_2
-  generic :: setSurplusRefinement => swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_3, &
-    swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_4, swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_5, &
-    swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_6
-  generic :: updateSequenceGrid => swigf_TasmanianSparseGrid_updateSequenceGrid__SWIG_2, &
-    swigf_TasmanianSparseGrid_updateSequenceGrid__SWIG_3, swigf_TasmanianSparseGrid_updateSequenceGrid__SWIG_4
-  generic :: makeSequenceGrid => swigf_TasmanianSparseGrid_makeSequenceGrid__SWIG_2, &
-    swigf_TasmanianSparseGrid_makeSequenceGrid__SWIG_3, swigf_TasmanianSparseGrid_makeSequenceGrid__SWIG_4
-  generic :: assignment(=) => swigf_TasmanianSparseGrid_op_assign__
+  generic :: setDomainTransform => swigf_TasmanianSparseGrid_setDomainTransform__SWIG_1
+  generic :: makeWaveletGrid => swigf_TasmanianSparseGrid_makeWaveletGrid__SWIG_1, &
+    swigf_TasmanianSparseGrid_makeWaveletGrid__SWIG_2, swigf_TasmanianSparseGrid_makeWaveletGrid__SWIG_3
+  generic :: printStats => swigf_TasmanianSparseGrid_printStats__SWIG_1
+  generic :: copyGrid => swigf_TasmanianSparseGrid_copyGrid__SWIG_0, swigf_TasmanianSparseGrid_copyGrid__SWIG_1, &
+    swigf_TasmanianSparseGrid_copyGrid__SWIG_2
   generic :: removePointsByHierarchicalCoefficient => swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_0, &
     swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_1, &
     swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_2
-  generic :: write => swigf_TasmanianSparseGrid_write__SWIG_0, swigf_TasmanianSparseGrid_write__SWIG_1
-  generic :: makeWaveletGrid => swigf_TasmanianSparseGrid_makeWaveletGrid__SWIG_1, &
-    swigf_TasmanianSparseGrid_makeWaveletGrid__SWIG_2, swigf_TasmanianSparseGrid_makeWaveletGrid__SWIG_3
-  generic :: updateGlobalGrid => swigf_TasmanianSparseGrid_updateGlobalGrid__SWIG_2, &
-    swigf_TasmanianSparseGrid_updateGlobalGrid__SWIG_3, swigf_TasmanianSparseGrid_updateGlobalGrid__SWIG_4
+  generic :: enableAcceleration => swigf_TasmanianSparseGrid_enableAcceleration__SWIG_0, &
+    swigf_TasmanianSparseGrid_enableAcceleration__SWIG_1
+  generic :: integrate => swigf_TasmanianSparseGrid_integrate__SWIG_1
+  generic :: evaluate => swigf_TasmanianSparseGrid_evaluate__SWIG_1
+  generic :: makeLocalPolynomialGrid => swigf_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_1, &
+    swigf_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_2, swigf_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_3, &
+    swigf_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_4
+  generic :: evaluateFast => swigf_TasmanianSparseGrid_evaluateFast__SWIG_2, swigf_TasmanianSparseGrid_evaluateFast__SWIG_4
+  generic :: loadConstructedPoints => swigf_TasmanianSparseGrid_loadConstructedPoints__SWIG_1
+  generic :: loadNeededPoints => swigf_TasmanianSparseGrid_loadNeededPoints__SWIG_1
+  generic :: getLoadedPoints => swigf_TasmanianSparseGrid_getLoadedPoints__SWIG_2
+  generic :: getNeededPoints => swigf_TasmanianSparseGrid_getNeededPoints__SWIG_2
+  generic :: getPoints => swigf_TasmanianSparseGrid_getPoints__SWIG_2
+  generic :: setConformalTransformASIN => swigf_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1
+  generic :: makeSequenceGrid => swigf_TasmanianSparseGrid_makeSequenceGrid__SWIG_2, &
+    swigf_TasmanianSparseGrid_makeSequenceGrid__SWIG_3, swigf_TasmanianSparseGrid_makeSequenceGrid__SWIG_4
+  generic :: updateSequenceGrid => swigf_TasmanianSparseGrid_updateSequenceGrid__SWIG_2, &
+    swigf_TasmanianSparseGrid_updateSequenceGrid__SWIG_3, swigf_TasmanianSparseGrid_updateSequenceGrid__SWIG_4
+  generic :: read => swigf_TasmanianSparseGrid_read__SWIG_0
+  generic :: setHierarchicalCoefficients => swigf_TasmanianSparseGrid_setHierarchicalCoefficients__SWIG_1
+  generic :: assignment(=) => swigf_TasmanianSparseGrid_op_assign__
   generic :: makeGlobalGrid => swigf_TasmanianSparseGrid_makeGlobalGrid__SWIG_5, &
     swigf_TasmanianSparseGrid_makeGlobalGrid__SWIG_6, swigf_TasmanianSparseGrid_makeGlobalGrid__SWIG_7, &
     swigf_TasmanianSparseGrid_makeGlobalGrid__SWIG_8, swigf_TasmanianSparseGrid_makeGlobalGrid__SWIG_9, &
     swigf_TasmanianSparseGrid_makeGlobalGrid__SWIG_10
-  generic :: getQuadratureWeights => swigf_TasmanianSparseGrid_getQuadratureWeights__SWIG_2
-  generic :: getInterpolationWeights => swigf_TasmanianSparseGrid_getInterpolationWeights__SWIG_3
-  generic :: read => swigf_TasmanianSparseGrid_read__SWIG_0
-  generic :: evaluate => swigf_TasmanianSparseGrid_evaluate__SWIG_1
-  generic :: evaluateBatch => swigf_TasmanianSparseGrid_evaluateBatch__SWIG_1, swigf_TasmanianSparseGrid_evaluateBatch__SWIG_2
-  generic :: printStats => swigf_TasmanianSparseGrid_printStats__SWIG_1
-  generic :: evaluateFast => swigf_TasmanianSparseGrid_evaluateFast__SWIG_2, swigf_TasmanianSparseGrid_evaluateFast__SWIG_4
-  generic :: setHierarchicalCoefficients => swigf_TasmanianSparseGrid_setHierarchicalCoefficients__SWIG_1
-  generic :: copyGrid => swigf_TasmanianSparseGrid_copyGrid__SWIG_0, swigf_TasmanianSparseGrid_copyGrid__SWIG_1, &
-    swigf_TasmanianSparseGrid_copyGrid__SWIG_2
-  generic :: makeLocalPolynomialGrid => swigf_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_1, &
-    swigf_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_2, swigf_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_3, &
-    swigf_TasmanianSparseGrid_makeLocalPolynomialGrid__SWIG_4
-  generic :: integrate => swigf_TasmanianSparseGrid_integrate__SWIG_1
-  generic :: updateFourierGrid => swigf_TasmanianSparseGrid_updateFourierGrid__SWIG_2, &
-    swigf_TasmanianSparseGrid_updateFourierGrid__SWIG_3, swigf_TasmanianSparseGrid_updateFourierGrid__SWIG_4
-  generic :: makeFourierGrid => swigf_TasmanianSparseGrid_makeFourierGrid__SWIG_2, &
-    swigf_TasmanianSparseGrid_makeFourierGrid__SWIG_3, swigf_TasmanianSparseGrid_makeFourierGrid__SWIG_4
-  generic :: evaluateHierarchicalFunctions => swigf_TasmanianSparseGrid_evaluateHierarchicalFunctions__SWIG_2
+  generic :: updateGlobalGrid => swigf_TasmanianSparseGrid_updateGlobalGrid__SWIG_2, &
+    swigf_TasmanianSparseGrid_updateGlobalGrid__SWIG_3, swigf_TasmanianSparseGrid_updateGlobalGrid__SWIG_4
   generic :: integrateHierarchicalFunctions => swigf_TasmanianSparseGrid_integrateHierarchicalFu1JSVB3__SWIG_2
-  generic :: getPoints => swigf_TasmanianSparseGrid_getPoints__SWIG_2
-  generic :: getNeededPoints => swigf_TasmanianSparseGrid_getNeededPoints__SWIG_2
-  generic :: getLoadedPoints => swigf_TasmanianSparseGrid_getLoadedPoints__SWIG_2
-  generic :: loadNeededPoints => swigf_TasmanianSparseGrid_loadNeededPoints__SWIG_1
-  generic :: loadConstructedPoints => swigf_TasmanianSparseGrid_loadConstructedPoints__SWIG_1
-  generic :: enableAcceleration => swigf_TasmanianSparseGrid_enableAcceleration__SWIG_0, &
-    swigf_TasmanianSparseGrid_enableAcceleration__SWIG_1
+  generic :: evaluateHierarchicalFunctions => swigf_TasmanianSparseGrid_evaluateHierarchicalFunctions__SWIG_2
+  generic :: setSurplusRefinement => swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_3, &
+    swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_4, swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_5, &
+    swigf_TasmanianSparseGrid_setSurplusRefinement__SWIG_6
+  generic :: setAnisotropicRefinement => swigf_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_1, &
+    swigf_TasmanianSparseGrid_setAnisotropicRefinement__SWIG_2
+  generic :: evaluateBatch => swigf_TasmanianSparseGrid_evaluateBatch__SWIG_1, swigf_TasmanianSparseGrid_evaluateBatch__SWIG_2
  end type TasmanianSparseGrid
  public :: TasmanianReadGrid
  interface TasmanianSparseGrid
@@ -1406,6 +1408,14 @@ import :: swigclasswrapper
 type(SwigClassWrapper), intent(in) :: farg1
 type(C_PTR), value :: farg2
 type(C_PTR), value :: farg3
+end subroutine
+
+subroutine swigc_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1(farg1, farg2) &
+bind(C, name="_wrap_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1")
+use, intrinsic :: ISO_C_BINDING
+import :: swigclasswrapper
+type(SwigClassWrapper), intent(in) :: farg1
+type(C_PTR), value :: farg2
 end subroutine
 
 subroutine swigc_TasmanianSparseGrid_op_assign__(farg1, farg2) &
@@ -3494,6 +3504,18 @@ farg1 = self%swigdata
 farg2 = c_loc(x)
 farg3 = c_loc(y)
 call swigc_TasmanianSparseGrid_evaluateFast__SWIG_4(farg1, farg2, farg3)
+end subroutine
+
+subroutine swigf_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1(self, truncation)
+use, intrinsic :: ISO_C_BINDING
+class(TasmanianSparseGrid), intent(in) :: self
+integer(C_INT), dimension(*), target :: truncation
+type(SwigClassWrapper) :: farg1 
+type(C_PTR) :: farg2 
+
+farg1 = self%swigdata
+farg2 = c_loc(truncation)
+call swigc_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1(farg1, farg2)
 end subroutine
 
 subroutine swigf_TasmanianSparseGrid_op_assign__(self, other)

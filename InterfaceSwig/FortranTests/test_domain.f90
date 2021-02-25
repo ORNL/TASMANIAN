@@ -125,10 +125,65 @@ subroutine test_domain_aniso()
     call grid%release()
 end subroutine
 
+subroutine test_conformal_transform()
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid) :: grid
+    real(C_DOUBLE), dimension(:), pointer :: weights
+    real(C_DOUBLE), dimension(:,:), pointer :: points
+    real(C_DOUBLE) :: err_normal, err_conformal
+    integer :: i, l
+
+    do l = 7,8
+        grid = TasmanianGlobalGrid(2, 0, l, tsg_type_qptotal, tsg_rule_gausspatterson)
+        weights => grid%returnQuadratureWeights()
+        points => grid%returnPoints()
+
+        err_normal = 0.0d+0
+        do i = 1,grid%getNumPoints()
+            err_normal = err_normal + weights(i) * ( 1.d0/((1.d0+5.d0*points(1,i)**2)*(1.d0+5.d0*points(2,i)**2  )) )
+        enddo
+        err_normal = abs(err_normal-1.028825601981092d0**2)
+
+        call grid%release()
+        deallocate(weights, points)
+
+        grid = TasmanianGlobalGrid(2, 0, l, tsg_type_qptotal, tsg_rule_gausspatterson)
+        call grid%setConformalTransformASIN( (/4,4/) )
+        if (.not. grid%isSetConformalTransformASIN()) then
+            write(*,*) "Conformal transform not set"
+            error stop
+        endif
+        weights => grid%returnQuadratureWeights()
+        points => grid%returnPoints()
+        call grid%clearConformalTransform()
+        if (grid%isSetConformalTransformASIN()) then
+            write(*,*) "Conformal transform incorrectly set"
+            error stop
+        endif
+
+        err_conformal = 0.0d+0
+        do i = 1,grid%getNumPoints()
+            err_conformal = err_conformal + weights(i) * ( 1.d0/((1.d0+5.d0*points(1,i)**2)*(1.d0+5.d0*points(2,i)**2  )) )
+        enddo
+        err_conformal = abs(err_conformal-1.028825601981092d0**2)
+
+        call grid%release()
+        deallocate(weights, points)
+
+        if (err_normal < err_conformal) then
+            write(*,*) "Conformal transform failed to improve convergence"
+            error stop
+        endif
+    enddo
+end subroutine
+
 subroutine test_domain_transforms()
     call test_domain_range()
     call test_domain_gauss_hermite()
     call test_domain_gauss_jacobi()
     call test_domain_aniso()
+    call test_conformal_transform()
     write(*,*) "  Performing tests on domain transforms:           PASS"
 end subroutine
