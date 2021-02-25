@@ -38,6 +38,7 @@ subroutine approx2d(n, m, A, B)
     do j = 1, m
         do i = 1, n
             if ( abs(A(i, j) - B(i, j)) > 1.D-12 ) then
+                write(*,*) "mismatch: ", A(i, j), B(i, j)
                 error stop
             endif
         enddo
