@@ -104,6 +104,7 @@ add_executable(Tasmanian_fortran_swig_tester ${CMAKE_CURRENT_SOURCE_DIR}/Fortran
                                              ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/test_domain.f90
                                              ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/test_evaluate.f90
                                              ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/test_update_grid.f90
+                                             ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/test_refinement.f90
                                              )
 set_target_properties(Tasmanian_fortran_swig_tester PROPERTIES OUTPUT_NAME "forswigtester"
                                                                LINKER_LANGUAGE Fortran)
