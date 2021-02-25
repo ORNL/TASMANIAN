@@ -214,7 +214,7 @@ end function
 
 function tsgGetLoadedPoints(grid) result(fresult)
     use, intrinsic :: ISO_C_BINDING
-    type(TasmanianSparseGrid), intent(in) :: grid
+    class(TasmanianSparseGrid), intent(in) :: grid
     real(C_DOUBLE), dimension(:,:), pointer :: fresult
 
     allocate(fresult(grid%getNumDimensions(), grid%getNumLoaded()))
@@ -223,7 +223,7 @@ end function
 
 function tsgGetNeededPoints(grid) result(fresult)
     use, intrinsic :: ISO_C_BINDING
-    type(TasmanianSparseGrid), intent(in) :: grid
+    class(TasmanianSparseGrid), intent(in) :: grid
     real(C_DOUBLE), dimension(:,:), pointer :: fresult
 
     allocate(fresult(grid%getNumDimensions(), grid%getNumNeeded()))
@@ -232,7 +232,7 @@ end function
 
 function tsgGetPoints(grid) result(fresult)
     use, intrinsic :: ISO_C_BINDING
-    type(TasmanianSparseGrid), intent(in) :: grid
+    class(TasmanianSparseGrid), intent(in) :: grid
     real(C_DOUBLE), dimension(:,:), pointer :: fresult
 
     allocate(fresult(grid%getNumDimensions(), grid%getNumPoints()))
@@ -241,7 +241,7 @@ end function
 
 function tsgGetQuadratureWeights(grid) result(fresult)
     use, intrinsic :: ISO_C_BINDING
-    type(TasmanianSparseGrid), intent(in) :: grid
+    class(TasmanianSparseGrid), intent(in) :: grid
     real(C_DOUBLE), dimension(:), pointer :: fresult
 
     allocate(fresult(grid%getNumPoints()))

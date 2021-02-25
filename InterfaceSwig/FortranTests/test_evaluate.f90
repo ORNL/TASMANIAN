@@ -41,7 +41,7 @@ subroutine test_exact_eval_linear()
     grid = TasmanianSparseGrid()
     call grid%makeLocalPolynomialGrid(2, 2, 3)
 
-    points => tsgGetNeededPoints(grid)
+    points => grid%returnNeededPoints()
     num_points = grid%getNumNeeded()
     allocate(values(2, num_points))
 
@@ -87,7 +87,7 @@ subroutine test_exact_eval_cubic()
     grid = TasmanianSparseGrid()
     call grid%makeLocalPolynomialGrid(2, 3, 3, 3)
 
-    points => tsgGetNeededPoints(grid)
+    points => grid%returnNeededPoints()
     num_points = grid%getNumNeeded()
     allocate(values(3, num_points))
 
@@ -98,7 +98,7 @@ subroutine test_exact_eval_cubic()
         values(3, i) = 5.0D-0 + points(1, i)**3 + 2.0D+0 * points(2, i)**2
     enddo
     call grid%loadNeededPoints(values(:, 1))
-    lpoints => tsgGetLoadedPoints(grid)
+    lpoints => grid%returnLoadedPoints()
     call approx2d(2, num_points, points, lpoints)
 
     x = reshape([ 0.3D-0, 0.3D-0, 0.7D-0, -0.3D-0, 0.44D-0, -0.11D-0, -0.17D-0, -0.83D-0 ], [2, 4])
@@ -139,7 +139,7 @@ subroutine test_eval_sequence()
     grid2 = TasmanianSparseGrid()
 
     call grid%makeSequenceGrid(2, 3, 6, tsg_type_level, tsg_rule_mindelta)
-    points => tsgGetNeededPoints(grid)
+    points => grid%returnNeededPoints()
     num_points = grid%getNumNeeded()
 
     allocate(values(3, num_points))
@@ -186,6 +186,11 @@ subroutine test_eval_sequence()
         enddo
         call grid1%evaluateBatch(xf(:,1), 4, yf(:,1))
         call approx2df(1, 4, yf, y_ref1f)
+
+        ! reset yf to call eval fast in single precision
+        yf(1, 1) = -333.33
+        call grid1%evaluateFast(xf(:,1), yf(:,1))
+        call approx2df(1, 1, yf, y_ref1f)
     endif
 
     deallocate(points, values)
