@@ -375,6 +375,9 @@ SWIGINTERN SwigClassWrapper SwigClassWrapper_uninitialized() {
     return result;
 }
 
+SWIGINTERN void TasGrid_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1(TasGrid::TasmanianSparseGrid *self,int *truncation){
+        self->setConformalTransformASIN( std::vector<int>(truncation, truncation + self->getNumDimensions()) );
+    }
 
 namespace swig {
 
@@ -2061,6 +2064,17 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateFast__SWIG_4(SwigClassWrapper 
   arg2 = (float *)(farg2);
   arg3 = (float *)(farg3);
   ((TasGrid::TasmanianSparseGrid const *)arg1)->SWIGTEMPLATEDISAMBIGUATOR evaluateFast< float >((float const (*))arg2,arg3);
+}
+
+
+SWIGEXPORT void _wrap_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1(SwigClassWrapper *farg1, int *farg2) {
+  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  int *arg2 = (int *) 0 ;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::setConformalTransformASIN(int *)", return );
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (int *)(farg2);
+  TasGrid_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1(arg1,arg2);
 }
 
 
