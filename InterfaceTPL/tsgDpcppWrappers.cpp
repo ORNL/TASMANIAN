@@ -263,20 +263,12 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
     oneapi::mkl::sparse::set_csr_data(mat, N, K, oneapi::mkl::index_base::zero,
                                       const_cast<int*>(pntr.data()), const_cast<int*>(indx.data()), const_cast<scalar_type*>(vals.data()));
 
-    Utils::Wrapper2D<scalar_type> ywrap(M, C);
-    Utils::Wrapper2D<scalar_type const> surpluses(M, A.data());
-    int const *spntr = pntr.data();
-    int const *sindx = indx.data();
-    scalar_type const *svals = vals.data();
-    #pragma omp parallel for
-    for(int i=0; i<N; i++){
-        scalar_type *this_y = ywrap.getStrip(i);
-        std::fill(this_y, this_y + M, 0.0);
-        for(int j=spntr[i]; j<spntr[i+1]; j++){
-            double v = svals[j];
-            scalar_type const *s = surpluses.getStrip(sindx[j]);
-            for(int k=0; k<M; k++) this_y[k] += v * s[k];
-        }
+    if (M == 1){ // using sparse-blas level 2
+        oneapi::mkl::sparse::gemv(*q, oneapi::mkl::transpose::nontrans, alpha, mat,
+                                  const_cast<scalar_type*>(A.data()), 0.0, C);
+    }else{ // using sparse-blas level 3
+        oneapi::mkl::sparse::gemm(*q, oneapi::mkl::transpose::nontrans, alpha, mat,
+                                  const_cast<scalar_type*>(A.data()), M, M, 0.0, C, M);
     }
 
     q->wait();
