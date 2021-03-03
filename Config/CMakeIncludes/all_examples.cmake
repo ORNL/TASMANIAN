@@ -41,7 +41,11 @@ if (Tasmanian_ENABLE_FORTRAN)
                                                           InterfaceSwig/FortranExamples/example_sparse_grids_04.f90
                                                           )
     set_target_properties(Tasmanian_example_sparse_grids_fortran PROPERTIES
-                            OUTPUT_NAME "example_sparse_grids_fortran"
-                            LINKER_LANGUAGE Fortran)
+                            OUTPUT_NAME "example_sparse_grids_fortran")
+    if (Tasmanian_ENABLE_DPCPP)
+        set_target_properties(Tasmanian_example_sparse_grids_fortran PROPERTIES LINKER_LANGUAGE CXX)
+    else()
+        set_target_properties(Tasmanian_example_sparse_grids_fortran PROPERTIES LINKER_LANGUAGE Fortran)
+    endif()
     target_link_libraries(Tasmanian_example_sparse_grids_fortran Tasmanian_libfortran03)
 endif()

@@ -55,9 +55,17 @@ namespace TasGrid{
 
 inline sycl::queue* getSyclQueue(AccelerationContext const *acceleration){
     if (acceleration->engine->sycl_gpu_queue == nullptr){
-        //sycl::default_selector d_selector;
+        sycl::queue *qq = nullptr;
+        try{
+            sycl::gpu_selector g_selector;
+            qq = new sycl::queue(g_selector);
+        }catch(sycl::exception const&){
+            sycl::cpu_selector c_selector;
+            qq = new sycl::queue(c_selector);
+        }
+
         acceleration->engine->internal_queue = std::shared_ptr<int>(
-            reinterpret_cast<int*>(new sycl::queue()),
+            reinterpret_cast<int*>(qq),
             [](int* q_int){
                 sycl::queue *q = reinterpret_cast<sycl::queue*>(q_int);
                 delete q;
