@@ -59,30 +59,49 @@ double err1(VectorLike1 const &x, VectorLike2 const &y){
     return err1(x.size(), x, y);
 }
 
+template<typename VectorLike>
+std::vector<std::pair<int, typename VectorLike::value_type>>
+extractRow(size_t i, std::vector<int> const &pntr, std::vector<int> const &indx, VectorLike const &vals){
+    std::vector<std::pair<int, typename VectorLike::value_type>> result;
+    result.reserve(pntr[i+1] - pntr[i]);
+    for(int j=pntr[i]; j<pntr[i+1]; j++)
+        result.push_back(std::pair<int, typename VectorLike::value_type>(indx[j], vals[j]));
+    return result;
+}
+
+template<typename T>
+void sortRow(std::vector<std::pair<int, T>> &row){
+    std::sort(row.begin(), row.end(), [&](std::pair<int, T> &a, std::pair<int, T> &b)->
+                                      bool{ return a.first < b.first; });
+}
+
 template<typename VectorLike1, typename VectorLike2>
 double err1_sparse(std::vector<int> const &xpntr, std::vector<int> const &xindx, VectorLike1 const &xvals,
                    std::vector<int> const &ypntr, std::vector<int> const &yindx, VectorLike2 const &yvals){
     if (xpntr.size() != ypntr.size()) throw std::runtime_error("mismatch in number of sparse rows");
     double err = 0.0;
-    for(size_t i=1; i<xpntr.size(); i++){
-        int xj = xpntr[i-1], yj = ypntr[i-1];
-        while((xj < xpntr[i]) || (yj < ypntr[i])){
-            double xv, yv;
-            if (xj >= xpntr[i]){ // x reached the end
+    for(size_t i=0; i<xpntr.size()-1; i++){
+        auto xrow = extractRow(i, xpntr, xindx, xvals); sortRow(xrow);
+        auto yrow = extractRow(i, ypntr, yindx, yvals); sortRow(yrow);
+        auto ix = xrow.begin();
+        auto iy = yrow.begin();
+        while( ix < xrow.end() or iy < yrow.end() ){
+            double xv = 0.0, yv = 0.0;
+            if (ix == xrow.end()){ // read all x, using only y
                 xv = 0.0;
-                yv = yvals[yj++];
-            }else if (yj >= ypntr[i]){ // y reached the end
-                xv = xvals[xj++];
+                yv = iy++ ->second;
+            }else if (iy == yrow.end()){ // read all y, using only x
+                xv = ix++ ->second;
                 yv = 0.0;
-            }else if (xindx[xj] == yindx[xj]){ // same index
-                xv = xvals[xj++];
-                yv = yvals[yj++];
-            }else if (xindx[xj] < yindx[yj]){ // y is skipping an index
-                xv = xvals[xj++];
+            }else if (ix->first == iy->first){ // index pair match
+                xv = ix++ ->second;
+                yv = iy++ ->second;
+            }else if (ix->first < iy->first){ // y skips an index
+                xv = ix++ ->second;
                 yv = 0.0;
-            }else{ // must be that x is skipping an index
+            }else{ // since sorted, x must have skipped an index
                 xv = 0.0;
-                yv = yvals[yj++];
+                yv = iy++ ->second;
             }
             err = std::max(err, std::abs(xv - yv));
         }
