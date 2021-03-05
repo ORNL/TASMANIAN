@@ -74,22 +74,22 @@ template void GpuVector<int>::unload(AccelerationContext const*, size_t, int*) c
 GpuEngine::~GpuEngine(){}
 
 int AccelerationMeta::getNumGpuDevices(){ return 0; }
-void AccelerationMeta::setDefaultCudaDevice(int){}
+void AccelerationMeta::setDefaultGpuDevice(int){}
 unsigned long long AccelerationMeta::getTotalGPUMemory(int){ return 0; }
-std::string AccelerationMeta::getCudaDeviceName(int){ return std::string(); }
-template<typename T> void AccelerationMeta::recvCudaArray(size_t, const T[], std::vector<T>&){}
-template<typename T> void AccelerationMeta::delCudaArray(T*){}
+std::string AccelerationMeta::getGpuDeviceName(int){ return std::string(); }
+template<typename T> void AccelerationMeta::recvGpuArray(AccelerationContext const*, size_t, const T[], std::vector<T>&){}
+template<typename T> void AccelerationMeta::delGpuArray(AccelerationContext const*, T*){}
 
 void* AccelerationMeta::createCublasHandle(){ return nullptr; }
 void AccelerationMeta::deleteCublasHandle(void*){}
 
-template void AccelerationMeta::recvCudaArray<double>(size_t num_entries, const double*, std::vector<double>&);
-template void AccelerationMeta::recvCudaArray<float>(size_t num_entries, const float*, std::vector<float>&);
-template void AccelerationMeta::recvCudaArray<int>(size_t num_entries, const int*, std::vector<int>&);
+template void AccelerationMeta::recvGpuArray<double>(AccelerationContext const*, size_t num_entries, const double*, std::vector<double>&);
+template void AccelerationMeta::recvGpuArray<float>(AccelerationContext const*, size_t num_entries, const float*, std::vector<float>&);
+template void AccelerationMeta::recvGpuArray<int>(AccelerationContext const*, size_t num_entries, const int*, std::vector<int>&);
 
-template void AccelerationMeta::delCudaArray<double>(double*);
-template void AccelerationMeta::delCudaArray<float>(float*);
-template void AccelerationMeta::delCudaArray<int>(int*);
+template void AccelerationMeta::delGpuArray<double>(AccelerationContext const*, double*);
+template void AccelerationMeta::delGpuArray<float>(AccelerationContext const*, float*);
+template void AccelerationMeta::delGpuArray<int>(AccelerationContext const*, int*);
 
 namespace TasGpu{
 /*

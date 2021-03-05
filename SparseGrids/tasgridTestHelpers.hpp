@@ -186,13 +186,13 @@ bool testHBasisGPUSparse(std::vector<double> const &x,
 
     grid.evaluateSparseHierarchicalFunctionsGPU(gpux.data(), nump, gpu_pntr, gpu_indx, gpu_vals, num_nz);
 
-    std::vector<int> cpntr; AccelerationMeta::recvCudaArray(nump + 1, gpu_pntr, cpntr);
-    std::vector<int> cindx; AccelerationMeta::recvCudaArray(num_nz, gpu_indx, cindx);
-    std::vector<T> cvals;   AccelerationMeta::recvCudaArray(num_nz, gpu_vals, cvals);
+    std::vector<int> cpntr; AccelerationMeta::recvGpuArray(acceleration, nump + 1, gpu_pntr, cpntr);
+    std::vector<int> cindx; AccelerationMeta::recvGpuArray(acceleration, num_nz, gpu_indx, cindx);
+    std::vector<T> cvals;   AccelerationMeta::recvGpuArray(acceleration, num_nz, gpu_vals, cvals);
 
-    AccelerationMeta::delCudaArray(gpu_pntr);
-    AccelerationMeta::delCudaArray(gpu_indx);
-    AccelerationMeta::delCudaArray(gpu_vals);
+    AccelerationMeta::delGpuArray(acceleration, gpu_pntr);
+    AccelerationMeta::delGpuArray(acceleration, gpu_indx);
+    AccelerationMeta::delGpuArray(acceleration, gpu_vals);
 
     return testPass(err1_sparse(pntr, indx, vals, cpntr, cindx, cvals), tolerance, message, grid);
 }

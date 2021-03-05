@@ -282,7 +282,7 @@ bool GridUnitTester::testAPIconsistency(){
     gridLoadEN2(&grid);
     std::vector<double> baseline_y, test_x = {0.33, 0.33, -0.33, -0.33, -0.66, 0.66};
     grid.evaluateBatch(test_x, baseline_y);
-    TasGrid::AccelerationMeta::setDefaultCudaDevice(0);
+    TasGrid::AccelerationMeta::setDefaultGpuDevice(0);
     auto manual_handle = TasGrid::AccelerationMeta::createCublasHandle();
     grid.enableAcceleration(accel_gpu_cuda, 0);
     grid.getAccelerationContext()->setCuBlasHandle(manual_handle);
