@@ -112,9 +112,9 @@ target_link_libraries(Tasmanian_libsparsegrid  Tasmanian_dependencies)
 target_include_directories(Tasmanian_libsparsegrid PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
 
 set_target_properties(Tasmanian_libsparsegrid PROPERTIES OUTPUT_NAME "tasmaniansparsegrid"
-                                                         INSTALL_RPATH "${Tasmanian_rpath}"
                                                          SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                          VERSION   ${PROJECT_VERSION})
+Tasmanian_rpath_target(TARGET Tasmanian_libsparsegrid)
 
 if (Tasmanian_ENABLE_OPENMP)
     # the nvcc compiler does nor recognize OpenMP, add the flag only to non-CUDA source files
@@ -131,13 +131,14 @@ install(TARGETS Tasmanian_libsparsegrid
 foreach(_tsgtarget tasgrid gridtest benchmarksgrid)
     target_link_libraries(Tasmanian_${_tsgtarget} Tasmanian_libsparsegrid)
     set_target_properties(Tasmanian_${_tsgtarget} PROPERTIES OUTPUT_NAME "${_tsgtarget}" CXX_EXTENSIONS OFF)
+    Tasmanian_rpath_target(TARGET Tasmanian_${_tsgtarget} USE_CURRENT)
     if (Tasmanian_ENABLE_OPENMP)
         # the OpenMP libraries are carried transitively from sparse grids library
         target_compile_options(Tasmanian_${_tsgtarget} PRIVATE ${OpenMP_CXX_FLAGS})
     endif()
 endforeach()
 unset(_tsgtarget)
-set_target_properties(Tasmanian_tasgrid PROPERTIES INSTALL_RPATH "${Tasmanian_rpath}")
+#set_target_properties(Tasmanian_tasgrid PROPERTIES INSTALL_RPATH "${Tasmanian_rpath}")
 
 # data file, needed for testing and reference about custom rule definitions
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"  "${CMAKE_CURRENT_BINARY_DIR}/GaussPattersonRule.table" COPYONLY)
