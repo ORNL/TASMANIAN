@@ -1535,7 +1535,7 @@ void TasmanianSparseGrid::setGPUID(int new_gpu_id){
     if (new_gpu_id != acceleration->device){
         auto change = acceleration->enable(acceleration->mode, new_gpu_id);
         if (not empty()) base->updateAccelerationData(change);
-        #ifdef Tasmanian_ENABLE_CUDA
+        #ifdef Tasmanian_ENABLE_GPU
         if (change == AccelerationContext::change_gpu_device)
             acc_domain.reset();
         #endif
