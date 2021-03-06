@@ -119,7 +119,7 @@ Tasmanian.py: ./InterfacePython/Tasmanian.py
 TasmanianConfig.py: ./InterfacePython/TasmanianConfig.in.py
 	cp ./InterfacePython/TasmanianConfig.in.py TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_VERSION_MAJOR@|'7'|g' ./TasmanianConfig.py
-	sed -i -e 's|@Tasmanian_VERSION_MINOR@|'3'|g' ./TasmanianConfig.py
+	sed -i -e 's|@Tasmanian_VERSION_MINOR@|'4'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_license@|'BSD\ 3-Clause\ with\ UT-Battelle\ disclaimer'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_git_hash@|'Tasmanian\ git\ hash\ is\ not\ available\ here'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_libsparsegrid_path@|'`pwd`/libtasmaniansparsegrid.so'|g' ./TasmanianConfig.py
@@ -128,10 +128,10 @@ TasmanianConfig.py: ./InterfacePython/TasmanianConfig.in.py
 
 example_sparse_grids.py: ./InterfacePython/example_sparse_grids.in.py
 	cp ./InterfacePython/example_sparse_grids.in.py example_sparse_grids.py
-	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python'|g' ./example_sparse_grids.py
+	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python3'|g' ./example_sparse_grids.py
 	sed -i -e 's|@Tasmanian_python_example_import@|'sys.path.append\(\"`pwd`\"\)'|g' ./example_sparse_grids.py
 	cp ./InterfacePython/example_dream.in.py example_dream.py
-	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python'|g' ./example_dream.py
+	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python3'|g' ./example_dream.py
 	sed -i -e 's|@Tasmanian_python_example_import@|'sys.path.append\(\"`pwd`\"\)'|g' ./example_dream.py
 	cp ./InterfacePython/example_sparse_grids_* .
 	cp ./InterfacePython/example_dream_* .
@@ -163,33 +163,6 @@ matlab:
 	@echo "use MATLAB command: addpath('"`pwd`"/InterfaceMATLAB/');"
 	@echo ""
 
-# Python 3
-.PHONY: python3
-python3: TasmanianSG.py testTSG.py example_sparse_grids.py
-	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' example_sparse_grids.py
-	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' example_dream.py
-	sed -i -e 's|\#\!\/usr\/bin\/env\ python|\#\!\/usr\/bin\/env\ python3|g' testTSG.py
-
-# Fortran
-#fortran: example_sparse_grids_f90 libtasmanianfortran90.a libtasmanianfortran90.so
-.PHONY: fortran
-fortran: ./include/tasmaniansg.mod forswigtester example_sparse_grids_fortran
-	./forswigtester
-
-./include/tasmaniansg.mod: libtasmaniancaddons.so libtasmaniandream.a
-	$(CC) $(OPTC) $(IADD) -I./include/ -c InterfaceSwig/generated/tasmanianFORTRAN_wrap.cxx -o InterfaceSwig/tasmanianFORTRAN_wrap.o
-	$(FF) $(OPTF) $(IADD) -c InterfaceSwig/generated/tasmanian.f90 -o InterfaceSwig/tasmanian.o
-	ar rcs libtasmanianfortran.a InterfaceSwig/tasmanianFORTRAN_wrap.o InterfaceSwig/tasmanian.o
-	$(FF) $(OPTLFF) $(LADD) InterfaceSwig/tasmanianFORTRAN_wrap.o InterfaceSwig/tasmanian.o -shared -o libtasmanianfortran.so ./libtasmaniandream.so ./libtasmaniansparsegrid.so $(LIBS) -lstdc++
-	mv tasmanian.mod ./include/
-
-forswigtester: ./include/tasmaniansg.mod
-	$(FF) $(OPTLFF) $(LADD) InterfaceSwig/FortranTests/*.f90 -o forswigtester -I./include/ libtasmanianfortran.a $(LIBS) -lstdc++
-
-example_sparse_grids_fortran: ./include/tasmaniansg.mod
-	$(FF) $(OPTLFF) $(LADD) InterfaceSwig/FortranExamples/*.f90 -o example_sparse_grids_fortran -I./include/ libtasmanianfortran.a $(LIBS) -lstdc++
-
-
 # Testing and examples
 .PHONY: test
 test: $(ALL_TARGETS)
@@ -220,10 +193,10 @@ clean:
 	rm -fr libtasmaniandream.so
 	rm -fr libtasmaniandream.a
 	rm -fr libtasmaniancaddons.so
-	rm -fr libtasmanianfortran.so
-	rm -fr libtasmanianfortran.a
-	rm -fr InterfaceSwig/*.o
-	rm -fr forswigtester
+	rm -fr libtasmanianfortran90.so
+	rm -fr libtasmanianfortran90.a
+	rm -fr InterfaceFortran/*.o
+	rm -fr fortester90
 	rm -fr f03_test_file
 	rm -fr tasgrid
 	rm -fr gridtest
