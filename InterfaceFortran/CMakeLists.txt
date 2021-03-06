@@ -10,9 +10,9 @@ target_include_directories(Tasmanian_libfortran90 PUBLIC $<BUILD_INTERFACE:${CMA
 target_link_libraries(Tasmanian_libfortran90  Tasmanian_addons)
 
 set_target_properties(Tasmanian_libfortran90 PROPERTIES OUTPUT_NAME "tasmanianfortran90"
-                                             INSTALL_RPATH "${Tasmanian_rpath}"
                                              SOVERSION ${Tasmanian_VERSION_MAJOR}
                                              VERSION   ${PROJECT_VERSION})
+Tasmanian_rpath_target(TARGET Tasmanian_libfortran90 COMPONENTS SparseGrids DREAM)
 
 install(TARGETS Tasmanian_libfortran90
         EXPORT "${Tasmanian_export_name}"
@@ -27,6 +27,7 @@ install(TARGETS Tasmanian_libfortran90
 add_executable(Tasmanian_fortester fortester.f90)
 
 set_target_properties(Tasmanian_fortester  PROPERTIES OUTPUT_NAME "fortester" LINKER_LANGUAGE Fortran)
+Tasmanian_rpath_target(TARGET Tasmanian_fortester USE_CURRENT COMPONENTS SparseGrids DREAM)
 
 target_link_libraries(Tasmanian_fortester  Tasmanian_libfortran90)
 

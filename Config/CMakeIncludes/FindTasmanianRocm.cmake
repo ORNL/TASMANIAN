@@ -19,6 +19,10 @@ set(Tasmanian_ROCM_ROOT "${ROCM_ROOT}" CACHE PATH "The root folder for the Rocm 
 list(APPEND CMAKE_PREFIX_PATH "${Tasmanian_ROCM_ROOT}")
 list(APPEND CMAKE_PREFIX_PATH "${Tasmanian_hipccroot}")
 
+if (Tasmanian_ENABLE_OPENMP)
+    set(Tasmanian_HIP_IOMP5_PATH "${Tasmanian_hipccroot}/llvm" CACHE PATH "The search path for libiomp5")
+endif()
+
 foreach(_tsg_roclib hip rocblas rocsparse rocsolver)
     find_package(${_tsg_roclib} REQUIRED)
 endforeach()
@@ -37,13 +41,21 @@ find_package_handle_standard_args(TasmanianRocm DEFAULT_MSG Tasmanian_hiplibs)
 
 if (Tasmanian_ENABLE_OPENMP)
     set(OpenMP_CXX_FLAGS "-fopenmp=libiomp5")
-    Tasmanian_find_libraries(REQUIRED iomp5
+    Tasmanian_find_libraries(REQUIRED iomp5 omp
                              OPTIONAL
-                             PREFIX /usr/lib/x86_64-linux-gnu
+                             PREFIX ${Tasmanian_HIP_IOMP5_PATH}
                              LIST hipomp)
     if (Tasmanian_hipomp)
         set(OpenMP_CXX_LIBRARIES "${Tasmanian_hipomp}")
         set(Tasmanian_ENABLE_OPENMP ON)
+        foreach(_tsg_roclib ${Tasmanian_hipomp})
+            get_filename_component(Tasmanian_omp_root ${_tsg_roclib} DIRECTORY)
+            list(APPEND Tasmanian_hip_rpath "${Tasmanian_omp_root}")
+            list(APPEND Tasmanian_hipomp_rpath "${Tasmanian_omp_root}")
+        endforeach()
+        list(REMOVE_DUPLICATES Tasmanian_hipomp_rpath)
+        unset(_tsg_roclib)
+        unset(Tasmanian_omp_root)
     else()
         if (Tasmanian_ENABLE_OPENMP)
             message(FATAL_ERROR "Cannot find libiomp5 which is needed by HIP/Clang to enable OpenMP")

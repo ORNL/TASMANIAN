@@ -59,6 +59,7 @@ list(APPEND Tasmanian_addons_tests "AddonTests")
 # set properties for all executable targets
 foreach(_tsg_exec ${Tasmanian_addons_executables})
     set_target_properties(Tasmanian_${_tsg_exec} PROPERTIES OUTPUT_NAME "${_tsg_exec}" CXX_EXTENSIONS OFF)
+    Tasmanian_rpath_target(TARGET Tasmanian_${_tsg_exec} USE_CURRENT COMPONENTS SparseGrids DREAM)
     target_link_libraries(Tasmanian_${_tsg_exec} Tasmanian_addons Tasmanian_libdream)
 endforeach()
 unset(_tsg_exec)

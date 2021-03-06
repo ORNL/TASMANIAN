@@ -18,9 +18,9 @@ target_include_directories(Tasmanian_libdream PUBLIC $<BUILD_INTERFACE:${CMAKE_C
 target_link_libraries(Tasmanian_libdream  Tasmanian_libsparsegrid)
 
 set_target_properties(Tasmanian_libdream PROPERTIES OUTPUT_NAME "tasmaniandream"
-                                                    INSTALL_RPATH "${Tasmanian_rpath}"
                                                     SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                     VERSION   ${PROJECT_VERSION})
+Tasmanian_rpath_target(TARGET Tasmanian_libdream COMPONENTS SparseGrids)
 
 install(TARGETS Tasmanian_libdream
         EXPORT  "${Tasmanian_export_name}"
@@ -36,7 +36,9 @@ add_executable(Tasmanian_dreamtest dreamtest_main.cpp
                                    tasdreamExternalTests.hpp
                                    tasdreamExternalTests.cpp)
 
-set_target_properties(Tasmanian_dreamtest  PROPERTIES OUTPUT_NAME "dreamtest" CXX_EXTENSIONS OFF)
+set_target_properties(Tasmanian_dreamtest  PROPERTIES OUTPUT_NAME "dreamtest"
+                                                      CXX_EXTENSIONS OFF)
+Tasmanian_rpath_target(TARGET Tasmanian_dreamtest USE_CURRENT COMPONENTS SparseGrids)
 target_link_libraries(Tasmanian_dreamtest  Tasmanian_libdream)
 
 
