@@ -116,6 +116,10 @@ macro(Tasmanian_find_rpath)
     unset(_tsg_libpath)
 endmacro()
 
+# usage: Tasmanian_rpath_target(TARGET Tasmanian_libdream USE_CURRENT COMPONENTS SparseGrid)
+# will set the rpath for the given target and will handle the work-around for the missing libomp.so under HIP
+# the USE_CURRENT adds the current folder, use for executable targets
+# COMPONENTS lists the additional folders, e.g., DREAM needs SparseGrid and Addons needs both DREAM and SparseGrid
 macro(Tasmanian_rpath_target)
     cmake_parse_arguments(Tasmanian_rpt "USE_CURRENT" "TARGET" "COMPONENTS" ${ARGN})
     if (Tasmanian_ENABLE_HIP)
