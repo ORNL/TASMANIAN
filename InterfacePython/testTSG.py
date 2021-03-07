@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # The hash-bang is used only but the GNU Make build system
 # The CMake build system uses the PYTHON_EXECUTABLE and ignores the hash-bang.

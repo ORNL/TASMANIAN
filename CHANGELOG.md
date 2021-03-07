@@ -5,8 +5,16 @@ Changelog for version 7.4 (development)
     * added both kernels and calls to BLAS/LAPACK methods
     * missing the kernels for the global grids due to the atomics
     * missing tests on an actual GPU due to lack of hardware
+* updated Rocm interface
+    * using the Rocm OpenMP implementation in libiomp5.so and libomp.so
 * added github CI covering a MacOSX build and basic Ubuntu build
     * credit goes to Viktor Reshniak
+* extended the Fortrain 2003 methods
+    * added functions, e.g., returnPoints() as members to TasmanianSparseGrid
+* updates to the GNU Make build system
+    * removed Fortran from the GNU Make build system, use CMake
+        * the added complexity to the SWIG build system is too much to maintain
+    * GNU Make now defaults to Python 3, removed the make python3 target
 
 Changelog for version 7.3
 --------------
