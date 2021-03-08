@@ -218,7 +218,7 @@ __device__ inline T tasgpu_devalpwpoly_feval(const double x, const double node, 
 }
 
 // evaluates the sparse grid functions for localp0, local0 and semilocalp rules using a DENSE algorithm
-// use with MAX_DIM = 64 and SHORT = 32
+// use with MAX_DIM = 64 and SHORT = 32 or MAX_DIM = 32 and SHORT = 64
 // dims is num_dimensions, this kernel cannot handle more than 64-dimensions, which is plenty for a sparse grid
 // grid blocks take 32 points each, cache the points, then iteratively take successive blocks of 32 x values (32 x dims)
 // each block of 32 gpu_x values is cached and used to form a 32 by 32 block of the values matrix
@@ -247,7 +247,7 @@ __global__ void tasgpu_devalpwpoly(int dims, int num_x, int num_points, const T 
                 cache_nodes[(i % dims) * SHORT + (i / dims)] = gpu_nodes[id_p * dims + i];
                 cache_support[(i % dims) * SHORT + (i / dims)] = gpu_support[id_p * dims + i];
             }
-            i += SHORT * SHORT;
+            i += 1024;
         }
         __syncthreads();
 
@@ -259,7 +259,7 @@ __global__ void tasgpu_devalpwpoly(int dims, int num_x, int num_points, const T 
             while(i < SHORT * dims){
                 if (id_x * dims + i < max_x)
                     cache_x[i] = gpu_x[id_x * dims + i];
-                i += SHORT * SHORT;
+                i += 1024;
             }
             __syncthreads();
 
@@ -272,7 +272,7 @@ __global__ void tasgpu_devalpwpoly(int dims, int num_x, int num_points, const T 
                 gpu_y[(id_x + swidth) * num_points + (id_p + height)] = v;
             __syncthreads();
 
-            id_x += SHORT;
+            id_x += (1024 / SHORT);
 
         }
         id_p += SHORT * gridDim.x;
@@ -436,13 +436,13 @@ __global__ void tasgpu_dseq_build_cache(int dims, int num_x, const T *gpuX, cons
     }
 }
 
-// use with SHORT = 32, Dimensions < 32
+// use with SHORT = 32 or 64
 // cache is computed above, dims is the number of dimensions
 // num_x and num_points give the dimension of the basis matrix (data is contiguous in index of points)
 // points is an array of integers, but it the transpose of the CPU points
 template <typename T, int SHORT>
 __global__ void tasgpu_dseq_eval_sharedpoints(int dims, int num_x, int num_points, const int *points, const int *offsets, const T *cache, T *result){
-    __shared__ int cpoints[SHORT][SHORT]; // uses only 32 * 32 * 4 = 4K of 48K shared memory
+    __shared__ int cpoints[1024 / SHORT][SHORT]; // uses only 32 * 32 * 4 = 4K of 48K shared memory
 
     int height = threadIdx.x % SHORT; // threads are oranized logically in a square of size SHORT by SHORT
     int swidth = threadIdx.x / SHORT; // height and swidth are the indexes of this thread in the block (relates to num_points and num_x respectively)
@@ -467,7 +467,7 @@ __global__ void tasgpu_dseq_eval_sharedpoints(int dims, int num_x, int num_point
 
                 result[num_points * id_x + id_p + height] = v;
 
-                id_x += SHORT;
+                id_x += (1024 / SHORT);
             }
         }
         id_p += SHORT * gridDim.x;
@@ -527,13 +527,13 @@ __global__ void tasgpu_dfor_build_cache(int dims, int num_x, const T *gpuX, cons
     }
 }
 
-// use with SHORT = 32, Dimensions < 32
+// use with SHORT = 32 or 64, Dimensions < 32
 // cache is computed above, dims is the number of dimensions
 // num_x and num_points give the dimension of the basis matrix (data is contiguous in index of points)
 // points is an array of integers, but it the transpose of the CPU points
 template <typename T, int SHORT, bool interlace>
 __global__ void tasgpu_dfor_eval_sharedpoints(int dims, int num_x, int num_points, const int *points, const int *offsets, const T *cache, T *wreal, T *wimag){
-    __shared__ int cpoints[SHORT][SHORT]; // uses only 32 * 32 * 4 = 4K of 48K shared memory
+    __shared__ int cpoints[1024 / SHORT][SHORT]; // uses only 32 * 32 * 4 = 4K of 48K shared memory
 
     int height = threadIdx.x % SHORT; // threads are oranized logically in a square of size SHORT by SHORT
     int swidth = threadIdx.x / SHORT; // height and swidth are the indexes of this thread in the block (relates to num_points and num_x respectively)
@@ -570,7 +570,7 @@ __global__ void tasgpu_dfor_eval_sharedpoints(int dims, int num_x, int num_point
                     wimag[num_points * id_x + id_p + height] = vimag;
                 }
 
-                id_x += SHORT;
+                id_x += (1024 / SHORT);
             }
         }
         id_p += SHORT * gridDim.x;
