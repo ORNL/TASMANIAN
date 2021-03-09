@@ -1938,7 +1938,7 @@ bool ExternalTester::testCudaCaching() const{
             if (grid.isFourier()) grid.setDomainTransform({-1.0, -1.0}, {1.0, 1.0});
 
             grid.setGPUID(gpu);
-            TasGrid::AccelerationMeta::setDefaultCudaDevice(gpu);
+            TasGrid::AccelerationMeta::setDefaultGpuDevice(gpu);
 
             for(int run : std::vector<int>{0, 1}){ // do two runs switching devices and grids in-between
                 loadValues(&f21nx2, grid);
@@ -2011,7 +2011,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
             bool dense_pass = true;
             grid.enableAcceleration(TasGrid::accel_gpu_cuda);
             grid.setGPUID(gpuID);
-            TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
+            TasGrid::AccelerationMeta::setDefaultGpuDevice(gpuID);
 
             if (!testDenseGPU<double, GridMethodHierBasisGPU>(xt, y_true_dense, nump, Maths::num_tol, grid, "GPU basis<double> evaluations"))
                 dense_pass = false;
@@ -2061,7 +2061,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
         for(int gpuID=gpu_index_first; gpuID < gpu_end_gpus; gpuID++){
             reset_grid();
-            TasGrid::AccelerationMeta::setDefaultCudaDevice(gpuID);
+            TasGrid::AccelerationMeta::setDefaultGpuDevice(gpuID);
             grid.enableAcceleration(TasGrid::accel_gpu_cuda);
             grid.setGPUID(gpuID);
 

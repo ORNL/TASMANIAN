@@ -1547,7 +1547,7 @@ int TasmanianSparseGrid::getGPUMemory(int gpu){
     return (int) (AccelerationMeta::getTotalGPUMemory(gpu) / 1048576);
 }
 std::string TasmanianSparseGrid::getGPUName(int gpu){
-    return AccelerationMeta::getCudaDeviceName(gpu);
+    return AccelerationMeta::getGpuDeviceName(gpu);
 }
 
 }

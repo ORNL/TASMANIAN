@@ -632,43 +632,40 @@ namespace AccelerationMeta{
     TypeAcceleration getAvailableFallback(TypeAcceleration accel);
 
     //! \internal
-    //! \brief Return the number of visible CUDA devices, uses cudaGetDeviceCount() (see the Nvidia documentation).
+    //! \brief Return the number of visible GPU devices.
     //! \ingroup TasmanianAcceleration
     int getNumGpuDevices();
 
     //! \internal
-    //! \brief Selects the active device for this CPU thread using cudaSetDevice() (see the Nvidia documentation).
+    //! \brief Selects the active device for this CPU thread, not supported for DPC++.
     //! \ingroup TasmanianAcceleration
 
     //! The \b deviceID must be a valid ID (between 0 and getNumGpuDevices() -1).
-    void setDefaultCudaDevice(int deviceID);
+    void setDefaultGpuDevice(int deviceID);
 
     //! \internal
-    //! \brief Return the memory available in the device (in units of bytes), uses cudaGetDeviceProperties() (see the Nvidia documentation).
+    //! \brief Return the memory available in the device (in units of bytes).
     //! \ingroup TasmanianAcceleration
 
     //! The \b deviceID must be a valid ID (between 0 and getNumGpuDevices() -1).
     unsigned long long getTotalGPUMemory(int deviceID);
 
     //! \internal
-    //! \brief Return a character array that is a copy of the CUDA device name, uses cudaGetDeviceProperties() (see the Nvidia documentation).
+    //! \brief Returns the name of the selected GPU device, empty string if no device is available or the index is out of bounds.
     //! \ingroup TasmanianAcceleration
 
     //! The \b deviceID must be a valid ID (between 0 and getNumGpuDevices() -1).
-    //! The character array has to be manually deleted to avoid memory leaks.
-    //! This causes issues between different versions of CUDA, Nvidia uses fixed length character arrays and Tasmanian makes a copy;
-    //! sometimes different versions of CUDA use different name length which causes unexpected crashes on the CUDA side.
-    std::string getCudaDeviceName(int deviceID);
+    std::string getGpuDeviceName(int deviceID);
 
     //! \internal
     //! \brief Copy a device array to the main memory, used for testing only, always favor using \b GpuVector (if possible).
     //! \ingroup TasmanianAcceleration
-    template<typename T> void recvCudaArray(size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data);
+    template<typename T> void recvGpuArray(AccelerationContext const*, size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data);
 
     //! \internal
     //! \brief Deallocate  device array, used primarily for testing, always favor using \b GpuVector (if possible).
     //! \ingroup TasmanianAcceleration
-    template<typename T> void delCudaArray(T *x);
+    template<typename T> void delGpuArray(AccelerationContext const*, T *x);
 
     /*!
      * \ingroup TasmanianAcceleration
@@ -807,7 +804,7 @@ struct AccelerationContext{
         }
     }
     //! \brief Set default device.
-    void setDevice() const{ AccelerationMeta::setDefaultCudaDevice(device); }
+    void setDevice() const{ AccelerationMeta::setDefaultGpuDevice(device); }
     //! \brief Custom convert to \b GpuEngine
     operator GpuEngine* () const{ return engine.get(); }
     //! \brief Returns true if any of the GPU-based acceleration modes have been enabled.

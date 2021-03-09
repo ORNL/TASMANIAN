@@ -3,7 +3,11 @@
 ########################################################################
 
 add_library(Tasmanian_dependencies INTERFACE)
-target_compile_features(Tasmanian_dependencies INTERFACE cxx_std_11)
+if (Tasmanian_ENABLE_DPCPP) # c++14 is needed when paired with some compilers
+    target_compile_features(Tasmanian_dependencies INTERFACE cxx_std_14)
+else()
+    target_compile_features(Tasmanian_dependencies INTERFACE cxx_std_11)
+endif()
 list(APPEND Tasmanian_rpath "${Tasmanian_final_install_path}/lib")
 
 if (Tasmanian_ENABLE_OPENMP)
