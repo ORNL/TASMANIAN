@@ -117,11 +117,15 @@ std::string AccelerationMeta::getGpuDeviceName(int deviceID){ // int deviceID
     sycl::queue q;
     return q.get_device().get_info<sycl::info::device::name>();
 }
-template<typename T> void AccelerationMeta::recvGpuArray(AccelerationContext const*, size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data){
-
+template<typename T> void AccelerationMeta::recvGpuArray(AccelerationContext const *acc, size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data){
+    sycl::queue *q = getSyclQueue(acc);
+    cpu_data.resize(num_entries);
+    q->memcpy(cpu_data.data(), gpu_data, num_entries * sizeof(T));
+    q->wait();
 }
-template<typename T> void AccelerationMeta::delGpuArray(AccelerationContext const*, T *x){
-
+template<typename T> void AccelerationMeta::delGpuArray(AccelerationContext const *acc, T *x){
+    sycl::queue *q = getSyclQueue(acc);
+    sycl::free(x, *q);
 }
 
 template void AccelerationMeta::recvGpuArray<double>(AccelerationContext const*, size_t num_entries, const double*, std::vector<double>&);

@@ -610,7 +610,7 @@ namespace AccelerationMeta{
             case accel_gpu_rocblas: return true;
             #endif
             #ifdef Tasmanian_ENABLE_DPCPP
-            //case accel_gpu_hip: return true;
+            case accel_gpu_cuda: return true;
             case accel_gpu_cublas: return true;
             #endif
             #ifdef Tasmanian_ENABLE_BLAS

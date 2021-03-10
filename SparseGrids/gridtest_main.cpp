@@ -66,15 +66,16 @@ int main(int argc, const char ** argv){
     ExternalTester tester(1000);
     GridUnitTester utester;
     tester.setGPUID(gpuid);
+
+    if (verbose) tester.setVerbose(true);
+    if (verbose) utester.setVerbose(true);
+
     bool pass = true;
     if (debug){
         tester.debugTest();
     }else if (debugII){
         tester.debugTestII();
     }else{
-        if (verbose) tester.setVerbose(true);
-        if (verbose) utester.setVerbose(true);
-
         if (seed_reset) tester.resetRandomSeed();
 
         if (utest == unit_none){
