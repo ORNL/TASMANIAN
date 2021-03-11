@@ -39,7 +39,7 @@ unset(_tsg_roclib)
 
 find_package_handle_standard_args(TasmanianRocm DEFAULT_MSG Tasmanian_hiplibs)
 
-if (Tasmanian_ENABLE_OPENMP)
+if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
     set(OpenMP_CXX_FLAGS "-fopenmp=libiomp5")
     Tasmanian_find_libraries(REQUIRED iomp5 omp
                              OPTIONAL
