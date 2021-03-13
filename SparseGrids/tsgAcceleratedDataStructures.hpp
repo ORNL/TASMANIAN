@@ -102,7 +102,7 @@ public:
     //! \brief Allow for move-construction.
     GpuVector(GpuVector<T> &&other) : num_entries(Utils::exchange(other.num_entries, 0)), gpu_data(Utils::exchange(other.gpu_data, nullptr))
     #ifdef Tasmanian_ENABLE_DPCPP
-        , sycl_queue(std::move(other.sycl_queue))
+        , sycl_queue(other.sycl_queue)
     #endif
     {}
     //! \brief Allow for move-assignment.

@@ -59,7 +59,6 @@ int main(int argc, char const **argv){
 
     #if defined(Tasmanian_ENABLE_BLAS) || defined(Tasmanian_ENABLE_GPU)
     #ifndef Tasmanian_ENABLE_DPCPP
-    cout << "calling here" << endl;
     pass = true;
     pass = testLoadUnstructuredL2(verbose, gpuid);
     cout << std::setw(40) << "Unstructured construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;

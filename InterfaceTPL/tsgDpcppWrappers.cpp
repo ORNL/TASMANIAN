@@ -51,6 +51,7 @@ template<typename T> void GpuVector<T>::resize(AccelerationContext const *acc, s
         sycl::queue *q = getSyclQueue(acc);
         sycl_queue = acc->engine->internal_queue;
         gpu_data = sycl::malloc_device<T>(num_entries, *q);
+        q->wait();
     }
 }
 template<typename T> void GpuVector<T>::clear(){
@@ -58,6 +59,7 @@ template<typename T> void GpuVector<T>::clear(){
     if (gpu_data != nullptr){
         sycl::queue *q = reinterpret_cast<sycl::queue*>(sycl_queue.get());
         sycl::free(gpu_data, *q);
+        q->wait();
     }
     gpu_data = nullptr;
 }
@@ -126,6 +128,7 @@ template<typename T> void AccelerationMeta::recvGpuArray(AccelerationContext con
 template<typename T> void AccelerationMeta::delGpuArray(AccelerationContext const *acc, T *x){
     sycl::queue *q = getSyclQueue(acc);
     sycl::free(x, *q);
+    q->wait();
 }
 
 template void AccelerationMeta::recvGpuArray<double>(AccelerationContext const*, size_t num_entries, const double*, std::vector<double>&);
@@ -138,23 +141,9 @@ template void AccelerationMeta::delGpuArray<int>(AccelerationContext const*, int
 
 namespace TasGpu{
 
-//! \brief Wrapper around dtrsm().
-inline void trsm(//rocblas_handle handle, rocblas_side side, rocblas_fill uplo,
-                 //rocblas_operation trans, rocblas_diagonal diag,
-                 int m, int n,
-                 double alpha, double const A[], int lda, double B[], int ldb){
-
-}
-//! \brief Wrapper around ztrsm().
-inline void trsm(//rocblas_handle handle, rocblas_side side, rocblas_fill uplo,
-                 //rocblas_operation trans, rocblas_diagonal diag,
-                 int m, int n,
-                 std::complex<double> alpha, std::complex<double> const A[], int lda, std::complex<double> B[], int ldb){
-
-}
-
-void transpose_matrix(sycl::queue *q, int m, int n, double const A[], double AT[]){
-    q->submit([&](sycl::handler& h) {
+template<typename scalar_type>
+void transpose_matrix(sycl::queue *q, int m, int n, scalar_type const A[], scalar_type AT[]){
+    q->submit([&](sycl::handler& h){
             h.parallel_for<class tsg_transpose>(sycl::range<2>{static_cast<size_t>(m), static_cast<size_t>(n)}, [=](sycl::id<2> i){
                 AT[i[0] * n + i[1]] = A[i[0] + m * i[1]];
             });
@@ -194,26 +183,41 @@ void solvePLU(AccelerationContext const *acceleration, char trans, int n, double
     transpose_matrix(q, n, nrhs, BT.data(), B);
 }
 
-//! \brief Wrapper around rocsolver_dgelqf().
-inline void gelqf(//rocblas_handle handle,
-                  int m, int n, double A[], double tau[]){
-
+template<typename scalar_type>
+void dump_data(sycl::queue *q, size_t m, size_t n, scalar_type *data){
+    std::vector<scalar_type> cpu_data(m * n);
+    q->memcpy(cpu_data.data(), data, Utils::size_mult(m, n) * sizeof(scalar_type));
+    q->wait();
+    std::cout << std::scientific; std::cout.precision(4);
+    for(size_t i=0; i<m; i++){
+        for(size_t j=0; j<n; j++){
+            std::cout << std::setw(15) << cpu_data[j * m + i];
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
 }
-//! \brief Wrapper around rocsolver_zgelqf().
-inline void gelqf(//rocblas_handle handle,
-                  int m, int n, std::complex<double> A[], std::complex<double> tau[]){
 
+template<typename scalar_type>
+std::int64_t gemrq_workspace(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::int64_t lda, std::int64_t ldc){
+    return oneapi::mkl::lapack::ormrq_scratchpad_size<scalar_type>(*q, side, trans, m, n, k, lda, ldc);
 }
 
-//! \brief Wrapper around rocsolver_dormlq(), does Q^T times C.
-inline void gemlq(//rocblas_handle handle,
-                  int m, int n, int k, double A[], double tau[], double C[]){
-
+template<>
+std::int64_t gemrq_workspace<std::complex<double>>(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::int64_t lda, std::int64_t ldc){
+    return oneapi::mkl::lapack::unmrq_scratchpad_size<std::complex<double>>(*q, side, trans, m, n, k, lda, ldc);
 }
-//! \brief Wrapper around rocsolver_dunmlq(), does Q^T times C.
-inline void gemlq(//rocblas_handle handle,
-                  int m, int n, int k, std::complex<double> A[], std::complex<double> tau[], std::complex<double> C[]){
 
+template<typename scalar_type>
+inline void gemrq(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, scalar_type* A, std::int64_t lda, scalar_type *T, scalar_type* C, std::int64_t ldc, scalar_type* workspace, std::int64_t worksize){
+    oneapi::mkl::lapack::ormrq(*q, side, trans, m, n, k, A, lda, T, C, ldc, workspace, worksize);
+    q->wait();
+}
+
+template<>
+void gemrq<std::complex<double>>(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::complex<double>* A, std::int64_t lda, std::complex<double> *T, std::complex<double>* C, std::int64_t ldc, std::complex<double>* workspace, std::int64_t worksize){
+    oneapi::mkl::lapack::unmrq(*q, side, trans, m, n, k, A, lda, T, C, ldc, workspace, worksize);
+    q->wait();
 }
 
 /*
@@ -221,7 +225,46 @@ inline void gemlq(//rocblas_handle handle,
  */
 template<typename scalar_type>
 void solveLSmultiGPU(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
+    sycl::queue *q = getSyclQueue(acceleration);
+    q->wait();
 
+    auto side = oneapi::mkl::side::left;
+    auto trans = oneapi::mkl::transpose::trans;
+
+    std::int64_t worksize = oneapi::mkl::lapack::geqrf_scratchpad_size<scalar_type>(*q, n, m, n);
+    worksize = std::max(worksize, gemrq_workspace<scalar_type>(q, side, trans, n, nrhs, m, n, n));
+    q->wait();
+
+    GpuVector<scalar_type> AT(acceleration, n, m);
+    q->wait();
+    transpose_matrix(q, m, n, A, AT.data());
+    q->wait();
+
+    GpuVector<scalar_type> workspace(acceleration, worksize);
+    GpuVector<scalar_type> T(acceleration, m); // tau parameter, or the weights of the orthogonal shift
+    q->wait();
+    try{
+        oneapi::mkl::lapack::geqrf(*q, n, m, AT.data(), n, T.data(), workspace.data(), worksize);
+    }catch(oneapi::mkl::lapack::exception &e){
+        std::cout << "lapack error code:  " << e.info() << std::endl;
+        std::cout << "lapack detail code: " << e.detail() << std::endl;
+    }
+    q->wait();
+
+    if (nrhs == 1){
+        gemrq(q, side, trans, n, 1, m, AT.data(), n, T.data(), B, n, workspace.data(), worksize);
+        q->wait();
+        oneapi::mkl::blas::column_major::trsv(*q, oneapi::mkl::uplo::U, oneapi::mkl::transpose::N, oneapi::mkl::diag::N, m, AT.data(), n, B, 1);
+        q->wait();
+    }else{
+        GpuVector<scalar_type> BT(acceleration, n, nrhs);
+        transpose_matrix(q, n, nrhs, B, BT.data());
+        gemrq(q, oneapi::mkl::side::left, oneapi::mkl::transpose::trans, n, nrhs, m, AT.data(), n, T.data(), BT.data(), n, workspace.data(), worksize);
+        q->wait();
+        oneapi::mkl::blas::column_major::trsm(*q, oneapi::mkl::side::L, oneapi::mkl::uplo::U, oneapi::mkl::transpose::N, oneapi::mkl::diag::N, m,  nrhs, 1.0, AT.data(), n, BT.data(), n);
+        q->wait();
+        transpose_matrix(q, nrhs, n, BT.data(), B);
+    }
 }
 
 template void solveLSmultiGPU<double>(AccelerationContext const*, int, int, double[], int, double[]);
