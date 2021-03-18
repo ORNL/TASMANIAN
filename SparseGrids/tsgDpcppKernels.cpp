@@ -296,7 +296,7 @@ void TasGpu::devalglo(AccelerationContext const *acc, bool is_nested, bool is_cl
                                     map_dimension.data(), map_level.data(), cache.data());
     }
 
-    tasgpu_dglo_eval_zero<T>(q, num_x * num_p, gpu_result);
+    tasgpu_dglo_eval_zero<T>(q, Utils::size_mult(num_x, num_p), gpu_result);
 
     tasgpu_dglo_eval_sharedpoints<T, _MAX_THREADS>
         (q, dims, num_x, (int) map_tensor.size(), num_p, cache.data(),
@@ -316,8 +316,23 @@ template void TasGpu::devalglo<float>(AccelerationContext const*, bool, bool, in
                                       GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                       GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, float*);
 
-void TasGpu::fillDataGPU(AccelerationContext const*, double value, long long n, long long stride, double data[]){
-
+void TasGpu::fillDataGPU(AccelerationContext const *acc, double value, long long n, long long stride, double data[]){
+    sycl::queue *q = syclQueue(acc);
+    if (stride == 1){
+        q->submit([&](sycl::handler& h) {
+            h.parallel_for<class tasgpu_vfill_kernel>(sycl::range<1>{static_cast<size_t>(n),}, [=](sycl::id<1> threadId){
+                data[threadId[0]] = value;
+            });
+        });
+        q->wait();
+    }else{
+        q->submit([&](sycl::handler& h) {
+            h.parallel_for<class tasgpu_sfill_kernel>(sycl::range<1>{static_cast<size_t>(n),}, [=](sycl::id<1> threadId){
+                data[threadId[0] * stride] = value;
+            });
+        });
+        q->wait();
+    }
 }
 
 }
