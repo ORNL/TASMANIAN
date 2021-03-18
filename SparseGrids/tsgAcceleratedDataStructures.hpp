@@ -102,7 +102,7 @@ public:
     //! \brief Allow for move-construction.
     GpuVector(GpuVector<T> &&other) : num_entries(Utils::exchange(other.num_entries, 0)), gpu_data(Utils::exchange(other.gpu_data, nullptr))
     #ifdef Tasmanian_ENABLE_DPCPP
-        , sycl_queue(std::move(other.sycl_queue))
+        , sycl_queue(other.sycl_queue)
     #endif
     {}
     //! \brief Allow for move-assignment.
@@ -528,17 +528,17 @@ namespace TasGpu{
      * \ingroup TasmanianAcceleration
      * \brief Similar to copy_n, copies the data from the CPU to the GPU.
      */
-    template<typename T> void load_n(T const *cpu_data, size_t num_entries, T *gpu_data);
+    template<typename T> void load_n(AccelerationContext const *acc, T const *cpu_data, size_t num_entries, T *gpu_data);
 
     /*!
      * \ingroup TasmanianAcceleration
      * \brief Similar to copy_n, copies the data from the CPU to the GPU.
      */
     template<typename T, typename U>
-    Utils::use_if<!std::is_same<U, T>::value> load_n(U const *cpu_data, size_t num_entries, T *gpu_data){
+    Utils::use_if<!std::is_same<U, T>::value> load_n(AccelerationContext const *acc, U const *cpu_data, size_t num_entries, T *gpu_data){
         std::vector<T> converted(num_entries);
         std::transform(cpu_data, cpu_data + num_entries, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
-        load_n(converted.data(), num_entries, gpu_data);
+        load_n(acc, converted.data(), num_entries, gpu_data);
     }
 
     // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas
@@ -610,7 +610,7 @@ namespace AccelerationMeta{
             case accel_gpu_rocblas: return true;
             #endif
             #ifdef Tasmanian_ENABLE_DPCPP
-            //case accel_gpu_hip: return true;
+            case accel_gpu_cuda: return true;
             case accel_gpu_cublas: return true;
             #endif
             #ifdef Tasmanian_ENABLE_BLAS

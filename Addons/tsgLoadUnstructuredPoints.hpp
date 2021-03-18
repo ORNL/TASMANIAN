@@ -214,7 +214,7 @@ inline void loadUnstructuredDataL2tmpl(double const data_points[], int num_data,
                 acceleration->setDevice();
                 GpuVector<double> gpu_points(acceleration, num_dimensions, num_data, data_points);
                 GpuVector<scalar_type> gpu_values(acceleration, num_outputs, num_equations);
-                TasGpu::load_n(model_values, Utils::size_mult(num_outputs, num_data), gpu_values.data());
+                TasGpu::load_n(acceleration, model_values, Utils::size_mult(num_outputs, num_data), gpu_values.data());
                 generateCoefficientsGPU<scalar_type>(gpu_points.data(), num_data, gpu_values.data(), tolerance, grid);
                 return Data2D<scalar_type>(num_outputs, num_equations, gpu_values.unload(acceleration));
             }else{

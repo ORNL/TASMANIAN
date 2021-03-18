@@ -185,12 +185,12 @@ template void devalglo<double>(AccelerationContext const*, bool, bool, int, int,
                                GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&,
                                GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, double*);
 
-template<typename T> void load_n(T const*, size_t, T*){}
+template<typename T> void load_n(AccelerationContext const*, T const*, size_t, T*){}
 
-template void load_n<int>(int const*, size_t, int*);
-template void load_n<float>(float const*, size_t, float*);
-template void load_n<double>(double const*, size_t, double*);
-template void load_n<std::complex<double>>(std::complex<double> const*, size_t, std::complex<double>*);
+template void load_n<int>(AccelerationContext const*, int const*, size_t, int*);
+template void load_n<float>(AccelerationContext const*, float const*, size_t, float*);
+template void load_n<double>(AccelerationContext const*, double const*, size_t, double*);
+template void load_n<std::complex<double>>(AccelerationContext const*, std::complex<double> const*, size_t, std::complex<double>*);
 
 }
 }

@@ -1914,7 +1914,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
     return pass;
 }
 
-bool ExternalTester::testCudaCaching() const{
+bool ExternalTester::testGpuCaching() const{
     bool pass = true;
     #ifdef Tasmanian_ENABLE_GPU
     int const num_samples = 30;
@@ -1925,6 +1925,9 @@ bool ExternalTester::testCudaCaching() const{
 
     for(int gpu = gpu_id_first; gpu < gpu_id_last; gpu++){ // test each active CUDA device
         for(int t=0; t<5; t++){ // test each grid type
+            #ifdef Tasmanian_ENABLE_DPCPP
+            if (verbose) cout << "                     caching test: " << t + 1 << "/5" << "\n";
+            #endif
             TasmanianSparseGrid grid = [&]()->TasmanianSparseGrid{
                 switch(t){
                     default:
@@ -1949,10 +1952,8 @@ bool ExternalTester::testCudaCaching() const{
 
                 if (!testAccEval<double, GridMethodBatch>(refx, refy, num_samples, Maths::num_tol, grid, "caching batch<double>"))
                     pass = false;
-                #ifndef Tasmanian_ENABLE_DPCPP // fix later, when DPC++ gets the GPU kernels
                 if (!testAccEval<float, GridMethodBatch>(refx, refy, num_samples, 5.E-5, grid, "caching batch<float>"))
                     pass = false;
-                #endif
 
                 if (run == 0){
                     // setting refinement will change the grid forcing the cache data-structures
@@ -1970,9 +1971,6 @@ bool ExternalTester::testCudaCaching() const{
 }
 
 bool ExternalTester::testGPU2GPUevaluations() const{
-    #ifdef Tasmanian_ENABLE_DPCPP
-    return true;
-    #endif
     #ifdef Tasmanian_ENABLE_GPU
     // check back basis evaluations, x and result both sit on the GPU (using CUDA acceleration)
     TasGrid::TasmanianSparseGrid grid;
@@ -1988,6 +1986,9 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     int gpu_index_first = (gpuid == -1) ? 0 : gpuid;
     int gpu_end_gpus = (gpuid == -1) ? grid.getNumGPUs() : gpuid+1;
     for(int t=0; t<num_tests; t++){
+        #ifdef Tasmanian_ENABLE_DPCPP
+        if (verbose) cout << "                  gpu-to-gpu test: " << t + 1 << "/15" << "\n";
+        #endif
         grid.makeLocalPolynomialGrid(dims, 1, ((order[t] == 0) ? 4 : 7), order[t], pwp_rule[t]);
 
         grid.setDomainTransform(a, b);
@@ -2035,6 +2036,9 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
     // Sequence, Global, Wavelet, Fourier Grid evaluations of the basis functions
     for(int t=0; t<6; t++){
+        #ifdef Tasmanian_ENABLE_DPCPP
+        if (verbose) cout << "                  gpu-to-gpu test: " << t + 10 << "/15" << "\n";
+        #endif
         int numx = 2020;
 
         auto reset_grid = [&]()->void{
@@ -2196,7 +2200,7 @@ bool ExternalTester::testAllAcceleration() const{
         cout << "      Accelerated" << setw(wsecond) << "wavelet" << setw(wthird) << "FAIL" << endl;
     }
 
-    pass = pass && testCudaCaching();
+    pass = pass && testGpuCaching();
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "caching" << setw(wthird) << "Pass" << endl;
     }else{
