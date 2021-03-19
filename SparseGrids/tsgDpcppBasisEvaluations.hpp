@@ -73,7 +73,7 @@ void tasgpu_m11_to_01(sycl::queue *q, int num_points, T *gpu_x){
 
 
 template <typename T>
-void tasgpu_dseq_build_cache(sycl::queue *q, int dims, int num_x, const T *gpuX, const T *nodes, const T *coeffs, int max_num_nodes, const int *offsets, const int *num_nodes, T *result){
+void tasgpu_dseq_build_cache(sycl::queue *q, int dims, int num_x, const T *gpuX, const T *nodes, const T *coeffs, const int *offsets, const int *num_nodes, T *result){
 
     q->submit([&](sycl::handler& h) {
         h.parallel_for<class tsg_seq_build_cache_kernel>(sycl::range<1>{static_cast<size_t>(num_x), }, [=](sycl::id<1> threadId){
@@ -448,7 +448,7 @@ void tasgpu_dglo_eval_sharedpoints(sycl::queue *q,
                                    int const *map_tensor, int const *map_index, int const *map_reference, T *result){
 
     q->submit([&](sycl::handler& h){
-        h.parallel_for<class tsg_glo_eval_sharedpoints_kernel>(sycl::range<1>{static_cast<size_t>(1),}, [=](sycl::id<1> threadID){
+        h.parallel_for<class tsg_glo_eval_sharedpoints_kernel>(sycl::range<1>{static_cast<size_t>(1),}, [=](sycl::id<1>){
             // this can be called in parallel_for over both bklid and idx (using loop_lda and num_x)
             // running this in parallel requires the atomicAdd()
             for(int blkid = 0; blkid < loop_lda; blkid++){

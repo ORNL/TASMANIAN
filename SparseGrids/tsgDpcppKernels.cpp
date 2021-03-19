@@ -33,39 +33,15 @@
 
 #include "tsgAcceleratedDataStructures.hpp"
 #include "tsgDpcppBasisEvaluations.hpp"
+#include "tsgDpcppWrappers.hpp"
 
 #define _MAX_THREADS 1024
 
 namespace TasGrid{
 
-inline sycl::queue* syclQueue(AccelerationContext const *acceleration){
-    // temporary hack, the method is identical to the one used in the DPC++ methods
-    if (acceleration->engine->sycl_gpu_queue == nullptr){
-        sycl::queue *qq = nullptr;
-        try{
-            sycl::gpu_selector g_selector;
-            qq = new sycl::queue(g_selector);
-        }catch(sycl::exception const&){
-            sycl::cpu_selector c_selector;
-            qq = new sycl::queue(c_selector);
-        }
-
-        acceleration->engine->internal_queue = std::shared_ptr<int>(
-            reinterpret_cast<int*>(qq),
-            [](int* q_int){
-                sycl::queue *q = reinterpret_cast<sycl::queue*>(q_int);
-                delete q;
-            }
-        );
-        acceleration->engine->sycl_gpu_queue = acceleration->engine->internal_queue.get();
-        acceleration->engine->own_gpu_queue = true;
-    }
-    return reinterpret_cast<sycl::queue*>(acceleration->engine->sycl_gpu_queue);
-}
-
 template<typename T>
 void TasGpu::dtrans2can(AccelerationContext const *acc, bool use01, int dims, int num_x, int pad_size, double const *gpu_trans_a, double const *gpu_trans_b, T const *gpu_x_transformed, T *gpu_x_canonical){
-    sycl::queue *q = syclQueue(acc);
+    sycl::queue *q = getSyclQueue(acc);
     tasgpu_transformed_to_canonical<T, double>(q, dims, num_x, pad_size, gpu_trans_a, gpu_trans_b, gpu_x_transformed, gpu_x_canonical);
     if (use01) tasgpu_m11_to_01<T>(q, dims * num_x, gpu_x_canonical);
 }
@@ -76,7 +52,7 @@ template void TasGpu::dtrans2can<float>(AccelerationContext const*, bool, int, i
 // local polynomial basis functions, DENSE algorithm
 template<typename T>
 void TasGpu::devalpwpoly(AccelerationContext const *acc, int order, TypeOneDRule rule, int dims, int num_x, int num_points, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y){
-    sycl::queue *q = syclQueue(acc);
+    sycl::queue *q = getSyclQueue(acc);
     // order == 1 is considered "default" so that the compiler doesn't complain about missing default statement
     // semilocalp cannot have order less than 2, only rule_localp can have order 0 (this gets overwrittein in makeLocalPolynomialGrid())
     if (rule == rule_localp){
@@ -121,7 +97,7 @@ inline void devalpwpoly_sparse_realize_rule_order(AccelerationContext const *acc
                                           const int *hpntr, const int *hindx, int num_roots, const int *roots,
                                           int *spntr, int *sindx, T *svals){
 
-    sycl::queue *q = syclQueue(acc);
+    sycl::queue *q = getSyclQueue(acc);
     if (rule == rule_localp){
         switch(order){
             case 0:
@@ -207,20 +183,18 @@ template<typename T>
 void TasGpu::devalseq(AccelerationContext const *acc, int dims, int num_x, const std::vector<int> &max_levels,
                       const T *gpu_x, const GpuVector<int> &num_nodes,
                       const GpuVector<int> &points, const GpuVector<T> &nodes, const GpuVector<T> &coeffs, T *gpu_result){
-    sycl::queue *q = syclQueue(acc);
+    sycl::queue *q = getSyclQueue(acc);
 
     std::vector<int> offsets(dims);
     offsets[0] = 0;
     for(int d=1; d<dims; d++) offsets[d] = offsets[d-1] + num_x * (max_levels[d-1] + 1);
     size_t num_total = offsets[dims-1] + num_x * (max_levels[dims-1] + 1);
 
-    int maxl = max_levels[0]; for(auto l : max_levels) if (maxl < l) maxl = l;
-
     GpuVector<int> gpu_offsets(acc, offsets);
     GpuVector<T> cache1D(acc, num_total);
 
     tasgpu_dseq_build_cache<T>
-        (q, dims, num_x, gpu_x, nodes.data(), coeffs.data(), maxl+1, gpu_offsets.data(), num_nodes.data(), cache1D.data());
+        (q, dims, num_x, gpu_x, nodes.data(), coeffs.data(), gpu_offsets.data(), num_nodes.data(), cache1D.data());
     tasgpu_dseq_eval_sharedpoints<T>
         (q, dims, num_x, (int) points.size() / dims, points.data(), gpu_offsets.data(), cache1D.data(), gpu_result);
 }
@@ -237,7 +211,7 @@ template<typename T>
 void TasGpu::devalfor(AccelerationContext const *acc, int dims, int num_x, const std::vector<int> &max_levels, const T *gpu_x,
                       const GpuVector<int> &num_nodes, const GpuVector<int> &points, T *gpu_wreal, typename GpuVector<T>::value_type *gpu_wimag){
 
-    sycl::queue *q = syclQueue(acc);
+    sycl::queue *q = getSyclQueue(acc);
     std::vector<int> max_nodes(dims);
     for(int j=0; j<dims; j++){
         int n = 1;
@@ -275,7 +249,7 @@ void TasGpu::devalglo(AccelerationContext const *acc, bool is_nested, bool is_cl
                       GpuVector<int> const &map_tensor, GpuVector<int> const &map_index, GpuVector<int> const &map_reference, T *gpu_result){
 
     GpuVector<T> cache(acc, num_x, num_basis);
-    sycl::queue *q = syclQueue(acc);
+    sycl::queue *q = getSyclQueue(acc);
 
     if (is_nested){
         if (is_clenshawcurtis0){
@@ -317,7 +291,7 @@ template void TasGpu::devalglo<float>(AccelerationContext const*, bool, bool, in
                                       GpuVector<int> const&, GpuVector<int> const&, GpuVector<int> const&, float*);
 
 void TasGpu::fillDataGPU(AccelerationContext const *acc, double value, long long n, long long stride, double data[]){
-    sycl::queue *q = syclQueue(acc);
+    sycl::queue *q = getSyclQueue(acc);
     if (stride == 1){
         q->submit([&](sycl::handler& h) {
             h.parallel_for<class tasgpu_vfill_kernel>(sycl::range<1>{static_cast<size_t>(n),}, [=](sycl::id<1> threadId){

@@ -111,11 +111,11 @@ int AccelerationMeta::getNumGpuDevices(){
     return 1; // fake device for now, will actually use the CPU
 }
 void AccelerationMeta::setDefaultGpuDevice(int){}
-unsigned long long AccelerationMeta::getTotalGPUMemory(int deviceID){ // int deviceID
+unsigned long long AccelerationMeta::getTotalGPUMemory(int){ // int deviceID
     sycl::queue q;
     return q.get_device().get_info<sycl::info::device::global_mem_size>();
 }
-std::string AccelerationMeta::getGpuDeviceName(int deviceID){ // int deviceID
+std::string AccelerationMeta::getGpuDeviceName(int){ // int deviceID
     sycl::queue q;
     return q.get_device().get_info<sycl::info::device::name>();
 }
@@ -199,24 +199,24 @@ void dump_data(sycl::queue *q, size_t m, size_t n, scalar_type *data){
 }
 
 template<typename scalar_type>
-std::int64_t gemrq_workspace(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::int64_t lda, std::int64_t ldc){
-    return oneapi::mkl::lapack::ormrq_scratchpad_size<scalar_type>(*q, side, trans, m, n, k, lda, ldc);
+std::int64_t gemqr_workspace(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::int64_t lda, std::int64_t ldc){
+    return oneapi::mkl::lapack::ormqr_scratchpad_size<scalar_type>(*q, side, trans, m, n, k, lda, ldc);
 }
 
 template<>
-std::int64_t gemrq_workspace<std::complex<double>>(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::int64_t lda, std::int64_t ldc){
-    return oneapi::mkl::lapack::unmrq_scratchpad_size<std::complex<double>>(*q, side, trans, m, n, k, lda, ldc);
+std::int64_t gemqr_workspace<std::complex<double>>(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::int64_t lda, std::int64_t ldc){
+    return oneapi::mkl::lapack::unmqr_scratchpad_size<std::complex<double>>(*q, side, trans, m, n, k, lda, ldc);
 }
 
 template<typename scalar_type>
-inline void gemrq(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, scalar_type* A, std::int64_t lda, scalar_type *T, scalar_type* C, std::int64_t ldc, scalar_type* workspace, std::int64_t worksize){
-    oneapi::mkl::lapack::ormrq(*q, side, trans, m, n, k, A, lda, T, C, ldc, workspace, worksize);
+inline void gemqr(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, scalar_type* A, std::int64_t lda, scalar_type *T, scalar_type* C, std::int64_t ldc, scalar_type* workspace, std::int64_t worksize){
+    oneapi::mkl::lapack::ormqr(*q, side, trans, m, n, k, A, lda, T, C, ldc, workspace, worksize);
     q->wait();
 }
 
 template<>
-void gemrq<std::complex<double>>(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::complex<double>* A, std::int64_t lda, std::complex<double> *T, std::complex<double>* C, std::int64_t ldc, std::complex<double>* workspace, std::int64_t worksize){
-    oneapi::mkl::lapack::unmrq(*q, side, trans, m, n, k, A, lda, T, C, ldc, workspace, worksize);
+void gemqr<std::complex<double>>(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::complex<double>* A, std::int64_t lda, std::complex<double> *T, std::complex<double>* C, std::int64_t ldc, std::complex<double>* workspace, std::int64_t worksize){
+    oneapi::mkl::lapack::unmqr(*q, side, trans, m, n, k, A, lda, T, C, ldc, workspace, worksize);
     q->wait();
 }
 
@@ -229,41 +229,44 @@ void solveLSmultiGPU(AccelerationContext const *acceleration, int n, int m, scal
     q->wait();
 
     auto side = oneapi::mkl::side::left;
-    auto trans = oneapi::mkl::transpose::trans;
+    auto trans = (std::is_same<scalar_type, double>::value) ? oneapi::mkl::transpose::trans : oneapi::mkl::transpose::conjtrans;
 
     std::int64_t worksize = oneapi::mkl::lapack::geqrf_scratchpad_size<scalar_type>(*q, n, m, n);
-    worksize = std::max(worksize, gemrq_workspace<scalar_type>(q, side, trans, n, nrhs, m, n, n));
-    q->wait();
+    worksize = std::max(worksize, gemqr_workspace<scalar_type>(q, side, trans, n, nrhs, m, n, n));
 
     GpuVector<scalar_type> AT(acceleration, n, m);
-    q->wait();
+    GpuVector<scalar_type> T(acceleration, m); // tau parameter, or the weights of the orthogonal shift
     transpose_matrix(q, m, n, A, AT.data());
-    q->wait();
 
     GpuVector<scalar_type> workspace(acceleration, worksize);
-    GpuVector<scalar_type> T(acceleration, m); // tau parameter, or the weights of the orthogonal shift
-    q->wait();
     try{
         oneapi::mkl::lapack::geqrf(*q, n, m, AT.data(), n, T.data(), workspace.data(), worksize);
+        q->wait();
     }catch(oneapi::mkl::lapack::exception &e){
-        std::cout << "lapack error code:  " << e.info() << std::endl;
-        std::cout << "lapack detail code: " << e.detail() << std::endl;
+        std::cout << "lapack geqrf() error code:  " << e.info()
+                  << "\nlapack geqrf() detail code: " << e.detail() << std::endl;
+        throw;
     }
-    q->wait();
 
     if (nrhs == 1){
-        gemrq(q, side, trans, n, 1, m, AT.data(), n, T.data(), B, n, workspace.data(), worksize);
-        q->wait();
+        try{
+            gemqr(q, side, trans, n, 1, m, AT.data(), n, T.data(), B, n, workspace.data(), worksize);
+        }catch(oneapi::mkl::lapack::exception &e){
+            std::cout << "lapack " << ((std::is_same<scalar_type, double>::value) ? "ormqr()" : "unmqr()")
+                      << " error code:  " << e.info()
+                      << "\nlapack " << ((std::is_same<scalar_type, double>::value) ? "ormqr()" : "unmqr()")
+                      << " detail code:  " << e.detail() << std::endl;
+            throw;
+        }
         oneapi::mkl::blas::column_major::trsv(*q, oneapi::mkl::uplo::U, oneapi::mkl::transpose::N, oneapi::mkl::diag::N, m, AT.data(), n, B, 1);
         q->wait();
     }else{
         GpuVector<scalar_type> BT(acceleration, n, nrhs);
-        transpose_matrix(q, n, nrhs, B, BT.data());
-        gemrq(q, oneapi::mkl::side::left, oneapi::mkl::transpose::trans, n, nrhs, m, AT.data(), n, T.data(), BT.data(), n, workspace.data(), worksize);
-        q->wait();
+        transpose_matrix(q, nrhs, n, B, BT.data());
+        gemqr(q, side, trans, n, nrhs, m, AT.data(), n, T.data(), BT.data(), n, workspace.data(), worksize);
         oneapi::mkl::blas::column_major::trsm(*q, oneapi::mkl::side::L, oneapi::mkl::uplo::U, oneapi::mkl::transpose::N, oneapi::mkl::diag::N, m,  nrhs, 1.0, AT.data(), n, BT.data(), n);
         q->wait();
-        transpose_matrix(q, nrhs, n, BT.data(), B);
+        transpose_matrix(q, n, nrhs, BT.data(), B);
     }
 }
 
