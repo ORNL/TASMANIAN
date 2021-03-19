@@ -241,16 +241,22 @@ std::vector<std::function<void(void)>> makeTests(TypeAcceleration acc, int gpu_i
 /*!
  * \brief Execute the tests and returns the result.
  */
-bool runTests(TypeAcceleration acc, int gpu_id){
+bool runTests(TypeAcceleration acc, bool verbose, int gpu_id){
     bool pass = true;
 
     auto tests = makeTests(acc, gpu_id);
+    #ifdef Tasmanian_ENABLE_DPCPP
+    int count = 1;
+    #endif
     for(auto &t : tests){
         try{
             t(); // run the test
-        }catch(std::invalid_argument &){
+        }catch(std::runtime_error &){
             pass = false;
         }
+        #ifdef Tasmanian_ENABLE_DPCPP
+        if (verbose) std::cout << " done test: " << std::setw(2) << count++ << "/" << tests.size() << std::endl;
+        #endif
     }
 
     return pass;
@@ -262,7 +268,7 @@ bool runTests(TypeAcceleration acc, int gpu_id){
 bool testLoadUnstructuredL2(bool verbose, int gpu_id){
     bool pass = true;
 
-    bool blas_pass = (AccelerationMeta::isAvailable(accel_cpu_blas)) ? runTests(accel_cpu_blas, 0) : true;
+    bool blas_pass = (AccelerationMeta::isAvailable(accel_cpu_blas)) ? runTests(accel_cpu_blas, verbose, 0) : true;
     if (blas_pass){
         if (verbose) cout << std::setw(10) << "blas   " << std::setw(30) << "unstructured construction" << std::setw(10) << "Pass" << endl;
     }else{
@@ -274,13 +280,13 @@ bool testLoadUnstructuredL2(bool verbose, int gpu_id){
         int gpu_begin = (gpu_id == -1) ? 0 : gpu_id;
         int gpu_end   = (gpu_id == -1) ? TasmanianSparseGrid::getNumGPUs() : gpu_id + 1;
         for(int gpu = gpu_begin; gpu < gpu_end; gpu++){
-            bool cublas_pass = runTests(accel_gpu_cublas, gpu);
+            bool cublas_pass = runTests(accel_gpu_cublas, verbose, gpu);
             if (cublas_pass){
                 if (verbose) cout << std::setw(7) << "cublas" << std::setw(3) << gpu << std::setw(30) << "unstructured construction" << std::setw(10) << "Pass" << endl;
             }else{
                 cout << "Failed testLoadUnstructuredL2() cublas case on device " << gpu << "\n";
             }
-            bool cuda_pass = runTests(accel_gpu_cuda, gpu);
+            bool cuda_pass = runTests(accel_gpu_cuda, verbose, gpu);
             if (cuda_pass){
                 if (verbose) cout << std::setw(7) << "cuda" << std::setw(3) << gpu << std::setw(30) << "unstructured construction" << std::setw(10) << "Pass" << endl;
             }else{
@@ -288,7 +294,7 @@ bool testLoadUnstructuredL2(bool verbose, int gpu_id){
             }
             pass = pass and cuda_pass;
             if (AccelerationMeta::isAvailable(accel_gpu_magma)){
-                bool magma_pass = runTests(accel_gpu_magma, gpu);
+                bool magma_pass = runTests(accel_gpu_magma, verbose, gpu);
                 if (magma_pass){
                     if (verbose) cout << std::setw(7) << "magma" << std::setw(3) << gpu
                                       << std::setw(30) << "unstructured construction" << std::setw(10) << "Pass" << endl;
