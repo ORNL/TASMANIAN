@@ -111,11 +111,11 @@ int AccelerationMeta::getNumGpuDevices(){
     return 1; // fake device for now, will actually use the CPU
 }
 void AccelerationMeta::setDefaultGpuDevice(int){}
-unsigned long long AccelerationMeta::getTotalGPUMemory(int deviceID){ // int deviceID
+unsigned long long AccelerationMeta::getTotalGPUMemory(int){ // int deviceID
     sycl::queue q;
     return q.get_device().get_info<sycl::info::device::global_mem_size>();
 }
-std::string AccelerationMeta::getGpuDeviceName(int deviceID){ // int deviceID
+std::string AccelerationMeta::getGpuDeviceName(int){ // int deviceID
     sycl::queue q;
     return q.get_device().get_info<sycl::info::device::name>();
 }
