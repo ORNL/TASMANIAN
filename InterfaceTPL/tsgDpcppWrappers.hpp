@@ -53,6 +53,18 @@
 
 namespace TasGrid{
 
+/*!
+ * \internal
+ * \ingroup TasmanianTPLWrappers
+ * \brief Returns the SYCL queue associated with the given AccelerationContext, creates a new queue if needed.
+ *
+ * If there is a current active sycl::queue the method will return a pointer to the queue,
+ * otherwise tries to create a new sycl::queue using the sycl::gpu_selector.
+ * If creating the GPU queue fails, e.g., throws sycl::exception,
+ * then a queue will be created using the sycl::cpu_selector.
+ *
+ * \endinternal
+ */
 inline sycl::queue* getSyclQueue(AccelerationContext const *acceleration){
     if (acceleration->engine->sycl_gpu_queue == nullptr){
         sycl::queue *qq = nullptr;
@@ -77,10 +89,6 @@ inline sycl::queue* getSyclQueue(AccelerationContext const *acceleration){
     return reinterpret_cast<sycl::queue*>(acceleration->engine->sycl_gpu_queue);
 }
 
-namespace TasGpu{
-
-
-}
 }
 
 #endif
