@@ -93,7 +93,7 @@ will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` follo
   -D Tasmanian_ENABLE_RECOMMENDED:BOOL=<ON/OFF> (enable the above and the -O3 flag)
   -D Tasmanian_ENABLE_CUDA:BOOL=<ON/OFF>        (stable)
   -D Tasmanian_ENABLE_HIP:BOOL=<ON/OFF>         (stable)
-  -D Tasmanian_ENABLE_DPCPP:BOOL=<ON/OFF>       (experimental)
+  -D Tasmanian_ENABLE_DPCPP:BOOL=<ON/OFF>       (mostly stable)
   -D Tasmanian_ENABLE_MAGMA:BOOL=<ON/OFF>       (stable)
   -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""       (stable)
   -D Tasmanian_ENABLE_DOXYGEN:BOOL=<ON/OFF>     (stable)
@@ -111,7 +111,8 @@ will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` follo
       within Tasmanian, the name BLAS in CMake or run-time options indicate the dependence and usage of both BLAS and LAPACK
     * CUDA is a C++ language extension that allows Tasmanian to leverage the computing power of Nvidia GPU devices,
       which greatly enhances the performance of `evaluateFast()` and `evaluateBatch()` and a few other calls
-    * HIP/ROCm is very similar to CUDA but uses AMD GPU devices instead, Tasmanian works with both backends
+    * HIP/ROCm is very similar to CUDA but uses AMD GPU devices instead, Tasmanian supports a HIP backend
+    * DPC++/OneAPI is the Intel alternative to CUDA and HIP, Tasmanian supports a DPC++ backend
     * Matrix Algebra on GPU and Multicore Architectures (MAGMA) is a library for GPU accelerated linear
       algebra developed at the University of Tennessee at Knoxville
     * MPI allows the use of distributed memory in Bayesian inference, parallel model construction, and send/receive grid through an MPI comm
@@ -378,6 +379,6 @@ Several known issues and work-around fixes:
 * The older versions of the PGI compiler fails when using optimization `-O2`
     * use the `-O1` instead, or the newest version of the compiler
 * XL with OpenMP segfaults if the OMP_NUM_THREADS is not set correctly
-* in version 7.3 documentation has to be build with `make Tasmanian_doxygen` as it is not added to all
+* in version 7.3 documentation has to be build with `make Tasmanian_doxygen` as it is not added to target `all`
 * Older versions of CUDA do not work with newer versions of some compilers, e.g., `gcc`
     * consult the CUDA manual for a list of acceptable compilers

@@ -1987,7 +1987,7 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     int gpu_end_gpus = (gpuid == -1) ? grid.getNumGPUs() : gpuid+1;
     for(int t=0; t<num_tests; t++){
         #ifdef Tasmanian_ENABLE_DPCPP
-        if (verbose) cout << "                  gpu-to-gpu test: " << t + 1 << "/15" << "\n";
+        if (verbose) cout << "                  gpu-to-gpu test: " << setw(2) << t + 1 << "/15" << "\n";
         #endif
         grid.makeLocalPolynomialGrid(dims, 1, ((order[t] == 0) ? 4 : 7), order[t], pwp_rule[t]);
 
