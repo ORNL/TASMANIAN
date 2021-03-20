@@ -72,7 +72,7 @@ set(Tasmanian_langs "CXX")
 if (Tasmanian_ENABLE_FORTRAN)
     set(Tasmanian_langs "${Tasmanian_langs} Fortran")
 endif()
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeLists.examples.txt" "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeLists.examples.cmake" "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt"
         DESTINATION "share/Tasmanian/examples/"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
