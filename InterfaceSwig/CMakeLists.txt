@@ -107,12 +107,7 @@ add_executable(Tasmanian_fortran_swig_tester ${CMAKE_CURRENT_SOURCE_DIR}/Fortran
                                              ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/test_refinement.f90
                                              )
 set_target_properties(Tasmanian_fortran_swig_tester PROPERTIES OUTPUT_NAME "forswigtester")
-
-if (Tasmanian_ENABLE_DPCPP)
-    set_target_properties(Tasmanian_fortran_swig_tester PROPERTIES LINKER_LANGUAGE CXX)
-else()
-    set_target_properties(Tasmanian_fortran_swig_tester PROPERTIES LINKER_LANGUAGE Fortran)
-endif()
+Tasmanian_set_fortran_linker(TARGET Tasmanian_fortran_swig_tester)
 
 if (Tasmanian_ENABLE_SWIG)
     # generate the interface
