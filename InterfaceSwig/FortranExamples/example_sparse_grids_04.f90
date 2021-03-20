@@ -37,8 +37,8 @@ subroutine example_sparse_grid_04()
         write(*,"(A,i2)") "  using polynomials of total degree up to: ", prec
         write(*,"(A,i3,A)") "                             the grid has: ", &
                                 surrogate%getNumPoints(), " points"
-        write(*,"(A,ES10.4)") "                 interpolant at (0.3,0.7): ", y(1)
-        write(*,"(A,ES10.4)") "                                    error: ", &
+        write(*,"(A,ES11.4)") "                 interpolant at (0.3,0.7): ", y(1)
+        write(*,"(A,ES11.4)") "                                    error: ", &
                                 abs(y(1) - exp(-x(1)**2) * cos(x(2)))
         write(*,*)
 
