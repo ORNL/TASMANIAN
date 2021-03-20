@@ -160,9 +160,9 @@ public:
     WaveletBasisMatrix& operator =(WaveletBasisMatrix &&) = default;
 
     //! \brief Decide between sparse and dense variant of the algorithms.
-    static bool useDense(AccelerationContext const *acceleration, int num_rows){
+    static bool useDense(AccelerationContext const *acceleration, int nrows){
         return ((acceleration->algorithm_select != AccelerationContext::algorithm_sparse)
-                and not (acceleration->algorithm_select == AccelerationContext::algorithm_autoselect and num_rows > 10000));
+                and not (acceleration->algorithm_select == AccelerationContext::algorithm_autoselect and nrows > 10000));
     }
 
     //! \brief Return true if using the sparse mode and false is using dense mode or empty.
