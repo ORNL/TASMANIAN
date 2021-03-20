@@ -5,13 +5,12 @@
 #
 #
 
-execute_process(COMMAND ${CMAKE_CXX_COMPILER} --version OUTPUT_VARIABLE Tasmanian_dpcpp_compiler)
-string(FIND "${Tasmanian_dpcpp_compiler}" "DPC++" Tasmanian_dpcpp_compiler)
+Tasmanian_compiler_type(COMPILER ${CMAKE_CXX_COMPILER} TYPE "DPC++" RESULT Tasmanian_dpcpp_compiler)
 
 get_filename_component(Tasmanian_dpcpproot ${CMAKE_CXX_COMPILER} DIRECTORY)  # convert <path>/bin/dpcpp to <path>/bin
 get_filename_component(Tasmanian_dpcpproot ${Tasmanian_dpcpproot} DIRECTORY)  # convert <path>/bin to <path>
 
-if (Tasmanian_dpcpp_compiler LESS 0)
+if (NOT Tasmanian_dpcpp_compiler)
     message(FATAL_ERROR "Tasmanian_ENABLE_DPCPP requires that the CMAKE_CXX_COMPILER is set to the Intel dpcpp compiler.")
 endif()
 
