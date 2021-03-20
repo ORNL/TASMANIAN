@@ -245,18 +245,14 @@ bool runTests(TypeAcceleration acc, bool verbose, int gpu_id){
     bool pass = true;
 
     auto tests = makeTests(acc, gpu_id);
-    #ifdef Tasmanian_ENABLE_DPCPP
     int count = 1;
-    #endif
     for(auto &t : tests){
         try{
             t(); // run the test
         }catch(std::runtime_error &){
             pass = false;
         }
-        #ifdef Tasmanian_ENABLE_DPCPP
         if (verbose) std::cout << " done test: " << std::setw(2) << count++ << "/" << tests.size() << std::endl;
-        #endif
     }
 
     return pass;

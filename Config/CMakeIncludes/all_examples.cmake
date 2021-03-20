@@ -28,9 +28,7 @@ target_link_libraries(Tasmanian_example_dream  Tasmanian_master)
 if (Tasmanian_ENABLE_FORTRAN)
     add_executable(Tasmanian_example_sparse_grids_f90 InterfaceFortran/Examples/example_sparse_grids.f90)
 
-    set_target_properties(Tasmanian_example_sparse_grids_f90 PROPERTIES
-                            OUTPUT_NAME "example_sparse_grids_f90"
-                            LINKER_LANGUAGE Fortran)
+    set_target_properties(Tasmanian_example_sparse_grids_f90 PROPERTIES OUTPUT_NAME "example_sparse_grids_f90")
     target_link_libraries(Tasmanian_example_sparse_grids_f90 Tasmanian_libfortran90)
 
     # adding the Fortran 2003 examples
@@ -40,12 +38,9 @@ if (Tasmanian_ENABLE_FORTRAN)
                                                           InterfaceSwig/FortranExamples/example_sparse_grids_03.f90
                                                           InterfaceSwig/FortranExamples/example_sparse_grids_04.f90
                                                           )
-    set_target_properties(Tasmanian_example_sparse_grids_fortran PROPERTIES
-                            OUTPUT_NAME "example_sparse_grids_fortran")
-    if (Tasmanian_ENABLE_DPCPP)
-        set_target_properties(Tasmanian_example_sparse_grids_fortran PROPERTIES LINKER_LANGUAGE CXX)
-    else()
-        set_target_properties(Tasmanian_example_sparse_grids_fortran PROPERTIES LINKER_LANGUAGE Fortran)
-    endif()
+    set_target_properties(Tasmanian_example_sparse_grids_fortran PROPERTIES OUTPUT_NAME "example_sparse_grids_fortran")
     target_link_libraries(Tasmanian_example_sparse_grids_fortran Tasmanian_libfortran03)
+
+    Tasmanian_set_fortran_linker(TARGET Tasmanian_example_sparse_grids_f90)
+    Tasmanian_set_fortran_linker(TARGET Tasmanian_example_sparse_grids_fortran)
 endif()

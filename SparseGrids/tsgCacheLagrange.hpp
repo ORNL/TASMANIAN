@@ -86,22 +86,22 @@ public:
     ~CacheLagrange() = default;
 
     //! \brief Computes the values of all Lagrange polynomials for the given level at the given x
-    static void cacheLevel(int level, double x, const OneDimensionalWrapper &rule, T *cache){
+    static void cacheLevel(int level, double x, const OneDimensionalWrapper &rule, T *cc){
         const double *nodes = rule.getNodes(level);
         const double *coeff = rule.getCoefficients(level);
         int num_points = rule.getNumPoints(level);
 
-        cache[0] = 1.0;
+        cc[0] = 1.0;
         T c = 1.0;
         for(int j=0; j<num_points-1; j++){
             c *= (x - nodes[j]);
-            cache[j+1] = c;
+            cc[j+1] = c;
         }
         c = (rule.getType() == rule_clenshawcurtis0) ? (x * x - 1.0) : 1.0;
-        cache[num_points-1] *= c * coeff[num_points-1];
+        cc[num_points-1] *= c * coeff[num_points-1];
         for(int j=num_points-2; j>=0; j--){
             c *= (x - nodes[j+1]);
-            cache[j] *= c * coeff[j];
+            cc[j] *= c * coeff[j];
         }
     }
 
