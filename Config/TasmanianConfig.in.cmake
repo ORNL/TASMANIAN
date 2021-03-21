@@ -92,10 +92,11 @@ set(Tasmanian_BLAS_FOUND   "@Tasmanian_ENABLE_BLAS@")
 set(Tasmanian_MPI_FOUND    "@Tasmanian_ENABLE_MPI@")
 set(Tasmanian_CUDA_FOUND   "@Tasmanian_ENABLE_CUDA@")
 set(Tasmanian_HIP_FOUND    "@Tasmanian_ENABLE_HIP@")
+set(Tasmanian_DPCPP_FOUND  "@Tasmanian_ENABLE_DPCPP@")
 set(Tasmanian_MAGMA_FOUND  "@Tasmanian_ENABLE_MAGMA@")
 
 # component GPU uses either GPU backend (CUDA or HIP)
-if (Tasmanian_CUDA_FOUND OR Tasmanian_HIP_FOUND)
+if (Tasmanian_CUDA_FOUND OR Tasmanian_HIP_FOUND OR Tasmanian_DPCPP_FOUND)
     set(Tasmanian_GPU_FOUND "ON")
 endif()
 

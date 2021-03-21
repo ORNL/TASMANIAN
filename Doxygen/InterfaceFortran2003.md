@@ -78,19 +78,18 @@ Fortran 2003 does not support namespaces and the wrapper API works directly with
 ```
 Although the methods do not support array API and hence anisotropic weights and level limits still require the use of the member functions, e.g., `grid%makeGlobalGrid()`.
 
-The static array API works with allocatable variables but requires user allocation of memory and is not very expressive. Helper methods are provided that return ready allocated pointer variables:
+The static array API works with allocatable variables but requires user allocation of memory and is not very expressive. Functions and subroutines cannot share names in generic overloads; therefore, the functions come with names replacing `get` with `return`:
 ```
     real(C_DOUBLE), dimension(:,:), pointer :: points
     ...
-    points => tsgGetPoints(grid)
+    points => grid%returnPoints()
     ...
     deallocate(points)
 ```
 The helper function are:
 ```
-    points => tsgGetLoadedPoints(grid) ->  grid%getLoadedPoints(points)
-    points => tsgGetNeededPoints(grid) ->  grid%getNeededPoints(points)
-    points => tsgGetLoaded(grid)       ->  grid%getPoints(points)
-
-    weights => tsgGetQuadratureWeights(grid) -> grid%getQuadratureWeights(weights)
+    points => grid%getLoadedPoints()
+    points => grid%getNeededPoints()
+    points => grid%getPoints()
+    points => grid%returnQuadratureWeights()
 ```

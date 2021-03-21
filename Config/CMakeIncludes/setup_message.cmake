@@ -21,11 +21,8 @@ foreach(Tasmanian_option Tasmanian_ENABLE_OPENMP  Tasmanian_ENABLE_BLAS
                          Tasmanian_ENABLE_HIP     Tasmanian_ENABLE_DPCPP
                          Tasmanian_ENABLE_SWIG
                          Tasmanian_ENABLE_FORTRAN Tasmanian_ENABLE_DOXYGEN)
-    if (${Tasmanian_option})
-        message(STATUS " -D ${Tasmanian_option}:BOOL=ON")
-    else()
-        message(STATUS " -D ${Tasmanian_option}:BOOL=OFF")
-    endif()
+
+    message(STATUS " -D ${Tasmanian_option}:BOOL=${${Tasmanian_option}}")
 endforeach()
 
 if (Tasmanian_MAGMA AND Tasmanian_MAGMA_ROOT)

@@ -16,18 +16,11 @@ find_package(Tasmanian @Tasmanian_VERSION_MAJOR@.@Tasmanian_VERSION_MINOR@.@Tasm
 #                    for example using -DCMAKE_PREFIX_PATH="@CMAKE_INSTALL_PREFIX@/lib/"
 #  Tasmanian_DIR or Tasmanian_ROOT environment variables (depending on the version of CMake)
 
-# Tasmanian::Tasmanian will be the name of the IMPORTED master C++ target.
-# Tasmanian::Tasmanian will point to the shared libraries if the static libraries are not available
-#                      or if the SHARED component is requested without the STATIC one.
-# Tasmanian::Tasmanian will point to the static libraries in all other cases.
-# Tasmanian::Fortran will follow the same logic as Tasmanian::Tasmanian but use Fortran instead
+# Tasmanian::Tasmanian will be the name of the IMPORTED C++ target.
+# Tasmanian::Fortran will be the name of the IMPORTED Fortran target.
 
 # Additional targets:
-#  Tasmanian::shared will point to the shared libraries, if those are available
-#  Tasmanian::static will point to the static libraries, if those are available
 #  Tasmanian::tasgrid will point to the executable ./tasgrid@CMAKE_EXECUTABLE_SUFFIX_CXX@
-#  Tasmanian::Fortran::shared will point to the shared Fortran libraries
-#  Tasmanian::Fortran::static will point to the static Fortran libraries
 
 # Additional variables (if the corresponding options have been enabled):
 #  Tasmanian_PYTHONPATH is the path to the python scripts
@@ -67,6 +60,7 @@ if (Tasmanian_FORTRAN_FOUND)
                                                  example_sparse_grids.f90)
     target_link_libraries(example_sparse_grids_fortran  Tasmanian::Fortran)
     # note that as of 7.1 Tasmanian::Fortran is not equivalent to Tasmanian::Tasmanian
+
     if (@Tasmanian_ifort_compiler@)
         set_target_properties(example_sparse_grids_fortran PROPERTIES LINKER_LANGUAGE Fortran)
     else()

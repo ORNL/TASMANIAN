@@ -69,6 +69,10 @@ foreach(_tsg_include ${Tasmanian_EXTRA_INCLUDE_DIRS})
     target_include_directories(Tasmanian_dependencies INTERFACE $<INSTALL_INTERFACE:${_tsg_include}>)
 endforeach()
 
+if (Tasmanian_EXTRA_CXX_FLAGS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${Tasmanian_EXTRA_CXX_FLAGS}")
+endif()
+
 install(TARGETS Tasmanian_dependencies EXPORT "${Tasmanian_export_name}")
 
 list(REMOVE_DUPLICATES Tasmanian_rpath)
