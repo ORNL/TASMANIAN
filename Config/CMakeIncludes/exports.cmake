@@ -59,7 +59,7 @@ else()
     set(Tasmanian_components " STATIC")
 endif()
 
-foreach(_comp OPENMP BLAS PYTHON CUDA HIP MAGMA FORTRAN MPI)
+foreach(_comp OPENMP BLAS PYTHON CUDA HIP DPCPP MAGMA FORTRAN MPI)
     if (Tasmanian_ENABLE_${_comp})
         set(Tasmanian_components "${Tasmanian_components} ${_comp}")
     endif()
