@@ -13,6 +13,27 @@ endif()
 
 set(Tasmanian_GENERATE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated")
 
+# usage: Tasmanian_set_fortran_props(TARGET Tasmanian_libdream OUTPUT_NAME "tasmanianfortran")
+# sets the common properties of Tasmanian Fortran targets
+macro(Tasmanian_set_fortran_props)
+    cmake_parse_arguments(Tasmanian_fprop "" "TARGET;OUTPUT_NAME" "" ${ARGN})
+    target_link_libraries(${Tasmanian_fprop_TARGET} Tasmanian_addons)
+    set_target_properties(${Tasmanian_fprop_TARGET} PROPERTIES
+                                                    OUTPUT_NAME ${Tasmanian_fprop_OUTPUT_NAME}
+                                                    INSTALL_RPATH "${Tasmanian_rpath}"
+                                                    SOVERSION ${Tasmanian_VERSION_MAJOR}
+                                                    VERSION   ${PROJECT_VERSION})
+    target_include_directories(${Tasmanian_fprop_TARGET} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
+
+    if (Tasmanian_ENABLE_MPI)
+        # see the comments in the Addons/CMakeLists.txt
+        target_link_libraries(${Tasmanian_fprop_TARGET} MPI::MPI_Fortran)
+    endif()
+
+    unset(Tasmanian_fprop_TARGET)
+    unset(Tasmanian_fprop_OUTPUT_NAME)
+endmacro()
+
 function(tasmanian_add_swig_module tsg_name)
 #
 # Generates the wrappers using SWIG
@@ -32,18 +53,7 @@ function(tasmanian_add_swig_module tsg_name)
       SOURCES "${src_file}" ${ARGN}
     )
 
-    target_link_libraries(${tsg_name} Tasmanian_addons Tasmanian_libdream)
-    set_target_properties(${tsg_name} PROPERTIES OUTPUT_NAME "tasmanian_swig"
-                                                 INSTALL_RPATH "${Tasmanian_rpath}"
-                                                 SOVERSION ${Tasmanian_VERSION_MAJOR}
-                                                 VERSION   ${PROJECT_VERSION})
-
-    target_include_directories(${tsg_name} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
-
-    if (Tasmanian_ENABLE_MPI)
-        # see the comments in the Addons/CMakeLists.txt
-        target_link_libraries(${tsg_name} MPI::MPI_Fortran)
-    endif()
+    Tasmanian_set_fortran_props(TARGET ${tsg_name} OUTPUT_NAME ${tsg_name})
 
 endfunction()
 
@@ -72,25 +82,27 @@ macro(Tasmanian_macro_add_libdfortran03)
     add_library(Tasmanian_libfortran03  "${CMAKE_CURRENT_BINARY_DIR}/regenerated/tasmanian.f90"
                                         "${Tasmanian_GENERATE_DIR}/tasmanian_swigFORTRAN_wrap.cxx")
 
-    target_link_libraries(Tasmanian_libfortran03  Tasmanian_addons)
-    set_target_properties(Tasmanian_libfortran03  PROPERTIES OUTPUT_NAME "tasmanianfortran"
-                                                             INSTALL_RPATH "${Tasmanian_final_install_path}/lib"
-                                                             SOVERSION ${Tasmanian_VERSION_MAJOR}
-                                                             VERSION   ${PROJECT_VERSION}
-                                                             LINKER_LANGUAGE Fortran)
-
-    target_include_directories(Tasmanian_libfortran03 PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>)
-
-    if (Tasmanian_ENABLE_MPI)
-        # see the comments in the Addons/CMakeLists.txt
-        target_link_libraries(Tasmanian_libfortran03  MPI::MPI_Fortran)
-    endif()
+    Tasmanian_set_fortran_props(TARGET Tasmanian_libfortran03 OUTPUT_NAME "tasmanianfortran")
 
     install(TARGETS Tasmanian_libfortran03
             EXPORT "${Tasmanian_export_name}"
             RUNTIME DESTINATION "bin"
             LIBRARY DESTINATION "lib"
             ARCHIVE DESTINATION "lib")
+
+    if (Tasmanian_ENABLE_MPI)
+        file(READ "${Tasmanian_GENERATE_DIR}/tasmanian_mpi_swig.f90" Tasmanian_generated_f90)
+        string(REPLACE "module tasmanian_mpi_swig" "module tasmanian_mpi" Tasmanian_generated_f90 ${Tasmanian_generated_f90})
+        string(REPLACE "use tasmanian_swig" "use tasmanian" Tasmanian_generated_f90 ${Tasmanian_generated_f90})
+
+        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/regenerated/tasmanian_mpi.f90" "${Tasmanian_generated_f90}")
+
+        add_library(Tasmanian_libfortranmpi03  "${CMAKE_CURRENT_BINARY_DIR}/regenerated/tasmanian_mpi.f90"
+                                               "${Tasmanian_GENERATE_DIR}/tasmanian_mpi_swigFORTRAN_wrap.cxx")
+
+        Tasmanian_set_fortran_props(TARGET Tasmanian_libfortranmpi03 OUTPUT_NAME "tasmanianfortranmpi")
+        target_link_libraries(Tasmanian_libfortranmpi03  Tasmanian_libfortran03)
+    endif()
 
 endmacro()
 
@@ -112,6 +124,10 @@ Tasmanian_set_fortran_linker(TARGET Tasmanian_fortran_swig_tester)
 if (Tasmanian_ENABLE_SWIG)
     # generate the interface
     tasmanian_add_swig_module(tasmanian_swig)
+    if (Tasmanian_ENABLE_MPI)
+        tasmanian_add_swig_module(tasmanian_mpi_swig)
+        target_link_libraries(tasmanian_mpi_swig  tasmanian_swig)
+    endif()
 endif()
 
 Tasmanian_macro_add_libdfortran03()
