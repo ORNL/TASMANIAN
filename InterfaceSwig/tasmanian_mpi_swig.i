@@ -48,4 +48,29 @@
 // Support std::string
 %include <std_string.i>
 
+%include "mpi.i"
+
 %import tasmanian_swig.i
+
+%ignore std::basic_streambuf<char, std::char_traits<char>>;
+%ignore TasGrid::VectorToStreamBuffer;
+%ignore getMPIRank(MPI_Comm comm);
+
+#define Tasmanian_ENABLE_MPI
+%{
+#include <tsgMPIScatterGrid.hpp>
+%}
+
+%include "tsgMPIScatterGrid.hpp"
+
+%rename(tsgMPIGridSend) TasGrid::MPIGridSend<true>;
+%template(tsgMPIGridSendBin) TasGrid::MPIGridSend<true>;
+
+%rename(tsgMPIGridRecv) TasGrid::MPIGridRecv<true>;
+%template(tsgMPIGridRecvBin) TasGrid::MPIGridRecv<true>;
+
+%rename(tsgMPIGridBcast) TasGrid::MPIGridBcast<true>;
+%template(tsgMPIGridBcastBin) TasGrid::MPIGridBcast<true>;
+
+%rename(tsgMPIGridScatterOutputs) TasGrid::MPIGridScatterOutputs<true>;
+%template(tsgMPIGridScatterOutputsBin) TasGrid::MPIGridScatterOutputs<true>;

@@ -213,6 +213,20 @@ SWIGEXPORT void SWIG_store_exception(const char* decl, int errcode, const char *
 
 
 
+
+enum SwigMemFlags {
+    SWIG_MEM_OWN = 0x01,
+    SWIG_MEM_RVALUE = 0x02,
+};
+
+
+#define SWIG_check_nonnull(PTR, TYPENAME, FNAME, FUNCNAME, RETURNNULL) \
+  if (!(PTR)) { \
+    SWIG_exception_impl(FUNCNAME, SWIG_NullReferenceError, \
+                        "Cannot pass null " TYPENAME " (class " FNAME ") " \
+                        "as a reference", RETURNNULL); \
+  }
+
 #define SWIGPOLICY_TasGrid_TasmanianSparseGrid swig::ASSIGNMENT_DEFAULT
 
 #include <stdexcept>
@@ -240,6 +254,103 @@ SWIGEXPORT void SWIG_store_exception(const char* decl, int errcode, const char *
 
 #include <string>
 
+
+#include <mpi.h>
+
+
+#include <tsgMPIScatterGrid.hpp>
+
+
+struct SwigClassWrapper {
+    void* cptr;
+    int cmemflags;
+};
+
+
+SWIGINTERN SwigClassWrapper SwigClassWrapper_uninitialized() {
+    SwigClassWrapper result;
+    result.cptr = NULL;
+    result.cmemflags = 0;
+    return result;
+}
+
 extern "C" {
+SWIGEXPORT int _wrap_tsgMPIGridSend(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4) {
+  int fresult ;
+  TasGrid::TasmanianSparseGrid *arg1 = 0 ;
+  int arg2 ;
+  int arg3 ;
+  MPI_Comm arg4 ;
+  int result;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const &", "TasmanianSparseGrid", "TasGrid::MPIGridSend< true >(TasGrid::TasmanianSparseGrid const &,int,int,MPI_Comm)", return 0);
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (int)(*farg2);
+  arg3 = (int)(*farg3);
+  arg4 = MPI_Comm_f2c((MPI_Fint)*farg4);
+  result = (int)TasGrid::SWIGTEMPLATEDISAMBIGUATOR MPIGridSend< true >((TasGrid::TasmanianSparseGrid const &)*arg1,arg2,arg3,arg4);
+  fresult = (int)(result);
+  return fresult;
+}
+
+
+SWIGEXPORT int _wrap_tsgMPIGridRecv__SWIG_1(SwigClassWrapper *farg1, int const *farg2, int const *farg3, int const *farg4) {
+  int fresult ;
+  TasGrid::TasmanianSparseGrid *arg1 = 0 ;
+  int arg2 ;
+  int arg3 ;
+  MPI_Comm arg4 ;
+  int result;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid &", "TasmanianSparseGrid", "TasGrid::MPIGridRecv< true >(TasGrid::TasmanianSparseGrid &,int,int,MPI_Comm)", return 0);
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (int)(*farg2);
+  arg3 = (int)(*farg3);
+  arg4 = MPI_Comm_f2c((MPI_Fint)*farg4);
+  result = (int)TasGrid::SWIGTEMPLATEDISAMBIGUATOR MPIGridRecv< true >(*arg1,arg2,arg3,arg4);
+  fresult = (int)(result);
+  return fresult;
+}
+
+
+SWIGEXPORT int _wrap_tsgMPIGridBcast(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
+  int fresult ;
+  TasGrid::TasmanianSparseGrid *arg1 = 0 ;
+  int arg2 ;
+  MPI_Comm arg3 ;
+  int result;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid &", "TasmanianSparseGrid", "TasGrid::MPIGridBcast< true >(TasGrid::TasmanianSparseGrid &,int,MPI_Comm)", return 0);
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (int)(*farg2);
+  arg3 = MPI_Comm_f2c((MPI_Fint)*farg3);
+  result = (int)TasGrid::SWIGTEMPLATEDISAMBIGUATOR MPIGridBcast< true >(*arg1,arg2,arg3);
+  fresult = (int)(result);
+  return fresult;
+}
+
+
+SWIGEXPORT int _wrap_tsgMPIGridScatterOutputs(SwigClassWrapper *farg1, SwigClassWrapper *farg2, int const *farg3, int const *farg4, int const *farg5) {
+  int fresult ;
+  TasGrid::TasmanianSparseGrid *arg1 = 0 ;
+  TasGrid::TasmanianSparseGrid *arg2 = 0 ;
+  int arg3 ;
+  int arg4 ;
+  MPI_Comm arg5 ;
+  int result;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const &", "TasmanianSparseGrid", "TasGrid::MPIGridScatterOutputs< true >(TasGrid::TasmanianSparseGrid const &,TasGrid::TasmanianSparseGrid &,int,int,MPI_Comm)", return 0);
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  SWIG_check_nonnull(farg2->cptr, "TasGrid::TasmanianSparseGrid &", "TasmanianSparseGrid", "TasGrid::MPIGridScatterOutputs< true >(TasGrid::TasmanianSparseGrid const &,TasGrid::TasmanianSparseGrid &,int,int,MPI_Comm)", return 0);
+  arg2 = (TasGrid::TasmanianSparseGrid *)farg2->cptr;
+  arg3 = (int)(*farg3);
+  arg4 = (int)(*farg4);
+  arg5 = MPI_Comm_f2c((MPI_Fint)*farg5);
+  result = (int)TasGrid::SWIGTEMPLATEDISAMBIGUATOR MPIGridScatterOutputs< true >((TasGrid::TasmanianSparseGrid const &)*arg1,*arg2,arg3,arg4,arg5);
+  fresult = (int)(result);
+  return fresult;
+}
+
+
 } // extern
 
