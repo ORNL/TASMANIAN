@@ -28,18 +28,95 @@
 ! IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 !==================================================================================================================================================================================
 program MPITESTER
-  use Tasmanian
-  use Tasmanian_mpi
-  use mpi
-  implicit none
-
-integer :: mpi_ierr, me
+    use Tasmanian
+    use Tasmanian_mpi
+    use mpi
+    use, intrinsic :: iso_c_binding
+    implicit none
 
 type(TasmanianSparseGrid) :: grid, reference_grid
 
-call MPI_Init(ierr)
+integer :: mpi_ierr, me
 
 
-call MPI_Finalize(ierr)
+call MPI_Init(mpi_ierr)
+
+call MPI_Comm_rank(MPI_COMM_WORLD, me, mpi_ierr)
+
+if (ierr /= MPI_SUCCESS) then
+  write(*,*) "ERROR: failed to initialize MPI"
+  stop 1
+endif
+
+reference_grid = TasmanianSequenceGrid(3, 1, 3, tsg_type_level, tsg_rule_rleja)
+grid = TasmanianSparseGrid()
+
+if (me == 0) then
+    mpi_ierr = tsgMPIGridSend(reference_grid, 1, 11, MPI_COMM_WORLD)
+endif
+if (me == 1) then
+    mpi_ierr = tsgMPIGridRecv(grid, 0, 11, MPI_COMM_WORLD)
+    if (grid%getNumPoints() /= reference_grid%getNumPoints() .or. &
+        grid%getNumDimensions() /= reference_grid%getNumDimensions()) then
+        write(*,*) "ERROR: failed to receive the grid"
+        stop 1
+    endif
+endif
+
+if (mpi_ierr /= MPI_SUCCESS) then
+    write(*,*) "ERROR: failed at send/recv stage with mpi code: ", mpi_ierr
+    error stop
+endif
+
+call grid%release()
+
+call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
+
+if (me == 0) then
+    write(*,*) ""
+    write(*,*) " Tasmanian Fortran 2003 MPI Tests:"
+    write(*,*) ""
+    write(*,*) "    MPI Send/Recv         PASS"
+endif
+
+!
+! Testing tsgMPIGridBcast()
+!
+
+! make a silly grid to overwrite later
+grid = TasmanianSequenceGrid(2, 1, 0, tsg_type_level, tsg_rule_rleja)
+
+if (me == 2) then
+    mpi_ierr = tsgMPIGridBcast(reference_grid, 2, MPI_COMM_WORLD)
+    call grid%copyGrid(reference_grid)
+endif
+if (me /= 2) then
+    mpi_ierr = tsgMPIGridBcast(grid, 2, MPI_COMM_WORLD)
+endif
+
+if (grid%getNumPoints() /= reference_grid%getNumPoints() .or. &
+    grid%getNumDimensions() /= reference_grid%getNumDimensions()) then
+    write(*,*) "ERROR: failed to broadcast the grid"
+    error stop
+endif
+
+if (mpi_ierr /= MPI_SUCCESS) then
+    write(*,*) "ERROR: failed at broadcast stage with mpi code: ", mpi_ierr
+    error stop
+endif
+
+if (me == 0) then
+    write(*,*) "    MPI Bcast             PASS"
+endif
+
+! Cleanup
+call grid%release()
+call reference_grid%release()
+
+if (me == 0) then
+    write(*,*) ""
+endif
+
+call MPI_Finalize(mpi_ierr)
 
 end program MPITESTER
