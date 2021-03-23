@@ -102,6 +102,15 @@ macro(Tasmanian_macro_add_libdfortran03)
 
         Tasmanian_set_fortran_props(TARGET Tasmanian_libfortranmpi03 OUTPUT_NAME "tasmanianfortranmpi")
         target_link_libraries(Tasmanian_libfortranmpi03  Tasmanian_libfortran03)
+
+        install(TARGETS Tasmanian_libfortranmpi03
+                EXPORT "${Tasmanian_export_name}"
+                RUNTIME DESTINATION "bin"
+                LIBRARY DESTINATION "lib"
+                ARCHIVE DESTINATION "lib")
+        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/tasmanian_mpi.mod"
+                DESTINATION include
+                PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
     endif()
 
 endmacro()
