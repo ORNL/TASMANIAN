@@ -141,12 +141,8 @@ add_test(NAME PythonAddons       COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT
 add_test(NAME PythonDream        COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testDream)
 set_tests_properties(PythonIO PROPERTIES RUN_SERIAL ON) # IO and Refine read/write to potentially the same files
 set_tests_properties(PythonRefine PROPERTIES RUN_SERIAL ON)
-if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
-    set_tests_properties(PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc PythonAddons PythonDream
-        PROPERTIES
-        PROCESSORS ${Tasmanian_TESTS_OMP_NUM_THREADS}
-        ENVIRONMENT OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS})
-endif()
+Tasmanian_set_test_properties(TESTS PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc PythonAddons PythonDream)
+
 
 ########################################################################
 # Windows system paths

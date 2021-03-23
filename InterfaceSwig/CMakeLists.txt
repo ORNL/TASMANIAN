@@ -144,12 +144,7 @@ Tasmanian_macro_add_libdfortran03()
 target_link_libraries(Tasmanian_fortran_swig_tester  Tasmanian_libfortran03)
 
 add_test(Fortran2003 forswigtester)
-if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
-    set_tests_properties(Fortran2003
-        PROPERTIES
-        PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
-        ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
-endif()
+Tasmanian_set_test_properties(TESTS Fortran2003)
 
 if (Tasmanian_ENABLE_MPI)
     add_executable(Tasmanian_fortran_mpiswig_tester ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/mpitester.f90
@@ -161,12 +156,7 @@ if (Tasmanian_ENABLE_MPI)
 
     add_test(MPIFortran2003 ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS} ${CMAKE_CURRENT_BINARY_DIR}/mpiforswigtester ${MPIEXEC_POSTFLAGS})
     set_tests_properties(MPIFortran2003 PROPERTIES RUN_SERIAL ON)
-    if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
-    set_tests_properties(MPIFortran2003
-            PROPERTIES
-            PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
-            ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
-    endif()
+    Tasmanian_set_test_properties(TESTS MPIFortran2003)
 endif()
 
 ########################################################################

@@ -43,7 +43,7 @@ if (Tasmanian_ENABLE_MPI)
     target_link_libraries(Tasmanian_mpif90     Tasmanian_libfortran90)
     add_test(MPIFortranGridIO ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 3 ${MPIEXEC_PREFLAGS} ${CMAKE_CURRENT_BINARY_DIR}/mpitester ${MPIEXEC_POSTFLAGS})
     set_tests_properties(MPIFortranGridIO PROPERTIES RUN_SERIAL ON)
-    list(APPEND Tasmanian_fortranmpi_test "MPIFortranGridIO")
+    Tasmanian_set_test_properties(TESTS MPIFortranGridIO)
 endif()
 
 
@@ -51,13 +51,7 @@ endif()
 # Testing
 ########################################################################
 add_test(Fortran90 fortester)
-if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
-    set_tests_properties(Fortran90 ${Tasmanian_fortranmpi_test}
-        PROPERTIES
-        PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
-        ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
-endif()
-unset(Tasmanian_fortranmpi_test)
+Tasmanian_set_test_properties(TESTS Fortran90)
 
 
 ########################################################################

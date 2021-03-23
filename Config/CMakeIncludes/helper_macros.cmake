@@ -172,3 +172,20 @@ macro(Tasmanian_compiler_type)
     unset(Tasmanian_ccheck_TYPE)
     unset(Tasmanian_ccheck_COMPILER)
 endmacro()
+
+# usage: Tasmanian_set_test_properties(TESTS Test1 Test2 Test3)
+# sets common properties for the Tasmanian tests, e.g., the OMP_NUM_THREADS variable
+macro(Tasmanian_set_test_properties)
+    cmake_parse_arguments(Tasmanian_tprops "" "" "TESTS" ${ARGN})
+
+    message(STATUS "Tasmanian_TESTS_OMP_NUM_THREADS = ${Tasmanian_TESTS_OMP_NUM_THREADS}")
+    if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
+        message(STATUS "Tasmanian_tprops_TESTS = ${Tasmanian_tprops_TESTS}")
+        set_tests_properties(${Tasmanian_tprops_TESTS}
+                             PROPERTIES
+                             PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
+                             ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
+    endif()
+
+    unset(Tasmanian_tprops_TESTS)
+endmacro()
