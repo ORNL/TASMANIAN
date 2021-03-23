@@ -67,12 +67,7 @@ unset(_tsg_exec)
 # cheap models have huge random variation in time-per-sample which can cause tests to fail
 # make sure other tests are not holding resources and making things even worse
 set_tests_properties(${Tasmanian_addons_tests} PROPERTIES RUN_SERIAL ON)
-if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
-    set_tests_properties(${Tasmanian_addons_tests}
-        PROPERTIES
-        PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
-        ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
-endif()
+Tasmanian_set_test_properties(TESTS ${Tasmanian_addons_tests})
 
 # Windows specific support (DLL export/import directives and names)
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")

@@ -47,12 +47,7 @@ target_link_libraries(Tasmanian_dreamtest  Tasmanian_libdream)
 ########################################################################
 add_test(DreamAnalytic dreamtest analytic)
 add_test(DreamModel dreamtest posterior)
-if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
-    set_tests_properties(DreamAnalytic DreamModel
-        PROPERTIES
-        PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
-        ENVIRONMENT "OMP_NUM_THREADS=${Tasmanian_TESTS_OMP_NUM_THREADS}")
-endif()
+Tasmanian_set_test_properties(TESTS DreamAnalytic DreamModel)
 
 
 ########################################################################
