@@ -23,6 +23,9 @@ if (Tasmanian_ENABLE_FORTRAN)
     add_library(Tasmanian::Fortran INTERFACE IMPORTED GLOBAL)
     target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortran90)
     target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortran03)
+    if (Tasmanian_ENABLE_MPI)
+        target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortranmpi03)
+    endif()
 endif()
 
 # add executable that has the sole purpose of testing the master target
