@@ -178,9 +178,7 @@ endmacro()
 macro(Tasmanian_set_test_properties)
     cmake_parse_arguments(Tasmanian_tprops "" "" "TESTS" ${ARGN})
 
-    message(STATUS "Tasmanian_TESTS_OMP_NUM_THREADS = ${Tasmanian_TESTS_OMP_NUM_THREADS}")
     if (Tasmanian_TESTS_OMP_NUM_THREADS GREATER 0)
-        message(STATUS "Tasmanian_tprops_TESTS = ${Tasmanian_tprops_TESTS}")
         set_tests_properties(${Tasmanian_tprops_TESTS}
                              PROPERTIES
                              PROCESSORS "${Tasmanian_TESTS_OMP_NUM_THREADS}"
