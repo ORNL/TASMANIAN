@@ -44,11 +44,13 @@
 
 namespace TasGrid{
 
+template<typename T, typename C> struct tsg_transformed_to_canonical_kernel{};
+
 template<typename T, typename C> // transformed and canonical types
 void tasgpu_transformed_to_canonical(sycl::queue *q, int dims, int num_x, int size_a, const C *gpu_trans_a, const C *gpu_trans_b, const T *gpu_x_transformed, T *gpu_x_canonical){
 
     q->submit([&](sycl::handler& h) {
-        h.parallel_for<class tsg_transformed_to_canonical_kernel>(sycl::range<1>{static_cast<size_t>(dims * num_x), }, [=](sycl::id<1> threadId){
+        h.parallel_for<tsg_transformed_to_canonical_kernel<T, C>>(sycl::range<1>{static_cast<size_t>(dims * num_x), }, [=](sycl::id<1> threadId){
 	    int i = threadId[0] % size_a;
 	    gpu_x_canonical[threadId[0]] = static_cast<T>(gpu_x_transformed[threadId[0]] * gpu_trans_a[i] - gpu_trans_b[i]);
         });
@@ -57,12 +59,14 @@ void tasgpu_transformed_to_canonical(sycl::queue *q, int dims, int num_x, int si
 
 }
 
+template<typename T> struct tsg_m11_to_01_kernel{};
+
 // convert (-1, 1) to (0, 1)
 template<typename T>
 void tasgpu_m11_to_01(sycl::queue *q, int num_points, T *gpu_x){
 
     q->submit([&](sycl::handler& h) {
-        h.parallel_for<class tsg_m11_to_01_kernel>(sycl::range<1>{static_cast<size_t>(num_points), }, [=](sycl::id<1> threadId){
+        h.parallel_for<tsg_m11_to_01_kernel<T>>(sycl::range<1>{static_cast<size_t>(num_points), }, [=](sycl::id<1> threadId){
             size_t i = threadId[0];
             gpu_x[i] = ( gpu_x[i] + 1.0 ) / 2.0;
         });
@@ -71,12 +75,13 @@ void tasgpu_m11_to_01(sycl::queue *q, int num_points, T *gpu_x){
 
 }
 
+template <typename T> struct tsg_seq_build_cache_kernel{};
 
 template <typename T>
 void tasgpu_dseq_build_cache(sycl::queue *q, int dims, int num_x, const T *gpuX, const T *nodes, const T *coeffs, const int *offsets, const int *num_nodes, T *result){
 
     q->submit([&](sycl::handler& h) {
-        h.parallel_for<class tsg_seq_build_cache_kernel>(sycl::range<1>{static_cast<size_t>(num_x), }, [=](sycl::id<1> threadId){
+        h.parallel_for<tsg_seq_build_cache_kernel<T>>(sycl::range<1>{static_cast<size_t>(num_x), }, [=](sycl::id<1> threadId){
             int i = threadId[0];
             for(int d=0; d<dims; d++){
                 int offset = offsets[d] + i;
@@ -96,11 +101,13 @@ void tasgpu_dseq_build_cache(sycl::queue *q, int dims, int num_x, const T *gpuX,
     q->wait();
 }
 
+template <typename T> struct tsg_seq_eval_sharedpoints_kernel{};
+
 template <typename T>
 void tasgpu_dseq_eval_sharedpoints(sycl::queue *q, int dims, int num_x, int num_points, const int *points, const int *offsets, const T *cache, T *result){
 
     q->submit([&](sycl::handler& h) {
-        h.parallel_for<class tsg_seq_eval_sharedpoints_kernel>(sycl::range<2>{static_cast<size_t>(num_points), static_cast<size_t>(num_x)}, [=](sycl::id<2> threadId){
+        h.parallel_for<tsg_seq_eval_sharedpoints_kernel<T>>(sycl::range<2>{static_cast<size_t>(num_points), static_cast<size_t>(num_x)}, [=](sycl::id<2> threadId){
             int id_p = threadId[0];
             int id_x = threadId[1];
 
@@ -206,11 +213,13 @@ inline T tasgpu_devalpwpoly_feval(const double x, const double node, const doubl
     }
     return v;
 }
+template<typename T, int order, int rule> struct tasgpu_devalpwpoly_kernel{};
+
 template <typename T, int order, TypeOneDRule rule> // rule: localp0, localp, semilocalp
 void tasgpu_devalpwpoly(sycl::queue *q, int dims, int num_x, int num_points, const T *gpu_x, const T *gpu_nodes, const T *gpu_support, T *gpu_y){
 
     q->submit([&](sycl::handler& h) {
-        h.parallel_for<class tasgpu_devalpwpoly_kernel>(sycl::range<2>{static_cast<size_t>(num_points), static_cast<size_t>(num_x)}, [=](sycl::id<2> threadId){
+        h.parallel_for<tasgpu_devalpwpoly_kernel<T, order, rule>>(sycl::range<2>{static_cast<size_t>(num_points), static_cast<size_t>(num_x)}, [=](sycl::id<2> threadId){
 
             int id_p = threadId[0];
             int id_x = threadId[1];
@@ -244,13 +253,16 @@ inline T tasgpu_devalpwpoly_support_pwc_multid(int dims, int i, int ip, const T 
     }
     return p;
 }
+
+template <typename T, int TOPLEVEL, int order, int rule, bool fill> struct tasgpu_devalpwpoly_sparse_kernel{};
+
 template <typename T, int TOPLEVEL, int order, TypeOneDRule rule, bool fill>
 void tasgpu_devalpwpoly_sparse(sycl::queue *q, int dims, int num_x, const T *x, const T *nodes, const T *support,
                                const int *hpntr, const int *hindx, int num_roots, const int *roots,
                                int *spntr, int *sindx, T *svals){
 
     q->submit([&](sycl::handler& h) {
-        h.parallel_for<class tasgpu_devalpwpoly_sparse_kernel>(sycl::range<1>{static_cast<size_t>(num_x),}, [=](sycl::id<1> threadId){
+        h.parallel_for<tasgpu_devalpwpoly_sparse_kernel<T, TOPLEVEL, order, rule, fill>>(sycl::range<1>{static_cast<size_t>(num_x),}, [=](sycl::id<1> threadId){
             int mcount[TOPLEVEL];
             int mstop[TOPLEVEL];
 
@@ -318,11 +330,13 @@ void tasgpu_devalpwpoly_sparse(sycl::queue *q, int dims, int num_x, const T *x, 
     q->wait();
 }
 
+template <typename T> struct tasgpu_dfor_build_cache_kernel{};
+
 template <typename T>
 void tasgpu_dfor_build_cache(sycl::queue *q, int dims, int num_x, const T *gpuX, const int *offsets, const int *num_nodes, T *result){
 
     q->submit([&](sycl::handler& h) {
-        h.parallel_for<class tasgpu_dfor_build_cache_kernel>(sycl::range<1>{static_cast<size_t>(num_x),}, [=](sycl::id<1> threadId){
+        h.parallel_for<tasgpu_dfor_build_cache_kernel<T>>(sycl::range<1>{static_cast<size_t>(num_x),}, [=](sycl::id<1> threadId){
             int i = threadId[0];
             for(int d=0; d<dims; d++){
                 int offset = offsets[d] + i;
@@ -357,11 +371,14 @@ void tasgpu_dfor_build_cache(sycl::queue *q, int dims, int num_x, const T *gpuX,
     });
     q->wait();
 }
+
+template <typename T, bool interlace> struct tasgpu_dfor_eval_sharedpoints_kernel{};
+
 template <typename T, bool interlace>
 void tasgpu_dfor_eval_sharedpoints(sycl::queue *q, int dims, int num_x, int num_points, const int *points, const int *offsets, const T *cache, T *wreal, T *wimag){
 
     q->submit([&](sycl::handler& h) {
-        h.parallel_for<class tasgpu_dfor_eval_sharedpoints_kernel>(sycl::range<2>{static_cast<size_t>(num_points), static_cast<size_t>(num_x)}, [=](sycl::id<2> threadId){
+        h.parallel_for<tasgpu_dfor_eval_sharedpoints_kernel<T, interlace>>(sycl::range<2>{static_cast<size_t>(num_points), static_cast<size_t>(num_x)}, [=](sycl::id<2> threadId){
             int id_p = threadId[0];
             int id_x = threadId[1];
 
@@ -388,6 +405,8 @@ void tasgpu_dfor_eval_sharedpoints(sycl::queue *q, int dims, int num_x, int num_
     q->wait();
 }
 
+template<typename T, bool nested, bool is_cc0> struct tsg_glo_build_cache_kernel{};
+
 template<typename T, bool nested, bool is_cc0>
 void tasgpu_dglo_build_cache(sycl::queue *q,
                              int num_dims, int num_x, int cache_lda, T const *gpu_x, T const *nodes, T const *coeff,
@@ -395,7 +414,7 @@ void tasgpu_dglo_build_cache(sycl::queue *q,
                              int const *map_dimension, int const *map_level, T *cache){
 
     q->submit([&](sycl::handler& h) {
-        h.parallel_for<class tsg_glo_build_cache_kernel>(sycl::range<2>{static_cast<size_t>(cache_lda), static_cast<size_t>(num_x)}, [=](sycl::id<2> threadID){
+        h.parallel_for<tsg_glo_build_cache_kernel<T, nested, is_cc0>>(sycl::range<2>{static_cast<size_t>(cache_lda), static_cast<size_t>(num_x)}, [=](sycl::id<2> threadID){
             int blkid = threadID[0];
             int idx   = threadID[1];
 
@@ -429,15 +448,19 @@ void tasgpu_dglo_build_cache(sycl::queue *q,
     q->wait();
 }
 
+template <typename T> struct tsg_glo_eval_zero_kernel{};
+
 template <typename T>
 void tasgpu_dglo_eval_zero(sycl::queue *q, size_t size, T *result){
     q->submit([&](sycl::handler& h) {
-        h.parallel_for<class tsg_glo_eval_zero_kernel>(sycl::range<1>{size,}, [=](sycl::id<1> i){
+        h.parallel_for<tsg_glo_eval_zero_kernel<T>>(sycl::range<1>{size,}, [=](sycl::id<1> i){
             result[i[0]] = static_cast<T>(0.0);
         });
     });
     q->wait();
 }
+
+template <typename T> struct tsg_glo_eval_sharedpoints_kernel{};
 
 template <typename T>
 void tasgpu_dglo_eval_sharedpoints(sycl::queue *q,
@@ -448,7 +471,7 @@ void tasgpu_dglo_eval_sharedpoints(sycl::queue *q,
                                    int const *map_tensor, int const *map_index, int const *map_reference, T *result){
 
     q->submit([&](sycl::handler& h){
-        h.parallel_for<class tsg_glo_eval_sharedpoints_kernel>(sycl::range<1>{static_cast<size_t>(1),}, [=](sycl::id<1>){
+        h.parallel_for<tsg_glo_eval_sharedpoints_kernel<T>>(sycl::range<1>{static_cast<size_t>(1),}, [=](sycl::id<1>){
             // this can be called in parallel_for over both bklid and idx (using loop_lda and num_x)
             // running this in parallel requires the atomicAdd()
             for(int blkid = 0; blkid < loop_lda; blkid++){

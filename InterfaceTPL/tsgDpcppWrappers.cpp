@@ -141,10 +141,12 @@ template void AccelerationMeta::delGpuArray<int>(AccelerationContext const*, int
 
 namespace TasGpu{
 
+template<typename scalar_type> struct tsg_transpose{};
+
 template<typename scalar_type>
 void transpose_matrix(sycl::queue *q, int m, int n, scalar_type const A[], scalar_type AT[]){
     q->submit([&](sycl::handler& h){
-            h.parallel_for<class tsg_transpose>(sycl::range<2>{static_cast<size_t>(m), static_cast<size_t>(n)}, [=](sycl::id<2> i){
+            h.parallel_for<tsg_transpose<scalar_type>>(sycl::range<2>{static_cast<size_t>(m), static_cast<size_t>(n)}, [=](sycl::id<2> i){
                 AT[i[0] * n + i[1]] = A[i[0] + m * i[1]];
             });
         });
