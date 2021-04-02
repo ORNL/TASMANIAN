@@ -83,6 +83,7 @@ macro(Tasmanian_macro_add_libdfortran03)
                                         "${Tasmanian_GENERATE_DIR}/tasmanian_swigFORTRAN_wrap.cxx")
 
     Tasmanian_set_fortran_props(TARGET Tasmanian_libfortran03 OUTPUT_NAME "tasmanianfortran")
+    Tasmanian_rpath_target(TARGET Tasmanian_libfortran03)
 
     install(TARGETS Tasmanian_libfortran03
             EXPORT "${Tasmanian_export_name}"
@@ -101,6 +102,7 @@ macro(Tasmanian_macro_add_libdfortran03)
                                                "${Tasmanian_GENERATE_DIR}/tasmanian_mpi_swigFORTRAN_wrap.cxx")
 
         Tasmanian_set_fortran_props(TARGET Tasmanian_libfortranmpi03 OUTPUT_NAME "tasmanianfortranmpi")
+        Tasmanian_rpath_target(TARGET Tasmanian_libfortranmpi03)
         target_link_libraries(Tasmanian_libfortranmpi03  Tasmanian_libfortran03)
 
         install(TARGETS Tasmanian_libfortranmpi03
@@ -145,11 +147,13 @@ target_link_libraries(Tasmanian_fortran_swig_tester  Tasmanian_libfortran03)
 
 add_test(Fortran2003 forswigtester)
 Tasmanian_set_test_properties(TESTS Fortran2003)
+Tasmanian_rpath_target(TARGET Tasmanian_fortran_swig_tester USE_CURRENT COMPONENTS SparseGrids DREAM)
 
 if (Tasmanian_ENABLE_MPI)
     add_executable(Tasmanian_fortran_mpiswig_tester ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/mpitester.f90
                                                     )
     set_target_properties(Tasmanian_fortran_mpiswig_tester PROPERTIES OUTPUT_NAME "mpiforswigtester")
+    Tasmanian_rpath_target(TARGET Tasmanian_fortran_mpiswig_tester USE_CURRENT COMPONENTS SparseGrids DREAM)
     Tasmanian_set_fortran_linker(TARGET Tasmanian_fortran_mpiswig_tester)
 
     target_link_libraries(Tasmanian_fortran_mpiswig_tester  Tasmanian_libfortranmpi03)
