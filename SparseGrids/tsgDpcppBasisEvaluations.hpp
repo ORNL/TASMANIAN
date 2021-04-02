@@ -388,7 +388,7 @@ void tasgpu_dfor_eval_sharedpoints(sycl::queue *q, int dims, int num_x, int num_
     q->wait();
 }
 
-template<typename T, int NUM_THREADS, bool nested, bool is_cc0>
+template<typename T, bool nested, bool is_cc0>
 void tasgpu_dglo_build_cache(sycl::queue *q,
                              int num_dims, int num_x, int cache_lda, T const *gpu_x, T const *nodes, T const *coeff,
                              int const *nodes_per_level, int const *offset_per_level, int const *dim_offsets,
@@ -439,7 +439,7 @@ void tasgpu_dglo_eval_zero(sycl::queue *q, size_t size, T *result){
     q->wait();
 }
 
-template <typename T, int NUM_THREADS>
+template <typename T>
 void tasgpu_dglo_eval_sharedpoints(sycl::queue *q,
                                    int num_dims, int num_x, int loop_lda, int result_lda, T const *cache,
                                    T const *tweights,
@@ -465,7 +465,7 @@ void tasgpu_dglo_eval_sharedpoints(sycl::queue *q,
                         index /= active_num_points[toff + j];
                     }
 
-                    //atomicAdd(&result[idx * result_lda + ref], tweights[tensor] * w);
+                    //sycl::atomic_fetch_add<T, sycl::access::address_space::global_space>(result[idx * result_lda + ref], tweights[tensor] * w);
                     result[idx * result_lda + ref] += tweights[tensor] * w;
                 }
             }

@@ -253,18 +253,18 @@ void TasGpu::devalglo(AccelerationContext const *acc, bool is_nested, bool is_cl
 
     if (is_nested){
         if (is_clenshawcurtis0){
-            tasgpu_dglo_build_cache<T, _MAX_THREADS, true, true>
+            tasgpu_dglo_build_cache<T, true, true>
                 (q, dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
                                         nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
                                         map_dimension.data(), map_level.data(), cache.data());
         }else{
-            tasgpu_dglo_build_cache<T, _MAX_THREADS, true, false>
+            tasgpu_dglo_build_cache<T, true, false>
                 (q, dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
                                         nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
                                         map_dimension.data(), map_level.data(), cache.data());
         }
     }else{
-        tasgpu_dglo_build_cache<T, _MAX_THREADS, false, false>
+        tasgpu_dglo_build_cache<T, false, false>
             (q, dims, num_x, (int) map_dimension.size(), gpu_x, nodes.data(), coeff.data(),
                                     nodes_per_level.data(), offset_per_level.data(), dim_offsets.data(),
                                     map_dimension.data(), map_level.data(), cache.data());
@@ -272,7 +272,7 @@ void TasGpu::devalglo(AccelerationContext const *acc, bool is_nested, bool is_cl
 
     tasgpu_dglo_eval_zero<T>(q, Utils::size_mult(num_x, num_p), gpu_result);
 
-    tasgpu_dglo_eval_sharedpoints<T, _MAX_THREADS>
+    tasgpu_dglo_eval_sharedpoints<T>
         (q, dims, num_x, (int) map_tensor.size(), num_p, cache.data(),
         tensor_weights.data(), offset_per_level.data(), dim_offsets.data(), active_tensors.data(), active_num_points.data(),
         map_tensor.data(), map_index.data(), map_reference.data(), gpu_result);
