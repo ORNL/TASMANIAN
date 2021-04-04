@@ -104,6 +104,41 @@ subroutine approx_grid_pw(grid, grid_ref)
     deallocate(weights, weights_ref, points, points_ref)
 end subroutine
 
+! compare grid points and values
+subroutine approx_grid_pv(grid, grid_ref)
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid), intent(in) :: grid, grid_ref
+    real(C_DOUBLE), dimension(:,:), pointer :: vals, vals_ref
+    real(C_DOUBLE), dimension(:,:), pointer :: points, points_ref
+    integer :: nump
+
+    nump = grid%getNumPoints()
+    if (nump /= grid_ref%getNumPoints()) then
+        write(*,*) "wrong number of points: ", nump, grid_ref%getNumPoints()
+        error stop
+    endif
+    if (grid%getNumOutputs() /= grid_ref%getNumOutputs()) then
+        write(*,*) "wrong number of points: ", nump, grid_ref%getNumPoints()
+        error stop
+    endif
+
+    points => grid%returnPoints()
+    points_ref => grid_ref%returnPoints()
+
+    allocate(vals(grid%getNumOutputs(), nump))
+    allocate(vals_ref(grid%getNumOutputs(), nump))
+
+    call grid%evaluateBatch(points(:,1), nump, vals(:,1))
+    call grid_ref%evaluateBatch(points_ref(:,1), nump, vals_ref(:,1))
+
+    call approx2d(grid_ref%getNumDimensions(), grid_ref%getNumPoints(), points, points_ref)
+    call approx2d(grid_ref%getNumOutputs(), nump, vals, vals_ref)
+
+    deallocate(vals, vals_ref, points, points_ref)
+end subroutine
+
 ! print the points of the grid
 subroutine print_points(grid)
     use Tasmanian
