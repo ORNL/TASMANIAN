@@ -74,6 +74,10 @@ macro(Tasmanian_macro_add_libdfortran03)
     procedure :: returnLoadedPoints => tsgGetLoadedPoints
     procedure :: returnNeededPoints => tsgGetNeededPoints
     procedure :: returnQuadratureWeights => tsgGetQuadratureWeights
+
+    procedure :: returnHierarchicalCoefficients => tsgGetHierarchicalCoefficients
+    procedure :: returnComplexHierarchicalCoefficients => tsgGetComplexHierarchicalCoefficients
+    procedure :: setComplexHierarchicalCoefficients => tsgSetComplexHierarchicalCoefficients
     "
     Tasmanian_generated_f90 ${Tasmanian_generated_f90})
 
@@ -128,6 +132,7 @@ add_executable(Tasmanian_fortran_swig_tester ${CMAKE_CURRENT_SOURCE_DIR}/Fortran
                                              ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/test_evaluate.f90
                                              ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/test_update_grid.f90
                                              ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/test_refinement.f90
+                                             ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/test_hierarchy.f90
                                              )
 set_target_properties(Tasmanian_fortran_swig_tester PROPERTIES OUTPUT_NAME "forswigtester")
 Tasmanian_set_fortran_linker(TARGET Tasmanian_fortran_swig_tester)
@@ -151,6 +156,7 @@ Tasmanian_rpath_target(TARGET Tasmanian_fortran_swig_tester USE_CURRENT COMPONEN
 
 if (Tasmanian_ENABLE_MPI)
     add_executable(Tasmanian_fortran_mpiswig_tester ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/mpitester.f90
+                                                    ${CMAKE_CURRENT_SOURCE_DIR}/FortranTests/test_common.f90
                                                     )
     set_target_properties(Tasmanian_fortran_mpiswig_tester PROPERTIES OUTPUT_NAME "mpiforswigtester")
     Tasmanian_rpath_target(TARGET Tasmanian_fortran_mpiswig_tester USE_CURRENT COMPONENTS SparseGrids DREAM)

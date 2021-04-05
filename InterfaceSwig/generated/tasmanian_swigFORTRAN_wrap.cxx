@@ -1796,6 +1796,17 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_finishConstruction(SwigClassWrapper *f
 }
 
 
+SWIGEXPORT void _wrap_TasmanianSparseGrid_getHierarchicalCoefficientsStatic(SwigClassWrapper *farg1, double *farg2) {
+  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  double *arg2 = (double *) 0 ;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::getHierarchicalCoefficientsStatic(double *) const", return );
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (double *)(farg2);
+  ((TasGrid::TasmanianSparseGrid const *)arg1)->getHierarchicalCoefficientsStatic(arg2);
+}
+
+
 SWIGEXPORT void _wrap_TasmanianSparseGrid_setHierarchicalCoefficients__SWIG_1(SwigClassWrapper *farg1, double *farg2) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double *arg2 ;

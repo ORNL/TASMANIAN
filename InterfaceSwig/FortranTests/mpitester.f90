@@ -34,11 +34,12 @@ program MPITESTER
     use, intrinsic :: iso_c_binding
     implicit none
 
-type(TasmanianSparseGrid) :: grid, reference_grid
+    real(C_DOUBLE), dimension(:,:), pointer :: points, values
+    integer :: mpi_ierr, me, i
 
-integer :: mpi_ierr, me
+    type(TasmanianSparseGrid) :: grid, scattered_grid, reference_grid
 
-
+! ======= begin code ======= !
 call MPI_Init(mpi_ierr)
 
 call MPI_Comm_rank(MPI_COMM_WORLD, me, mpi_ierr)
@@ -109,11 +110,74 @@ if (me == 0) then
     write(*,*) "    MPI Bcast             PASS"
 endif
 
-! Cleanup
+call MPI_Barrier(MPI_COMM_WORLD, mpi_ierr)
+
+! Cleanup before scatter
 call grid%release()
 call reference_grid%release()
 
+! scatter_grid is the destination, grid is the source
+scattered_grid = TasmanianSparseGrid()
+
+if (me == 1) then
+! make the source grid
+    grid = TasmanianLocalPolynomialGrid(3, 2, 4, 1, tsg_rule_localp)
+    points => grid%returnPoints()
+    allocate(values(2, grid%getNumPoints()))
+    do i = 1, grid%getNumPoints()
+        values(1, i) = exp(points(1,i) + points(2, i))
+        values(2, i) = exp(points(2,i) - points(3, i))
+    enddo
+    call grid%loadNeededPoints(values(:, 1))
+    deallocate(points, values)
+else
+    grid = TasmanianSparseGrid() ! non-null grid is needed outside of root
+endif
+
+reference_grid = TasmanianLocalPolynomialGrid(3, 1, 4, 1, tsg_rule_localp)
 if (me == 0) then
+! rank 0 gets the first output
+    points => reference_grid%returnPoints()
+    allocate(values(1, reference_grid%getNumPoints()))
+    do i = 1, reference_grid%getNumPoints()
+        values(1, i) = exp(points(1,i) + points(2, i))
+    enddo
+    call reference_grid%loadNeededPoints(values(:, 1))
+    deallocate(points, values)
+elseif (me == 1) then
+! rank 1 gets the second output
+    points => reference_grid%returnPoints()
+    allocate(values(1, reference_grid%getNumPoints()))
+    do i = 1, reference_grid%getNumPoints()
+        values(1, i) = exp(points(2,i) - points(3, i))
+    enddo
+    call reference_grid%loadNeededPoints(values(:, 1))
+    deallocate(points, values)
+endif
+! rank 2 gets and empty grid
+
+mpi_ierr = tsgMPIGridScatterOutputs(grid, scattered_grid, 1, 47, MPI_COMM_WORLD)
+if (mpi_ierr /= 0) then
+    write(*,*) "ERROR: calling tsgMPIGridScatterOutputs() with code: ", mpi_ierr
+    error stop
+endif
+
+if (me == 2) then
+    if (.not. scattered_grid%isEmpty()) then
+        write(*,*) "rank 2 grid is not empty()"
+        error stop
+    endif
+else
+    call approx_grid_pv(scattered_grid, reference_grid)
+endif
+
+! clean up the grids
+call reference_grid%release()
+call scattered_grid%release()
+call grid%release()
+
+if (me == 0) then
+    write(*,*) "    MPI Scatter Outputs   PASS"
     write(*,*) ""
 endif
 

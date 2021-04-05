@@ -1370,6 +1370,17 @@ public:
      *      use setHierarchicalCoefficients() instead.
      */
     const double* getHierarchicalCoefficients() const;
+
+    /*!
+     * \internal
+     * \brief Copies the coefficients to the pre-allocated array, intended for internal use.
+     * \endinternal
+     */
+    void getHierarchicalCoefficientsStatic(double *coeff) const{
+        std::copy(getHierarchicalCoefficients(), getHierarchicalCoefficients()
+                  + ((isFourier()) ? 2 : 1) * getNumOutputs() * getNumLoaded(), coeff);
+    }
+
     /*!
      * \brief Overwrites the current set of coefficients (and loaded values) with the ones provided.
      *
