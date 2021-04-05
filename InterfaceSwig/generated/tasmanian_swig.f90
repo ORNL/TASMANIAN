@@ -252,6 +252,7 @@ module tasmanian_swig
   procedure :: isUsingConstruction => swigf_TasmanianSparseGrid_isUsingConstruction
   procedure, private :: swigf_TasmanianSparseGrid_loadConstructedPoints__SWIG_1
   procedure :: finishConstruction => swigf_TasmanianSparseGrid_finishConstruction
+  procedure :: getHierarchicalCoefficientsStatic => swigf_TasmanianSparseGrid_getHierarchicalCoefficientsStatic
   procedure, private :: swigf_TasmanianSparseGrid_setHierarchicalCoefficients__SWIG_1
   procedure, private :: swigf_TasmanianSparseGrid_evaluateHierarchicalFunctions__SWIG_2
   procedure, private :: swigf_TasmanianSparseGrid_integrateHierarchicalFu1JSVB3__SWIG_2
@@ -1226,6 +1227,14 @@ import :: swigclasswrapper
 type(SwigClassWrapper), intent(in) :: farg1
 end subroutine
 
+subroutine swigc_TasmanianSparseGrid_getHierarchicalCoefficientsStatic(farg1, farg2) &
+bind(C, name="_wrap_TasmanianSparseGrid_getHierarchicalCoefficientsStatic")
+use, intrinsic :: ISO_C_BINDING
+import :: swigclasswrapper
+type(SwigClassWrapper), intent(in) :: farg1
+type(C_PTR), value :: farg2
+end subroutine
+
 subroutine swigc_TasmanianSparseGrid_setHierarchicalCoefficients__SWIG_1(farg1, farg2) &
 bind(C, name="_wrap_TasmanianSparseGrid_setHierarchicalCoefficients__SWIG_1")
 use, intrinsic :: ISO_C_BINDING
@@ -1676,6 +1685,64 @@ function tsgGetQuadratureWeights(grid) result(fresult)
     allocate(fresult(grid%getNumPoints()))
     call grid%getQuadratureWeights(fresult)
 end function
+
+function tsgGetHierarchicalCoefficients(grid) result(fresult)
+    use, intrinsic :: ISO_C_BINDING
+    class(TasmanianSparseGrid), intent(in) :: grid
+    real(C_DOUBLE), dimension(:, :), pointer :: fresult
+
+    if (grid%isFourier()) then
+        write(*,*) "making large coeffs"
+        allocate(fresult(grid%getNumOutputs(), 2 * grid%getNumLoaded()))
+    else
+        allocate(fresult(grid%getNumOutputs(), grid%getNumLoaded()))
+    endif
+
+    call grid%getHierarchicalCoefficientsStatic(fresult(:,1))
+end function
+
+function tsgGetComplexHierarchicalCoefficients(grid) result(fresult)
+    use, intrinsic :: ISO_C_BINDING
+    class(TasmanianSparseGrid), intent(in) :: grid
+    real(C_DOUBLE), dimension(:, :), pointer :: real_coeff
+    complex(C_DOUBLE), dimension(:, :), pointer :: fresult
+    integer :: i, j, numo, numl
+
+    real_coeff => tsgGetHierarchicalCoefficients(grid)
+    numl = grid%getNumLoaded()
+    numo = grid%getNumOutputs()
+
+    allocate(fresult(numo, numl))
+    do i = 1, numl
+        do j = 1, numo
+            fresult(j,i) = cmplx(real_coeff(j,i), real_coeff(j,i + numl), 16)
+        enddo
+    enddo
+
+    deallocate(real_coeff)
+end function
+
+subroutine tsgSetComplexHierarchicalCoefficients(grid, coeffs)
+    use, intrinsic :: ISO_C_BINDING
+    class(TasmanianSparseGrid), intent(inout) :: grid
+    complex(C_DOUBLE), dimension(:, :) :: coeffs
+    real(C_DOUBLE), dimension(:, :), pointer :: real_coeff
+    integer :: i, j, numo, numl
+
+    numl = grid%getNumPoints()
+    numo = grid%getNumOutputs()
+
+    allocate(real_coeff(numo, 2*numl))
+    do i = 1, numl
+        do j = 1, numo
+            real_coeff(j,i) = real(coeffs(j,i), 8)
+            real_coeff(j,i + numl) = aimag(coeffs(j,i))
+        enddo
+    enddo
+    call grid%setHierarchicalCoefficients(real_coeff(:,1))
+
+    deallocate(real_coeff)
+end subroutine
 
 
 function swigf_new_TasmanianSparseGrid__SWIG_0() &
@@ -3208,6 +3275,18 @@ type(SwigClassWrapper) :: farg1
 
 farg1 = self%swigdata
 call swigc_TasmanianSparseGrid_finishConstruction(farg1)
+end subroutine
+
+subroutine swigf_TasmanianSparseGrid_getHierarchicalCoefficientsStatic(self, coeff)
+use, intrinsic :: ISO_C_BINDING
+class(TasmanianSparseGrid), intent(in) :: self
+real(C_DOUBLE), dimension(*), target :: coeff
+type(SwigClassWrapper) :: farg1 
+type(C_PTR) :: farg2 
+
+farg1 = self%swigdata
+farg2 = c_loc(coeff)
+call swigc_TasmanianSparseGrid_getHierarchicalCoefficientsStatic(farg1, farg2)
 end subroutine
 
 subroutine swigf_TasmanianSparseGrid_setHierarchicalCoefficients__SWIG_1(self, c)

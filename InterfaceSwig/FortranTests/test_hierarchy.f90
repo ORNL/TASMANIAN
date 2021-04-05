@@ -27,42 +27,73 @@
 ! THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
 ! IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 !==================================================================================================================================================================================
-program FORSWIGTESTER
+
+subroutine test_set_get_rcoeff()
     use Tasmanian
+    use, intrinsic :: iso_c_binding
     implicit none
-    type(TasmanianSparseGrid) :: grid
-    integer :: i
+    type(TasmanianSparseGrid) :: gridA, gridB
+    real(C_DOUBLE), dimension(:,:), pointer :: points, vals, coeffs
+    integer :: i, nump
 
-write(*,*)
-write(*,'(a,i1,a,i1)') 'Testing Tasmanian Fortran 2003-SWIG interface: version ', &
-                       grid%getVersionMajor(), ".", grid%getVersionMinor()
-write(*,*)
+    gridA = TasmanianSequenceGrid(2, 1, 11, tsg_type_level, tsg_rule_rleja)
+    gridB = TasmanianSequenceGrid(2, 1, 11, tsg_type_level, tsg_rule_rleja)
 
-write(*,'(a,a)') '    module version: ', grid%getVersion()
-write(*,'(a,a)') '    license:        ', grid%getLicense()
-write(*,'(a,a)') '    git hash:       ', grid%getGitCommitHash()
-write(*,'(a,a)') '    cxx flags:      ', grid%getCmakeCxxFlags()
-write(*,'(a,l)') '    openmp enabled: ', grid%isOpenMPEnabled()
-write(*,'(a,l)') '    blas   enabled: ', grid%isAccelerationAvailable(tsg_accel_cpu_blas)
-write(*,'(a,l)') '    magma  enabled: ', grid%isAccelerationAvailable(tsg_accel_gpu_magma)
-write(*,'(a,l)') '    gpu    enabled: ', grid%isAccelerationAvailable(tsg_accel_gpu_cuda)
-
-if (grid%isAccelerationAvailable(tsg_accel_gpu_cuda)) then
-    do i = 1, grid%getNumGPUs()
-        write(*,"(a,i1,a,a20,a,i6,a)") "      device ", i-1, ": ", &
-            grid%getGPUName(i-1), " with ", grid%getGPUMemory(i-1),"MB of RAM"
+    points => gridA%returnPoints()
+    nump = gridA%getNumPoints()
+    allocate(vals(1, nump))
+    do i = 1, nump
+        vals(1,i) = exp(points(1,i)**2 - points(2,i))
     enddo
-endif
+    call gridA%loadNeededPoints(vals(:,1))
 
-write(*,*)
+    coeffs => gridA%returnHierarchicalCoefficients()
 
-call test_make_grid()
-call test_domain_transforms()
-call test_eval_surrogate()
-call test_update_grids()
-call test_refinement()
-call test_hierarchy_transforms()
+    call gridB%setHierarchicalCoefficients(coeffs(:,1))
+    call approx_grid_pv(gridA, gridB)
 
-write(*,*)
+    deallocate(points, vals, coeffs)
 
-end program FORSWIGTESTER
+    call gridA%release()
+    call gridB%release()
+end subroutine
+
+subroutine test_set_get_ccoeff()
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid) :: gridA, gridB
+    real(C_DOUBLE), dimension(:,:), pointer :: points, vals
+    complex(C_DOUBLE), dimension(:,:), pointer :: coeffs
+    integer :: i, j, nump
+
+    gridA = TasmanianFourierGrid(2, 2, 1, tsg_type_level)
+    gridB = TasmanianFourierGrid(2, 2, 1, tsg_type_level)
+
+    call tassert(gridA%isFourier())
+
+    points => gridA%returnPoints()
+    nump = gridA%getNumPoints()
+    allocate(vals(2, nump))
+    do i = 1, nump
+        vals(1,i) = points(1,i) ** 3 - points(1,i)
+        vals(2,i) = 0.25 * points(1,i) ** 4 - 0.5 * points(1,i) ** 2
+    enddo
+    call gridA%loadNeededPoints(vals(:,1))
+
+    coeffs => gridA%returnComplexHierarchicalCoefficients()
+
+    call gridB%setComplexHierarchicalCoefficients(coeffs)
+    call approx_grid_pv(gridA, gridB)
+
+    deallocate(points, vals, coeffs)
+
+    call gridA%release()
+    call gridB%release()
+end subroutine
+
+subroutine test_hierarchy_transforms()
+    call test_set_get_rcoeff()
+    call test_set_get_ccoeff()
+    write(*,*) "  Performing tests on hierarchy coefficients:      PASS"
+end subroutine
