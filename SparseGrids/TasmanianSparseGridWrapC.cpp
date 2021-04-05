@@ -417,11 +417,7 @@ const double* tsgGetHierarchicalCoefficients(void *grid){
     return ((TasmanianSparseGrid*) grid)->getHierarchicalCoefficients();
 }
 void tsgGetHierarchicalCoefficientsStatic(void *grid, double *coeff){
-    int num_points = ((TasmanianSparseGrid*) grid)->getNumPoints();
-    int num_outputs = ((TasmanianSparseGrid*) grid)->getNumOutputs();
-    if ((num_points == 0) || (num_outputs == 0)) return;
-    const double *surp = ((TasmanianSparseGrid*) grid)->getHierarchicalCoefficients();
-    std::copy(surp, surp + (((TasmanianSparseGrid*) grid)->isFourier() ? 2 : 1) * num_outputs * num_points, coeff);
+    ((TasmanianSparseGrid*) grid)->getHierarchicalCoefficientsStatic(coeff);
 }
 void tsgSetHierarchicalCoefficients(void *grid, const double *c){
     ((TasmanianSparseGrid*) grid)->setHierarchicalCoefficients(c);
