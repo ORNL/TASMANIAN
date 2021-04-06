@@ -39,6 +39,11 @@ namespace TasGrid {
 %ignore TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *, int, int);
 %ignore TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *, int);
 %ignore TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *);
+
+%ignore TasmanianSparseGrid::beginConstruction;
+%ignore TasmanianSparseGrid::isUsingConstruction;
+%ignore TasmanianSparseGrid::loadConstructedPoints;
+%ignore TasmanianSparseGrid::finishConstruction;
 }
 
 // Using custom factory methods to take advantage of the Fortran optional parameters

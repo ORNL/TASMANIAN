@@ -1750,52 +1750,6 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_mergeRefinement(SwigClassWrapper *farg
 }
 
 
-SWIGEXPORT void _wrap_TasmanianSparseGrid_beginConstruction(SwigClassWrapper *farg1) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::beginConstruction()", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  (arg1)->beginConstruction();
-}
-
-
-SWIGEXPORT int _wrap_TasmanianSparseGrid_isUsingConstruction(SwigClassWrapper *farg1) {
-  int fresult ;
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  bool result;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::isUsingConstruction() const", return 0);
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  result = (bool)((TasGrid::TasmanianSparseGrid const *)arg1)->isUsingConstruction();
-  fresult = (result ? 1 : 0);
-  return fresult;
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_loadConstructedPoints__SWIG_1(SwigClassWrapper *farg1, double *farg2, int const *farg3, double *farg4) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  double *arg2 ;
-  int arg3 ;
-  double *arg4 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::loadConstructedPoints(double const [],int,double const [])", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  arg2 = (double *)(farg2);
-  arg3 = (int)(*farg3);
-  arg4 = (double *)(farg4);
-  (arg1)->loadConstructedPoints((double const (*))arg2,arg3,(double const (*))arg4);
-}
-
-
-SWIGEXPORT void _wrap_TasmanianSparseGrid_finishConstruction(SwigClassWrapper *farg1) {
-  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
-  
-  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::finishConstruction()", return );
-  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
-  (arg1)->finishConstruction();
-}
-
-
 SWIGEXPORT void _wrap_TasmanianSparseGrid_getHierarchicalCoefficientsStatic(SwigClassWrapper *farg1, double *farg2) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   double *arg2 = (double *) 0 ;
