@@ -1,16 +1,16 @@
-Changelog for version 7.4 (development)
+Changelog for version 7.5
 --------------
 
 * added DPC++ backend using oneMKL
     * added both kernels and calls to BLAS/LAPACK methods
-    * missing the kernels for the global grids due to the atomics
-    * missing tests on an actual GPU due to lack of hardware
+    * the kernels for the global grids is missing atomics (currently very slow)
 * updated Rocm interface
     * using the Rocm OpenMP implementation in libiomp5.so and libomp.so
 * added github CI covering a MacOSX build and basic Ubuntu build
     * credit goes to Viktor Reshniak
 * extended the Fortrain 2003 methods
     * added functions, e.g., returnPoints() as members to TasmanianSparseGrid
+    * added MPI methods to the Fortain interface
 * updates to the GNU Make build system
     * removed Fortran from the GNU Make build system, use CMake
         * the added complexity to the SWIG build system is too much to maintain
