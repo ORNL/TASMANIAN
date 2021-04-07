@@ -8,7 +8,7 @@ The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN is 
 Visit us at: [https://tasmanian.ornl.gov/](https://tasmanian.ornl.gov/) and
 [https://github.com/ORNL/Tasmanian](https://github.com/ORNL/Tasmanian)
 
-[Documentation: v7.3 (latest stable)](https://ornl.github.io/TASMANIAN/stable/)
+[Documentation: v7.5 (latest stable)](https://ornl.github.io/TASMANIAN/stable/)
 
 [Documentation: development (rolling)](https://ornl.github.io/TASMANIAN/)
 
