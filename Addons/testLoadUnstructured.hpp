@@ -262,6 +262,9 @@ bool runTests(TypeAcceleration acc, bool verbose, int gpu_id){
  * \brief All tests for the loadUnstructuredDataL2() method for all acceleration modes.
  */
 bool testLoadUnstructuredL2(bool verbose, int gpu_id){
+    #ifdef Tasmanian_ENABLE_DPCPP
+    test_queue.init_testing();
+    #endif
     bool pass = true;
 
     bool blas_pass = (AccelerationMeta::isAvailable(accel_cpu_blas)) ? runTests(accel_cpu_blas, verbose, 0) : true;

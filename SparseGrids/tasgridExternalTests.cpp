@@ -1932,9 +1932,6 @@ bool ExternalTester::testGpuCaching() const{
 
     for(int gpu = gpu_id_first; gpu < gpu_id_last; gpu++){ // test each active CUDA device
         for(int t=0; t<5; t++){ // test each grid type
-            #ifdef Tasmanian_ENABLE_DPCPP
-            if (verbose) cout << "                     caching test: " << t + 1 << "/5" << "\n";
-            #endif
             TasmanianSparseGrid grid = [&]()->TasmanianSparseGrid{
                 switch(t){
                     default:
@@ -1993,9 +1990,6 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     int gpu_index_first = (gpuid == -1) ? 0 : gpuid;
     int gpu_end_gpus = (gpuid == -1) ? grid.getNumGPUs() : gpuid+1;
     for(int t=0; t<num_tests; t++){
-        #ifdef Tasmanian_ENABLE_DPCPP
-        if (verbose) cout << "                  gpu-to-gpu test: " << setw(2) << t + 1 << "/15" << "\n";
-        #endif
         grid.makeLocalPolynomialGrid(dims, 1, ((order[t] == 0) ? 4 : 7), order[t], pwp_rule[t]);
 
         grid.setDomainTransform(a, b);
@@ -2043,9 +2037,6 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 
     // Sequence, Global, Wavelet, Fourier Grid evaluations of the basis functions
     for(int t=0; t<6; t++){
-        #ifdef Tasmanian_ENABLE_DPCPP
-        if (verbose) cout << "                  gpu-to-gpu test: " << t + 10 << "/15" << "\n";
-        #endif
         int numx = 2020;
 
         auto reset_grid = [&]()->void{
@@ -2168,9 +2159,6 @@ bool ExternalTester::testAllAcceleration() const{
     // for order 0, regardless of the selected rule, thegrid should switch to localp
     TasGrid::TypeOneDRule pwp_rule[4] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb};
     for(int t=0; t<12; t++){
-        #ifdef Tasmanian_ENABLE_DPCPP
-        if (verbose) cout << "            local-polynomial test: " << setw(2) << t + 1 << "/12" << "\n";
-        #endif
         grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), ((t / 4 == 0) ? 5 : 6), (t / 4), pwp_rule[t % 4]);
         pass = pass && testAcceleration(f, grid);
     }
