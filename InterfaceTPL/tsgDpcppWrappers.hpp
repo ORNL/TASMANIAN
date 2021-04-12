@@ -56,6 +56,47 @@ namespace TasGrid{
 /*!
  * \internal
  * \ingroup TasmanianTPLWrappers
+ * \brief Return a new sycl::queue wrapped in a shared_ptr object.
+ *
+ * \endinternal
+ */
+inline std::shared_ptr<int> makeNewQueue(){
+    sycl::queue *qq = nullptr;
+    try{
+        sycl::gpu_selector g_selector;
+        qq = new sycl::queue(g_selector);
+    }catch(sycl::exception const&){
+        sycl::cpu_selector c_selector;
+        qq = new sycl::queue(c_selector);
+    }
+    return std::shared_ptr<int>(reinterpret_cast<int*>(qq),
+                                    [](int* q_int){
+                                        sycl::queue *q = reinterpret_cast<sycl::queue*>(q_int);
+                                        delete q;
+                                    }
+                                );
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianTPLWrappers
+ * \brief Return a new shared_ptr object that will not delete the void pointer.
+ *
+ * The Tasmanian DPC++ backend uses shared_ptr objects that wrap around instances of sycl::queue.
+ * Each GpuVector needs a queue to free the internal memory and thus it holds an alias to a shared_ptr holding the queue.
+ * The shared_ptr makes sure that the queue is not destroyed before all the data has been properly freed.
+ * However, Tasmanian has to also work with a user provided queue; thus, the user provided queue is also wrapped
+ * in a shared_ptr object, but the delete method is removed from the object.
+ * The user is responsible to ensure that the queue is not deleted before the last associated Tasmanian object.
+ * \endinternal
+ */
+inline std::shared_ptr<int> wrapNonOwnedQueue(void *qq){
+    return std::shared_ptr<int>(reinterpret_cast<int*>(qq), [](int*){});
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianTPLWrappers
  * \brief Returns the SYCL queue associated with the given AccelerationContext, creates a new queue if needed.
  *
  * If there is a current active sycl::queue the method will return a pointer to the queue,
@@ -66,27 +107,14 @@ namespace TasGrid{
  * \endinternal
  */
 inline sycl::queue* getSyclQueue(AccelerationContext const *acceleration){
-    if (acceleration->engine->sycl_gpu_queue == nullptr){
-        sycl::queue *qq = nullptr;
-        try{
-            sycl::gpu_selector g_selector;
-            qq = new sycl::queue(g_selector);
-        }catch(sycl::exception const&){
-            sycl::cpu_selector c_selector;
-            qq = new sycl::queue(c_selector);
+    if (not acceleration->engine->internal_queue){
+        if (test_queue.use_testing){
+            acceleration->engine->internal_queue = wrapNonOwnedQueue(test_queue);
+        }else{
+            acceleration->engine->internal_queue = makeNewQueue();
         }
-
-        acceleration->engine->internal_queue = std::shared_ptr<int>(
-            reinterpret_cast<int*>(qq),
-            [](int* q_int){
-                sycl::queue *q = reinterpret_cast<sycl::queue*>(q_int);
-                delete q;
-            }
-        );
-        acceleration->engine->sycl_gpu_queue = acceleration->engine->internal_queue.get();
-        acceleration->engine->own_gpu_queue = true;
     }
-    return reinterpret_cast<sycl::queue*>(acceleration->engine->sycl_gpu_queue);
+    return reinterpret_cast<sycl::queue*>(acceleration->engine->internal_queue.get());
 }
 
 }

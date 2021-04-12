@@ -44,6 +44,12 @@
 
 namespace TasGrid{
 
+void InternalSyclQueue::init_testing(){
+    use_testing = true;
+    test_queue = makeNewQueue();
+}
+InternalSyclQueue test_queue;
+
 template<typename T> void GpuVector<T>::resize(AccelerationContext const *acc, size_t count){
     if (count != num_entries){ // if the current array is not big enoug
         clear(); // resets dynamic_mode
@@ -100,8 +106,7 @@ template void GpuVector<std::int64_t>::unload(AccelerationContext const*, size_t
 GpuEngine::~GpuEngine(){}
 
 void GpuEngine::setSyclQueue(void *queue){
-    sycl_gpu_queue = queue;
-    own_gpu_queue = false;
+    internal_queue = wrapNonOwnedQueue(queue);
 }
 
 int AccelerationMeta::getNumGpuDevices(){
