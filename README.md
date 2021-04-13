@@ -1,5 +1,6 @@
 ![build](https://github.com/ORNL/TASMANIAN/workflows/build-ubuntu/badge.svg?branch=master)
 ![build](https://github.com/ORNL/TASMANIAN/workflows/build-macos/badge.svg?branch=master)
+![build](https://github.com/ORNL/TASMANIAN/workflows/build-windows/badge.svg?branch=master)
 
 # Tasmanian
 
