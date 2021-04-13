@@ -23,7 +23,7 @@ html, body {
 }
 
 #doc-content {
-        height: 100% - 56px;
+        height: calc(100% - 112px);
         background: #F5F5F5;
 }
 
@@ -47,10 +47,12 @@ div.contents {
 #side-nav {
         background: #F5F5F5;
         width: 21em;
+        height: calc(100% - 112px);
 }
 
 #nav-tree {
         background: #F5F5F5;
+        height: 100%;
 }
 
 
