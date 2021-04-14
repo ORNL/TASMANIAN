@@ -1,3 +1,7 @@
+Changelog for version 7.6 (development, future 7.7 or 8.0)
+--------------
+
+
 Changelog for version 7.5
 --------------
 
