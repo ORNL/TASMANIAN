@@ -160,8 +160,11 @@ endmacro()
 # checks whether the compiler called with "--version" returns a string that contains the TYPE
 # the result is written to the boolean variable
 macro(Tasmanian_compiler_type)
-    cmake_parse_arguments(Tasmanian_ccheck "" "COMPILER;TYPE;RESULT" "" ${ARGN})
-    execute_process(COMMAND ${Tasmanian_ccheck_COMPILER} --version OUTPUT_VARIABLE ${Tasmanian_ccheck_RESULT})
+    cmake_parse_arguments(Tasmanian_ccheck "" "COMPILER;TYPE;RESULT;SWITCH" "" ${ARGN})
+    if (NOT Tasmanian_ccheck_SWITCH)
+        set(Tasmanian_ccheck_SWITCH "--version")
+    endif()
+    execute_process(COMMAND ${Tasmanian_ccheck_COMPILER} ${Tasmanian_ccheck_SWITCH} OUTPUT_VARIABLE ${Tasmanian_ccheck_RESULT})
     string(FIND "${${Tasmanian_ccheck_RESULT}}" "${Tasmanian_ccheck_TYPE}" ${Tasmanian_ccheck_RESULT})
     if (NOT ${${Tasmanian_ccheck_RESULT}} LESS 0)
         set(${Tasmanian_ccheck_RESULT} ON)

@@ -44,6 +44,12 @@
 
 namespace TasGrid{
 
+void InternalSyclQueue::init_testing(){
+    use_testing = true;
+    test_queue = makeNewQueue();
+}
+InternalSyclQueue test_queue;
+
 template<typename T> void GpuVector<T>::resize(AccelerationContext const *acc, size_t count){
     if (count != num_entries){ // if the current array is not big enoug
         clear(); // resets dynamic_mode
@@ -51,7 +57,6 @@ template<typename T> void GpuVector<T>::resize(AccelerationContext const *acc, s
         sycl::queue *q = getSyclQueue(acc);
         sycl_queue = acc->engine->internal_queue;
         gpu_data = sycl::malloc_device<T>(num_entries, *q);
-        q->wait();
     }
 }
 template<typename T> void GpuVector<T>::clear(){
@@ -59,20 +64,18 @@ template<typename T> void GpuVector<T>::clear(){
     if (gpu_data != nullptr){
         sycl::queue *q = reinterpret_cast<sycl::queue*>(sycl_queue.get());
         sycl::free(gpu_data, *q);
-        q->wait();
+        q->wait(); // wait is needed here in case the pointer q gets deleted
     }
     gpu_data = nullptr;
 }
 template<typename T> void GpuVector<T>::load(AccelerationContext const *acc, size_t count, const T* cpu_data){
     resize(acc, count);
     sycl::queue *q = getSyclQueue(acc);
-    q->memcpy(gpu_data, cpu_data, count * sizeof(T));
-    q->wait();
+    q->memcpy(gpu_data, cpu_data, count * sizeof(T)).wait();
 }
 template<typename T> void GpuVector<T>::unload(AccelerationContext const *acc, size_t num, T* cpu_data) const{
     sycl::queue *q = getSyclQueue(acc);
-    q->memcpy(cpu_data, gpu_data, num * sizeof(T));
-    q->wait();
+    q->memcpy(cpu_data, gpu_data, num * sizeof(T)).wait();
 }
 
 template void GpuVector<double>::resize(AccelerationContext const*, size_t);
@@ -103,8 +106,7 @@ template void GpuVector<std::int64_t>::unload(AccelerationContext const*, size_t
 GpuEngine::~GpuEngine(){}
 
 void GpuEngine::setSyclQueue(void *queue){
-    sycl_gpu_queue = queue;
-    own_gpu_queue = false;
+    internal_queue = wrapNonOwnedQueue(queue);
 }
 
 int AccelerationMeta::getNumGpuDevices(){
@@ -122,13 +124,12 @@ std::string AccelerationMeta::getGpuDeviceName(int){ // int deviceID
 template<typename T> void AccelerationMeta::recvGpuArray(AccelerationContext const *acc, size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data){
     sycl::queue *q = getSyclQueue(acc);
     cpu_data.resize(num_entries);
-    q->memcpy(cpu_data.data(), gpu_data, num_entries * sizeof(T));
-    q->wait();
+    q->memcpy(cpu_data.data(), gpu_data, num_entries * sizeof(T)).wait();
 }
 template<typename T> void AccelerationMeta::delGpuArray(AccelerationContext const *acc, T *x){
     sycl::queue *q = getSyclQueue(acc);
     sycl::free(x, *q);
-    q->wait();
+    q->wait(); // wait is needed here in case the pointer q gets deleted
 }
 
 template void AccelerationMeta::recvGpuArray<double>(AccelerationContext const*, size_t num_entries, const double*, std::vector<double>&);
@@ -149,8 +150,7 @@ void transpose_matrix(sycl::queue *q, int m, int n, scalar_type const A[], scala
             h.parallel_for<tsg_transpose<scalar_type>>(sycl::range<2>{static_cast<size_t>(m), static_cast<size_t>(n)}, [=](sycl::id<2> i){
                 AT[i[0] * n + i[1]] = A[i[0] + m * i[1]];
             });
-        });
-    q->wait();
+        }).wait();
 }
 
 //! \brief Wrapper around rocsolver_dgetrf().
@@ -334,8 +334,7 @@ template void sparseMultiply<double>(AccelerationContext const*, int, int, int, 
 
 template<typename T> void load_n(AccelerationContext const *acc, T const *cpu_data, size_t num_entries, T *gpu_data){
     sycl::queue *q = getSyclQueue(acc);
-    q->memcpy(gpu_data, cpu_data, num_entries * sizeof(T));
-    q->wait();
+    q->memcpy(gpu_data, cpu_data, num_entries * sizeof(T)).wait();
 }
 
 template void load_n<int>(AccelerationContext const*, int const*, size_t, int*);

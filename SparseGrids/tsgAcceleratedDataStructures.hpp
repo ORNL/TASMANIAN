@@ -244,9 +244,6 @@ struct GpuEngine{
                 : rocblasHandle(nullptr), own_rocblas_handle(false),
                   rocsparseHandle(nullptr), own_rocsparse_handle(false)
     #endif
-    #ifdef Tasmanian_ENABLE_DPCPP
-                : sycl_gpu_queue(nullptr), own_gpu_queue(false)
-    #endif
     #ifdef Tasmanian_ENABLE_MAGMA
                   , called_magma_init(false)
     #endif
@@ -277,14 +274,7 @@ struct GpuEngine{
         own_rocsparse_handle(Utils::exchange(other.own_rocsparse_handle, false))
         {}
     #else
-    #ifdef Tasmanian_ENABLE_DPCPP
-    GpuEngine(GpuEngine &&other) :
-        sycl_gpu_queue(Utils::exchange(other.sycl_gpu_queue, nullptr)),
-        own_gpu_queue(Utils::exchange(other.own_gpu_queue, false))
-        {}
-    #else
     GpuEngine(GpuEngine &&) = default;
-    #endif
     #endif
     #endif
 
@@ -321,8 +311,7 @@ struct GpuEngine{
     #ifdef Tasmanian_ENABLE_DPCPP
     GpuEngine& operator= (GpuEngine &&other){
         GpuEngine temp(std::move(other));
-        std::swap(sycl_gpu_queue, other.sycl_gpu_queue);
-        std::swap(own_gpu_queue, other.own_gpu_queue);
+        std::swap(internal_queue, temp.internal_queue);
         #ifdef Tasmanian_ENABLE_MAGMA
         std::swap(called_magma_init, temp.called_magma_init);
         #endif
@@ -370,10 +359,6 @@ struct GpuEngine{
     #ifdef Tasmanian_ENABLE_DPCPP
     //! \brief Set a user provided sycl::queue.
     void setSyclQueue(void *queue);
-    //! \brief Owns the sycl::queue instance for the acceleration.
-    void *sycl_gpu_queue;
-    //! \brief Remember the ownership of the queue.
-    bool own_gpu_queue;
     //! \brief Holds the actual queue.
     std::shared_ptr<int> internal_queue;
     #endif
@@ -773,8 +758,23 @@ struct AccelerationContext{
         #endif
     }
 
+    //! \brief Returns the ChangeType if enable() is called, but does not change the acceleration.
+    ChangeType testEnable(TypeAcceleration acc, int new_gpu_id) const{
+        TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
+        if (AccelerationMeta::isAccTypeGPU(effective_acc) and ((new_gpu_id < 0 or new_gpu_id >= AccelerationMeta::getNumGpuDevices())))
+            throw std::runtime_error("Invalid GPU device ID, see ./tasgrid -v for list of detected devices.");
+        ChangeType mode_change = (effective_acc == mode) ? change_none : change_cpu_blas;
+        ChangeType device_change = (device == new_gpu_id) ? change_none : change_gpu_device;
+
+        if (on_gpu()){
+            return (AccelerationMeta::isAccTypeGPU(effective_acc)) ? device_change : change_gpu_device;
+        }else{
+            return (AccelerationMeta::isAccTypeGPU(effective_acc)) ? change_gpu_enabled : mode_change;
+        }
+    }
+
     //! \brief Accepts parameters directly from TasmanianSparseGrid::enableAcceleration()
-    ChangeType enable(TypeAcceleration acc, int new_gpu_id){
+    void enable(TypeAcceleration acc, int new_gpu_id){
         // get the effective new acceleration mode (use the fallback if acc is not enabled)
         TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
         // if switching to a GPU mode, check if the device id is valid
@@ -782,25 +782,14 @@ struct AccelerationContext{
             throw std::runtime_error("Invalid GPU device ID, see ./tasgrid -v for list of detected devices.");
 
         // assign the new values for the mode and device, but remember the current gpu state and check whether something changed
-        bool was_on_gpu = on_gpu();
-        ChangeType mode_change = (effective_acc == Utils::exchange(mode, effective_acc)) ? change_none : change_cpu_blas;
-        ChangeType device_change = (new_gpu_id == Utils::exchange(device, new_gpu_id)) ? change_none : change_gpu_device;
+        mode = effective_acc;
+        device = new_gpu_id;
 
         if (AccelerationMeta::isAccTypeGPU(mode)){
             // if the new mode is GPU-based, reset the engine and the handles (if already created)
             engine = Utils::make_unique<GpuEngine>();
         }else{
             engine.reset();
-        }
-
-        if (was_on_gpu){
-            // switching from gpu to gpu issues a change if the device is different
-            // switching from gpu to non-gpu acts as if the device has changed
-            return (on_gpu()) ? device_change : change_gpu_device;
-        }else{
-            // switching from non-gpu to gpu triggers gpu-enabled switch
-            // switching from non-gpu to non-gpu triggers blas change if the modes were different
-            return (on_gpu()) ? change_gpu_enabled : mode_change;
         }
     }
     //! \brief Set default device.
@@ -828,6 +817,42 @@ struct AccelerationContext{
     }
     #endif
 };
+
+#ifdef Tasmanian_ENABLE_DPCPP
+/*!
+ * \internal
+ * \ingroup TasmanianAcceleration
+ * \brief Class holding the sycl queue used for internal testing.
+ *
+ * Testing uses multiple Tasmanian objects created and destroyed a lot of those.
+ * Creating lots of sycl queues causes the jit system to keep recompiling the same kernels,
+ * testing goes better when using a single queue.
+ * The queue is created internally and reused for all tests, if InternalSyclQueue::init_testing()
+ * has not been called, then regular internal queue would be used (separate for each object).
+ * Note that in all cases, the user can provide their own sycl queue.
+ * \endinternal
+ */
+struct InternalSyclQueue{
+    //! \brief Default constructor, assume we are not in a testing mode.
+    InternalSyclQueue() : use_testing(false){}
+    //! \brief Initialize the testing, in which case the internal queue would be used in place of a new queue.
+    void init_testing();
+    //! \brief Auto-converts to void-pointer.
+    operator void* (){ return reinterpret_cast<void*>(test_queue.get()); }
+    //! \brief Indicates whether this is a testing run.
+    bool use_testing;
+    //! \brief Holds the internal sycl::queue for testing.
+    std::shared_ptr<int> test_queue;
+};
+/*!
+ * \internal
+ * \ingroup TasmanianAcceleration
+ * \brief Holds an internal queue for testing purposes.
+ *
+ * \endinternal
+ */
+extern InternalSyclQueue test_queue;
+#endif
 
 }
 

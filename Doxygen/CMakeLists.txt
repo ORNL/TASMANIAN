@@ -32,7 +32,7 @@ if (NOT DOXYGEN_INTERNAL_DOCS)
 # have to exclude the classes manually
     set(DOXYGEN_EXCLUDE_SYMBOLS TasGrid::Data2D TasGrid::MultiIndexSet TasGrid::StorageSet TasGrid::CustomTabulated TasGrid::OneDimensionalWrapper
         TasGrid::TasSparse::WaveletBasisMatrix TasGrid::GpuEngine TasGrid::GpuVector TasGrid::AccelerationDomainTransform
-        TasGrid::AccelerationContext TasGrid::TableGaussPatterson
+        TasGrid::AccelerationContext TasGrid::TableGaussPatterson TasGrid::InternalSyclQueue
         TasBLAS TasGrid::TasmanianDenseSolver TasGrid::TasmanianTridiagonalSolver TasGrid::Utils
         TasGrid::NodeData TasGrid::TensorData TasGrid::CacheLagrange TasGrid::MultiIndexManipulations::ProperWeights
         TasGrid::HierarchyManipulations::SplitDirections

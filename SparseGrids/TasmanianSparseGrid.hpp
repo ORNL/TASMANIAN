@@ -2001,11 +2001,11 @@ private:
     std::vector<int> conformal_asin_power;
     std::vector<int> llimits;
 
-    std::unique_ptr<AccelerationContext> acceleration;
-
     bool using_dynamic_construction;
 
     mutable std::unique_ptr<AccelerationDomainTransform> acc_domain;
+
+    std::unique_ptr<AccelerationContext> acceleration; // must come last for sycl
 };
 
 /*!

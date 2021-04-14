@@ -6,12 +6,13 @@
 #
 
 Tasmanian_compiler_type(COMPILER ${CMAKE_CXX_COMPILER} TYPE "DPC++" RESULT Tasmanian_dpcpp_compiler)
+Tasmanian_compiler_type(COMPILER ${CMAKE_CXX_COMPILER} SWITCH "--help" TYPE "sycl" RESULT Tasmanian_sycl_compiler)
 
 get_filename_component(Tasmanian_dpcpproot ${CMAKE_CXX_COMPILER} DIRECTORY)  # convert <path>/bin/dpcpp to <path>/bin
 get_filename_component(Tasmanian_dpcpproot ${Tasmanian_dpcpproot} DIRECTORY)  # convert <path>/bin to <path>
 
-if (NOT Tasmanian_dpcpp_compiler)
-    message(FATAL_ERROR "Tasmanian_ENABLE_DPCPP requires that the CMAKE_CXX_COMPILER is set to the Intel dpcpp compiler.")
+if (NOT Tasmanian_dpcpp_compiler AND NOT Tasmanian_sycl_compiler)
+    message(FATAL_ERROR "Tasmanian_ENABLE_DPCPP requires that the CMAKE_CXX_COMPILER is set to the Intel dpcpp compiler or a compatible sycl compiler.")
 endif()
 
 set(Tasmanian_MKL_SYCL_ROOT "${MKL_SYCL_ROOT}" CACHE PATH "The root folder for the Intel OneAPI framework installation")
