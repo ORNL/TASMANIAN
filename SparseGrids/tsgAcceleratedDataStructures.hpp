@@ -758,8 +758,23 @@ struct AccelerationContext{
         #endif
     }
 
+    //! \brief Returns the ChangeType if enable() is called, but does not change the acceleration.
+    ChangeType testEnable(TypeAcceleration acc, int new_gpu_id) const{
+        TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
+        if (AccelerationMeta::isAccTypeGPU(effective_acc) and ((new_gpu_id < 0 or new_gpu_id >= AccelerationMeta::getNumGpuDevices())))
+            throw std::runtime_error("Invalid GPU device ID, see ./tasgrid -v for list of detected devices.");
+        ChangeType mode_change = (effective_acc == mode) ? change_none : change_cpu_blas;
+        ChangeType device_change = (device == new_gpu_id) ? change_none : change_gpu_device;
+
+        if (on_gpu()){
+            return (AccelerationMeta::isAccTypeGPU(effective_acc)) ? device_change : change_gpu_device;
+        }else{
+            return (AccelerationMeta::isAccTypeGPU(effective_acc)) ? change_gpu_enabled : mode_change;
+        }
+    }
+
     //! \brief Accepts parameters directly from TasmanianSparseGrid::enableAcceleration()
-    ChangeType enable(TypeAcceleration acc, int new_gpu_id){
+    void enable(TypeAcceleration acc, int new_gpu_id){
         // get the effective new acceleration mode (use the fallback if acc is not enabled)
         TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
         // if switching to a GPU mode, check if the device id is valid
@@ -767,25 +782,14 @@ struct AccelerationContext{
             throw std::runtime_error("Invalid GPU device ID, see ./tasgrid -v for list of detected devices.");
 
         // assign the new values for the mode and device, but remember the current gpu state and check whether something changed
-        bool was_on_gpu = on_gpu();
-        ChangeType mode_change = (effective_acc == Utils::exchange(mode, effective_acc)) ? change_none : change_cpu_blas;
-        ChangeType device_change = (new_gpu_id == Utils::exchange(device, new_gpu_id)) ? change_none : change_gpu_device;
+        mode = effective_acc;
+        device = new_gpu_id;
 
         if (AccelerationMeta::isAccTypeGPU(mode)){
             // if the new mode is GPU-based, reset the engine and the handles (if already created)
             engine = Utils::make_unique<GpuEngine>();
         }else{
             engine.reset();
-        }
-
-        if (was_on_gpu){
-            // switching from gpu to gpu issues a change if the device is different
-            // switching from gpu to non-gpu acts as if the device has changed
-            return (on_gpu()) ? device_change : change_gpu_device;
-        }else{
-            // switching from non-gpu to gpu triggers gpu-enabled switch
-            // switching from non-gpu to non-gpu triggers blas change if the modes were different
-            return (on_gpu()) ? change_gpu_enabled : mode_change;
         }
     }
     //! \brief Set default device.
