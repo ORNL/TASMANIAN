@@ -346,6 +346,10 @@ struct GpuEngine{
     #endif
 
     #ifdef Tasmanian_ENABLE_HIP
+    //! \brief Set the rocBlas handle, handle must be a valid rocblas_handle associated with this ROCm device.
+    void setRocBlasHandle(void *handle);
+    //! \brief Set the rocSparse handle, handle must be a valid rocsparse_handle associated with this ROCm device.
+    void setRocSparseHandle(void *handle);
     //! \brief Alias the rocBlas handle.
     void *rocblasHandle;
     //! \brief Remember the ownership of the handle.
@@ -817,7 +821,21 @@ struct AccelerationContext{
     }
     #endif
 
+    #ifdef Tasmanian_ENABLE_HIP
+    //! \brief Manually sets the rocBlas handle, handle must be a valid rocblas_handle associated with this HIP device.
+    void setRocBlasHandle(void *handle) const{
+        if (not engine) throw std::runtime_error("Cannot set a handle without first selecting a gpu acceleration mode.");
+        engine->setRocBlasHandle(handle);
+    }
+    //! \brief Manually sets the rocSparse handle, handle must be a valid rocsparse_handle associated with this HIP device.
+    void setRocSparseHandle(void *handle) const{
+        if (not engine) throw std::runtime_error("Cannot set a handle without first selecting a gpu acceleration mode.");
+        engine->setRocSparseHandle(handle);
+    }
+    #endif
+
     #ifdef Tasmanian_ENABLE_DPCPP
+    //! \brief Manually set the sycl::queue, should be done before making calls to accelerated methods.
     void setSyclQueue(void *queue) const{
         if (not engine) std::runtime_error("Cannot set a handle without first selecting a gpu acceleration mode.");
         engine->setSyclQueue(queue);

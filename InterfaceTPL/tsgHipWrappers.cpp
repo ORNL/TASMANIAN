@@ -100,6 +100,18 @@ GpuEngine::~GpuEngine(){
         own_rocsparse_handle = false;
     }
 }
+void GpuEngine::setRocBlasHandle(void *handle){
+    if (own_rocblas_handle && rocblasHandle != nullptr)
+        rocblas_destroy_handle(reinterpret_cast<rocblas_handle>(rocblasHandle));
+    rocblasHandle = handle;
+    own_rocblas_handle = false;
+}
+void GpuEngine::setRocSparseHandle(void *handle){
+    if (own_rocsparse_handle && rocsparseHandle != nullptr)
+        rocsparse_destroy_handle(reinterpret_cast<rocsparse_handle>(rocblasHandle));
+    rocblasHandle = handle;
+    own_rocsparse_handle = false;
+}
 
 int AccelerationMeta::getNumGpuDevices(){
     int gpu_count = 0;

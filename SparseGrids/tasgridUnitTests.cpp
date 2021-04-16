@@ -35,6 +35,14 @@
 #include "tasgridExternalTests.hpp"
 #include "tasgridTestHelpers.hpp"
 
+#ifdef Tasmanian_ENABLE_HIP
+#ifndef __HIP_PLATFORM_HCC__
+#define __HIP_PLATFORM_HCC__
+#endif
+#include <hip/hip_runtime.h>
+#include <rocblas.h>
+#endif
+
 #ifdef Tasmanian_ENABLE_DPCPP
 #include <CL/sycl.hpp>
 #endif
@@ -284,7 +292,7 @@ bool GridUnitTester::testAPIconsistency(){
         cout << "ERROR: the hierarchical coefficients of empty should be null." << endl; pass = false;
     }
 
-    #if defined(Tasmanian_ENABLE_CUDA) || defined(Tasmanian_ENABLE_DPCPP)
+    #ifdef Tasmanian_ENABLE_GPU
     grid = makeGlobalGrid(2, 1, 4, type_iptotal, rule_clenshawcurtis); // resets the acceleration mode
     gridLoadEN2(&grid);
     std::vector<double> baseline_y, test_x = {0.33, 0.33, -0.33, -0.33, -0.66, 0.66};
@@ -296,6 +304,11 @@ bool GridUnitTester::testAPIconsistency(){
     auto manual_handle = TasGrid::AccelerationMeta::createCublasHandle();
     grid.getAccelerationContext()->setCuBlasHandle(manual_handle);
     #endif
+    #ifdef Tasmanian_ENABLE_HIP
+    rocblas_handle manual_handle;
+    rocblas_create_handle(&manual_handle);
+    grid.getAccelerationContext()->setRocBlasHandle(manual_handle);
+    #endif
     #ifdef Tasmanian_ENABLE_DPCPP
     grid.getAccelerationContext()->setSyclQueue(&q);
     #endif
@@ -304,6 +317,9 @@ bool GridUnitTester::testAPIconsistency(){
         pass = false;
     #ifdef Tasmanian_ENABLE_CUDA
     TasGrid::AccelerationMeta::deleteCublasHandle(manual_handle);
+    #endif
+    #ifdef Tasmanian_ENABLE_HIP
+    rocblas_destroy_handle(manual_handle);
     #endif
     #endif
     passAll = pass && passAll;
