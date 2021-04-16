@@ -44,3 +44,14 @@ if (Tasmanian_ENABLE_FORTRAN)
     Tasmanian_set_fortran_linker(TARGET Tasmanian_example_sparse_grids_f90)
     Tasmanian_set_fortran_linker(TARGET Tasmanian_example_sparse_grids_fortran)
 endif()
+
+get_filename_component(_tsg_cpath "${CMAKE_CURRENT_BINARY_DIR}" NAME)
+foreach(_tsg_example Tasmanian_example_sparse_grids Tasmanian_example_dream Tasmanian_example_sparse_grids_f90 Tasmanian_example_sparse_grids_fortran)
+    if (TARGET ${_tsg_example})
+        Tasmanian_rpath_target(TARGET ${_tsg_example} USE_CURRENT
+                               COMPONENTS ${_tsg_cpath}/SparseGrids ${_tsg_cpath}/DREAM
+                                          ${_tsg_cpath}/Fortran ${_tsg_cpath}/Fortran03)
+    endif()
+endforeach()
+unset(_tsg_cpath)
+unset(_tsg_example)
