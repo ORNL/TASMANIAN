@@ -816,6 +816,13 @@ struct AccelerationContext{
         engine->setCuSolverDnHandle(handle);
     }
     #endif
+
+    #ifdef Tasmanian_ENABLE_DPCPP
+    void setSyclQueue(void *queue) const{
+        if (not engine) std::runtime_error("Cannot set a handle without first selecting a gpu acceleration mode.");
+        engine->setSyclQueue(queue);
+    }
+    #endif
 };
 
 #ifdef Tasmanian_ENABLE_DPCPP

@@ -35,6 +35,10 @@
 #include "tasgridExternalTests.hpp"
 #include "tasgridTestHelpers.hpp"
 
+#ifdef Tasmanian_ENABLE_DPCPP
+#include <CL/sycl.hpp>
+#endif
+
 void gridLoadEN2(TasmanianSparseGrid *grid){ // load points using model exp( - \| x \|^2 )
     std::vector<double> points;
     grid->getNeededPoints(points);
@@ -185,6 +189,9 @@ bool GridUnitTester::testAPIconsistency(){
     bool pass = true;
     std::vector<double> vpoints;
 
+    #ifdef Tasmanian_ENABLE_DPCPP
+    sycl::queue q; // the sycl queue must be declared before the grid so it is deleted after the grid
+    #endif
     TasmanianSparseGrid grid;
     grid.makeGlobalGrid(2, 1, 4, type_iptotal, rule_clenshawcurtis);
     gridLoadEN2(&grid);
@@ -277,18 +284,27 @@ bool GridUnitTester::testAPIconsistency(){
         cout << "ERROR: the hierarchical coefficients of empty should be null." << endl; pass = false;
     }
 
-    #ifdef Tasmanian_ENABLE_CUDA
+    #if defined(Tasmanian_ENABLE_CUDA) || defined(Tasmanian_ENABLE_DPCPP)
     grid = makeGlobalGrid(2, 1, 4, type_iptotal, rule_clenshawcurtis); // resets the acceleration mode
     gridLoadEN2(&grid);
     std::vector<double> baseline_y, test_x = {0.33, 0.33, -0.33, -0.33, -0.66, 0.66};
     grid.evaluateBatch(test_x, baseline_y);
     TasGrid::AccelerationMeta::setDefaultGpuDevice(0);
-    auto manual_handle = TasGrid::AccelerationMeta::createCublasHandle();
     grid.enableAcceleration(accel_gpu_cuda, 0);
+
+    #ifdef Tasmanian_ENABLE_CUDA
+    auto manual_handle = TasGrid::AccelerationMeta::createCublasHandle();
     grid.getAccelerationContext()->setCuBlasHandle(manual_handle);
+    #endif
+    #ifdef Tasmanian_ENABLE_DPCPP
+    grid.getAccelerationContext()->setSyclQueue(&q);
+    #endif
+
     if (!testDenseGPU<double, GridMethodEvalBatchGPU>(test_x, baseline_y, 3, Maths::num_tol, grid, "GPU evaluate with manual handle"))
         pass = false;
+    #ifdef Tasmanian_ENABLE_CUDA
     TasGrid::AccelerationMeta::deleteCublasHandle(manual_handle);
+    #endif
     #endif
     passAll = pass && passAll;
 
