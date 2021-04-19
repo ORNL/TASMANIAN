@@ -762,8 +762,11 @@ struct InternalSyclQueue{
     InternalSyclQueue() : use_testing(false){}
     //! \brief Initialize the testing, in which case the internal queue would be used in place of a new queue.
     void init_testing();
-    //! \brief Auto-converts to void-pointer.
-    operator void* (){ return reinterpret_cast<void*>(test_queue.get()); }
+    //! \brief Auto-converts to a non-owning std::unique_ptr.
+    operator std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>> (){
+        return std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>>(test_queue.get(),
+                                                                         HandleDeleter<AccHandle::Syclqueue>(false));
+    }
     //! \brief Indicates whether this is a testing run.
     bool use_testing;
     //! \brief Holds the internal sycl::queue for testing.
