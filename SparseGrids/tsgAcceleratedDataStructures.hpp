@@ -285,19 +285,14 @@ class AccelerationDomainTransform{
 public:
     //! \brief Constructor, load the transform data to the GPU, the vectors are the same as used in the \b TasmanianSparseGrid class.
     AccelerationDomainTransform(AccelerationContext const *, std::vector<double> const &transform_a, std::vector<double> const &transform_b);
-    //! \brief Destructor, clear all loaded data.
-    ~AccelerationDomainTransform() = default;
 
-    //! \brief The class is move constructable, due to the GpuVector.
-    AccelerationDomainTransform(AccelerationDomainTransform &&) = default;
-    //! \brief The class is move assignable, due to the GpuVector.
-    AccelerationDomainTransform& operator =(AccelerationDomainTransform &&) = default;
-
-    //! \brief Transform a set of points, used in the calls to \b evaluateHierarchicalFunctionsGPU()
-
-    //! Takes the user provided \b gpu_transformed_x points of dimension matching the grid num_dimensions and total number \b num_x.
-    //! The \b gpu_canonical_x is resized to match \b gpu_transformed_x and it loaded with the corresponding canonical points.
-    //! The \b use01 flag indicates whether to use canonical domain (0, 1) (Fourier grids), or (-1, 1) (almost everything else).
+    /*!
+     * \brief Transform a set of points, used in the calls to \b evaluateHierarchicalFunctionsGPU()
+     *  Takes the user provided \b gpu_transformed_x points of dimension matching the grid num_dimensions
+     * and total number \b num_x.
+     * The \b gpu_canonical_x is resized to match \b gpu_transformed_x and it loaded with the corresponding canonical points.
+     * The \b use01 flag indicates whether to use canonical domain (0, 1) (Fourier grids), or (-1, 1) (almost everything else).
+     */
     template<typename T>
     void getCanonicalPoints(bool use01, T const gpu_transformed_x[], int num_x, GpuVector<T> &gpu_canonical_x);
 
