@@ -55,14 +55,14 @@ template<typename T> void GpuVector<T>::resize(AccelerationContext const *acc, s
         clear(); // resets dynamic_mode
         num_entries = count;
         sycl::queue *q = getSyclQueue(acc);
-        sycl_queue = acc->engine->internal_queue;
+        sycl_queue = reinterpret_cast<void*>(q);
         gpu_data = sycl::malloc_device<T>(num_entries, *q);
     }
 }
 template<typename T> void GpuVector<T>::clear(){
     num_entries = 0;
     if (gpu_data != nullptr){
-        sycl::queue *q = reinterpret_cast<sycl::queue*>(sycl_queue.get());
+        sycl::queue *q = reinterpret_cast<sycl::queue*>(sycl_queue);
         sycl::free(gpu_data, *q);
         q->wait(); // wait is needed here in case the pointer q gets deleted
     }
@@ -103,10 +103,14 @@ template void GpuVector<std::int64_t>::clear();
 template void GpuVector<std::int64_t>::load(AccelerationContext const*, size_t, const std::int64_t*);
 template void GpuVector<std::int64_t>::unload(AccelerationContext const*, size_t, std::int64_t*) const;
 
-GpuEngine::~GpuEngine(){}
+template<> void deleteHandle<AccHandle::Syclqueue>(int *p){
+    sycl::queue *q = reinterpret_cast<sycl::queue*>(p);
+    delete q;
+}
 
 void GpuEngine::setSyclQueue(void *queue){
-    internal_queue = wrapNonOwnedQueue(queue);
+    internal_queue = std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>>
+        (reinterpret_cast<int*>(queue), HandleDeleter<AccHandle::Syclqueue>(false));
 }
 
 int AccelerationMeta::getNumGpuDevices(){

@@ -28,78 +28,63 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_DPCPP_WRAPPERS_HPP
-#define __TASMANIAN_DPCPP_WRAPPERS_HPP
+#ifndef __TASMANIAN_SPARSE_GRID_ACCELERATED_HANDLES
+#define __TASMANIAN_SPARSE_GRID_ACCELERATED_HANDLES
 
-#include "tsgGpuWrappers.hpp"
-
-#ifndef Tasmanian_ENABLE_DPCPP
-#error "Cannot use tsgDpcppWrappers.cpp without Tasmanian_ENABLE_DPCPP"
-#endif
-
-#define MKL_INT int
-#include <CL/sycl.hpp>
-#include <CL/sycl/usm.hpp>
-#include "oneapi/mkl.hpp"
-
-/*!
- * \file tsgDpcppWrappers.hpp
- * \brief Wrappers to DPC++ functionality.
- * \author Miroslav Stoyanov
- * \ingroup TasmanianTPLWrappers
- *
- * Helper methods for the DPC++ backend.
- */
+#include "tsgEnumerates.hpp"
 
 namespace TasGrid{
 
 /*!
  * \internal
- * \ingroup TasmanianTPLWrappers
- * \brief Return a new sycl::queue wrapped in a shared_ptr object.
+ * \ingroup TasmanianAcceleration
+ * \brief Type tags for the different handle types.
  *
  * \endinternal
  */
-inline std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>> makeNewQueue(){
-    sycl::queue *qq = nullptr;
-    try{
-        sycl::gpu_selector g_selector;
-        qq = new sycl::queue(g_selector);
-    }catch(sycl::exception const&){
-        sycl::cpu_selector c_selector;
-        qq = new sycl::queue(c_selector);
-    }
-    return std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>>(
-                                    reinterpret_cast<int*>(qq),
-                                    HandleDeleter<AccHandle::Syclqueue>()
-                                );
+namespace AccHandle{
+    //! \brief cuBlas handle.
+    struct Cublas{};
+    //! \brief cuSparse handle.
+    struct Cusparse{};
+    //! \brief cuSolver handle.
+    struct Cusolver{};
+    //! \brief rocBlas handle.
+    struct Rocblas{};
+    //! \brief rocSparse handle.
+    struct Rocsparse{};
+    //! \brief SYCL queue handle.
+    struct Syclqueue{};
 }
 
 /*!
  * \internal
- * \ingroup TasmanianTPLWrappers
- * \brief Returns the SYCL queue associated with the given AccelerationContext, creates a new queue if needed.
- *
- * If there is a current active sycl::queue the method will return a pointer to the queue,
- * otherwise tries to create a new sycl::queue using the sycl::gpu_selector.
- * If creating the GPU queue fails, e.g., throws sycl::exception,
- * then a queue will be created using the sycl::cpu_selector.
+ * \ingroup TasmanianAcceleration
+ * \brief Deletes the handle, specialized for each TPL backend and tag in TasGrid::AccHandle namepace.
  *
  * \endinternal
  */
-inline sycl::queue* getSyclQueue(AccelerationContext const *acceleration){
-    if (not acceleration->engine->internal_queue){
-        if (test_queue.use_testing){
-            acceleration->engine->internal_queue = std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>>(
-                                    reinterpret_cast<int*>(test_queue.test_queue.get()),
-                                    HandleDeleter<AccHandle::Syclqueue>(false)
-                                );
-        }else{
-            acceleration->engine->internal_queue = makeNewQueue();
-        }
-    }
-    return reinterpret_cast<sycl::queue*>(acceleration->engine->internal_queue.get());
-}
+template<typename> void deleteHandle(int*);
+
+/*!
+ * \internal
+ * \ingroup TasmanianAcceleration
+ * \brief Deleter template for the GPU handles, e.g., cuBlas and rocBlas
+ *
+ * The deleter is used in conjunction with std::unique_ptr to provide both type-safety
+ * and RAII resource management for the opaque pointer handles.
+ * The delete operation is defined in the corresponding TPL file.
+ * \endinternal
+ */
+template<typename ehandle>
+struct HandleDeleter{
+    //! \brief Constructor indicating the ownership of the handle.
+    HandleDeleter(bool init_own = true) : own(init_own){}
+    //! \brief Deletes the handle, if owned; nothing otherwise.
+    void operator()(int *p) const { if (own) deleteHandle<ehandle>(p); }
+    //! \brief Save the own/not own state.
+    bool own;
+};
 
 }
 

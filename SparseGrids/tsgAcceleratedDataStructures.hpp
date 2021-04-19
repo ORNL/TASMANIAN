@@ -31,7 +31,7 @@
 #ifndef __TASMANIAN_SPARSE_GRID_ACCELERATED_DATA_STRUCTURES_HPP
 #define __TASMANIAN_SPARSE_GRID_ACCELERATED_DATA_STRUCTURES_HPP
 
-#include "tsgEnumerates.hpp"
+#include "tsgAcceleratedHandles.hpp"
 
 //! \internal
 //! \file tsgAcceleratedDataStructures.hpp
@@ -223,7 +223,7 @@ private:
     size_t num_entries; // keep track of the size, update on every call that changes the gpu_data
     T *gpu_data; // the GPU array
     #ifdef Tasmanian_ENABLE_DPCPP
-    std::shared_ptr<int> sycl_queue ;
+    void* sycl_queue;
     #endif
 };
 
@@ -234,95 +234,6 @@ private:
  * The class also manages the required handles and queues and holds the context of the active GPU device.
  */
 struct GpuEngine{
-    //! \brief Construct a new engine without any handles.
-    GpuEngine()
-    #ifdef Tasmanian_ENABLE_CUDA
-                : cublasHandle(nullptr), own_cublas_handle(false),
-                  cusparseHandle(nullptr), own_cusparse_handle(false), cusolverDnHandle(nullptr), own_cusolverdn_handle(false)
-    #endif
-    #ifdef Tasmanian_ENABLE_HIP
-                : rocblasHandle(nullptr), own_rocblas_handle(false),
-                  rocsparseHandle(nullptr), own_rocsparse_handle(false)
-    #endif
-    #ifdef Tasmanian_ENABLE_MAGMA
-                  , called_magma_init(false)
-    #endif
-        {}
-    //! \brief Destructor, clear all handles and queues.
-    ~GpuEngine();
-
-    #ifdef Tasmanian_ENABLE_CUDA
-    //! \brief Move construct the engine.
-    GpuEngine(GpuEngine &&other) :
-        cublasHandle(Utils::exchange(other.cublasHandle, nullptr)),
-        own_cublas_handle(Utils::exchange(other.own_cublas_handle, false)),
-        cusparseHandle(Utils::exchange(other.cusparseHandle, nullptr)),
-        own_cusparse_handle(Utils::exchange(other.own_cusparse_handle, false)),
-        cusolverDnHandle(Utils::exchange(other.cusolverDnHandle, nullptr)),
-        own_cusolverdn_handle(Utils::exchange(other.own_cusolverdn_handle, false))
-        #ifdef Tasmanian_ENABLE_MAGMA
-        , called_magma_init(Utils::exchange(other.called_magma_init, false))
-        #endif
-        {}
-    #else
-    #ifdef Tasmanian_ENABLE_HIP
-    //! \brief Move construct the engine.
-    GpuEngine(GpuEngine &&other) :
-        rocblasHandle(Utils::exchange(other.rocblasHandle, nullptr)),
-        own_rocblas_handle(Utils::exchange(other.own_rocblas_handle, false)),
-        rocsparseHandle(Utils::exchange(other.rocsparseHandle, nullptr)),
-        own_rocsparse_handle(Utils::exchange(other.own_rocsparse_handle, false))
-        {}
-    #else
-    GpuEngine(GpuEngine &&) = default;
-    #endif
-    #endif
-
-    #ifdef Tasmanian_ENABLE_CUDA
-    //! \brief Move assign the engine.
-    GpuEngine& operator= (GpuEngine &&other){
-        GpuEngine temp(std::move(other));
-        std::swap(cublasHandle, temp.cublasHandle);
-        std::swap(own_cublas_handle, temp.own_cublas_handle);
-        std::swap(cusparseHandle, temp.cusparseHandle);
-        std::swap(own_cusparse_handle, temp.own_cusparse_handle);
-        std::swap(cusolverDnHandle, temp.cusolverDnHandle);
-        std::swap(own_cusolverdn_handle, temp.own_cusolverdn_handle);
-        #ifdef Tasmanian_ENABLE_MAGMA
-        std::swap(called_magma_init, temp.called_magma_init);
-        #endif
-        return *this;
-    }
-    #else
-    #ifdef Tasmanian_ENABLE_HIP
-    //! \brief Move assign the engine.
-    GpuEngine& operator= (GpuEngine &&other){
-        GpuEngine temp(std::move(other));
-        std::swap(rocblasHandle, temp.rocblasHandle);
-        std::swap(own_rocblas_handle, temp.own_rocblas_handle);
-        std::swap(rocsparseHandle, temp.rocsparseHandle);
-        std::swap(own_rocsparse_handle, temp.own_rocsparse_handle);
-        #ifdef Tasmanian_ENABLE_MAGMA
-        std::swap(called_magma_init, temp.called_magma_init);
-        #endif
-        return *this;
-    }
-    #else
-    #ifdef Tasmanian_ENABLE_DPCPP
-    GpuEngine& operator= (GpuEngine &&other){
-        GpuEngine temp(std::move(other));
-        std::swap(internal_queue, temp.internal_queue);
-        #ifdef Tasmanian_ENABLE_MAGMA
-        std::swap(called_magma_init, temp.called_magma_init);
-        #endif
-        return *this;
-    }
-    #else
-    GpuEngine& operator= (GpuEngine &&) = default;
-    #endif
-    #endif
-    #endif
-
     #ifdef Tasmanian_ENABLE_CUDA
     //! \brief Manually sets the cuBlas handle, handle must be a valid cublasHandle_t associated with this CUDA device.
     void setCuBlasHandle(void *handle);
@@ -331,18 +242,12 @@ struct GpuEngine{
     //! \brief Manually sets the cuSparse handle, handle must be a valid cusolverDnHandle_t associated with this CUDA device.
     void setCuSolverDnHandle(void *handle);
 
-    //! \brief Alias the cuBlas handle.
-    void *cublasHandle;
-    //! \brief Remembers the ownership of the handle.
-    bool own_cublas_handle; // indicates whether to delete the handle on exit
-    //! \brief Alias the cuSparse handle.
-    void *cusparseHandle;
-    //! \brief Remembers the ownership of the handle.
-    bool own_cusparse_handle; // indicates whether to delete the handle on exit
-    //! \brief Alias the cuSolverDn handle.
-    void *cusolverDnHandle;
-    //! \brief Remembers the ownership of the handle.
-    bool own_cusolverdn_handle;
+    //! \brief Holds the cuBlas handle.
+    std::unique_ptr<int, HandleDeleter<AccHandle::Cublas>> cublas_handle;
+    //! \brief Holds the cuSparse handle.
+    std::unique_ptr<int, HandleDeleter<AccHandle::Cusparse>> cusparse_handle;
+    //! \brief Holds the cuSolver handle.
+    std::unique_ptr<int, HandleDeleter<AccHandle::Cusolver>> cusolver_handle;
     #endif
 
     #ifdef Tasmanian_ENABLE_HIP
@@ -350,27 +255,22 @@ struct GpuEngine{
     void setRocBlasHandle(void *handle);
     //! \brief Set the rocSparse handle, handle must be a valid rocsparse_handle associated with this ROCm device.
     void setRocSparseHandle(void *handle);
-    //! \brief Alias the rocBlas handle.
-    void *rocblasHandle;
-    //! \brief Remember the ownership of the handle.
-    bool own_rocblas_handle;
-    //! \brief Alias the rocSparse handle.
-    void *rocsparseHandle;
-    //! \brief Remember the ownership of the handle.
-    bool own_rocsparse_handle;
+
+    //! \brief Holds the rocBlas handle.
+    std::unique_ptr<int, HandleDeleter<AccHandle::Rocblas>> rblas_handle;
+    //! \brief Holds the rocSparse handle.
+    std::unique_ptr<int, HandleDeleter<AccHandle::Rocsparse>> rsparse_handle;
     #endif
 
     #ifdef Tasmanian_ENABLE_DPCPP
     //! \brief Set a user provided sycl::queue.
     void setSyclQueue(void *queue);
     //! \brief Holds the actual queue.
-    std::shared_ptr<int> internal_queue;
+    std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>> internal_queue;
     #endif
 
-    #ifdef Tasmanian_ENABLE_MAGMA
-    //! \brief Remembers whether MAGMA init has been called.
-    bool called_magma_init;
-    #endif
+    //! \brief Avoids an empty engine when no acceleration is enabled, allows for default constructor/move/copy, skips extraneous calls to MAGMA init.
+    std::unique_ptr<int> called_magma_init;
 };
 
 //! \internal
@@ -867,7 +767,7 @@ struct InternalSyclQueue{
     //! \brief Indicates whether this is a testing run.
     bool use_testing;
     //! \brief Holds the internal sycl::queue for testing.
-    std::shared_ptr<int> test_queue;
+    std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>> test_queue;
 };
 /*!
  * \internal

@@ -88,29 +88,16 @@ template void GpuVector<int>::clear();
 template void GpuVector<int>::load(AccelerationContext const*, size_t, const int*);
 template void GpuVector<int>::unload(AccelerationContext const*, size_t, int*) const;
 
-GpuEngine::~GpuEngine(){
-    if (own_rocblas_handle && rocblasHandle != nullptr){
-        rocblas_destroy_handle(reinterpret_cast<rocblas_handle>(rocblasHandle));
-        rocblasHandle = nullptr;
-        own_rocblas_handle = false;
-    }
-    if (own_rocsparse_handle && rocsparseHandle != nullptr){
-        rocsparse_destroy_handle(reinterpret_cast<rocsparse_handle>(rocblasHandle));
-        rocsparseHandle = nullptr;
-        own_rocsparse_handle = false;
-    }
-}
+template<> void deleteHandle<AccHandle::Rocblas>(int *p){ rocblas_destroy_handle(reinterpret_cast<rocblas_handle>(p)); }
+template<> void deleteHandle<AccHandle::Rocsparse>(int *p){ rocsparse_destroy_handle(reinterpret_cast<rocsparse_handle>(p)); }
+
 void GpuEngine::setRocBlasHandle(void *handle){
-    if (own_rocblas_handle && rocblasHandle != nullptr)
-        rocblas_destroy_handle(reinterpret_cast<rocblas_handle>(rocblasHandle));
-    rocblasHandle = handle;
-    own_rocblas_handle = false;
+    rblas_handle = std::unique_ptr<int, HandleDeleter<AccHandle::Rocblas>>
+        (reinterpret_cast<int*>(handle), HandleDeleter<AccHandle::Rocblas>(false));
 }
 void GpuEngine::setRocSparseHandle(void *handle){
-    if (own_rocsparse_handle && rocsparseHandle != nullptr)
-        rocsparse_destroy_handle(reinterpret_cast<rocsparse_handle>(rocblasHandle));
-    rocblasHandle = handle;
-    own_rocsparse_handle = false;
+    rsparse_handle = std::unique_ptr<int, HandleDeleter<AccHandle::Rocsparse>>
+        (reinterpret_cast<int*>(handle), HandleDeleter<AccHandle::Rocsparse>(false));
 }
 
 int AccelerationMeta::getNumGpuDevices(){
