@@ -324,6 +324,10 @@ bool GridUnitTester::testAPIconsistency(){
     #endif
     passAll = pass && passAll;
 
+    TasmanianSparseGrid dummy_grid = TasGrid::makeFourierGrid(2, 1, 3, TasGrid::type_level);
+    dummy_grid.enableAcceleration(TasGrid::accel_gpu_cuda); // makes an acceleration engine
+    // the engine is never used and the handles are null, should still destroy properly
+
     cout << setw(wfirst+1) << "API variations" << setw(wsecond-1) << "" << setw(wthird) << ((passAll) ? "Pass" : "FAIL") << endl;
     return passAll;
 }

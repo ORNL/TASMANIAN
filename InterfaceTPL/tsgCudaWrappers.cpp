@@ -88,37 +88,21 @@ template void GpuVector<int>::clear();
 template void GpuVector<int>::load(AccelerationContext const*, size_t, const int*);
 template void GpuVector<int>::unload(AccelerationContext const*, size_t, int*) const;
 
-GpuEngine::~GpuEngine(){
-    if (own_cublas_handle && cublasHandle != nullptr){
-        cublasDestroy(reinterpret_cast<cublasHandle_t>(cublasHandle));
-        cublasHandle = nullptr;
-    }
-    if (own_cusparse_handle && cusparseHandle != nullptr){
-        cusparseDestroy(reinterpret_cast<cusparseHandle_t>(cusparseHandle));
-        cusparseHandle = nullptr;
-    }
-    if (own_cusolverdn_handle && cusolverDnHandle != nullptr){
-        cusolverDnDestroy(reinterpret_cast<cusolverDnHandle_t>(cusolverDnHandle));
-        cusolverDnHandle = nullptr;
-    }
-}
+template<> void deleteHandle<AccHandle::Cublas>(int *p){ cublasDestroy(reinterpret_cast<cublasHandle_t>(p)); }
+template<> void deleteHandle<AccHandle::Cusparse>(int *p){ cusparseDestroy(reinterpret_cast<cusparseHandle_t>(p)); }
+template<> void deleteHandle<AccHandle::Cusolver>(int *p){ cusolverDnDestroy(reinterpret_cast<cusolverDnHandle_t>(p)); }
+
 void GpuEngine::setCuBlasHandle(void *handle){
-    if (own_cublas_handle && cublasHandle != nullptr)
-        cublasDestroy(reinterpret_cast<cublasHandle_t>(cublasHandle));
-    own_cublas_handle = false;
-    cublasHandle = handle;
+    cublas_handle = std::unique_ptr<int, HandleDeleter<AccHandle::Cublas>>
+        (reinterpret_cast<int*>(handle), HandleDeleter<AccHandle::Cublas>(false));
 }
 void GpuEngine::setCuSparseHandle(void *handle){
-    if (own_cusparse_handle && cusparseHandle != nullptr)
-        cusparseDestroy(reinterpret_cast<cusparseHandle_t>(cusparseHandle));
-    own_cusparse_handle = false;
-    cusparseHandle = handle;
+    cusparse_handle = std::unique_ptr<int, HandleDeleter<AccHandle::Cusparse>>
+        (reinterpret_cast<int*>(handle), HandleDeleter<AccHandle::Cusparse>(false));
 }
 void GpuEngine::setCuSolverDnHandle(void *handle){
-    if (own_cusolverdn_handle && cusolverDnHandle != nullptr)
-        cusolverDnDestroy(reinterpret_cast<cusolverDnHandle_t>(cusolverDnHandle));
-    own_cusolverdn_handle = false;
-    cusolverDnHandle = handle;
+    cusolver_handle = std::unique_ptr<int, HandleDeleter<AccHandle::Cusolver>>
+        (reinterpret_cast<int*>(handle), HandleDeleter<AccHandle::Cusolver>(false));
 }
 
 int AccelerationMeta::getNumGpuDevices(){

@@ -10,6 +10,7 @@ set(Tasmanian_source_libsparsegrid
         TasmanianSparseGrid.hpp
         TasmanianSparseGrid.cpp
         TasmanianSparseGridWrapC.cpp
+        tsgAcceleratedHandles.hpp
         tsgAcceleratedDataStructures.hpp
         tsgAcceleratedDataStructures.cpp
         tsgCacheLagrange.hpp

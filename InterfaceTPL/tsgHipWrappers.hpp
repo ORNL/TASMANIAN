@@ -115,19 +115,23 @@ inline void hipcheck(rocsparse_status status, std::string info){
 
 //! \brief Make rocBlas handle.
 inline rocblas_handle getRocBlasHandle(AccelerationContext const *acceleration){
-    if (acceleration->engine->rocblasHandle == nullptr){
-        hipcheck( rocblas_create_handle(reinterpret_cast<rocblas_handle*>(&acceleration->engine->rocblasHandle)), "create handle" );
-        acceleration->engine->own_rocblas_handle = true;
+    if (not acceleration->engine->rblas_handle){
+        rocblas_handle handle;
+        hipcheck( rocblas_create_handle(&handle), "create handle" );
+        acceleration->engine->rblas_handle = std::unique_ptr<int, HandleDeleter<AccHandle::Rocblas>>
+            (reinterpret_cast<int*>(handle), HandleDeleter<AccHandle::Rocblas>());
     }
-    return reinterpret_cast<rocblas_handle>(acceleration->engine->rocblasHandle);
+    return reinterpret_cast<rocblas_handle>(acceleration->engine->rblas_handle.get());
 }
-//! \brief Make rocSParse handle.
+//! \brief Make rocSparse handle.
 inline rocsparse_handle getRocSparseHandle(AccelerationContext const *acceleration){
-    if (acceleration->engine->rocsparseHandle == nullptr){
-        hipcheck( rocsparse_create_handle(reinterpret_cast<rocsparse_handle*>(&acceleration->engine->rocsparseHandle)), "create handle" );
-        acceleration->engine->own_rocsparse_handle = true;
+    if (not acceleration->engine->rsparse_handle){
+        rocsparse_handle handle;
+        hipcheck( rocsparse_create_handle(&handle), "create handle" );
+        acceleration->engine->rsparse_handle = std::unique_ptr<int, HandleDeleter<AccHandle::Rocsparse>>
+            (reinterpret_cast<int*>(handle), HandleDeleter<AccHandle::Rocsparse>());
     }
-    return reinterpret_cast<rocsparse_handle>(acceleration->engine->rocsparseHandle);
+    return reinterpret_cast<rocsparse_handle>(acceleration->engine->rsparse_handle.get());
 }
 
 //! \brief Wrapper around rocsparse_mat_descr

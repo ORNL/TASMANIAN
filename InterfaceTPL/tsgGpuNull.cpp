@@ -71,8 +71,6 @@ template void GpuVector<int>::clear();
 template void GpuVector<int>::load(AccelerationContext const*, size_t, const int*);
 template void GpuVector<int>::unload(AccelerationContext const*, size_t, int*) const;
 
-GpuEngine::~GpuEngine(){}
-
 int AccelerationMeta::getNumGpuDevices(){ return 0; }
 void AccelerationMeta::setDefaultGpuDevice(int){}
 unsigned long long AccelerationMeta::getTotalGPUMemory(int){ return 0; }

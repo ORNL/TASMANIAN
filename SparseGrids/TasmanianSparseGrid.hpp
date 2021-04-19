@@ -1995,6 +1995,8 @@ protected:
     #endif // __TASMANIAN_DOXYGEN_SKIP_INTERNAL
 
 private:
+    std::unique_ptr<AccelerationContext> acceleration; // must be destroyed last for sycl
+
     std::unique_ptr<BaseCanonicalGrid> base;
 
     std::vector<double> domain_transform_a, domain_transform_b;
@@ -2004,8 +2006,6 @@ private:
     bool using_dynamic_construction;
 
     mutable std::unique_ptr<AccelerationDomainTransform> acc_domain;
-
-    std::unique_ptr<AccelerationContext> acceleration; // must come last for sycl
 };
 
 /*!

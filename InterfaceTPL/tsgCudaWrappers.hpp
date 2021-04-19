@@ -140,19 +140,23 @@ inline void cucheck(cusolverStatus_t status, std::string info){
 namespace TasGpu{
 //! \brief Make cuBlas handle.
 inline cublasHandle_t getCuBlasHandle(AccelerationContext const *acceleration){
-    if (acceleration->engine->cublasHandle == nullptr){
-        cucheck( cublasCreate(reinterpret_cast<cublasHandle_t*>(&acceleration->engine->cublasHandle)), "create handle" );
-        acceleration->engine->own_cublas_handle = true;
+    if (not acceleration->engine->cublas_handle){
+        cublasHandle_t handle;
+        cucheck( cublasCreate(&handle), "create handle" );
+        acceleration->engine->cublas_handle = std::unique_ptr<int, HandleDeleter<AccHandle::Cublas>>
+            (reinterpret_cast<int*>(handle), HandleDeleter<AccHandle::Cublas>());
     }
-    return reinterpret_cast<cublasHandle_t>(acceleration->engine->cublasHandle);
+    return reinterpret_cast<cublasHandle_t>(acceleration->engine->cublas_handle.get());
 }
 //! \brief Make cuSparse handle.
 inline cusparseHandle_t getCuSparseHandle(AccelerationContext const *acceleration){
-    if (acceleration->engine->cusparseHandle == nullptr){
-        cucheck( cusparseCreate(reinterpret_cast<cusparseHandle_t*>(&acceleration->engine->cusparseHandle)), "create handle" );
-        acceleration->engine->own_cusparse_handle = true;
+    if (not acceleration->engine->cusparse_handle){
+        cusparseHandle_t handle;
+        cucheck( cusparseCreate(&handle), "create handle" );
+        acceleration->engine->cusparse_handle = std::unique_ptr<int, HandleDeleter<AccHandle::Cusparse>>
+            (reinterpret_cast<int*>(handle), HandleDeleter<AccHandle::Cusparse>());
     }
-    return reinterpret_cast<cusparseHandle_t>(acceleration->engine->cusparseHandle);
+    return reinterpret_cast<cusparseHandle_t>(acceleration->engine->cusparse_handle.get());
 }
 
 //! \brief Wrapper around cusparseMatDescr_t
@@ -244,11 +248,13 @@ makeSparseDenseMatDesc(int rows, int cols, int lda, scalar_type const vals[]){
 
 //! \brief Make cuSolver handle.
 inline cusolverDnHandle_t getCuSolverDnHandle(AccelerationContext const *acceleration){
-    if (acceleration->engine->cusolverDnHandle == nullptr){
-        cucheck( cusolverDnCreate(reinterpret_cast<cusolverDnHandle_t*>(&acceleration->engine->cusolverDnHandle)), "create handle" );
-        acceleration->engine->own_cusolverdn_handle = true;
+    if (not acceleration->engine->cusolver_handle){
+        cusolverDnHandle_t handle;
+        cucheck( cusolverDnCreate(&handle), "create handle" );
+        acceleration->engine->cusolver_handle = std::unique_ptr<int, HandleDeleter<AccHandle::Cusolver>>
+            (reinterpret_cast<int*>(handle), HandleDeleter<AccHandle::Cusolver>());
     }
-    return reinterpret_cast<cusolverDnHandle_t>(acceleration->engine->cusolverDnHandle);
+    return reinterpret_cast<cusolverDnHandle_t>(acceleration->engine->cusolver_handle.get());
 }
 
 }

@@ -51,10 +51,10 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
     #endif // _OPENMP
 }
 
-TasmanianSparseGrid::TasmanianSparseGrid() : using_dynamic_construction(false), acceleration(Utils::make_unique<AccelerationContext>()){}
+TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(Utils::make_unique<AccelerationContext>()), using_dynamic_construction(false){}
 
 TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) :
-        using_dynamic_construction(false), acceleration(Utils::make_unique<AccelerationContext>()){
+        acceleration(Utils::make_unique<AccelerationContext>()), using_dynamic_construction(false){
     copyGrid(&source);
 }
 
