@@ -85,6 +85,11 @@ int main(int argc, const char ** argv){
         }else{
             cout << "          OpenMP multithreading: Disabled" << endl;
         }
+        std::string gpu_backend = "none";
+        if (TasmanianSparseGrid::isCudaEnabled()) gpu_backend = "CUDA";
+        if (TasmanianSparseGrid::isHipEnabled()) gpu_backend = "ROCm/HIP";
+        if (TasmanianSparseGrid::isDpcppEnabled()) gpu_backend = "oneAPI/DPC++";
+        cout << "          GPU backend framework: " << gpu_backend << endl;
         cout << "         Available acceleration: ";
         bool anyAcc = false, anyGPU = false;
         if (TasmanianSparseGrid::isAccelerationAvailable(accel_cpu_blas)){

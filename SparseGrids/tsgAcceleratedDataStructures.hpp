@@ -697,45 +697,6 @@ struct AccelerationContext{
     operator GpuEngine* () const{ return engine.get(); }
     //! \brief Returns true if any of the GPU-based acceleration modes have been enabled.
     bool on_gpu() const{ return !!engine; }
-
-    #ifdef Tasmanian_ENABLE_CUDA
-    //! \brief Manually sets the cuBlas handle, handle must be a valid cublasHandle_t associated with this CUDA device.
-    void setCuBlasHandle(void *handle) const{
-        if (not engine) throw std::runtime_error("Cannot set a handle without first selecting a cuda acceleration mode.");
-        engine->setCuBlasHandle(handle);
-    }
-    //! \brief Manually sets the cuSparse handle, handle must be a valid cusparseHandle_t associated with this CUDA device.
-    void setCuSparseHandle(void *handle) const{
-        if (not engine) throw std::runtime_error("Cannot set a handle without first selecting a cuda acceleration mode.");
-        engine->setCuSparseHandle(handle);
-    }
-    //! \brief Manually sets the cuSparse handle, handle must be a valid cusolverDnHandle_t associated with this CUDA device.
-    void setCuSolverDnHandle(void *handle) const{
-        if (not engine) throw std::runtime_error("Cannot set a handle without first selecting a cuda acceleration mode.");
-        engine->setCuSolverDnHandle(handle);
-    }
-    #endif
-
-    #ifdef Tasmanian_ENABLE_HIP
-    //! \brief Manually sets the rocBlas handle, handle must be a valid rocblas_handle associated with this HIP device.
-    void setRocBlasHandle(void *handle) const{
-        if (not engine) throw std::runtime_error("Cannot set a handle without first selecting a gpu acceleration mode.");
-        engine->setRocBlasHandle(handle);
-    }
-    //! \brief Manually sets the rocSparse handle, handle must be a valid rocsparse_handle associated with this HIP device.
-    void setRocSparseHandle(void *handle) const{
-        if (not engine) throw std::runtime_error("Cannot set a handle without first selecting a gpu acceleration mode.");
-        engine->setRocSparseHandle(handle);
-    }
-    #endif
-
-    #ifdef Tasmanian_ENABLE_DPCPP
-    //! \brief Manually set the sycl::queue, should be done before making calls to accelerated methods.
-    void setSyclQueue(void *queue) const{
-        if (not engine) std::runtime_error("Cannot set a handle without first selecting a gpu acceleration mode.");
-        engine->setSyclQueue(queue);
-    }
-    #endif
 };
 
 #ifdef Tasmanian_ENABLE_DPCPP

@@ -251,6 +251,23 @@ namespace TasGrid{
  * - setGPUID(), getGPUID(), getNumGPUs()
  * - isAccelerationAvailable(), getGPUName(), getGPUMemory()
  *
+ * \par Set User Provided Handles for Accelerated Linear Algebra
+ * Acceleration frameworks such as CUDA ROCm and oneAPI use handles and queues
+ * that are either opaque pointers to internal data-structures (CUDA and ROCm)
+ * or queues that must be used for all types of acceleration and data operations.
+ * A Tasmanian object will allocate internal handles as needed, but the user can
+ * specify the handles manually. The handles must be set after a GPU capable
+ * acceleration has been enabled via enableAcceleration(), Tasmanian takes
+ * a non-owning reference and the user is responsible for deleting the handle
+ * \b after the Tasmanian object has been destroyed or a non-GPU acceleration
+ * is selected, i.e., accel_none or accel_cpu_blas. The handles are accepted
+ * as void-pointers (the type is stripped) to keep consistent API since only
+ * one GPU framework can be enabled in a single Tasmanian build and the headers
+ * for the other frameworks will not be present.
+ * - \b (CUDA) setCuBlasHandle(), setCuSparseHandle(), setCuSolverHandle()
+ * - \b (ROCm) setRocBlasHandle(), setRocSparseHandle()
+ * - \b (oneAPI) setSycleQueue()
+ *
  * \par Get Grid Meta-data
  * Various method that read the number of points, grid type, specifics about
  * the rule and domain transformations and others.
@@ -300,6 +317,12 @@ public:
     static const char* getCmakeCxxFlags();
     //! \brief Returns \b true if compiled with OpenMP support, e.g., Tasmanian_ENABLE_OPENMP=ON.
     static bool isOpenMPEnabled();
+    //! \brief Returns \b true if compiled with CUDA support, e.g., Tasmanian_ENABLE_CUDA=ON.
+    static bool isCudaEnabled();
+    //! \brief Returns \b true if compiled with HIP support, e.g., Tasmanian_ENABLE_HIP=ON.
+    static bool isHipEnabled();
+    //! \brief Returns \b true if compiled with DPC++ support, e.g., Tasmanian_ENABLE_DPCPP=ON.
+    static bool isDpcppEnabled();
 
     //! \brief Write the grid to the given \b filename using either \b binary or ASCII format.
     void write(const char *filename, bool binary = mode_binary) const;
@@ -1614,6 +1637,54 @@ public:
      *      with the converse \b favor will reset mode to the default (automatic) selection.
      */
     void favorSparseAcceleration(bool favor);
+    /*!
+     * \brief Takes a user provided cuBlas handle.
+     *
+     * \param handle must be a valid and initialized cublasHandle_t
+     *
+     * \throws std::runtime_error if CUDA is not enabled in CMake and enableAcceleration()
+     */
+    void setCuBlasHandle(void *handle);
+    /*!
+     * \brief Takes a user provided cuSparse handle.
+     *
+     * \param handle must be a valid and initialized cusparseHandle_t
+     *
+     * \throws std::runtime_error if CUDA is not enabled in CMake and enableAcceleration()
+     */
+    void setCuSparseHandle(void *handle);
+    /*!
+     * \brief Takes a user provided cuSparse handle.
+     *
+     * \param handle must be a valid and initialized cusolverDnHandle_t
+     *
+     * \throws std::runtime_error if CUDA is not enabled in CMake and enableAcceleration()
+     */
+    void setCuSolverHandle(void *handle);
+    /*!
+     * \brief Takes a user provided cuBlas handle.
+     *
+     * \param handle must be a valid and initialized rocblas_handle
+     *
+     * \throws std::runtime_error if HIP is not enabled in CMake and enableAcceleration()
+     */
+    void setRocBlasHandle(void *handle);
+    /*!
+     * \brief Takes a user provided cuSparse handle.
+     *
+     * \param handle must be a valid and initialized rocsparse_handle
+     *
+     * \throws std::runtime_error if HIP is not enabled in CMake and enableAcceleration()
+     */
+    void setRocSparseHandle(void *handle);
+    /*!
+     * \brief Takes a user provided sycl::queue handle.
+     *
+     * \param queue must be a valid and initialized sycl::queue
+     *
+     * \throws std::runtime_error if DPC++ is not enabled in CMake and enableAcceleration()
+     */
+    void setSycleQueue(void *queue);
     /*!
      * \brief Returns the current effective acceleration mode.
      *

@@ -50,6 +50,27 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
     return false;
     #endif // _OPENMP
 }
+bool TasmanianSparseGrid::isCudaEnabled(){
+    #ifdef Tasmanian_ENABLE_CUDA
+    return true;
+    #else
+    return false;
+    #endif
+}
+bool TasmanianSparseGrid::isHipEnabled(){
+    #ifdef Tasmanian_ENABLE_HIP
+    return true;
+    #else
+    return false;
+    #endif
+}
+bool TasmanianSparseGrid::isDpcppEnabled(){
+    #ifdef Tasmanian_ENABLE_DPCPP
+    return true;
+    #else
+    return false;
+    #endif
+}
 
 TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(Utils::make_unique<AccelerationContext>()), using_dynamic_construction(false){}
 
@@ -1526,6 +1547,79 @@ void TasmanianSparseGrid::favorSparseAcceleration(bool favor){
     AccelerationContext::ChangeType change = acceleration->favorSparse(favor);
     if (not empty()) base->updateAccelerationData(change);
 }
+
+#ifdef Tasmanian_ENABLE_CUDA
+void TasmanianSparseGrid::setCuBlasHandle(void *handle){
+    if (acceleration->on_gpu()){
+        acceleration->engine->setCuBlasHandle(handle);
+    }else{
+        throw std::runtime_error("setCuBlasHandle() called with non-GPU acceleration mode.");
+    }
+}
+void TasmanianSparseGrid::setCuSparseHandle(void *handle){
+    if (acceleration->on_gpu()){
+        acceleration->engine->setCuSparseHandle(handle);
+    }else{
+        throw std::runtime_error("setCuSparseHandle() called with non-GPU acceleration mode.");
+    }
+}
+void TasmanianSparseGrid::setCuSolverHandle(void *handle){
+    if (acceleration->on_gpu()){
+        acceleration->engine->setCuSolverDnHandle(handle);
+    }else{
+        throw std::runtime_error("setCuSolverHandle() called with non-GPU acceleration mode.");
+    }
+}
+#else
+void TasmanianSparseGrid::setCuBlasHandle(void*){
+    throw std::runtime_error("setCuBlasHandle() requires Tasmanian to be build with the CUDA backend.");
+}
+void TasmanianSparseGrid::setCuSparseHandle(void*){
+    throw std::runtime_error("setCuSparseHandle() requires Tasmanian to be build with the CUDA backend.");
+}
+void TasmanianSparseGrid::setCuSolverHandle(void*){
+    throw std::runtime_error("setCuSolverHandle() requires Tasmanian to be build with the CUDA backend.");
+}
+#endif
+
+#ifdef Tasmanian_ENABLE_HIP
+void TasmanianSparseGrid::setRocBlasHandle(void *handle){
+    if (acceleration->on_gpu()){
+        acceleration->engine->setRocBlasHandle(handle);
+    }else{
+        throw std::runtime_error("setRocBlasHandle() called with non-GPU acceleration mode.");
+    }
+}
+void TasmanianSparseGrid::setRocSparseHandle(void *handle){
+    if (acceleration->on_gpu()){
+        acceleration->engine->setRocSparseHandle(handle);
+    }else{
+        throw std::runtime_error("setRocSparseHandle() called with non-GPU acceleration mode.");
+    }
+}
+#else
+void TasmanianSparseGrid::setRocBlasHandle(void*){
+    throw std::runtime_error("setRocBlasHandle() requires Tasmanian to be build with the HIP/ROCm backend.");
+}
+void TasmanianSparseGrid::setRocSparseHandle(void*){
+    throw std::runtime_error("setRocSparseHandle() requires Tasmanian to be build with the HIP/ROCm backend.");
+}
+#endif
+
+#ifdef Tasmanian_ENABLE_DPCPP
+void TasmanianSparseGrid::setSycleQueue(void *queue){
+    if (acceleration->on_gpu()){
+        acceleration->engine->setSyclQueue(queue);
+    }else{
+        throw std::runtime_error("setSyclQueue() called with non-GPU acceleration mode.");
+    }
+}
+#else
+void TasmanianSparseGrid::setSycleQueue(void*){
+    throw std::runtime_error("setSyclQueue() requires Tasmanian to be build with the DPC++/SYCL backend.");
+}
+#endif
+
 bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
     #ifdef Tasmanian_ENABLE_GPU
     if (acc == accel_gpu_default) return true;
