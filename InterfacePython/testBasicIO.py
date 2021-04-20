@@ -33,6 +33,11 @@ class TestTasClass(unittest.TestCase):
             sStatus = "Disabled"
         print("                        OpenMP: {0:1s}".format(sStatus))
         sAvailableAcceleration = ""
+        sGPUbackend = "none"
+        if (grid.isCudaEnabled()): sGPUbackend = "CUDA"
+        if (grid.isHipEnabled()): sGPUbackend = "ROCm/HIP"
+        if (grid.isDpcppEnabled()): sGPUbackend = "oneAPI/DPC++"
+        print("                   GPU backend: {0:1s}".format(sGPUbackend))
         for s in ["cpu-blas", "gpu-cublas", "gpu-cuda", "gpu-magma"]:
             if (grid.isAccelerationAvailable(s)):
                 sAvailableAcceleration += " " + s
