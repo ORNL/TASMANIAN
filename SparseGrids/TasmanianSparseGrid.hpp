@@ -317,6 +317,12 @@ public:
     static const char* getCmakeCxxFlags();
     //! \brief Returns \b true if compiled with OpenMP support, e.g., Tasmanian_ENABLE_OPENMP=ON.
     static bool isOpenMPEnabled();
+    //! \brief Returns \b true if compiled with CUDA support, e.g., Tasmanian_ENABLE_CUDA=ON.
+    static bool isCudaEnabled();
+    //! \brief Returns \b true if compiled with HIP support, e.g., Tasmanian_ENABLE_HIP=ON.
+    static bool isHipEnabled();
+    //! \brief Returns \b true if compiled with DPC++ support, e.g., Tasmanian_ENABLE_DPCPP=ON.
+    static bool isDpcppEnabled();
 
     //! \brief Write the grid to the given \b filename using either \b binary or ASCII format.
     void write(const char *filename, bool binary = mode_binary) const;

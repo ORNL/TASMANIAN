@@ -50,6 +50,27 @@ bool TasmanianSparseGrid::isOpenMPEnabled(){
     return false;
     #endif // _OPENMP
 }
+bool TasmanianSparseGrid::isCudaEnabled(){
+    #ifdef Tasmanian_ENABLE_CUDA
+    return true;
+    #else
+    return false;
+    #endif
+}
+bool TasmanianSparseGrid::isHipEnabled(){
+    #ifdef Tasmanian_ENABLE_HIP
+    return true;
+    #else
+    return false;
+    #endif
+}
+bool TasmanianSparseGrid::isDpcppEnabled(){
+    #ifdef Tasmanian_ENABLE_DPCPP
+    return true;
+    #else
+    return false;
+    #endif
+}
 
 TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(Utils::make_unique<AccelerationContext>()), using_dynamic_construction(false){}
 

@@ -301,15 +301,18 @@ bool GridUnitTester::testAPIconsistency(){
     grid.enableAcceleration(accel_gpu_cuda, 0);
 
     #ifdef Tasmanian_ENABLE_CUDA
+    if (not TasmanianSparseGrid::isCudaEnabled()) throw std::runtime_error("Ambiguous is CUDA enabled!");
     auto manual_handle = TasGrid::AccelerationMeta::createCublasHandle();
     grid.setCuBlasHandle(manual_handle);
     #endif
     #ifdef Tasmanian_ENABLE_HIP
+    if (not TasmanianSparseGrid::isHipEnabled()) throw std::runtime_error("Ambiguous is HIP enabled!");
     rocblas_handle manual_handle;
     rocblas_create_handle(&manual_handle);
     grid.setRocBlasHandle(manual_handle);
     #endif
     #ifdef Tasmanian_ENABLE_DPCPP
+    if (not TasmanianSparseGrid::isDpcppEnabled()) throw std::runtime_error("Ambiguous is DPC++ enabled!");
     grid.setSycleQueue(&q);
     #endif
 
@@ -323,6 +326,12 @@ bool GridUnitTester::testAPIconsistency(){
     #endif
     #endif
     passAll = pass && passAll;
+
+    if ((TasmanianSparseGrid::isCudaEnabled() and TasmanianSparseGrid::isHipEnabled())
+        or (TasmanianSparseGrid::isCudaEnabled() and TasmanianSparseGrid::isDpcppEnabled())
+        or (TasmanianSparseGrid::isDpcppEnabled() and TasmanianSparseGrid::isHipEnabled())){
+        throw std::runtime_error("Ambiguous two GPU backends report as enabled!");
+    }
 
     TasmanianSparseGrid dummy_grid = TasGrid::makeFourierGrid(2, 1, 3, TasGrid::type_level);
     dummy_grid.enableAcceleration(TasGrid::accel_gpu_cuda); // makes an acceleration engine
