@@ -302,15 +302,15 @@ bool GridUnitTester::testAPIconsistency(){
 
     #ifdef Tasmanian_ENABLE_CUDA
     auto manual_handle = TasGrid::AccelerationMeta::createCublasHandle();
-    grid.getAccelerationContext()->setCuBlasHandle(manual_handle);
+    grid.setCuBlasHandle(manual_handle);
     #endif
     #ifdef Tasmanian_ENABLE_HIP
     rocblas_handle manual_handle;
     rocblas_create_handle(&manual_handle);
-    grid.getAccelerationContext()->setRocBlasHandle(manual_handle);
+    grid.setRocBlasHandle(manual_handle);
     #endif
     #ifdef Tasmanian_ENABLE_DPCPP
-    grid.getAccelerationContext()->setSyclQueue(&q);
+    grid.setSycleQueue(&q);
     #endif
 
     if (!testDenseGPU<double, GridMethodEvalBatchGPU>(test_x, baseline_y, 3, Maths::num_tol, grid, "GPU evaluate with manual handle"))
