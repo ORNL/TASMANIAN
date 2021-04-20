@@ -72,8 +72,30 @@ template<typename> void deleteHandle(int*);
  * \brief Deleter template for the GPU handles, e.g., cuBlas and rocBlas
  *
  * The deleter is used in conjunction with std::unique_ptr to provide both type-safety
- * and RAII resource management for the opaque pointer handles.
+ * and RAII resource management for the opaque pointer handles for TPL such as cuBlas and rocBlas.
  * The delete operation is defined in the corresponding TPL file.
+ * The deleter is initialized with ownership flag which is indicated whether the associated
+ * handle should or should not be deleted, e.g., whether the handle was created internally
+ * or handed down by the user.
+ *
+ * Effectively, the deleter with init_own set to false will turn the associated std::unique_ptr
+ * into a non-owning container. The positive side of this approach include:
+ * - the rest of the code can refer to a single unique_ptr, e.g., this bundles the ownership flag
+ *   into the object
+ * - the rest of the code can utilize all properties of std::unique_ptr, e.g., automatically
+ *   initializing and creating/deleting the proper copy and move constructor and assignment operators
+ * - the C++ code outside of the TasGrid::deleteHandle() specializations looks like modern C++
+ *
+ * The negative side of the above is that a non-owning std::unique_ptr is unexpected and violates
+ * the spirit of the container, and possibly the whole point of the container.
+ * However, this hack is necessitated by the mix of C-style of memory management for cuBlas/rocBlas
+ * handles together with the C++ code. The alternative to this hack is to follow a C-style of code
+ * throughout and keeping separate variables to indicate ownership, manually deleting constructors,
+ * manually implementing move semantics, and losing C++ abstraction and automation.
+ * The loss of abstraction would be obvious to a causal reader, but the code will be prone to all
+ * problems that come without RAII regardless of how diligent or how familiar with Tasmanian
+ * a contributor may be.
+ * Therefore, this deleter is implemented to allow the use of std::unique_ptr in either owning or non-owning mode.
  * \endinternal
  */
 template<typename ehandle>

@@ -161,39 +161,33 @@ void transpose_matrix(sycl::queue *q, int m, int n, scalar_type const A[], scala
 void factorizePLU(AccelerationContext const *acceleration, int n, double A[], int_gpu_lapack ipiv[]){
     sycl::queue *q = getSyclQueue(acceleration);
     size_t size = oneapi::mkl::lapack::getrf_scratchpad_size<double>(*q, n, n, n);
-    q->wait();
     GpuVector<double> workspace(acceleration, size);
-    oneapi::mkl::lapack::getrf(*q, n, n, A, n, ipiv, workspace.data(), size);
-    q->wait();
+    oneapi::mkl::lapack::getrf(*q, n, n, A, n, ipiv, workspace.data(), size).wait();
 }
 
 void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int_gpu_lapack const ipiv[], double b[]){
     sycl::queue *q = getSyclQueue(acceleration);
     size_t size = oneapi::mkl::lapack::getrs_scratchpad_size<double>(*q, (trans == 'T') ? oneapi::mkl::transpose::T :oneapi::mkl::transpose::N, n, 1, n, n);
-    q->wait();
     GpuVector<double> workspace(acceleration, size);
     oneapi::mkl::lapack::getrs(*q, (trans == 'T') ? oneapi::mkl::transpose::T :oneapi::mkl::transpose::N, n, 1,
-                               const_cast<double*>(A), n, const_cast<int_gpu_lapack*>(ipiv), b, n, workspace.data(), size);
-    q->wait();
+                               const_cast<double*>(A), n, const_cast<int_gpu_lapack*>(ipiv), b, n, workspace.data(), size).wait();
 }
 void solvePLU(AccelerationContext const *acceleration, char trans, int n, double const A[], int_gpu_lapack const ipiv[], int nrhs, double B[]){
     sycl::queue *q = getSyclQueue(acceleration);
     size_t size = oneapi::mkl::lapack::getrs_scratchpad_size<double>(*q, (trans == 'T') ? oneapi::mkl::transpose::T :oneapi::mkl::transpose::N, n, nrhs, n, n);
-    q->wait();
     GpuVector<double> workspace(acceleration, size);
     GpuVector<double> BT(acceleration, n, nrhs);
     transpose_matrix(q, nrhs, n, B, BT.data());
     oneapi::mkl::lapack::getrs(*q, (trans == 'T') ? oneapi::mkl::transpose::T :oneapi::mkl::transpose::N, n, nrhs,
-                               const_cast<double*>(A), n, const_cast<int_gpu_lapack*>(ipiv), BT.data(), n, workspace.data(), size);
-    q->wait();
+                               const_cast<double*>(A), n, const_cast<int_gpu_lapack*>(ipiv), BT.data(), n,
+                               workspace.data(), size).wait();
     transpose_matrix(q, n, nrhs, BT.data(), B);
 }
 
 template<typename scalar_type>
 void dump_data(sycl::queue *q, size_t m, size_t n, scalar_type *data){
     std::vector<scalar_type> cpu_data(m * n);
-    q->memcpy(cpu_data.data(), data, Utils::size_mult(m, n) * sizeof(scalar_type));
-    q->wait();
+    q->memcpy(cpu_data.data(), data, Utils::size_mult(m, n) * sizeof(scalar_type)).wait();
     std::cout << std::scientific; std::cout.precision(4);
     for(size_t i=0; i<m; i++){
         for(size_t j=0; j<n; j++){
@@ -216,14 +210,12 @@ std::int64_t gemqr_workspace<std::complex<double>>(cl::sycl::queue *q, oneapi::m
 
 template<typename scalar_type>
 inline void gemqr(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, scalar_type* A, std::int64_t lda, scalar_type *T, scalar_type* C, std::int64_t ldc, scalar_type* workspace, std::int64_t worksize){
-    oneapi::mkl::lapack::ormqr(*q, side, trans, m, n, k, A, lda, T, C, ldc, workspace, worksize);
-    q->wait();
+    oneapi::mkl::lapack::ormqr(*q, side, trans, m, n, k, A, lda, T, C, ldc, workspace, worksize).wait();
 }
 
 template<>
 void gemqr<std::complex<double>>(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::complex<double>* A, std::int64_t lda, std::complex<double> *T, std::complex<double>* C, std::int64_t ldc, std::complex<double>* workspace, std::int64_t worksize){
-    oneapi::mkl::lapack::unmqr(*q, side, trans, m, n, k, A, lda, T, C, ldc, workspace, worksize);
-    q->wait();
+    oneapi::mkl::lapack::unmqr(*q, side, trans, m, n, k, A, lda, T, C, ldc, workspace, worksize).wait();
 }
 
 /*
@@ -232,7 +224,6 @@ void gemqr<std::complex<double>>(cl::sycl::queue *q, oneapi::mkl::side side, one
 template<typename scalar_type>
 void solveLSmultiGPU(AccelerationContext const *acceleration, int n, int m, scalar_type A[], int nrhs, scalar_type B[]){
     sycl::queue *q = getSyclQueue(acceleration);
-    q->wait();
 
     auto side = oneapi::mkl::side::left;
     auto trans = (std::is_same<scalar_type, double>::value) ? oneapi::mkl::transpose::trans : oneapi::mkl::transpose::conjtrans;
@@ -246,8 +237,7 @@ void solveLSmultiGPU(AccelerationContext const *acceleration, int n, int m, scal
 
     GpuVector<scalar_type> workspace(acceleration, worksize);
     try{
-        oneapi::mkl::lapack::geqrf(*q, n, m, AT.data(), n, T.data(), workspace.data(), worksize);
-        q->wait();
+        oneapi::mkl::lapack::geqrf(*q, n, m, AT.data(), n, T.data(), workspace.data(), worksize).wait();
     }catch(oneapi::mkl::lapack::exception &e){
         std::cout << "lapack geqrf() error code:  " << e.info()
                   << "\nlapack geqrf() detail code: " << e.detail() << std::endl;
@@ -264,14 +254,12 @@ void solveLSmultiGPU(AccelerationContext const *acceleration, int n, int m, scal
                       << " detail code:  " << e.detail() << std::endl;
             throw;
         }
-        oneapi::mkl::blas::column_major::trsv(*q, oneapi::mkl::uplo::U, oneapi::mkl::transpose::N, oneapi::mkl::diag::N, m, AT.data(), n, B, 1);
-        q->wait();
+        oneapi::mkl::blas::column_major::trsv(*q, oneapi::mkl::uplo::U, oneapi::mkl::transpose::N, oneapi::mkl::diag::N, m, AT.data(), n, B, 1).wait();
     }else{
         GpuVector<scalar_type> BT(acceleration, n, nrhs);
         transpose_matrix(q, nrhs, n, B, BT.data());
         gemqr(q, side, trans, n, nrhs, m, AT.data(), n, T.data(), BT.data(), n, workspace.data(), worksize);
-        oneapi::mkl::blas::column_major::trsm(*q, oneapi::mkl::side::L, oneapi::mkl::uplo::U, oneapi::mkl::transpose::N, oneapi::mkl::diag::N, m,  nrhs, 1.0, AT.data(), n, BT.data(), n);
-        q->wait();
+        oneapi::mkl::blas::column_major::trsm(*q, oneapi::mkl::side::L, oneapi::mkl::uplo::U, oneapi::mkl::transpose::N, oneapi::mkl::diag::N, m,  nrhs, 1.0, AT.data(), n, BT.data(), n).wait();
         transpose_matrix(q, n, nrhs, BT.data(), B);
     }
 }
@@ -293,14 +281,13 @@ void denseMultiply(AccelerationContext const *acceleration, int M, int N, int K,
     sycl::queue *q = getSyclQueue(acceleration);
     if (M > 1){
         if (N > 1){ // matrix-matrix mode
-            oneapi::mkl::blas::column_major::gemm(*q, oneapi::mkl::transpose::N, oneapi::mkl::transpose::N, M, N, K, alpha, A.data(), M, B.data(), K, beta, C, M);
+            oneapi::mkl::blas::column_major::gemm(*q, oneapi::mkl::transpose::N, oneapi::mkl::transpose::N, M, N, K, alpha, A.data(), M, B.data(), K, beta, C, M).wait();
         }else{ // matrix vector, A * v = C
-            oneapi::mkl::blas::column_major::gemv(*q, oneapi::mkl::transpose::N, M, K, alpha, A.data(), M, B.data(), 1, beta, C, 1);
+            oneapi::mkl::blas::column_major::gemv(*q, oneapi::mkl::transpose::N, M, K, alpha, A.data(), M, B.data(), 1, beta, C, 1).wait();
         }
     }else{ // matrix vector B^T * v = C
-        oneapi::mkl::blas::column_major::gemv(*q, oneapi::mkl::transpose::T, K, N, alpha, B.data(), K, A.data(), 1, beta, C, 1);
+        oneapi::mkl::blas::column_major::gemv(*q, oneapi::mkl::transpose::T, K, N, alpha, B.data(), K, A.data(), 1, beta, C, 1).wait();
     }
-    q->wait();
 }
 
 template void denseMultiply<float>(AccelerationContext const*, int, int, int, float,
@@ -321,13 +308,12 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
 
     if (M == 1){ // using sparse-blas level 2
         oneapi::mkl::sparse::gemv(*q, oneapi::mkl::transpose::nontrans, alpha, mat,
-                                  const_cast<scalar_type*>(A.data()), 0.0, C);
+                                  const_cast<scalar_type*>(A.data()), 0.0, C).wait();
     }else{ // using sparse-blas level 3
         oneapi::mkl::sparse::gemm(*q, oneapi::mkl::transpose::nontrans, alpha, mat,
-                                  const_cast<scalar_type*>(A.data()), M, M, 0.0, C, M);
+                                  const_cast<scalar_type*>(A.data()), M, M, 0.0, C, M).wait();
     }
 
-    q->wait();
     oneapi::mkl::sparse::release_matrix_handle(&mat);
 }
 

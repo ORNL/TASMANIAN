@@ -252,6 +252,7 @@ bool runTests(TypeAcceleration acc, bool verbose, int gpu_id){
         }catch(std::runtime_error &){
             pass = false;
         }
+        // this one shows which test has failed (for debugging purposes)
         if (verbose) std::cout << " done test: " << std::setw(2) << count++ << "/" << tests.size() << std::endl;
     }
 

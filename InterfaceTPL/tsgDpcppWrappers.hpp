@@ -56,7 +56,7 @@ namespace TasGrid{
 /*!
  * \internal
  * \ingroup TasmanianTPLWrappers
- * \brief Return a new sycl::queue wrapped in a shared_ptr object.
+ * \brief Return a new sycl::queue wrapped in a unique_ptr object in owning mode.
  *
  * \endinternal
  */
@@ -90,10 +90,7 @@ inline std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>> makeNewQueue(){
 inline sycl::queue* getSyclQueue(AccelerationContext const *acceleration){
     if (not acceleration->engine->internal_queue){
         if (test_queue.use_testing){
-            acceleration->engine->internal_queue = std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>>(
-                                    reinterpret_cast<int*>(test_queue.test_queue.get()),
-                                    HandleDeleter<AccHandle::Syclqueue>(false)
-                                );
+            acceleration->engine->internal_queue = test_queue; // take non-owning copy of the pointer
         }else{
             acceleration->engine->internal_queue = makeNewQueue();
         }
