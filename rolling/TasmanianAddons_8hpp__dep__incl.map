@@ -1,0 +1,20 @@
+<map id="Addons/TasmanianAddons.hpp" name="Addons/TasmanianAddons.hpp">
+<area shape="rect" id="node1" title="Header to include add addon templates." alt="" coords="1451,5,1671,32"/>
+<area shape="rect" id="node2" href="$Tasmanian_8hpp.html" title="Master header to include all modules." alt="" coords="1478,80,1643,107"/>
+<area shape="rect" id="node3" href="$example__sparse__grids__01_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="5,155,177,211"/>
+<area shape="rect" id="node4" href="$example__sparse__grids__02_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="201,155,373,211"/>
+<area shape="rect" id="node5" href="$example__sparse__grids__03_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="397,155,569,211"/>
+<area shape="rect" id="node6" href="$example__sparse__grids__04_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="593,155,765,211"/>
+<area shape="rect" id="node7" href="$example__sparse__grids__05_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="789,155,961,211"/>
+<area shape="rect" id="node8" href="$example__sparse__grids__06_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="985,155,1157,211"/>
+<area shape="rect" id="node9" href="$example__sparse__grids__07_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="1181,155,1353,211"/>
+<area shape="rect" id="node10" href="$example__sparse__grids__08_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="1377,155,1549,211"/>
+<area shape="rect" id="node11" href="$example__sparse__grids__09_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="1573,155,1745,211"/>
+<area shape="rect" id="node12" href="$example__sparse__grids__10_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="1769,155,1941,211"/>
+<area shape="rect" id="node13" href="$example__dream_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="1965,162,2164,203"/>
+<area shape="rect" id="node14" href="$example__dream__01_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="2188,162,2387,203"/>
+<area shape="rect" id="node15" href="$example__dream__02_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="2411,162,2609,203"/>
+<area shape="rect" id="node16" href="$example__dream__03_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="2633,162,2832,203"/>
+<area shape="rect" id="node17" href="$example__dream__04_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="2856,162,3055,203"/>
+<area shape="rect" id="node18" href="$example__dream__05_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="3079,162,3277,203"/>
+</map>

@@ -1,0 +1,52 @@
+<map id="Addons/tsgMPISampleDream.hpp" name="Addons/tsgMPISampleDream.hpp">
+<area shape="rect" id="node1" title="DREAM posterior sampling using MPI." alt="" coords="234,5,473,32"/>
+<area shape="rect" id="node2" href="$tsgMPIConstructGrid_8hpp.html" title="Sparse Grids construction through sampling and MPI." alt="" coords="262,80,445,107"/>
+<area shape="rect" id="node3" href="$tsgMPIScatterDream_8hpp.html" title="DREAM objects send/receive through MPI." alt="" coords="155,155,339,181"/>
+<area shape="rect" id="node49" href="$tsgConstructSurrogate_8hpp.html" title="Automated parallel construction procedure." alt="" coords="363,155,557,181"/>
+<area shape="rect" id="node4" href="$tsgMPIScatterGrid_8hpp.html" title="Sparse Grids send/receive through MPI." alt="" coords="167,229,334,256"/>
+<area shape="rect" id="node5" href="$tsgAddonsCommon_8hpp.html" title="Common includes and methods for all addons." alt="" coords="263,304,441,331"/>
+<area shape="rect" id="node6" title=" " alt="" coords="5,379,80,405"/>
+<area shape="rect" id="node7" title=" " alt="" coords="104,379,168,405"/>
+<area shape="rect" id="node8" title=" " alt="" coords="192,379,256,405"/>
+<area shape="rect" id="node9" title=" " alt="" coords="281,379,423,405"/>
+<area shape="rect" id="node10" title=" " alt="" coords="448,379,515,405"/>
+<area shape="rect" id="node11" href="$TasmanianDREAM_8hpp.html" title="DiffeRential Evolution Adaptive Metropolis methods." alt="" coords="539,379,707,405"/>
+<area shape="rect" id="node48" title=" " alt="" coords="731,379,789,405"/>
+<area shape="rect" id="node12" href="$tsgDreamSample_8hpp.html" title="Core sampling templates." alt="" coords="412,453,575,480"/>
+<area shape="rect" id="node46" href="$tsgDreamLikelyGaussian_8hpp.html" title="Several likelihood implementations based on Gaussian noise." alt="" coords="646,453,858,480"/>
+<area shape="rect" id="node13" href="$tsgDreamState_8hpp.html" title="The container class holding the DREAM history." alt="" coords="522,528,670,555"/>
+<area shape="rect" id="node44" href="$tsgDreamCoreRandom_8hpp.html" title="Core random sampling methods." alt="" coords="299,528,498,555"/>
+<area shape="rect" id="node45" href="$tsgDreamCorePDF_8hpp.html" title="Gives the unscaled formulas for several probability distributions." alt="" coords="107,528,275,555"/>
+<area shape="rect" id="node14" href="$tsgDreamEnumerates_8hpp.html" title="The enumerated types used in the DREAM module." alt="" coords="500,603,692,629"/>
+<area shape="rect" id="node15" title=" " alt="" coords="483,677,555,704"/>
+<area shape="rect" id="node16" href="$TasmanianSparseGrid_8hpp.html" title="Main header for the Sparse Grid module." alt="" coords="579,677,770,704"/>
+<area shape="rect" id="node17" href="$tsgGridGlobal_8hpp_source.html" title=" " alt="" coords="331,752,469,779"/>
+<area shape="rect" id="node40" href="$tsgGridLocalPolynomial_8hpp.html" title="Algorithms for manipulating sets of multi&#45;indexes." alt="" coords="505,827,709,853"/>
+<area shape="rect" id="node41" href="$tsgGridWavelet_8hpp_source.html" title=" " alt="" coords="665,752,815,779"/>
+<area shape="rect" id="node43" href="$tsgGridFourier_8hpp_source.html" title=" " alt="" coords="848,752,989,779"/>
+<area shape="rect" id="node18" href="$tsgGridSequence_8hpp_source.html" title=" " alt="" coords="320,827,480,853"/>
+<area shape="rect" id="node39" href="$tsgCacheLagrange_8hpp.html" title="Cache data structure for evaluate with Global grids." alt="" coords="125,827,296,853"/>
+<area shape="rect" id="node19" href="$tsgGridCore_8hpp.html" title="Definition for the base grid class." alt="" coords="543,901,670,928"/>
+<area shape="rect" id="node20" href="$tsgDConstructGridGlobal_8hpp.html" title="Class and data types used for dynamic construction of Global grids." alt="" coords="264,976,475,1003"/>
+<area shape="rect" id="node36" href="$tsgCudaLoadStructures_8hpp_source.html" title=" " alt="" coords="636,1200,836,1227"/>
+<area shape="rect" id="node37" href="$tsgHierarchyManipulator_8hpp.html" title="Algorithms for manipulating multi&#45;indexes defined by hierarchy rules." alt="" coords="501,976,712,1003"/>
+<area shape="rect" id="node21" title=" " alt="" coords="155,1051,253,1077"/>
+<area shape="rect" id="node22" href="$tsgIndexManipulator_8hpp.html" title="Algorithms for manipulating sets of multi&#45;indexes." alt="" coords="278,1051,461,1077"/>
+<area shape="rect" id="node23" href="$tsgIndexSets_8hpp.html" title="Data structures for storing multi&#45;indexes and floating point values." alt="" coords="154,1275,289,1301"/>
+<area shape="rect" id="node29" href="$tsgOneDimensionalWrapper_8hpp.html" title="Cache for one dimensional rules." alt="" coords="252,1125,484,1152"/>
+<area shape="rect" id="node24" href="$tsgIOHelpers_8hpp.html" title="Templates to simply file I/O." alt="" coords="251,1349,386,1376"/>
+<area shape="rect" id="node25" href="$tsgEnumerates_8hpp.html" title="Omnipresent enumerate types." alt="" coords="381,1573,529,1600"/>
+<area shape="rect" id="node26" title=" " alt="" coords="339,1648,405,1675"/>
+<area shape="rect" id="node27" title=" " alt="" coords="429,1648,480,1675"/>
+<area shape="rect" id="node28" title=" " alt="" coords="504,1648,584,1675"/>
+<area shape="rect" id="node30" href="$tsgHardCodedTabulatedRules_8hpp.html" title="Hard&#45;coded nodes and weights." alt="" coords="274,1200,515,1227"/>
+<area shape="rect" id="node31" href="$tsgCoreOneDimensional_8hpp.html" title="Algorithms and meta&#45;data for the Gauuss, Chebyshev and custom rules." alt="" coords="351,1275,559,1301"/>
+<area shape="rect" id="node32" href="$tsgLinearSolvers_8hpp.html" title="Linear solvers." alt="" coords="517,1349,675,1376"/>
+<area shape="rect" id="node35" href="$tsgSequenceOptimizer_8hpp.html" title="Algorithms for computing greedy sequences." alt="" coords="357,1424,553,1451"/>
+<area shape="rect" id="node33" href="$tsgAcceleratedDataStructures_8hpp.html" title="Data structures for interacting with CUDA and MAGMA environments." alt="" coords="577,1424,821,1451"/>
+<area shape="rect" id="node34" href="$tsgAcceleratedHandles_8hpp_source.html" title=" " alt="" coords="545,1499,745,1525"/>
+<area shape="rect" id="node38" href="$tsgRuleLocalPolynomial_8hpp_source.html" title=" " alt="" coords="509,1125,715,1152"/>
+<area shape="rect" id="node42" href="$tsgRuleWavelet_8hpp_source.html" title=" " alt="" coords="733,827,885,853"/>
+<area shape="rect" id="node47" href="$tsgDreamLikelihoodCore_8hpp.html" title="The interface mother&#45;class for the likelihood classes." alt="" coords="695,528,905,555"/>
+<area shape="rect" id="node50" href="$tsgCandidateManager_8hpp.html" title="Manager for manipulations of candidate construction points." alt="" coords="361,229,553,256"/>
+</map>

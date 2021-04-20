@@ -1,0 +1,4 @@
+<map id="TasDREAM::LikelihoodGaussIsotropic" name="TasDREAM::LikelihoodGaussIsotropic">
+<area shape="rect" id="node1" title="Implements likelihood under the assumption of isotropic white noise." alt="" coords="20,80,225,121"/>
+<area shape="rect" id="node2" href="$classTasDREAM_1_1TasmanianLikelihood.html" title="Interface for the likelihood classes." alt="" coords="5,5,240,32"/>
+</map>
