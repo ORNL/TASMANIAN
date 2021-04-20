@@ -117,6 +117,9 @@ class TasmanianSparseGrid:
         self.pLibTSG.tsgGetVersionMajor.restype = c_int
         self.pLibTSG.tsgGetVersionMinor.restype = c_int
         self.pLibTSG.tsgIsOpenMPEnabled.restype = c_int
+        self.pLibTSG.tsgIsCudaEnabled.restype = c_int
+        self.pLibTSG.tsgIsHipEnabled.restype = c_int
+        self.pLibTSG.tsgIsDpcppEnabled.restype = c_int
         self.pLibTSG.tsgGetNumDimensions.restype = c_int
         self.pLibTSG.tsgGetNumOutputs.restype = c_int
         self.pLibTSG.tsgGetNumLoaded.restype = c_int
@@ -303,6 +306,24 @@ class TasmanianSparseGrid:
         returns True if the library has been compiled with OpenMP support
         '''
         return (self.pLibTSG.tsgIsOpenMPEnabled() != 0)
+
+    def isCudaEnabled(self):
+        '''
+        returns True if the library has been compiled with CUDA support
+        '''
+        return (self.pLibTSG.tsgIsCudaEnabled() != 0)
+
+    def isHipEnabled(self):
+        '''
+        returns True if the library has been compiled with HIP support
+        '''
+        return (self.pLibTSG.tsgIsHipEnabled() != 0)
+
+    def isDpcppEnabled(self):
+        '''
+        returns True if the library has been compiled with DPC++ support
+        '''
+        return (self.pLibTSG.tsgIsDpcppEnabled() != 0)
 
     def read(self, sFilename):
         '''
