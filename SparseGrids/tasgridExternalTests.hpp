@@ -31,8 +31,8 @@
 #ifndef __TASGRID_TESTER_HPP
 #define __TASGRID_TESTER_HPP
 
+#include "tasgridLogs.hpp"
 #include "tasgridCLICommon.hpp"
-
 #include "tasgridTestFunctions.hpp"
 
 struct TestResults{

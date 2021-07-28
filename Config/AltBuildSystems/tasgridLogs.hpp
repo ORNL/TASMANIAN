@@ -28,10 +28,16 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-void show_log(){
+#include <iostream>
+#include <fstream>
+
+#define TasmanianGPTableBuild ./SparseGrids/GaussPattersonRule.table
+#define TasmanianGPTableInstall ./SparseGrids/GaussPattersonRule.table
+
+inline void show_log(){
     std::cout << "Logs are not availeble with GNU Make" << std::endl;
 }
 
-void show_cmake_log(){
+inline void show_cmake_log(){
     std::cout << "Logs are not availeble with GNU Make" << std::endl;
 }
