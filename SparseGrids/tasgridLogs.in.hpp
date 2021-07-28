@@ -31,12 +31,15 @@
 #include <iostream>
 #include <fstream>
 
-void show_log(){
+#define TasmanianGPTableBuild @CMAKE_CURRENT_BINARY_DIR@/SparseGrids/GaussPattersonRule.table
+#define TasmanianGPTableInstall @Tasmanian_final_install_path@/share/Tasmanian/GaussPattersonRule.table
+
+inline void show_log(){
     std::ifstream logfile("@Tasmanian_final_install_path@/share/Tasmanian/Tasmanian.log");
     std::cout << "\n" << logfile.rdbuf() << std::endl;
 }
 
-void show_cmake_log(){
+inline void show_cmake_log(){
     std::cout << "\nCMake parameters:\n--------------------------------------------------------------------------------"
     << R"CMAKEVARS(
 CMAKE_COMMAND                      @CMAKE_COMMAND@

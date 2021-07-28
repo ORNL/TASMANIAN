@@ -30,7 +30,6 @@
 
 #include "tasgridExternalTests.hpp"
 #include "tasgridWrapper.hpp"
-#include "tasgridLogs.hpp"
 
 using namespace std;
 using namespace TasGrid;
