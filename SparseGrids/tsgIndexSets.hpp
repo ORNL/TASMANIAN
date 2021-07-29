@@ -232,7 +232,7 @@ public:
     //! \brief Constructor, makes a set by \b moving out of the vector, the vector must be already sorted.
     MultiIndexSet(size_t cnum_dimensions, std::vector<int> &&new_indexes) :
         num_dimensions(cnum_dimensions), cache_num_indexes((int)(new_indexes.size() / cnum_dimensions)),
-        indexes(std::forward<std::vector<int>>(new_indexes)){}
+        indexes(std::move(new_indexes)){}
     //! \brief Copy a collection of unsorted indexes into a sorted multi-index set, sorts during the copy.
     MultiIndexSet(Data2D<int> const &data);
     //! \brief Read from stream constructor.
@@ -331,7 +331,7 @@ public:
     StorageSet() : num_outputs(0), num_values(0){}
     //! \brief Move constructor from a known vector.
     StorageSet(int cnum_outputs, int cnum_values, std::vector<double> &&vals) :
-        num_outputs(cnum_outputs), num_values(cnum_values), values(std::forward<std::vector<double>>(vals)){}
+        num_outputs(cnum_outputs), num_values(cnum_values), values(std::move(vals)){}
     //! \brief Read constructor.
     template<typename iomode> StorageSet(std::istream &is, iomode) :
         num_outputs((size_t) IO::readNumber<iomode, int>(is)),
