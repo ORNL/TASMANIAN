@@ -9,6 +9,9 @@ export create_lower_set, is_itd_elem
 function create_lower_set(num_dimensions::Int, is_elem::Function)
     # Function that returns a (sorted) MultiSet whose elements satisfy
     # a conditional *is_elem*.
+    if num_dimensions == 0
+        return Int[]
+    end
     num_entries = 0
     indexes = Int[]
     p = ones(Int, num_dimensions)
