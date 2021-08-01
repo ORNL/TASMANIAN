@@ -1,14 +1,13 @@
 module TasData
-
 export create_lower_set, is_itd_elem
 
-# ==============================================================================
-# Key Functions
-# ==============================================================================
+# A collection of functions for generating key data structures.
 
 function create_lower_set(num_dimensions::Int, is_elem::Function)
-    # Function that returns a (sorted) MultiSet whose elements satisfy
-    # a conditional *is_elem*.
+    #=
+    Function that returns a column-sorted matrix whose columns satisfy
+    a conditional *is_elem*.
+    =#
     if num_dimensions == 0
         return Int[]
     end
@@ -32,8 +31,10 @@ function create_lower_set(num_dimensions::Int, is_elem::Function)
 end
 
 function is_itd_elem(m::Int, index::Vector{Int})
-    # Test if an index is part of the isotropic total degree lower set of
-    # degree m
+    #=
+    Test if an index is part of the isotropic total degree lower set of
+    degree m.
+    =#
     return sum(index) <= m
 end
 
