@@ -1,4 +1,18 @@
-# A collection of subroutines that appear in various key functions.
+# A collection of subroutines, and tests on some subroutines, that appear in
+# various key functions.
+
+module TasProto
+
+include("../src/TasData.jl")
+using .TasData
+include("../src/TasOneDimesionalRule.jl")
+using .TasOneDimensionalRule
+include("../src/TasGrid.jl")
+using .TasGrid
+
+# ==============================================================================
+# PROTO 1
+# ==============================================================================
 
 # Specialized permutation function.
 function spec_permute(n)
@@ -18,3 +32,15 @@ function spec_permute(n)
     end
     return(p)
 end
+
+# ==============================================================================
+# PROTO 2
+# ==============================================================================
+g = GlobalGrid([true, true],
+               [clenshaw_curtis, clenshaw_curtis],
+               [[1, 1] [1, 2]])
+wg = generate_weight_cache(g)
+sg = generate_surplus_cache(g)
+print(sg)
+
+end # module
