@@ -1,7 +1,8 @@
+# A collection of 1D interpolation functions that return points and
+# weights in column major format.
 module TasOneDimensionalRule
 export clenshaw_curtis
 
-# TODO: Make the output incrementally nested.
 function clenshaw_curtis(l::Int)
     #=
     Generates (*points*, *weights*) following the Clenshaw-Curtis rule over

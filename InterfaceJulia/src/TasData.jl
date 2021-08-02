@@ -1,7 +1,6 @@
+# A collection of functions for generating key data structures.
 module TasData
 export create_lower_set, is_itd_elem
-
-# A collection of functions for generating key data structures.
 
 function create_lower_set(num_dimensions::Int, is_elem::Function)
     #=
