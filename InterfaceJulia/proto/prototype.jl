@@ -1,6 +1,5 @@
 # A collection of subroutines, and tests on some subroutines, that appear in
 # various key functions.
-
 module TasProto
 
 include("../src/TasData.jl")
@@ -9,6 +8,9 @@ include("../src/TasOneDimesionalRule.jl")
 using .TasOneDimensionalRule
 include("../src/TasGrid.jl")
 using .TasGrid
+include("../src/TasUtil.jl")
+using .TasUtil
+
 
 # ==============================================================================
 # PROTO 1
@@ -36,11 +38,25 @@ end
 # ==============================================================================
 # PROTO 2
 # ==============================================================================
-g = GlobalGrid([true, true],
-               [clenshaw_curtis, clenshaw_curtis],
-               [[1, 1] [1, 2]])
-wg = generate_weight_cache(g)
-sg = generate_surplus_cache(g)
-print(sg)
+
+# Clenshaw-Curtis grid of dimension 2 and total degree 4.
+cc_rule = Rule1D(true, l->2^l+1, clenshaw_curtis)
+ls = create_lower_set(2, x->TasData.is_itd_elem(7, x))
+g = GlobalGrid([cc_rule, cc_rule], ls)
+wcg = generate_weight_cache(g)
+scg = generate_quad_surplus_cache(g)
+pg = get_points(g)
+wg = get_quadrature_weights(g)
+
+# Use the grid to compute
+#
+#   I := ∫ₐ∫ₐ sin(x²+y²) dx dy
+#
+# where a := [-1, 1].
+int_fn = (t) -> sin(t[1]^2 + t[2]^2)
+I = sum(wg .* int_fn.(pg))
+cmp_mat = Matrix(undef, 2, 1)
+cmp_mat[1, 1] = 2.245161593287624
+cmp_mat[2, 1] = I
 
 end # module

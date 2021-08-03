@@ -1,8 +1,30 @@
 # A collection of structures and functions for general sparse grids.
-
 module TasGrid
 
-export GlobalGrid, generate_weight_cache, generate_surplus_cache
+include("TasUtil.jl")
+using .TasUtil
+
+export Rule1D, GlobalGrid
+export generate_weight_cache, generate_quad_surplus_cache
+export get_points, get_quadrature_weights
+
+struct Rule1D
+    #=
+    Container for a 1D interpolation rule.
+    =#
+
+    # Indicator for if the rule generates nested points.
+    nested::Bool
+    # Function that returns the number of nodes for a given level.
+    num_nodes::Function
+    # Function that returns the points and weights in a pair (points, weights)
+    # for a given level. Indices for points and weights should align!
+    points_and_weights::Function
+
+    # Constructors
+    Rule1D() = new(false, l->0, l->([],[]))
+    Rule1D(n::Bool, nn::Function, pw::Function) = new(n, nn, pw)
+end
 
 struct GlobalGrid
     #=
@@ -12,27 +34,20 @@ struct GlobalGrid
 
     # The dimension of the grid.
     num_dims::Int
-    # The i-th entry is true if the i-th 1D rule produces nested points.
-    is_nested_vec::Vector{Bool}
-    # The i-th entry is the 1D rule for the i-th dimension. Each rule function
-    # should return a (points, weights) tuple.
-    rule1D_vec::Vector{<:Function}
+    # The i-th entry is the 1D interpolation rule for the i-th dimension. 
+    rule1D_vec::Vector{Rule1D}
     # The lower set for filtering the possible levels of for the rules. Each
     # column represents a particular multi-index.
     lower_set::Array{Int, 2}
 
     # Constructors.
     GlobalGrid() = new(0, Bool[], Function[], zeros(Int, 0, 0))
-    function GlobalGrid(is::Vector{Bool},
-                        r1d::Vector{<:Function},
-                        ls::Array{Int, 2})
-        if (length(is) != length(r1d))
-            error("The lengths of the first two arguments are not equal!")
-        elseif (length(r1d) != size(ls, 1))
-            error("The number of rows of the third argument is not equal to " *
-                  "the lengths of the first two arguments!")
+    function GlobalGrid(r1d::Vector{Rule1D}, ls::Array{Int, 2})
+        if (length(r1d) != size(ls, 1))
+            error("The number of 1D rules is not equal to the number of " *
+                  "multi-indexes in the given lower set!")
         else
-            new(length(is), is, r1d, ls)
+            new(length(r1d), r1d, ls)
         end
     end
 end
@@ -47,48 +62,101 @@ function generate_weight_cache(grid::GlobalGrid)
     for k=1:grid.num_dims
         weight_cache[k] = Vector{Float64}[]
         for l=1:max_degrees[k]
-            _, wk = grid.rule1D_vec[k](l)
+            _, wk = grid.rule1D_vec[k].points_and_weights(l)
             push!(weight_cache[k], wk)
         end
     end
     return weight_cache
 end
 
-function generate_surplus_cache(grid::GlobalGrid)
+function generate_quad_surplus_cache(grid::GlobalGrid)
     # For over every multi-index in grid.lower_set, create a cache of
-    # surplus weights. In particular, surplus_cache[k][j] contains the nonzero
-    # weights for the operator
+    # quadrature surplus weights. In particular, quad_surplus_cache[j][k] contains
+    # the nonzero weights for the operator
     #
-    #   Δ(l) := U(l) - U(l-1)
+    #   Δ(l) := R(l) - R(l-1)
     #
-    # where l = grid.lower_set[k,j] and U(l) is corresponds to the 1D rule in
+    # where l = grid.lower_set[k,j] and R(l) is corresponds to the 1D rule in
     # grid.rule1D_vec[k](l).
     num_dims = grid.num_dims
     num_entries = size(grid.lower_set, 2)
     weight_cache = generate_weight_cache(grid)
-    surplus_cache = Vector{Vector{Vector{Float64}}}(undef, num_dims)
-    for k=1:num_dims
-        surplus_cache[k] = Vector{Float64}[]
-        # Safety check.
-        if !grid.is_nested_vec[k] error("Only nested rules are supported!") end
-        for j=1:num_entries
-            l = grid.lower_set[k, j]
-            wl = weight_cache[k][l]
-            wl_m1 = (l >= 2) ? weight_cache[k][l-1] : zeros(Float64, 0)
-            push!(surplus_cache[k],
-                  wl - [wl_m1; zeros(Float64, length(wl) - length(wl_m1))])
+    quad_surplus_cache = Vector{Vector{Vector{Float64}}}(undef, num_entries)
+    for j=1:num_entries
+        quad_surplus_cache[j] = Vector{Float64}[]
+        for k=1:num_dims
+            if grid.rule1D_vec[k].nested
+                l = grid.lower_set[k, j]
+                wl = weight_cache[k][l]
+                wl_m1 = (l >= 2) ? weight_cache[k][l-1] : zeros(Float64, 0)
+                push!(quad_surplus_cache[j],
+                      wl - [wl_m1; zeros(Float64, length(wl) - length(wl_m1))])
+            else
+                # TODO Implement the non-nested case.
+                error("Only nested rules are supported!")
+            end
         end
     end
-    return surplus_cache
+    return quad_surplus_cache
 
 end
 
-function get_points_and_weights(grid::GlobalGrid)
-    # Outputs the points and weights of a global grid.
+# NOTE: The ordering of get_points() should coincide with the ordering of
+#       get_weights().
 
-    # TODO: Implement the non-nested version. Only grids where all dimensions
-    #       have a nested rule are allowed right now.
-
+function get_points(grid::GlobalGrid)
+    # Outputs the points of a global grid using a cache of 1D points. Only
+    # covers the nested case right now.
+    max_degrees, _ = findmax(grid.lower_set, dims=2)
+    point_cache = Vector{Vector{Float64}}(undef, grid.num_dims)
+    for k=1:grid.num_dims
+        if grid.rule1D_vec[k].nested
+            point_cache[k], _ =
+                grid.rule1D_vec[k].points_and_weights(max_degrees[k])
+        else
+            # TODO Implement the non-nested case.
+            error("Only nested rules are supported!")
+        end
+    end
+    return cartesian_product(point_cache)
 end
+
+function get_quadrature_weights(grid::GlobalGrid)
+    # Outputs the quadrature weights of a global grid. Only covers the nested
+    # case right now.
+
+    # Compute the number of points in each dimension based on the lower set
+    # and rules for each dimension.
+    num_points = Vector{Int}(undef, grid.num_dims)
+    max_degrees, _ = findmax(grid.lower_set, dims=2)
+    for k=1:grid.num_dims
+        if grid.rule1D_vec[k].nested
+            num_points[k] = grid.rule1D_vec[k].num_nodes(max_degrees[k])
+        else
+            # TODO Implement the non-nested case.
+            error("Only nested rules are supported!")
+        end
+    end
+
+    # Collapse all of the tensors over the indices in the lower set.
+    qs_cache = generate_quad_surplus_cache(grid)
+    quad_weights = zeros(Float64, prod(num_points))
+    num_entries = size(grid.lower_set, 2)
+    for j=1:num_entries
+        # Take a full Cartesian product with added zero weights and
+        # collapse the tensor product by multiplying the weights at a
+        # particular grid point.
+        for k=1:grid.num_dims
+            fill_length = num_points[k] - length(qs_cache[j][k])
+            qs_cache[j][k] = [qs_cache[j][k]; zeros(Float64, fill_length)]
+        end
+        cprod_qsk = cartesian_product(qs_cache[j])
+        # This line aggregates all of the collapsed tensors in the allocated
+        # quadrature weight vector.
+        quad_weights += map(prod, cprod_qsk)
+    end
+    return(quad_weights)
+end
+
 
 end # module
