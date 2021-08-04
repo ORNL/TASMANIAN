@@ -1,8 +1,5 @@
 # A collection of 1D interpolation functions that return points and
 # weights in column major format.
-module TasOneDimensionalRule
-
-export Rule1D, ClenshawCurtis
 
 struct Rule1D
     #=
@@ -13,7 +10,7 @@ struct Rule1D
     nested::Bool
     # Domain of interpolation [a,b] as a tuple (a,b).
     domain::Tuple{Float64,Float64}
-    # Function that returns the number of nodes for a given level.
+    # Function that returns the number of nodes for a given level, i.e., m(⋅).
     num_nodes::Function
     # Function that returns the points and weights in a pair (points, weights)
     # for a given level. Indices for points and weights should align!
@@ -71,5 +68,3 @@ function clenshaw_curtis_points_and_weights(l::Int)
 end
 ClenshawCurtis() =
     Rule1D(true, (-1.0, 1.0), l->2^l+1, clenshaw_curtis_points_and_weights)
-
-end

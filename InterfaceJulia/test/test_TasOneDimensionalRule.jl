@@ -1,5 +1,5 @@
 using XUnit
-using InterfaceJulia.TasOneDimensionalRule
+using InterfaceJulia
 
 @testset "TasOneDimensionalRule" begin
     @testcase "Clenshaw-Curtis 1D Quadrature" begin

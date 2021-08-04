@@ -1,6 +1,4 @@
 # A collection of functions for generating key data structures.
-module TasData
-export create_lower_set, is_itd_elem
 
 function create_lower_set(num_dimensions::Int, is_elem::Function)
     #=
@@ -36,5 +34,3 @@ function is_itd_elem(m::Int, index::Vector{Int})
     =#
     return sum(index) <= m
 end
-
-end # module

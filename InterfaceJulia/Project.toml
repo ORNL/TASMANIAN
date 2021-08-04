@@ -5,5 +5,6 @@ version = "0.1.0"
 
 [deps]
 Profile = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 XUnit = "3e3c03f2-1a94-11e9-2981-050a4ca824ab"

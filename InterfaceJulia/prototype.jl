@@ -1,10 +1,9 @@
 # A collection of subroutines, and tests on some subroutines, that appear in
 # various key functions.
+module proto
 
-using Profile
-using InterfaceJulia.TasOneDimensionalRule
-using InterfaceJulia.TasData
-using InterfaceJulia.TasGrid
+include("src/InterfaceJulia.jl")
+using .InterfaceJulia
 
 # ==============================================================================
 # PROTO 1
@@ -55,13 +54,14 @@ using InterfaceJulia.TasGrid
 # PROTO 2
 # ==============================================================================
 
-# # Clenshaw-Curtis grid of dimension 3 and total degree 4.
-# cc_rule = ClenshawCurtis()
-# dimension = 2
-# level = 4
-# ls = create_lower_set(dimension, x->TasData.is_itd_elem(level, x))
-# g = GlobalGrid([cc_rule, cc_rule], ls)
-# qwg = get_quadrature_weights(g)
+# Clenshaw-Curtis grid of dimension 3 and total degree 4.
+cc_rule = ClenshawCurtis()
+dimension = 2
+level = 4
+ls = create_lower_set(dimension, x->is_itd_elem(level, x))
+g = GlobalGrid([cc_rule, cc_rule], ls)
+qwg = get_quadrature_weights(g)
+create_XTheta(g)
 # pg = get_points(g)
 
 # Profile.print(format=:flat, sortedby=:count, mincount=100)
@@ -86,3 +86,5 @@ using InterfaceJulia.TasGrid
 #     end
 #     return(cprod_set)
 # end
+
+end

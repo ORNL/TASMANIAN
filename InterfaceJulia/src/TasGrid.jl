@@ -1,11 +1,4 @@
 # A collection of structures and functions for general sparse grids.
-module TasGrid
-
-using InterfaceJulia.TasUtil
-using InterfaceJulia.TasOneDimensionalRule
-
-export GlobalGrid
-export get_points, get_quadrature_weights
 
 struct GlobalGrid
     #=
@@ -82,6 +75,22 @@ function generate_quad_surplus_cache(grid::GlobalGrid)
 
 end
 
+function create_XTheta(grid::GlobalGrid)
+    # Expand the lower set to a full set of lexicographical multi-indices for
+    # the grid (depends on the 1D rule set). This is precisely the set X(Θ).
+    XTheta = Matrix{Int}(undef, grid.num_dims, 0) 
+    for i=1:size(grid.lower_set, 2)
+        expanded_index_set = Vector{Vector{Int64}}(undef, grid.num_dims)
+        for k=1:grid.num_dims
+            level_k = grid.lower_set[i,k]
+            num_points_k = grid.rule1D_vec[k].num_nodes(level_k)
+            expanded_index_set[k] = collect(1:num_points_k)
+        end
+        indexes = cartesian_product(expanded_index_set)
+        println(indexes)
+    end
+end
+
 # NOTE: The ordering of get_points() should coincide with the ordering of
 #       get_weights().
 
@@ -138,6 +147,3 @@ function get_quadrature_weights(grid::GlobalGrid)
     end
     return(quad_weights)
 end
-
-
-end # module

@@ -1,5 +1,5 @@
 using XUnit
-using InterfaceJulia.TasGrid
+using InterfaceJulia
 
 # Utility function that generates a global grid of a given dimension and degree
 # with isotropic total degree lower set and each dimension uses the nested
@@ -11,7 +11,7 @@ function create_cc_grid(dimension::Int, degree::Int)
         push!(grid_rule_vec, cc_rule)
     end
     grid_lower_set = create_lower_set(
-        dimension, x->TasData.is_itd_elem(degree, x))
+        dimension, x->is_itd_elem(degree, x))
     return GlobalGrid(grid_rule_vec, grid_lower_set)
 end
 
@@ -65,7 +65,7 @@ end
     end
     @testcase "Clenshaw-Curtis 3D Quadrature" begin
         # Create a grid of total degree 8 and dimension 3.
-        grid = create_cc_grid(3, 12)
+        grid = create_cc_grid(3, 8)
         cc_points = get_points(grid)
         cc_quad_weights = get_quadrature_weights(grid)
         # Compute ∫ₐ∫ₐ∫ₐ exp(-(x²+y²+z²)) dx dy dz where a=[-1,1].
