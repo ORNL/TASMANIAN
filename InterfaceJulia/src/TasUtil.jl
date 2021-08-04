@@ -19,41 +19,57 @@ function cartesian_product(elem_set::Vector{Vector{T}}) where T<:Any
     return(cprod_set)
 end
 
-function lex_merge_2d_arrays(mat1::Array{T,2}, mat2::Array{T,2}) where T<:Integer
-    # Takes two integer matrices, whose columns are in lexicographical order, and
-    # merges their columns into another matrix, whose columns are also in
-    # lexicographical order.
-    if size(mat1, 1) != size(mat2, 1)
-        error("Both matrices have to have the same number of rows.")
+function lex_merge_2d_arrays(val1::Array{Float64,2}, val2::Array{Float64,2},
+                             ind1::Array{Int,2}, ind2::Array{Int,2},
+                             op::Function)
+    # Takes two value matrices, two index arrays, whose columns are in
+    # lexicographical order, and a binary operator. Merges columns in the value
+    # and index arrays so that: (i) output index array is also lexicographically
+    # sorted; (ii) the output value array has the same ordering as the output
+    # index array; values of the same index are resolved using the binary
+    # operator.
+    if size(ind1, 1) != size(ind2, 1)
+        error("All index matrices have to have the same number of rows.")
     end
-    lex_mat = Matrix{T}(undef, size(mat1, 1), 0)
-    c1 = size(mat1, 2)
-    c2 = size(mat2, 2)
+    if size(val1, 2) != size(ind1, 2) || size(val2, 2) != size(ind2, 2)
+        error("Value and index array pairs do not have matching number of " *
+              "columns!")
+    end
+    lex_val_mat = Matrix{Float64}(undef, size(val1, 1), 0)
+    lex_ind_mat = Matrix{Int}(undef, size(ind1, 1), 0)
+    c1 = size(val1, 2)
+    c2 = size(val2, 2)
     i1 = 1;
     i2 = 1;
     while i1 <= c1 || i2 <= c2
         if i1 > c1
-            next_elem = mat2[:,i2]
+            next_val_elem = val2[:,i2]
+            next_ind_elem = ind2[:,i2]
             i2 += 1
         elseif i2 > c2
-            next_elem = mat1[:,i1]
+            next_val_elem = val1[:,i1]
+            next_ind_elem = ind1[:,i1]
             i1 += 1
         else
-            if mat1[:,i1] == mat2[:,i2]
-                next_elem = mat1[:,i1]
+            if ind1[:,i1] == ind2[:,i2]
+                next_val_elem = op(val1[:,i1], val2[:,i2])
+                next_ind_elem = ind1[:,i1]
                 i1 += 1
                 i2 += 1
-            elseif  mat1[:,i1] > mat2[:,i2]
-                next_elem = mat2[:,i2]
+            elseif  ind1[:,i1] > ind2[:,i2]
+                next_val_elem = val2[:,i2]
+                next_ind_elem = ind2[:,i2]
                 i2 += 1
-            elseif mat1[:,i1] < mat2[:,i2]
-                next_elem = mat1[:,i1]
+            elseif ind1[:,i1] < ind2[:,i2]
+                next_val_elem = val1[:,i1]
+                next_ind_elem = ind1[:,i1]
                 i1 += 1
             else
                 error("Cannot compare elements!")
             end
         end
-        lex_mat = [lex_mat next_elem]
+        lex_val_mat = [lex_val_mat next_val_elem]
+        lex_ind_mat = [lex_ind_mat next_ind_elem]
     end
-    return lex_mat
+    return lex_val_mat, lex_ind_mat
 end

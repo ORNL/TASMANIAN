@@ -54,21 +54,25 @@ using .InterfaceJulia
 # PROTO 2
 # ==============================================================================
 
-# Clenshaw-Curtis grid of dimension 3 and total degree 4.
-cc_rule = ClenshawCurtis()
-dimension = 2
-level = 4
-ls = create_lower_set(dimension, x->is_itd_elem(level, x))
-g = GlobalGrid([cc_rule, cc_rule], ls)
-qwg = get_quadrature_weights(g)
-create_XTheta(g)
-# pg = get_points(g)
+# # Clenshaw-Curtis grid of dimension 3 and total degree 4.
+# dimension = 1
+# level = 3
+# ls = create_lower_set(dimension, x->is_itd_elem(level, x))
+# rule_vec = Array{Rule1D}(undef, 0)
+# for _=1:dimension
+#     push!(rule_vec, ClenshawCurtis())
+# end
+# g = GlobalGrid(rule_vec, ls)
+# pg, wg = get_points_and_quadrature_weights(g)
 
+# pg = get_points(g)
+# qwg = get_quadrature_weights(g)
 # Profile.print(format=:flat, sortedby=:count, mincount=100)
 
 # ==============================================================================
 # PROTO 2
 # ==============================================================================
+
 # function cartesian(elem_set::Vector{Vector{T}}) where T<:Any
 #     # Efficiently computes the Cartesian product of a set of vectors.
 #     num_dims = length(elem_set)
@@ -87,4 +91,48 @@ create_XTheta(g)
 #     return(cprod_set)
 # end
 
-end
+# ==============================================================================
+# PROTO 3
+# ==============================================================================
+
+# a = [[1, 2] [1, 3] [3, 3]]
+# b = [[1, 1] [1, 3] [2, 3] [4, 1]]
+# va = [[1.1, 2.3] [2.8, 0.1] [3.1, 1.3]]
+# vb = [[1.0, 0.1] [0.2, 0.3] [2.0, 0.3] [0.4, 1.1]]
+
+# vc, c = lex_merge_2d_arrays(va, vb, a, b)
+
+# ==============================================================================
+# PROTO 4
+# ==============================================================================
+
+# # Utility function that generates a global grid of a given dimension and degree
+# # with isotropic total degree lower set and each dimension uses the nested
+# # Clenshaw-Curtis interpolation rule.
+# function create_cc_grid(dimension::Int, degree::Int)
+#     cc_rule = ClenshawCurtis()
+#     grid_rule_vec = Array{Rule1D}(undef, 0)
+#     for _=1:dimension
+#         push!(grid_rule_vec, cc_rule)
+#     end
+#     grid_lower_set = create_lower_set(dimension, x->is_itd_elem(degree, x))
+#     return GlobalGrid(grid_rule_vec, grid_lower_set)
+# end
+
+# # Utility function that computes the integral given by a function applied
+# # to a set of weights and points (listed in column major order).
+# function compute_integral(fn::Function,
+#                           pts::Matrix{Float64},
+#                           wts::Vector{Float64})
+#     return sum(wts .* map(fn, eachcol(pts)))
+# end
+
+# # Create a grid of total degree 4 and dimension 1.
+# grid = create_cc_grid(1, 4)
+# cc_points, cc_quad_weights = get_points_and_quadrature_weights(grid)
+# # Compute ∫ₐ sin(x²) dx dy where a=[-1,1].
+# integrand = z -> sin(z[1]^2)
+# integral = compute_integral(integrand, cc_points, cc_quad_weights)
+# println([integral, 0.6205366034467622])
+
+end # proto module
