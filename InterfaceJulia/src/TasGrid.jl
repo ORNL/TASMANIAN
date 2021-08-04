@@ -1,30 +1,11 @@
 # A collection of structures and functions for general sparse grids.
 module TasGrid
 
-include("TasUtil.jl")
-using .TasUtil
+using InterfaceJulia.TasUtil
+using InterfaceJulia.TasOneDimensionalRule
 
-export Rule1D, GlobalGrid
-export generate_weight_cache, generate_quad_surplus_cache
+export GlobalGrid
 export get_points, get_quadrature_weights
-
-struct Rule1D
-    #=
-    Container for a 1D interpolation rule.
-    =#
-
-    # Indicator for if the rule generates nested points.
-    nested::Bool
-    # Function that returns the number of nodes for a given level.
-    num_nodes::Function
-    # Function that returns the points and weights in a pair (points, weights)
-    # for a given level. Indices for points and weights should align!
-    points_and_weights::Function
-
-    # Constructors
-    Rule1D() = new(false, l->0, l->([],[]))
-    Rule1D(n::Bool, nn::Function, pw::Function) = new(n, nn, pw)
-end
 
 struct GlobalGrid
     #=
@@ -34,7 +15,7 @@ struct GlobalGrid
 
     # The dimension of the grid.
     num_dims::Int
-    # The i-th entry is the 1D interpolation rule for the i-th dimension. 
+    # The i-th entry is the 1D interpolation rule for the i-th dimension.
     rule1D_vec::Vector{Rule1D}
     # The lower set for filtering the possible levels of for the rules. Each
     # column represents a particular multi-index.
@@ -153,7 +134,7 @@ function get_quadrature_weights(grid::GlobalGrid)
         cprod_qsk = cartesian_product(qs_cache[j])
         # This line aggregates all of the collapsed tensors in the allocated
         # quadrature weight vector.
-        quad_weights += map(prod, cprod_qsk)
+        quad_weights += map(prod, eachcol(cprod_qsk))
     end
     return(quad_weights)
 end
