@@ -5,13 +5,8 @@ using InterfaceJulia
 # with isotropic total degree lower set and each dimension uses the nested
 # Clenshaw-Curtis interpolation rule.
 function create_cc_grid(dimension::Int, degree::Int)
-    cc_rule = ClenshawCurtis()
-    grid_rule_vec = Array{Rule1D}(undef, 0)
-    for _=1:dimension
-        push!(grid_rule_vec, cc_rule)
-    end
     grid_lower_set = create_lower_set(dimension, x->is_itd_elem(degree, x))
-    return GlobalGrid(grid_rule_vec, grid_lower_set)
+    return GlobalGrid(ClenshawCurtis(), grid_lower_set)
 end
 
 # Utility function that computes the integral given by a function applied

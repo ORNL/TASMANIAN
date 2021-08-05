@@ -54,16 +54,16 @@ using .InterfaceJulia
 # PROTO 2
 # ==============================================================================
 
-# # Clenshaw-Curtis grid of dimension 3 and total degree 4.
-# dimension = 1
-# level = 3
-# ls = create_lower_set(dimension, x->is_itd_elem(level, x))
-# rule_vec = Array{Rule1D}(undef, 0)
-# for _=1:dimension
-#     push!(rule_vec, ClenshawCurtis())
-# end
-# g = GlobalGrid(rule_vec, ls)
-# pg, wg = get_points_and_quadrature_weights(g)
+# Clenshaw-Curtis grid of dimension 3 and total degree 4.
+dimension = 2
+level = 8
+ls = create_lower_set(dimension, x->is_itd_elem(level, x))
+rule_vec = Array{Rule1D}(undef, 0)
+for _=1:dimension
+    push!(rule_vec, ClenshawCurtis())
+end
+g = GlobalGrid(rule_vec, ls)
+pg, wg = get_points_and_quadrature_weights(g)
 
 # pg = get_points(g)
 # qwg = get_quadrature_weights(g)
