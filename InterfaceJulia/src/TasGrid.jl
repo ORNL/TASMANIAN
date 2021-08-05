@@ -23,6 +23,7 @@ struct GlobalGrid
     GlobalGrid(r::Rule1D, ls::Array{Int, 2}) = new(size(ls, 1), r, ls)
 end
 
+
 function generate_point_and_quad_weight_cache(grid::GlobalGrid)
     # Generate a cache of weight vectors for every dimension and every possible
     # degree up to the maximum degree that appears in grid.lower_set. In
@@ -114,3 +115,43 @@ function get_points_and_quadrature_weights(grid::GlobalGrid)
     return points, quadrature_weights
 end
 
+# ==============================================================================
+# Work In Progress (WIP)
+# ==============================================================================
+
+function get_point_cache(grid::GlobalGrid)
+    # Generate a cache of point vectors for the the levels in grid.lower_set.
+    # If the rule is nested, only return the points for the largest level.
+    if grid.rule.nested
+        max_degree, _ = findmax(grid.lower_set)
+        point_cache, _ = grid.rule.points_and_weights(max_degree)
+    else
+        # TODO Implement the non-nested case.
+        error("Only nested rules are supported!")
+    end
+    return point_cache
+end
+
+function get_point_set(grid::GlobalGrid)
+    # Generate a lexicographically sorted point set that is the union of the
+    # points in the grid. If grid.rule.nested is true, then the expansion from
+    # a tensor (in the lower set) is done using the index surplus, i.e.,
+    # the points considered in level l have indexes m(l-1),...,m(l)-1.
+    point_set = Matrix{Int}(undef, grid.num_dims, 0)
+    comp_idx = Vector{Vector{Int}}(undef, grid.num_dims)
+    for j=1:size(grid.lower_set, 2)
+        for k=1:grid.num_dims
+        end
+    end
+end
+
+function get_quad_weight_cache(grid::GlobalGrid)
+    # Generate a cache of quadrature weight vectors for all levels up to the
+    # largest one l_max in grid.lower_set. In particular, weight_cache[l].
+    max_degree, _ = findmax(grid.lower_set)
+    weight_cache = Vector{Vector{Float64}}(undef, max_degree)
+    for l=1:max_degree
+        _, weight_cache[l] = grid.rule.points_and_weights(l)
+    end
+    return weight_cache
+end

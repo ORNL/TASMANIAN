@@ -73,3 +73,39 @@ function lex_merge_2d_arrays(val1::Array{Float64,2}, val2::Array{Float64,2},
     end
     return lex_val_mat, lex_ind_mat
 end
+
+
+function lex_merge_matrices(ind1::Array{Int,2}, ind2::Array{Int,2})
+    # Takes two index matrices, whose columns are in lexicographical order.
+    # Merges columns in the arrays so that: (i) output index array is also
+    # lexicographic order and (ii) duplicates are removed
+    if size(ind1, 1) != size(ind2, 1)
+        error("All matrices have to have the same number of rows.")
+    end
+    merged_mat = Matrix{Int}(undef, size(ind1, 1), 0)
+    i1 = 1;
+    i2 = 1;
+    while i1 <= size(ind1, 2) || i2 <= size(ind2, 2)
+        if i1 > size(ind1, 2)
+            next_ind_elem = ind2[:,i2]
+            i2 += 1
+        elseif i2 > size(ind2, 2)
+            next_ind_elem = ind1[:,i1]
+            i1 += 1
+        else
+            if  ind1[:,i1] > ind2[:,i2]
+                next_ind_elem = ind2[:,i2]
+                i2 += 1
+            elseif ind1[:,i1] < ind2[:,i2]
+                next_ind_elem = ind1[:,i1]
+                i1 += 1
+            else ind1[:,i1] == ind2[:,i2]
+                next_ind_elem = ind1[:,i1]
+                i1 += 1
+                i2 += 1
+            end
+        end
+        merged_mat = [merged_mat next_ind_elem]
+    end
+    return merged_mat
+end

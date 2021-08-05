@@ -1,10 +1,13 @@
 module InterfaceJulia
 
-export ClenshawCurtis
-export GlobalGrid, Rule1D
+# Constructors
+export ClenshawCurtis, GlobalGrid, Rule1D
+# TasData
 export create_lower_set, is_itd_elem
-export get_points, get_quadrature_weights, create_XTheta,
-    get_points_and_quadrature_weights, lex_merge_2d_arrays
+# TasGrid
+export get_points_and_quadrature_weights, get_point_cache, get_quad_weight_cache
+# TasUtil
+export lex_merge_2d_arrays
 
 include("TasData.jl")
 include("TasOneDimesionalRule.jl")
