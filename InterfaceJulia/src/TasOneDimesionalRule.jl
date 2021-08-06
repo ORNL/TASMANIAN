@@ -66,5 +66,7 @@ function clenshaw_curtis_points_and_weights(l::Int)
     end
     return points[p], weights[p]
 end
-ClenshawCurtis() =
-    Rule1D(true, (-1.0, 1.0), l->2^l+1, clenshaw_curtis_points_and_weights)
+ClenshawCurtis() = Rule1D(true,
+                          (-1.0, 1.0),
+                          l -> l == 0 ? 1 : 2^l+1,
+                          clenshaw_curtis_points_and_weights)

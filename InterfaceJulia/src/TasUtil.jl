@@ -1,4 +1,7 @@
-# A collection of helpful utility functions.
+# A collection of helpful utility functions and types.
+
+# Union types
+SubMatrix{T} = Union{Matrix{T}, SubArray{T, 2}} where T
 
 function cartesian_product(elem_set::Vector{Vector{T}}) where T<:Any
     # Takes in a list of vectors and computes the full cartesian product of them.
@@ -19,72 +22,15 @@ function cartesian_product(elem_set::Vector{Vector{T}}) where T<:Any
     return(cprod_set)
 end
 
-function lex_merge_2d_arrays(val1::Array{Float64,2}, val2::Array{Float64,2},
-                             ind1::Array{Int,2}, ind2::Array{Int,2},
-                             op::Function)
-    # Takes two value matrices, two index arrays, whose columns are in
-    # lexicographical order, and a binary operator. Merges columns in the value
-    # and index arrays so that: (i) output index array is also lexicographically
-    # sorted; (ii) the output value array has the same ordering as the output
-    # index array; values of the same index are resolved using the binary
-    # operator.
+function lex_merge_matrices(ind1::Matrix{Int}, ind2::Matrix{Int})
+    # Takes two multi-index arrays, whose columns are in lexicographical order,
+    # and merges their columns together. The output array is also in
+    # lexicographical order.
     if size(ind1, 1) != size(ind2, 1)
         error("All index matrices have to have the same number of rows.")
     end
-    if size(val1, 2) != size(ind1, 2) || size(val2, 2) != size(ind2, 2)
-        error("Value and index array pairs do not have matching number of " *
-              "columns!")
-    end
-    lex_val_mat = Matrix{Float64}(undef, size(val1, 1), 0)
     lex_ind_mat = Matrix{Int}(undef, size(ind1, 1), 0)
-    c1 = size(val1, 2)
-    c2 = size(val2, 2)
-    i1 = 1;
-    i2 = 1;
-    while i1 <= c1 || i2 <= c2
-        if i1 > c1
-            next_val_elem = val2[:,i2]
-            next_ind_elem = ind2[:,i2]
-            i2 += 1
-        elseif i2 > c2
-            next_val_elem = val1[:,i1]
-            next_ind_elem = ind1[:,i1]
-            i1 += 1
-        else
-            if ind1[:,i1] == ind2[:,i2]
-                next_val_elem = op(val1[:,i1], val2[:,i2])
-                next_ind_elem = ind1[:,i1]
-                i1 += 1
-                i2 += 1
-            elseif  ind1[:,i1] > ind2[:,i2]
-                next_val_elem = val2[:,i2]
-                next_ind_elem = ind2[:,i2]
-                i2 += 1
-            elseif ind1[:,i1] < ind2[:,i2]
-                next_val_elem = val1[:,i1]
-                next_ind_elem = ind1[:,i1]
-                i1 += 1
-            else
-                error("Cannot compare elements!")
-            end
-        end
-        lex_val_mat = [lex_val_mat next_val_elem]
-        lex_ind_mat = [lex_ind_mat next_ind_elem]
-    end
-    return lex_val_mat, lex_ind_mat
-end
-
-
-function lex_merge_matrices(ind1::Array{Int,2}, ind2::Array{Int,2})
-    # Takes two index matrices, whose columns are in lexicographical order.
-    # Merges columns in the arrays so that: (i) output index array is also
-    # lexicographic order and (ii) duplicates are removed
-    if size(ind1, 1) != size(ind2, 1)
-        error("All matrices have to have the same number of rows.")
-    end
-    merged_mat = Matrix{Int}(undef, size(ind1, 1), 0)
-    i1 = 1;
-    i2 = 1;
+    (i1, i2) = (1, 1)
     while i1 <= size(ind1, 2) || i2 <= size(ind2, 2)
         if i1 > size(ind1, 2)
             next_ind_elem = ind2[:,i2]
@@ -99,13 +45,36 @@ function lex_merge_matrices(ind1::Array{Int,2}, ind2::Array{Int,2})
             elseif ind1[:,i1] < ind2[:,i2]
                 next_ind_elem = ind1[:,i1]
                 i1 += 1
-            else ind1[:,i1] == ind2[:,i2]
+            else
                 next_ind_elem = ind1[:,i1]
-                i1 += 1
-                i2 += 1
+                (i1, i2) = (i1 + 1, i2 + 1)
             end
         end
-        merged_mat = [merged_mat next_ind_elem]
+        lex_ind_mat = [lex_ind_mat next_ind_elem]
     end
-    return merged_mat
+    return lex_ind_mat
 end
+
+function lex_find_idx(a::SubMatrix{Int}, x::Vector{Int})
+    # Find a the column index multi-index in a lexicographically sorted
+    # multi-index array, listed in column major order.
+    function binary_search(a::SubMatrix{Int}, x::Vector{Int}, lo::Int, hi::Int)
+        # Binary search helper function.
+        if lo <= hi
+            mid = lo + (hi - lo) ÷ 2
+            if a[:, mid] == x
+                return mid
+            elseif a[:, mid] > x
+                binary_search(a, x, lo, mid-1)
+            else
+                binary_search(a, x, mid+1, hi)
+            end
+        else
+            error("Index not found!")
+        end
+    end
+    return binary_search(a, x, 1, size(a, 2))
+end
+
+
+

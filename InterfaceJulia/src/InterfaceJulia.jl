@@ -5,9 +5,7 @@ export ClenshawCurtis, GlobalGrid, Rule1D
 # TasData
 export create_lower_set, is_itd_elem
 # TasGrid
-export get_points_and_quadrature_weights, get_point_cache, get_quad_weight_cache
-# TasUtil
-export lex_merge_2d_arrays
+export get_points, get_quad_weights
 
 include("TasData.jl")
 include("TasOneDimesionalRule.jl")

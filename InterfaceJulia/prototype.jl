@@ -54,13 +54,13 @@ using .InterfaceJulia
 # PROTO 2
 # ==============================================================================
 
-# Clenshaw-Curtis grid of dimension 3 and total degree 4.
-dimension = 2
-level = 8
-ls = create_lower_set(dimension, x->is_itd_elem(level, x))
-g = GlobalGrid(ClenshawCurtis(), ls)
-pg = get_point_cache(g)
-wg = get_quad_weight_cache(g)
+# # Clenshaw-Curtis grid of dimension 3 and total degree 4.
+# dimension = 2
+# level = 8
+# ls = create_lower_set(dimension, x->is_itd_elem(level, x))
+# g = GlobalGrid(ClenshawCurtis(), ls)
+# pg = get_point_cache(g)
+# wg = get_quad_weight_cache(g)
 
 # pg = get_points(g)
 # qwg = get_quadrature_weights(g)
@@ -103,33 +103,41 @@ wg = get_quad_weight_cache(g)
 # PROTO 4
 # ==============================================================================
 
-# # Utility function that generates a global grid of a given dimension and degree
-# # with isotropic total degree lower set and each dimension uses the nested
-# # Clenshaw-Curtis interpolation rule.
-# function create_cc_grid(dimension::Int, degree::Int)
-#     cc_rule = ClenshawCurtis()
-#     grid_rule_vec = Array{Rule1D}(undef, 0)
-#     for _=1:dimension
-#         push!(grid_rule_vec, cc_rule)
-#     end
-#     grid_lower_set = create_lower_set(dimension, x->is_itd_elem(degree, x))
-#     return GlobalGrid(grid_rule_vec, grid_lower_set)
-# end
+# Utility function that generates a global grid of a given dimension and degree
+# with isotropic total degree lower set and each dimension uses the nested
+# Clenshaw-Curtis interpolation rule.
+function create_cc_grid(dimension::Int, degree::Int)
+    grid_lower_set = create_lower_set(dimension, x->is_itd_elem(degree, x))
+    return GlobalGrid(ClenshawCurtis(), grid_lower_set)
+end
 
-# # Utility function that computes the integral given by a function applied
-# # to a set of weights and points (listed in column major order).
-# function compute_integral(fn::Function,
-#                           pts::Matrix{Float64},
-#                           wts::Vector{Float64})
-#     return sum(wts .* map(fn, eachcol(pts)))
-# end
+# Utility function that computes the integral given by a function applied
+# to a set of weights and points (listed in column major order).
+function compute_integral(fn::Function,
+                          pts::Matrix{Float64},
+                          wts::Vector{Float64})
+    return sum(wts .* map(fn, eachcol(pts)))
+end
 
-# # Create a grid of total degree 4 and dimension 1.
-# grid = create_cc_grid(1, 4)
-# cc_points, cc_quad_weights = get_points_and_quadrature_weights(grid)
-# # Compute ∫ₐ sin(x²) dx dy where a=[-1,1].
-# integrand = z -> sin(z[1]^2)
-# integral = compute_integral(integrand, cc_points, cc_quad_weights)
-# println([integral, 0.6205366034467622])
+# Create a grid of total degree 4 and dimension 1.
+grid = create_cc_grid(1, 4)
+cc_points = get_points(grid)
+cc_quad_weights = get_quad_weights(grid)
+# Compute ∫ₐ sin(x²) dx dy where a=[-1,1].
+integrand = z -> sin(z[1]^2)
+integral = compute_integral(integrand, cc_points, cc_quad_weights)
+println([integral, 0.6205366034467622])
+
+# ==============================================================================
+# PROTO 5
+# ==============================================================================
+
+# dimension = 2
+# level = 4
+# ls = create_lower_set(dimension, x->is_itd_elem(level, x))
+# g = GlobalGrid(ClenshawCurtis(), ls)
+# is = g.index_set
+# ps = get_points(g)
+# ws = get_quad_weights(g)
 
 end # proto module

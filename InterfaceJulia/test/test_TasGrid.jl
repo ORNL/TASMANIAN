@@ -23,7 +23,8 @@ end
     @testcase "Clenshaw-Curtis 1D Quadrature" begin
         # Create a grid of total degree 4 and dimension 1.
         grid = create_cc_grid(1, 4)
-        cc_points, cc_quad_weights = get_points_and_quadrature_weights(grid)
+        cc_points = get_points(grid)
+        cc_quad_weights = get_quad_weights(grid)
         # Compute ∫ₐ sin(x²) dx dy where a=[-1,1].
         integrand = z -> sin(z[1]^2)
         integral = compute_integral(integrand, cc_points, cc_quad_weights)
@@ -40,7 +41,8 @@ end
     @testcase "Clenshaw-Curtis 2D Quadrature" begin
         # Create a grid of total degree 6 and dimension 2.
         grid = create_cc_grid(2, 6)
-        cc_points, cc_quad_weights = get_points_and_quadrature_weights(grid)
+        cc_points = get_points(grid)
+        cc_quad_weights = get_quad_weights(grid)
         # Compute ∫ₐ∫ₐ sin(x²+y²) dx dy where a=[-1,1].
         integrand = z -> sin(z[1]^2 + z[2]^2)
         integral = compute_integral(integrand, cc_points, cc_quad_weights)
@@ -58,7 +60,8 @@ end
     @testcase "Clenshaw-Curtis 3D Quadrature" begin
         # Create a grid of total degree 8 and dimension 3.
         grid = create_cc_grid(3, 8)
-        cc_points, cc_quad_weights = get_points_and_quadrature_weights(grid)
+        cc_points = get_points(grid)
+        cc_quad_weights = get_quad_weights(grid)
         # Compute ∫ₐ∫ₐ∫ₐ exp(-(x²+y²+z²)) dx dy dz where a=[-1,1].
         integrand = z -> exp(-z[1]^2-z[2]^2-z[3]^2)
         integral = compute_integral(integrand, cc_points, cc_quad_weights)
