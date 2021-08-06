@@ -119,14 +119,20 @@ function compute_integral(fn::Function,
     return sum(wts .* map(fn, eachcol(pts)))
 end
 
-# Create a grid of total degree 4 and dimension 1.
-grid = create_cc_grid(1, 4)
+# # Create a grid of total degree 4 and dimension 1.
+# grid = create_cc_grid(1, 4)
+# cc_points = get_points(grid)
+# cc_quad_weights = get_quad_weights(grid)
+# # Compute ∫ₐ sin(x²) dx dy where a=[-1,1].
+# integrand = z -> sin(z[1]^2)
+# integral = compute_integral(integrand, cc_points, cc_quad_weights)
+# println([integral, 0.6205366034467622])
+
+# Create a grid of dimension 3 and some large degree
+grid = create_cc_grid(3, 12)
 cc_points = get_points(grid)
 cc_quad_weights = get_quad_weights(grid)
-# Compute ∫ₐ sin(x²) dx dy where a=[-1,1].
-integrand = z -> sin(z[1]^2)
-integral = compute_integral(integrand, cc_points, cc_quad_weights)
-println([integral, 0.6205366034467622])
+display(size(cc_points))
 
 # ==============================================================================
 # PROTO 5
