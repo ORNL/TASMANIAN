@@ -42,18 +42,19 @@ public:
     TplUnitTester();
     ~TplUnitTester();
 
-    static UnitTests hasTest(std::string const &s);
     void setVerbose(bool new_verbose);
     bool Test(UnitTests test);
-
-protected:
-    bool doesMatch(const std::vector<double> &a, const std::vector<double> &b, double prec = 1.E-12) const;
-    bool doesMatch(const std::vector<double> &a, const double b[], double prec = 1.E-12) const;
-    bool doesMatch(const std::vector<int> &a, const int b[]) const;
-    bool doesMatch(size_t n, double a[], const double b[], double prec = 1.E-12) const;
 
 private:
     bool verbose;
 };
+
+bool testTriToeplitzEigen();
+
+bool doesMatch(const std::vector<double> &a, const std::vector<double> &b, double prec = 1.E-12);
+bool doesMatch(const std::vector<double> &a, const double b[], double prec = 1.E-12);
+bool doesMatch(const std::vector<int> &a, const int b[]);
+bool doesMatch(size_t n, const double a[], const double b[], double prec = 1.E-12);
+
 
 #endif

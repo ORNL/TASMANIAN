@@ -32,6 +32,12 @@
 #define __TPL_UNIT_TESTS_CPP
 
 #include "tplUnitTests.hpp"
+#include "tsgBlasWrappers.hpp"
+#include <string>
+#include <math.h>
+#include <cmath>
+
+bool testTridiagonal();
 
 TplUnitTester::TplUnitTester() : verbose(false){}
 TplUnitTester::~TplUnitTester() {}
@@ -45,6 +51,7 @@ bool TplUnitTester::Test(UnitTests test){
         cout << "       Tasmanian Third Party Libraries (TPL): Unit Tests" << endl;
         cout << "---------------------------------------------------------------------" << endl << endl;
         bool pass = true;
+        pass = testTriToeplitzEigen();
         cout << endl;
         if (pass){
             cout << "---------------------------------------------------------------------" << endl;
@@ -65,23 +72,66 @@ bool TplUnitTester::Test(UnitTests test){
     }
 }
 
-bool TplUnitTester::doesMatch(const std::vector<double> &a, const std::vector<double> &b, double prec) const{
+bool testTriToeplitzEigen() {
+    // Initialize.
+    const int N = 100;
+    bool is_matched;
+    double exact_eigs[N], D[N], E[N-1], W[N], Z[N*N], WORK1[2 * N - 2], WORK2[4 * N];
+    int IBLOCK1[N], ISPLIT1[N], IWORK1[3 * N];
+    double a = M_PI_2;
+    double b = M_PI_4;
+    ISPLIT1[0] = N;
+    IBLOCK1[0] = N;
+    for (int i=0; i<N; i++) {
+        exact_eigs[i] = a + 2.0 * b * cos((i+1) * M_PI / (N+1));
+    }
+    std::sort(exact_eigs, exact_eigs + N);
+
+    // Test LAPACK's dsterf function.
+    std::fill_n(D, N, a);
+    std::fill_n(E, N-1, b);
+    TasBLAS::sterf(N, D, E);
+    std::sort(D, D + N);
+    is_matched = doesMatch(N, D, exact_eigs);
+
+    // Test LAPACK's dsteqr function.
+    std::fill_n(D, N, a);
+    std::fill_n(E, N-1, b);
+    TasBLAS::steqr('N', N, D, E, Z, 1, WORK1);
+    std::sort(D, D + N);
+    is_matched = doesMatch(N, D, exact_eigs);
+
+    // Test LAPACK's dstebz function.
+    std::fill_n(D, N, a);
+    std::fill_n(E, N-1, b);
+    TasBLAS::stebz('A', 'E', N, 0.0, 0.0, 1, N, 1e-13, D, E, N, 1, W, IBLOCK1, ISPLIT1, WORK2, IWORK1);
+    is_matched = doesMatch(N, W, exact_eigs);
+
+    // For debugging only.
+    // for (int i=0; i<N; i++) {
+    //     cout << std::to_string(D[i]) << " " <<  std::to_string(W[i]) << " " << std::to_string(exact_eigs[i])<< endl;
+    // }
+
+    return is_matched;
+}
+
+bool doesMatch(const std::vector<double> &a, const std::vector<double> &b, double prec) {
     if (a.size() != b.size()) return false;
     auto ib = b.begin();
     for(auto x : a) if (std::abs(x - *ib++) > prec) return false;
     return true;
 }
-bool TplUnitTester::doesMatch(const std::vector<double> &a, const double b[], double prec) const{
+bool doesMatch(const std::vector<double> &a, const double b[], double prec) {
     auto ib = b;
     for(auto x : a) if (std::abs(x - *ib++) > prec) return false;
     return true;
 }
-bool TplUnitTester::doesMatch(const std::vector<int> &a, const int b[]) const{
+bool doesMatch(const std::vector<int> &a, const int b[]) {
     auto ib = b;
     for(auto x : a) if (x != *ib++) return false;
     return true;
 }
-bool TplUnitTester::doesMatch(size_t n, double a[], const double b[], double prec) const{
+bool doesMatch(size_t n, const double a[], const double b[], double prec) {
     for(size_t i=0; i<n; i++) if (std::abs(a[i] - b[i]) > prec) return false;
     return true;
 }
