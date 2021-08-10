@@ -143,6 +143,10 @@ if (Tasmanian_ENABLE_FORTRAN)
       "${CMAKE_CURRENT_BINARY_DIR}/Fortran03")
 endif()
 
+if (Tasmanian_ENABLE_BLAS)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/InterfaceTPL"  "${CMAKE_CURRENT_BINARY_DIR}/TPL")
+endif()
+
 if (Tasmanian_ENABLE_PYTHON)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/InterfacePython"  "${CMAKE_CURRENT_BINARY_DIR}/Python")
 endif()
