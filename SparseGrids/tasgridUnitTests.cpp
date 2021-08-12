@@ -34,6 +34,8 @@
 #include "tasgridUnitTests.hpp"
 #include "tasgridExternalTests.hpp"
 #include "tasgridTestHelpers.hpp"
+#include "tsgBlasWrappers.hpp"
+#include "tsgMathUtils.hpp"
 
 #ifdef Tasmanian_ENABLE_HIP
 #ifndef __HIP_PLATFORM_HCC__
@@ -45,6 +47,15 @@
 
 #ifdef Tasmanian_ENABLE_DPCPP
 #include <CL/sycl.hpp>
+#include <string>
+#include <iomanip>
+#include <vector>
+#include <map>
+#include <iostream>
+#include <cmath>
+#include <cstdlib>
+#include <algorithm>
+
 #endif
 
 void gridLoadEN2(TasmanianSparseGrid *grid){ // load points using model exp( - \| x \|^2 )
@@ -78,6 +89,7 @@ UnitTests GridUnitTester::hasTest(std::string const &s){
         {"errors", unit_except},
         {"api",    unit_api},
         {"c",      unit_c},
+        {"lapack", unit_lapack}
     };
 
     try{
@@ -97,13 +109,15 @@ bool GridUnitTester::Test(UnitTests test){
     bool testExceptions = true;
     bool testAPI = true;
     bool testC = true;
+    bool testLAPACK = true;
 
     if ((test == unit_all) || (test == unit_cover)) testCover = testCoverUnimportant();
     if ((test == unit_all) || (test == unit_except)) testExceptions = testAllException();
     if ((test == unit_all) || (test == unit_api)) testAPI = testAPIconsistency();
     if ((test == unit_all) || (test == unit_c)) testC = testCInterface();
+    if ((test == unit_all) || (test == unit_lapack)) testLAPACK = testLAPACKInterface();
 
-    bool pass = testCover && testExceptions && testAPI && testC;
+    bool pass = testCover && testExceptions && testAPI && testC && testLAPACK;
     //bool pass = true;
 
     cout << endl;
@@ -785,5 +799,70 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
         },
     };
 }
+
+bool GridUnitTester::testLAPACKInterface() {
+
+    bool all_matched = true;
+    #ifdef Tasmanian_ENABLE_BLAS
+    // Initialize.
+    const int N = 100;
+    double* exact_eigs = new double[N];
+    double* D = new double[N];
+    double* E = new double[N-1];
+    double* W = new double[N];
+    double* Z = new double[N*N];
+    double* WORK1 = new double[2*N-2];
+    double* WORK2 = new double[4*N];
+    int* IBLOCK1 = new int[N];
+    int* ISPLIT1 = new int[N];
+    int* IWORK1 = new int[3*N];
+    double a = TasGrid::Maths::pi / 2;
+    double b = TasGrid::Maths::pi / 4;
+    ISPLIT1[0] = N;
+    IBLOCK1[0] = N;
+    for (int i=0; i<N; i++) {
+        exact_eigs[i] = a + 2.0 * b * std::cos((i+1) * TasGrid::Maths::pi / (N+1));
+    }
+    std::sort(exact_eigs, exact_eigs + N);
+
+    // Test LAPACK's dsterf function.
+    std::fill_n(D, N, a);
+    std::fill_n(E, N-1, b);
+    TasBLAS::sterf(N, D, E);
+    std::sort(D, D + N);
+    all_matched = all_matched && doesMatch(N, D, exact_eigs);
+
+    // Test LAPACK's dsteqr function.
+    std::fill_n(D, N, a);
+    std::fill_n(E, N-1, b);
+    TasBLAS::steqr('N', N, D, E, Z, 1, WORK1);
+    std::sort(D, D + N);
+    all_matched = all_matched && doesMatch(N, D, exact_eigs);
+
+    // Test LAPACK's dstebz function.
+    std::fill_n(D, N, a);
+    std::fill_n(E, N-1, b);
+    TasBLAS::stebz('A', 'E', N, 0.0, 0.0, 1, N, 1e-13, D, E, N, 1, W, IBLOCK1, ISPLIT1, WORK2, IWORK1);
+    all_matched = all_matched && doesMatch(N, W, exact_eigs);
+
+    // For debugging only.
+    // for (int i=0; i<N; i++) {
+    //     cout << std::to_string(D[i]) << " " <<  std::to_string(W[i]) << " " << std::to_string(exact_eigs[i])<< endl;
+    // }
+
+    delete[] exact_eigs;
+    delete[] D;
+    delete[] E;
+    delete[] W;
+    delete[] Z;
+    delete[] WORK1;
+    delete[] WORK2;
+    delete[] IBLOCK1;
+    delete[] ISPLIT1;
+    delete[] IWORK1;
+    #endif
+    return all_matched;
+}
+
 
 #endif
