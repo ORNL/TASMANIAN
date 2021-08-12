@@ -35,7 +35,7 @@
 #include <string>
 #include <vector>
 
-enum UnitTests {
+enum UnitTests{
     unit_none, unit_all, unit_cover, unit_except, unit_api, unit_c, unit_lapack
 };
 
