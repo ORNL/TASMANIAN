@@ -73,6 +73,11 @@ void dgels_(const char *trans, const int *M, const int *N, const int *nrhs, doub
             double *B, const int *ldb, double *work, int *lwork, int *info);
 void zgels_(const char *trans, const int *M, const int *N, const int *nrhs, std::complex<double> *A, const int *lda,
             std::complex<double> *B, const int *ldb, std::complex<double> *work, int *lwork, int *info);
+// Symmetric tridiagonal eigenvalue compute
+void dstebz_(const char *range, const char *order, const int *N, const double *vl, const double *vu, const int *il, const int *iu, const double *abstol,
+             const double D[], const double E[], int *M, int *nsplit, double W[], int iblock[], int isplit[], double work[], int iwork[], int *info);
+void dsteqr_(const char *compz, const int *N, double D[], double E[], double Z[], const int *ldz, double work[], int *info);
+void dsterf_(const int *N, double D[], double E[], int *info);
 // General LQ-factorize and multiply by Q
 #ifdef Tasmanian_BLAS_HAS_ZGELQ
 void dgelq_(const int *M, const int *N, double *A, const int *lda, double *T, int const *Tsize, double *work, int const *lwork, int *info);
@@ -196,7 +201,75 @@ namespace TasBLAS{
                 throw std::runtime_error(std::string("Lapack zgels_ infer-worksize-stage exited with code: ") + std::to_string(info));
         }
     }
-    #ifdef Tasmanian_BLAS_HAS_ZGELQ
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief LAPACK dstebz
+     */
+    inline void stebz(char range, char order, int N, double vl, double vu, int il, int iu, double abstol, double D[], double E[],
+                      int& M, int& nsplit, double W[], int iblock[], int isplit[], double work[], int iwork[]) {
+        int info = 0;
+        dstebz_(&range, &order, &N, &vl, &vu, &il, &iu, &abstol, D, E, &M, &nsplit, W, iblock, isplit, work, iwork, &info);
+        if (info != 0) {
+            if (info <= 3) {
+                throw std::runtime_error(
+                    std::string(
+                        "Lapack dstebz_ failed to converge for some eigenvalues and exited with code: ") +
+                    std::to_string(info));
+            } else if (info == 4) {
+                throw std::runtime_error(
+                    std::string("Lapack dstebz_ used a Gershgorin interval that was too small and exited with code: ") +
+                    std::to_string(info));
+            } else if (info > 4) {
+                throw std::runtime_error(
+                    std::string("Lapack dstebz_ failed and exited with code: ") +
+                    std::to_string(info));
+            } else {
+                throw std::runtime_error(
+                    std::string(
+                        "Lapack dstebz_ had an illegal value at argument number: ") +
+                    std::to_string(-info));
+            }
+        }
+    }
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief LAPACK dsteqr
+     */
+    inline void steqr(char compz, int N, double D[], double E[], double Z[], int ldz, double work[]) {
+        int info = 0;
+        dsteqr_(&compz, &N, D, E, Z, &ldz, work, &info);
+        if (info != 0) {
+            if (info > 0) {
+                throw std::runtime_error(
+                    std::string("Lapack dsteqr_ failed to converge for some eigenvalues and exited with code: ") +
+                    std::to_string(info));
+            } else {
+                throw std::runtime_error(
+                    std::string("Lapack dsteqr_ had an illegal value at argument number: ") +
+                    std::to_string(-info));
+            }
+        }
+    }
+    /*!
+     * \ingroup TasmanianTPLWrappers
+     * \brief LAPACK dsterf
+     */
+    inline void sterf(int N, double D[], double E[]) {
+        int info = 0;
+        dsterf_(&N, D, E, &info);
+        if (info != 0) {
+            if (info > 0) {
+                throw std::runtime_error(
+                    std::string("Lapack dsteqr_ failed to converge for some eigenvalues and exited with code: ") +
+                    std::to_string(info));
+            } else {
+                throw std::runtime_error(
+                    std::string("Lapack dsteqr_ had an illegal value at argument number: ") +
+                    std::to_string(-info));
+            }
+        }
+    }
+#ifdef Tasmanian_BLAS_HAS_ZGELQ
     /*!
      * \ingroup TasmanianTPLWrappers
      * \brief LAPACK dgeql

@@ -34,6 +34,7 @@
 #include "tasgridUnitTests.hpp"
 #include "tasgridExternalTests.hpp"
 #include "tasgridTestHelpers.hpp"
+#include "tsgTPLWrappers.hpp"
 
 #ifdef Tasmanian_ENABLE_HIP
 #ifndef __HIP_PLATFORM_HCC__
@@ -78,6 +79,7 @@ UnitTests GridUnitTester::hasTest(std::string const &s){
         {"errors", unit_except},
         {"api",    unit_api},
         {"c",      unit_c},
+        {"lapack", unit_lapack}
     };
 
     try{
@@ -97,13 +99,15 @@ bool GridUnitTester::Test(UnitTests test){
     bool testExceptions = true;
     bool testAPI = true;
     bool testC = true;
+    bool testLAPACK = true;
 
     if ((test == unit_all) || (test == unit_cover)) testCover = testCoverUnimportant();
     if ((test == unit_all) || (test == unit_except)) testExceptions = testAllException();
     if ((test == unit_all) || (test == unit_api)) testAPI = testAPIconsistency();
     if ((test == unit_all) || (test == unit_c)) testC = testCInterface();
+    if ((test == unit_all) || (test == unit_lapack)) testLAPACK = testLAPACKInterface();
 
-    bool pass = testCover && testExceptions && testAPI && testC;
+    bool pass = testCover && testExceptions && testAPI && testC && testLAPACK;
     //bool pass = true;
 
     cout << endl;
@@ -784,6 +788,63 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
             grid.getPointsIndexes(); // cannot call on empty
         },
     };
+}
+
+bool GridUnitTester::testLAPACKInterface() {
+    bool all_matched = true;
+
+    #ifdef Tasmanian_ENABLE_BLAS
+    // Initialize.
+    const int N = 100;
+    const double a = TasGrid::Maths::pi / 2;
+    const double b = TasGrid::Maths::pi / 4;
+    int M = N;
+    int nsplit = 1;
+
+    std::vector<double> exact_eigs(N);
+    for (int i=0; i<N; i++) {
+        exact_eigs[i] =
+            a + 2.0 * b * std::cos((i+1) * TasGrid::Maths::pi / (N+1));
+    }
+    std::sort(exact_eigs.begin(), exact_eigs.end());
+
+    std::vector<double> D(N, a), E(N-1, b);
+    std::vector<double> W(N), Z(N*N), WORK1(2*N-2), WORK2(4*N);
+    std::vector<int> IBLOCK1(N), ISPLIT1(N), IWORK1(3*N);
+    ISPLIT1[0] = N;
+    IBLOCK1[0] = N;
+
+    // Test LAPACK's dsterf function.
+    TasBLAS::sterf(N, D.data(), E.data());
+    std::sort(D.begin(), D.end());
+    if (not doesMatch(D, exact_eigs)) {
+        std::cout << "ERROR: failed LAPACK test at sterf()\n";
+        all_matched = false;
+    }
+
+    // Test LAPACK's dsteqr function.
+    std::fill(D.begin(), D.end(), a);
+    std::fill(E.begin(), E.end(), b);
+    TasBLAS::steqr('N', N, D.data(), E.data(), Z.data(), 1, WORK1.data());
+    std::sort(D.begin(), D.end());
+    if (not doesMatch(D, exact_eigs)) {
+        std::cout << "ERROR: failed LAPACK test at steqr()\n";
+        all_matched = false;
+    }
+
+    // Test LAPACK's dstebz function.
+    std::fill(D.begin(), D.end(), a);
+    std::fill(E.begin(), E.end(), b);
+    TasBLAS::stebz('A', 'E', N, 0.0, 0.0, 1, N, 1e-13, D.data(), E.data(), M,
+                   nsplit, W.data(), IBLOCK1.data(), ISPLIT1.data(),
+                   WORK2.data(), IWORK1.data());
+    if (not doesMatch(W, exact_eigs)) {
+        std::cout << "ERROR: failed LAPACK test at stebz()\n";
+        all_matched = false;
+    }
+    #endif
+
+    return all_matched;
 }
 
 #endif

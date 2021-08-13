@@ -34,7 +34,7 @@
 #include "tasgridCLICommon.hpp"
 
 enum UnitTests{
-    unit_none, unit_all, unit_cover, unit_except, unit_api, unit_c
+    unit_none, unit_all, unit_cover, unit_except, unit_api, unit_c, unit_lapack
 };
 
 class GridUnitTester{
@@ -52,6 +52,7 @@ public:
     bool testAPIconsistency();
     bool testCInterface();
     bool testCoverUnimportant();
+    bool testLAPACKInterface();
 
 protected:
     std::vector<std::function<void(void)>> getInvalidArgumentCalls() const;
