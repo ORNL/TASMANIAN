@@ -817,14 +817,20 @@ bool GridUnitTester::testLAPACKInterface() {
     // Test LAPACK's dsterf function.
     TasBLAS::sterf(N, D.data(), E.data());
     std::sort(D.begin(), D.end());
-    all_matched = all_matched && doesMatch(D, exact_eigs);
+    if (not doesMatch(D, exact_eigs)) {
+        std::cout << "ERROR: failed LAPACK test at sterf()\n";
+        all_matched = false;
+    }
 
     // Test LAPACK's dsteqr function.
     std::fill(D.begin(), D.end(), a);
     std::fill(E.begin(), E.end(), b);
     TasBLAS::steqr('N', N, D.data(), E.data(), Z.data(), 1, WORK1.data());
     std::sort(D.begin(), D.end());
-    all_matched = all_matched && doesMatch(D, exact_eigs);
+    if (not doesMatch(D, exact_eigs)) {
+        std::cout << "ERROR: failed LAPACK test at steqr()\n";
+        all_matched = false;
+    }
 
     // Test LAPACK's dstebz function.
     std::fill(D.begin(), D.end(), a);
@@ -832,9 +838,12 @@ bool GridUnitTester::testLAPACKInterface() {
     TasBLAS::stebz('A', 'E', N, 0.0, 0.0, 1, N, 1e-13, D.data(), E.data(), M,
                    nsplit, W.data(), IBLOCK1.data(), ISPLIT1.data(),
                    WORK2.data(), IWORK1.data());
-    all_matched = all_matched && doesMatch(W, exact_eigs);
-
+    if (not doesMatch(W, exact_eigs)) {
+        std::cout << "ERROR: failed LAPACK test at stebz()\n";
+        all_matched = false;
+    }
     #endif
+
     return all_matched;
 }
 
