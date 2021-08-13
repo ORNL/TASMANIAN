@@ -181,7 +181,7 @@ add_test(SparseGridsC            gridtest c)
 Tasmanian_set_test_properties(TESTS SparseGridsAcceleration SparseGridsDomain SparseGridsRefinement SparseGridsGlobal SparseGridsLocal SparseGridsWavelet SparseGridsFourier SparseGridsExceptions SparseGridsAPI SparseGridsC)
 
 if (Tasmanian_ENABLE_BLAS)
-	add_test(SparseGridsLAPACK gridtest lapack)
+    add_test(SparseGridsLAPACK gridtest lapack)
     Tasmanian_set_test_properties(TESTS SparseGridsLAPACK)
 endif()
 

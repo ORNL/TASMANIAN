@@ -34,10 +34,7 @@
 #include "tasgridUnitTests.hpp"
 #include "tasgridExternalTests.hpp"
 #include "tasgridTestHelpers.hpp"
-
-#ifdef Tasmanian_ENABLE_BLAS
-#include "tsgBlasWrappers.hpp"
-#endif
+#include "tsgTPLWrappers.hpp"
 
 #ifdef Tasmanian_ENABLE_HIP
 #ifndef __HIP_PLATFORM_HCC__
@@ -837,12 +834,7 @@ bool GridUnitTester::testLAPACKInterface() {
                    WORK2.data(), IWORK1.data());
     all_matched = all_matched && doesMatch(W, exact_eigs);
 
-    // For debugging only.
-    // for (int i=0; i<N; i++) {
-    //     cout << D[i] << " " <<  W[i] << " " << exact_eigs[i] << endl;
-    // }
     #endif
-
     return all_matched;
 }
 
