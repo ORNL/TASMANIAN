@@ -178,9 +178,12 @@ add_test(SparseGridsFourier      gridtest fourier)
 add_test(SparseGridsExceptions   gridtest errors)
 add_test(SparseGridsAPI          gridtest api)
 add_test(SparseGridsC            gridtest c)
-add_test(SparseGridsLAPACK       gridtest lapack)
 Tasmanian_set_test_properties(TESTS SparseGridsAcceleration SparseGridsDomain SparseGridsRefinement SparseGridsGlobal SparseGridsLocal SparseGridsWavelet SparseGridsFourier SparseGridsExceptions SparseGridsAPI SparseGridsC)
 
+if (Tasmanian_ENABLE_BLAS)
+	add_test(SparseGridsLAPACK gridtest lapack)
+    Tasmanian_set_test_properties(TESTS SparseGridsLAPACK)
+endif()
 
 ########################################################################
 # Install headers and config files
