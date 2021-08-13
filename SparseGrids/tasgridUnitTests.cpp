@@ -801,6 +801,8 @@ bool GridUnitTester::testLAPACKInterface() {
     const int N = 100;
     const double a = TasGrid::Maths::pi / 2;
     const double b = TasGrid::Maths::pi / 4;
+    int M = N;
+    int nsplit = 1;
 
     std::vector<double> exact_eigs(N);
     for (int i=0; i<N; i++) {
@@ -830,9 +832,9 @@ bool GridUnitTester::testLAPACKInterface() {
     // Test LAPACK's dstebz function.
     std::fill(D.begin(), D.end(), a);
     std::fill(E.begin(), E.end(), b);
-    TasBLAS::stebz('A', 'E', N, 0.0, 0.0, 1, N, 1e-13, D.data(), E.data(), N,
-                   1, W.data(), IBLOCK1.data(), ISPLIT1.data(), WORK2.data(),
-                   IWORK1.data());
+    TasBLAS::stebz('A', 'E', N, 0.0, 0.0, 1, N, 1e-13, D.data(), E.data(), M,
+                   nsplit, W.data(), IBLOCK1.data(), ISPLIT1.data(),
+                   WORK2.data(), IWORK1.data());
     all_matched = all_matched && doesMatch(W, exact_eigs);
 
     // For debugging only.

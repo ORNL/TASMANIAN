@@ -206,7 +206,7 @@ namespace TasBLAS{
      * \brief LAPACK dstebz
      */
     inline void stebz(char range, char order, int N, double vl, double vu, int il, int iu, double abstol, double D[], double E[],
-                      int M, int nsplit, double W[], int iblock[], int isplit[], double work[], int iwork[]) {
+                      int& M, int& nsplit, double W[], int iblock[], int isplit[], double work[], int iwork[]) {
         int info = 0;
         dstebz_(&range, &order, &N, &vl, &vu, &il, &iu, &abstol, D, E, &M, &nsplit, W, iblock, isplit, work, iwork, &info);
         if (info != 0) {
