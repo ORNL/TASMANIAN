@@ -811,7 +811,7 @@ bool GridUnitTester::testLAPACKInterface() {
     }
     std::sort(exact_eigs.begin(), exact_eigs.end());
 
-    std::vector<double>  D(N, a), E(N-1, b);
+    std::vector<double> D(N, a), E(N-1, b);
     std::vector<double> W(N), Z(N*N), WORK1(2*N-2), WORK2(4*N);
     std::vector<int> IBLOCK1(N), ISPLIT1(N), IWORK1(3*N);
     ISPLIT1[0] = N;

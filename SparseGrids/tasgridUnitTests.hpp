@@ -32,8 +32,6 @@
 #define __TASGRID_UNIT_TESTS_HPP
 
 #include "tasgridCLICommon.hpp"
-#include <string>
-#include <vector>
 
 enum UnitTests{
     unit_none, unit_all, unit_cover, unit_except, unit_api, unit_c, unit_lapack
