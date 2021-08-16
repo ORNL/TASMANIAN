@@ -215,6 +215,8 @@ namespace OneDimensionalNodes{
     void getGaussHermite(int m, std::vector<double> &w, std::vector<double> &x, double alpha);
     //! \brief Generate Gauss-Laguerre weights \b w and points \b x for (input) number of points \b m, using parameters \b alpha
     void getGaussLaguerre(int m, std::vector<double> &w, std::vector<double> &x, double alpha);
+    //! \brief Weighted Gauss-Legendre weights \b w and points \b x for (input) number of points \b, using parameter \b shift.
+    void getWeightedExoticGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x, double shift);
 
     // nested rules
     //! \brief Generate Clenshaw-Curtis \b nodes for the \b level.
