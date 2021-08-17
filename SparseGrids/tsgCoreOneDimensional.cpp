@@ -377,6 +377,9 @@ std::vector<double> OneDimensionalOrthPolynomials::getRoots(
     int n, std::function<double(double)> &weight_fn, const std::vector<double> &ref_points,
     const std::vector<double> &ref_weights) {
 
+    std::vector<double> roots(n, 0.0);
+
+    #ifdef Tasmanian_ENABLE_BLAS
     // Compute the weights for the intergral according to the input weight function.
     if (ref_points.size() != ref_weights.size()) {
         throw std::invalid_argument("The number of reference points does not match the point of reference weights!\n");
@@ -415,6 +418,7 @@ std::vector<double> OneDimensionalOrthPolynomials::getRoots(
         std::transform(ref_points.begin(), ref_points.end(), poly_vals.begin(),
                        [&roots](double x){return poly_eval(roots, x);});
     }
+    #endif
     return(roots);
 }
 
