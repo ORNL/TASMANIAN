@@ -33,6 +33,13 @@
 
 #include "tsgCoreOneDimensional.hpp"
 #include "tsgIOHelpers.hpp"
+#include <functional>
+#include <stdexcept>
+#include <string>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
 
 namespace TasGrid{
 
@@ -360,6 +367,57 @@ const char* OneDimensionalMeta::getHumanString(TypeOneDRule rule){
     }
 }
 
+// Generate the n roots of the n-th degree orthogonal polynomial.
+// ref_points and ref_points are used in the computation of the integrals that form the elements of the Jacobi matrix.
+double poly_eval(std::vector<double> roots, double x) {
+    std::transform(roots.begin(), roots.end(), roots.begin(), [&x](double r){return(r - x);});
+    return(std::accumulate(roots.begin(), roots.end(), 1, std::multiplies<double>()));
+}
+std::vector<double> OneDimensionalOrthPolynomials::getRoots(
+    int n, std::function<double(double)> &weight_fn, const std::vector<double> &ref_points,
+    const std::vector<double> &ref_weights) {
+
+    // Compute the weights for the intergral according to the input weight function.
+    if (ref_points.size() != ref_weights.size()) {
+        throw std::invalid_argument("The number of reference points does not match the point of reference weights!\n");
+    }
+    int nref = ref_points.size();
+    std::vector<std::vector<double>> roots_cache(n);
+    std::vector<double> integr_weights(nref);
+    for (int j=0; j<nref; j++) { 
+        integr_weights[j] = weight_fn(ref_points[j]) * ref_weights[j];
+    }
+
+    std::vector<double> poly_m1_vals(nref, 0.0), poly_vals(nref, 1.0);
+    std::vector<double> alpha(n), beta(n-1), roots(n);
+    double alpha_numr, alpha_denm, beta_numr, beta_denm;
+    for (int i=0; i<n+1; i++) {
+        // Form the Jacobi matrix and compute the roots.
+        alpha_numr = 0.0;
+        alpha_denm = 0.0;
+        beta_numr = 0.0;
+        beta_denm = 0.0;
+        for (int j=0; j<nref; j++) {
+            alpha_numr += ref_points[j] * pow(poly_vals[j], 2) * integr_weights[j];
+            alpha_denm += pow(poly_vals[j], 2) * integr_weights[j];
+            beta_numr += pow(poly_vals[j], 2) * integr_weights[j];
+            beta_denm +=  pow(poly_m1_vals[j], 2) * ref_weights[j];
+        }
+        alpha[i] = alpha_numr / alpha_denm;
+        if (i<n) {
+            beta[i] = beta_numr / beta_denm;
+        }
+        // TODO: Call a tridiagonal solver here.
+
+        // Update key variables for the next iteration.
+        roots_cache[i] = roots;
+        poly_m1_vals = poly_vals;
+        std::transform(ref_points.begin(), ref_points.end(), poly_vals.begin(),
+                       [&roots](double x){return poly_eval(roots, x);});
+    }
+    return(roots);
+}
+
 // Gauss-Legendre
 void OneDimensionalNodes::getGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x){
     w.resize(m);
@@ -498,6 +556,12 @@ void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::v
     s[m-1] = 0.0;
 
     TasmanianTridiagonalSolver::decompose(m, x, s, w);
+}
+
+// Get Exotic Gauss-Legendre quadrature weights and points.
+void OneDimensionalNodes::getExoticGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x, double shift, std::function<double (double)> weight_fn){
+    w.resize(m);
+    x.resize(m);
 }
 
 // Clenshaw-Curtis

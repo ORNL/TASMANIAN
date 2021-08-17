@@ -34,6 +34,9 @@
 #include "tsgIOHelpers.hpp"
 #include "tsgLinearSolvers.hpp"
 #include "tsgSequenceOptimizer.hpp"
+#include <string>
+#include <vector>
+#include <functional>
 
 /*!
  * \internal
@@ -197,6 +200,15 @@ namespace OneDimensionalMeta{
 }
 
 //! \internal
+//! \brief Contains algorithms for generating orthogonal polynomials with respect to a nonnegative weight function.
+//! \ingroup TasmanianCoreOneDimensional
+namespace OneDimensionalOrthPolynomials{
+    //! \brief Generate the n roots of the n-th degree orthogonal polynomial.
+    std::vector<double> getRoots(int n, std::function<double(double)> &weight_fn, const std::vector<double> &ref_points,
+                                 const std::vector<double> &ref_weights);
+};
+
+//! \internal
 //! \brief Contains algorithms for generating Gauss,Chebyshev, and Fourier nodes and weights.
 //! \ingroup TasmanianCoreOneDimensional
 namespace OneDimensionalNodes{
@@ -215,8 +227,9 @@ namespace OneDimensionalNodes{
     void getGaussHermite(int m, std::vector<double> &w, std::vector<double> &x, double alpha);
     //! \brief Generate Gauss-Laguerre weights \b w and points \b x for (input) number of points \b m, using parameters \b alpha
     void getGaussLaguerre(int m, std::vector<double> &w, std::vector<double> &x, double alpha);
-    //! \brief Weighted Gauss-Legendre weights \b w and points \b x for (input) number of points \b, using parameter \b shift.
-    void getWeightedExoticGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x, double shift);
+    //! \brief Generate Exotic (weighted and possibly shifted) Gauss-Legendre weights \b w and points \b x for (input) number of points \b, using parameter \b shift.
+    void getExoticGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x, double shift,
+                                  std::function<double(double)> weight_fn);
 
     // nested rules
     //! \brief Generate Clenshaw-Curtis \b nodes for the \b level.
