@@ -409,9 +409,11 @@ std::vector<std::vector<double>> OneDimensionalOrthPolynomials::getRootCache(
         // tridiagonal eigensolver generates the eigenvalues in place and
         // destroys some of its inputs.
         roots = alpha;
-        std::transform(beta.begin(), beta.end(), offdiag.begin(), sqrt);
-        TasBLAS::sterf(i+1, roots.data(), offdiag.data());
+        for (int k=0; k<i; k++) {
+            offdiag[k] = sqrt(beta[k]);
+        }
         roots.resize(i+1);
+        TasBLAS::sterf(i+1, roots.data(), offdiag.data());
         root_cache[i] = roots;
         // Update the values of the polynomials at ref_points.
         poly_m1_vals = poly_vals;
