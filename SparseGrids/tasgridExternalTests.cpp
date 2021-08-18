@@ -34,7 +34,6 @@
 
 #include "tasgridExternalTests.hpp"
 #include "tasgridTestHelpers.hpp"
-#include "tsgCoreOneDimensional.hpp"
 
 std::minstd_rand park_miller(10);
 std::vector<double> genRandom(int num_samples, std::vector<double> const &lower, std::vector<double> const &upper){
@@ -2198,16 +2197,19 @@ bool ExternalTester::testAllAcceleration() const{
 void ExternalTester::debugTest(){
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
-    int n = 200;
-    int nref = 501;
-    std::function<double(double)> sinc_plus1 =
-            [](double x)->double{return(x == 0.0 ? 2.0 : 1.0 + sin(x) / x);};
+    int n = 10;
+    int nref = 101;
+    auto sinc_plus1 = [](double x)->double{return(x == 0.0 ? 2.0 : 1.0 + sin(x) / x);};
     std::vector<double> ref_weights(nref), ref_points(nref);
     std::vector<std::vector<double>> root_cache(n);
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
     root_cache = TasGrid::OneDimensionalOrthPolynomials::getRootCache(n, sinc_plus1, ref_weights, ref_points);
-    for (int j=0; j<root_cache.back().size(); j++) {
-        std::cout << root_cache.back()[j] << std::endl;
+    for (int j=0; j<root_cache.size(); j++) {
+        std::cout << "n = " << j + 1 << std::endl;
+        for (int k=0; k<root_cache[j].size(); k++) {
+            std::cout << root_cache[j][k] << std::endl;
+        }
+        std::cout << std::endl;
     }
 }
 
