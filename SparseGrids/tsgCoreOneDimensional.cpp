@@ -34,8 +34,7 @@
 #include "tsgCoreOneDimensional.hpp"
 #include "tsgIOHelpers.hpp"
 #include "tsgTPLWrappers.hpp"
-#include <ostream>
-#include <sys/types.h>
+#include <cassert>
 
 namespace TasGrid{
 
@@ -373,7 +372,8 @@ double poly_eval(std::vector<double> roots, double x) {
     return eval_value;
 }
 std::vector<std::vector<double>> OneDimensionalOrthPolynomials::getRootCache(
-        const int n, const std::function<double(double)> &weight_fn,
+        const int n,
+        std::function<double(double)> weight_fn,
         const std::vector<double> &ref_weights,
         const std::vector<double> &ref_points) {
 
@@ -381,44 +381,42 @@ std::vector<std::vector<double>> OneDimensionalOrthPolynomials::getRootCache(
     std::vector<std::vector<double>> root_cache(n);
     std::vector<double> roots;
     #ifdef Tasmanian_ENABLE_BLAS
-    if (ref_points.size() != ref_weights.size()) {
-        throw std::invalid_argument("The number of reference points does not match the point of reference weights!\n");
-    }
-    int nref = ref_points.size();
-    std::vector<double> integral_weights(nref);
-    for (size_t j=0; j<nref; j++) {
+    assert(ref_points.size() == ref_weights.size());
+    std::vector<double> integral_weights(ref_points.size());
+    for (size_t j=0; j<ref_points.size(); j++) {
         integral_weights[j] = weight_fn(ref_points[j]) * ref_weights[j];
     }
 
     // Compute the roots incrementally.
-    std::vector<double> poly_m1_vals(nref, 0.0), poly_vals(nref, 1.0);
-    std::vector<double> alpha(n), beta(n-1), offdiag(n-1);
-    double alpha_numr, alpha_denm, beta_numr, beta_denm;
+    std::vector<double>
+            poly_m1_vals(ref_points.size(), 0.0),
+            poly_vals(ref_points.size(), 1.0);
+    std::vector<double> alpha, beta;
     for (int i=0; i<n; i++) {
-        // Form the tridiagonal vectors of the Jacobi matrix.
-        alpha_numr = 0.0;
-        alpha_denm = 0.0;
-        beta_numr = 0.0;
-        beta_denm = 0.0;
-        for (int j=0; j<nref; j++) {
-            alpha_numr += ref_points[j] * pow(poly_vals[j], 2) * integral_weights[j];
-            alpha_denm += pow(poly_vals[j], 2) * integral_weights[j];
-            beta_numr += pow(poly_vals[j], 2) * integral_weights[j];
-            beta_denm +=  pow(poly_m1_vals[j], 2) * integral_weights[j];
+        // Form the tridiagonal vectors, alpha and beta, of the Jacobi matrix.
+        double alpha_numr = 0.0;
+        double alpha_denm = 0.0;
+        double beta_numr = 0.0;
+        double beta_denm = 0.0;
+        for (int j=0; j<ref_points.size(); j++) {
+            alpha_numr += ref_points[j] * poly_vals[j] * poly_vals[j] * integral_weights[j];
+            alpha_denm += poly_vals[j] * poly_vals[j] * integral_weights[j];
+            beta_numr += poly_vals[j] * poly_vals[j] * integral_weights[j];
+            beta_denm +=  poly_m1_vals[j] * poly_m1_vals[j]  * integral_weights[j];
         }
-        alpha[i] = alpha_numr / alpha_denm;
+        alpha.push_back(alpha_numr / alpha_denm);
         if (i >= 1) {
-            beta[i-1] = beta_numr / beta_denm;
+            beta.push_back(beta_numr / beta_denm);
         }
         // Compute the roots. alpha and beta need to be copied because the
         // tridiagonal eigensolver generates the eigenvalues in place and
         // destroys some of its inputs.
         roots = alpha;
+        std::vector<double> offdiag(n-1);
         for (int k=0; k<i; k++) {
             offdiag[k] = sqrt(beta[k]);
         }
-        roots.resize(i+1);
-        TasBLAS::sterf(i+1, roots.data(), offdiag.data());
+        TasBLAS::sterf(i + 1, roots.data(), offdiag.data());
         root_cache[i] = roots;
         // Update the values of the polynomials at ref_points.
         poly_m1_vals = poly_vals;
@@ -445,8 +443,11 @@ double lagrange_eval(int idx, std::vector<double> roots, double x) {
     return eval_value;
 }
 void OneDimensionalWriter::writeExoticGaussLegendre(
-      std::ostream &os, const int m, const double shift,
-      const std::function<double(double)> &weight_fn, const int nref) {
+      std::ostream &os,
+      const int m,
+      const double shift,
+      std::function<double(double)> weight_fn,
+      const int nref) {
 
     // Create the set of points for the first term.
     std::vector<double> ref_weights(nref), ref_points(nref);
