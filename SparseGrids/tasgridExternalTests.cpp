@@ -34,6 +34,7 @@
 
 #include "tasgridExternalTests.hpp"
 #include "tasgridTestHelpers.hpp"
+#include "tsgCoreOneDimensional.hpp"
 
 std::minstd_rand park_miller(10);
 std::vector<double> genRandom(int num_samples, std::vector<double> const &lower, std::vector<double> const &upper){
@@ -2197,6 +2198,13 @@ bool ExternalTester::testAllAcceleration() const{
 void ExternalTester::debugTest(){
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
+    int n = 10;
+    int nref = 99;
+    std::function<double(double)> sinc_plus1 =
+            [](double x)->double{return(x == 0.0 ? 2.0 : 1.0 + sin(x) / x);};
+    std::vector<double> ref_weights(nref), ref_points(nref), roots(n);
+    TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
+    roots = TasGrid::OneDimensionalOrthPolynomials::getRoots(n, sinc_plus1, ref_points, ref_weights);
 }
 
 void ExternalTester::debugTestII(){
