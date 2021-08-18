@@ -34,13 +34,6 @@
 #include "tsgCoreOneDimensional.hpp"
 #include "tsgIOHelpers.hpp"
 #include "tsgTPLWrappers.hpp"
-#include <functional>
-#include <stdexcept>
-#include <string>
-#include <vector>
-#include <cmath>
-#include <algorithm>
-#include <numeric>
 
 namespace TasGrid{
 

@@ -34,9 +34,6 @@
 #include "tsgIOHelpers.hpp"
 #include "tsgLinearSolvers.hpp"
 #include "tsgSequenceOptimizer.hpp"
-#include <string>
-#include <vector>
-#include <functional>
 
 /*!
  * \internal
