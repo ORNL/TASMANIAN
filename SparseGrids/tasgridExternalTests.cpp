@@ -2198,13 +2198,17 @@ bool ExternalTester::testAllAcceleration() const{
 void ExternalTester::debugTest(){
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
-    int n = 10;
-    int nref = 99;
+    int n = 200;
+    int nref = 501;
     std::function<double(double)> sinc_plus1 =
             [](double x)->double{return(x == 0.0 ? 2.0 : 1.0 + sin(x) / x);};
-    std::vector<double> ref_weights(nref), ref_points(nref), roots(n);
+    std::vector<double> ref_weights(nref), ref_points(nref);
+    std::vector<std::vector<double>> root_cache(n);
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
-    roots = TasGrid::OneDimensionalOrthPolynomials::getRoots(n, sinc_plus1, ref_points, ref_weights);
+    root_cache = TasGrid::OneDimensionalOrthPolynomials::getRootCache(n, sinc_plus1, ref_weights, ref_points);
+    for (int j=0; j<root_cache.back().size(); j++) {
+        std::cout << root_cache.back()[j] << std::endl;
+    }
 }
 
 void ExternalTester::debugTestII(){

@@ -371,14 +371,18 @@ const char* OneDimensionalMeta::getHumanString(TypeOneDRule rule){
 // Generate the n roots of the n-th degree orthogonal polynomial.
 // ref_points and ref_points are used in the computation of the integrals that form the elements of the Jacobi matrix.
 double poly_eval(int nroots, std::vector<double> roots, double x) {
-    std::transform(roots.begin(), roots.begin()+nroots, roots.begin(), [&x](double r){return(r - x);});
-    return(std::accumulate(roots.begin(), roots.begin()+nroots, 1.0, std::multiplies<double>{}));
+    double eval_value = 1.0;
+    for (int i=0; i<nroots; i++) {
+        eval_value *= (x - roots[i]);
+    }
+    return(eval_value);
 }
-std::vector<double> OneDimensionalOrthPolynomials::getRoots(
-    int n, std::function<double(double)> &weight_fn, const std::vector<double> &ref_points,
-    const std::vector<double> &ref_weights) {
+std::vector<std::vector<double>> OneDimensionalOrthPolynomials::getRootCache(
+    int n, std::function<double(double)> &weight_fn, const std::vector<double> &ref_weights,
+    const std::vector<double> &ref_points) {
     // Initialize and compute the integral weights corresponding to weight_fn.
-    std::vector<double> roots(n, 0.0);
+    std::vector<std::vector<double>> root_cache(n);
+    std::vector<double> roots;
     #ifdef Tasmanian_ENABLE_BLAS
     if (ref_points.size() != ref_weights.size()) {
         throw std::invalid_argument("The number of reference points does not match the point of reference weights!\n");
@@ -390,7 +394,7 @@ std::vector<double> OneDimensionalOrthPolynomials::getRoots(
     }
     // Compute the roots incrementally.
     std::vector<double> poly_m1_vals(nref, 0.0), poly_vals(nref, 1.0);
-    std::vector<double> alpha(n, 0.0), beta(n-1, 0.0), offdiag(n-1, 0.0);
+    std::vector<double> alpha(n), beta(n-1), offdiag(n-1);
     double alpha_numr, alpha_denm, beta_numr, beta_denm;
     for (int i=0; i<n; i++) {
         // Form the tridiagonal vectors of the Jacobi matrix.
@@ -402,7 +406,7 @@ std::vector<double> OneDimensionalOrthPolynomials::getRoots(
             alpha_numr += ref_points[j] * pow(poly_vals[j], 2) * integral_weights[j];
             alpha_denm += pow(poly_vals[j], 2) * integral_weights[j];
             beta_numr += pow(poly_vals[j], 2) * integral_weights[j];
-            beta_denm +=  pow(poly_m1_vals[j], 2) * ref_weights[j];
+            beta_denm +=  pow(poly_m1_vals[j], 2) * integral_weights[j];
         }
         alpha[i] = alpha_numr / alpha_denm;
         if (i >= 1) {
@@ -414,13 +418,15 @@ std::vector<double> OneDimensionalOrthPolynomials::getRoots(
         roots = alpha;
         std::transform(beta.begin(), beta.end(), offdiag.begin(), sqrt);
         TasBLAS::sterf(i+1, roots.data(), offdiag.data());
-        // Update key variables for the next iteration.
+        roots.resize(i+1);
+        root_cache[i] = roots;
+        // Update the values of the polynomials at ref_points.
         poly_m1_vals = poly_vals;
         std::transform(ref_points.begin(), ref_points.end(), poly_vals.begin(),
                        [&roots, i](double x){return poly_eval(i+1, roots, x);});
     }
     #endif
-    return(roots);
+    return(root_cache);
 }
 
 // Gauss-Legendre
@@ -561,12 +567,6 @@ void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::v
     s[m-1] = 0.0;
 
     TasmanianTridiagonalSolver::decompose(m, x, s, w);
-}
-
-// Get Exotic Gauss-Legendre quadrature weights and points.
-void OneDimensionalNodes::getExoticGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x, double shift, std::function<double (double)> weight_fn){
-    w.resize(m);
-    x.resize(m);
 }
 
 // Clenshaw-Curtis
