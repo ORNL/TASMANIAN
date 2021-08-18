@@ -34,6 +34,8 @@
 #include "tsgCoreOneDimensional.hpp"
 #include "tsgIOHelpers.hpp"
 #include "tsgTPLWrappers.hpp"
+#include <ostream>
+#include <sys/types.h>
 
 namespace TasGrid{
 
@@ -363,16 +365,15 @@ const char* OneDimensionalMeta::getHumanString(TypeOneDRule rule){
 
 // Generate the n roots of the n-th degree orthogonal polynomial.
 // ref_points and ref_points are used in the computation of the integrals that form the elements of the Jacobi matrix.
-double poly_eval(int nroots, std::vector<double> roots, double x) {
+double poly_eval(std::vector<double> roots, double x) {
     double eval_value = 1.0;
-    for (int i=0; i<nroots; i++) {
+    for (size_t i=0; i<roots.size(); i++) {
         eval_value *= (x - roots[i]);
     }
-    return(eval_value);
+    return eval_value;
 }
 std::vector<std::vector<double>> OneDimensionalOrthPolynomials::getRootCache(
-        int n,
-        std::function<double(double)> &weight_fn,
+        const int n, const std::function<double(double)> &weight_fn,
         const std::vector<double> &ref_weights,
         const std::vector<double> &ref_points) {
 
@@ -385,9 +386,10 @@ std::vector<std::vector<double>> OneDimensionalOrthPolynomials::getRootCache(
     }
     int nref = ref_points.size();
     std::vector<double> integral_weights(nref);
-    for (int j=0; j<nref; j++) {
+    for (size_t j=0; j<nref; j++) {
         integral_weights[j] = weight_fn(ref_points[j]) * ref_weights[j];
     }
+
     // Compute the roots incrementally.
     std::vector<double> poly_m1_vals(nref, 0.0), poly_vals(nref, 1.0);
     std::vector<double> alpha(n), beta(n-1), offdiag(n-1);
@@ -421,11 +423,57 @@ std::vector<std::vector<double>> OneDimensionalOrthPolynomials::getRootCache(
         // Update the values of the polynomials at ref_points.
         poly_m1_vals = poly_vals;
         std::transform(ref_points.begin(), ref_points.end(), poly_vals.begin(),
-                       [&roots, i](double x){return poly_eval(i+1, roots, x);});
+                       [&roots, i](double x){return poly_eval(roots, x);});
     }
     #endif
-    return(root_cache);
+    return root_cache;
 }
+
+// Exotic Gauss-Legendre writer. For the case where the integrand F(x) is
+// decomposed as:
+//
+//     F(x) := f(x) * [weight_fn(x) - shift] + shift * f(x)
+//
+// and separate weights and points are computed for each term.
+double lagrange_eval(int idx, std::vector<double> roots, double x) {
+    double eval_value = 1.0;
+    for (size_t i=0; i<roots.size(); i++) {
+        if (i != idx) {
+            eval_value *= (x - roots[i]) / (roots[idx] - roots[i]);
+        }
+    }
+    return eval_value;
+}
+void OneDimensionalWriter::writeExoticGaussLegendre(
+      std::ostream &os, const int m, const double shift,
+      const std::function<double(double)> &weight_fn, const int nref) {
+
+    // Create the set of points for the first term.
+    std::vector<double> ref_weights(nref), ref_points(nref);
+    TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
+    std::vector<std::vector<double>> points_cache(m), weights_cache(m);
+    points_cache = OneDimensionalOrthPolynomials::getRootCache(
+        m, [shift, weight_fn](double x)->double{return (weight_fn(x) + shift);},
+        ref_weights, ref_points);
+
+    // Create the set of weights for the first term.
+    std::vector<double> quad_weights;
+    for (int i=0; i<m; i++) {
+        quad_weights.resize(points_cache[i].size());
+        for (size_t j=0; j<points_cache[i].size(); j++) {
+            quad_weights[j] = 0.0;
+            // Integrate the function L_j(x) * [weight_fn(x) + shift].
+            for (int k=0; k<nref; k++) {
+                quad_weights[j] +=
+                        lagrange_eval(j, points_cache[j], ref_points[k]) *
+                        (weight_fn(ref_points[k]) + shift) *
+                        ref_weights[k];
+            }
+        }
+        weights_cache[i] = quad_weights;
+    }
+}
+
 
 // Gauss-Legendre
 void OneDimensionalNodes::getGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x){
