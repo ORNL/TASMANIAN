@@ -371,8 +371,11 @@ double poly_eval(int nroots, std::vector<double> roots, double x) {
     return(eval_value);
 }
 std::vector<std::vector<double>> OneDimensionalOrthPolynomials::getRootCache(
-    int n, std::function<double(double)> &weight_fn, const std::vector<double> &ref_weights,
-    const std::vector<double> &ref_points) {
+        int n,
+        std::function<double(double)> &weight_fn,
+        const std::vector<double> &ref_weights,
+        const std::vector<double> &ref_points) {
+
     // Initialize and compute the integral weights corresponding to weight_fn.
     std::vector<std::vector<double>> root_cache(n);
     std::vector<double> roots;

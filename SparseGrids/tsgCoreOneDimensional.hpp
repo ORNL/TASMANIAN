@@ -197,12 +197,14 @@ namespace OneDimensionalMeta{
 }
 
 //! \internal
-//! \brief Contains algorithms for generating orthogonal polynomials with respect to a nonnegative weight function.
+//! \brief Contains algorithms for generating orthogonal polynomials with respect to a NONNEGATIVE weight function.
 //! \ingroup TasmanianCoreOneDimensional
 namespace OneDimensionalOrthPolynomials{
     //! \brief Generate all roots up to the n roots of the n-th degree orthogonal polynomial.
     std::vector<std::vector<double>> getRootCache(
-        int n, std::function<double(double)> &weight_fn, const std::vector<double> &ref_weights,
+        int n,
+        std::function<double(double)> &weight_fn,
+        const std::vector<double> &ref_weights,
         const std::vector<double> &ref_points);
 };
 
