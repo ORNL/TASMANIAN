@@ -2220,8 +2220,7 @@ void ExternalTester::debugTest(){
     double shift = 1.0;
     auto sinc = [](double x)->double{return(x == 0.0 ? 1.0 : sin(x) / x);};
     std::vector<std::vector<double>> points_cache(n), weights_cache(n);
-    TasGrid::OneDimensionalExoticQuad::getExoticGaussLegendreCache(
-        n, shift, sinc, nref, weights_cache, points_cache);
+    TasGrid::getExoticGaussLegendreCache(n, shift, sinc, nref, weights_cache, points_cache);
     for (int j=0; j<points_cache.size(); j++) {
         std::cout << "POINTS, n = " << j + 1 << std::endl;
         for (int k=0; k<points_cache[j].size(); k++) {
