@@ -98,3 +98,45 @@ int main(int argc, char const **argv){
     }
 
 }
+
+void debugTest() {
+    cout << "Debug Test (callable from the CMake build folder)" << endl;
+    cout << "Put testing code here and call with ./Addons/addontester debug" << endl;
+    // // Test 1 (Print Roots)
+    // int n = 10;
+    // int nref = 101;
+    // auto sinc_plus1 = [](double x)->double{return(x == 0.0 ? 2.0 : 1.0 + sin(x) / x);};
+    // std::vector<double> ref_weights(nref), ref_points(nref);
+    // std::vector<std::vector<double>> root_cache(n);
+    // TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
+    // root_cache = TasGrid::OneDimensionalExoticQuad::getRootCache(n, sinc_plus1, ref_weights, ref_points);
+    // for (int j=0; j<root_cache.size(); j++) {
+    //     std::cout << "n = " << j + 1 << std::endl;
+    //     for (int k=0; k<root_cache[j].size(); k++) {
+    //         std::cout << root_cache[j][k] << std::endl;
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    // Test 2 (Print Weights and Points)
+    int n = 7;
+    int nref = 101;
+    double shift = 1.0;
+    auto sinc = [](double x)->double{return(x == 0.0 ? 1.0 : sin(x) / x);};
+    std::vector<std::vector<double>> points_cache(n), weights_cache(n);
+    TasGrid::getExoticGaussLegendreCache(n, shift, sinc, nref, weights_cache, points_cache);
+    for (int j=0; j<points_cache.size(); j++) {
+        std::cout << "POINTS, n = " << j + 1 << std::endl;
+        for (int k=0; k<points_cache[j].size(); k++) {
+            std::cout << points_cache[j][k] << std::endl;
+        }
+        std::cout << std::endl;
+    }
+    for (int j=0; j<weights_cache.size(); j++) {
+        std::cout << "WEIGHTS, n = " << j + 1 << std::endl;
+        for (int k=0; k<weights_cache[j].size(); k++) {
+            std::cout << weights_cache[j][k] << std::endl;
+        }
+        std::cout << std::endl;
+    }
+}
