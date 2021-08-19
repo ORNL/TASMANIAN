@@ -416,6 +416,9 @@ std::vector<std::vector<double>> OneDimensionalExoticQuad::getRootCache(
             offdiag[k] = sqrt(beta[k]);
         }
         TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, roots, offdiag);
+        if (roots.size() % 2 == 1) {
+            roots[(roots.size() - 1) / 2] = 0.0; // Zero out the center for stability.
+        }
         root_cache[i] = roots;
         // Update the values of the polynomials at ref_points.
         poly_m1_vals = poly_vals;
@@ -481,6 +484,10 @@ void OneDimensionalExoticQuad::getExoticGaussLegendreCache(
         std::vector<double> quad_weights(points_cache[i].size());
         for (size_t j=0; j<points_cache[i].size(); j++) {
             quad_weights[j] = -shift * gl_weights[j];
+            if (points.size() % 2 == 1) {
+                // Zero out for stability.
+                points[(points.size() - 1) / 2] = 0.0;
+            }
         }
         points_cache[i].reserve(points_cache[i].size() + points.size());
         points_cache[i].insert(points_cache[i].end(), points.begin(), points.end());
