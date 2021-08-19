@@ -155,6 +155,17 @@ template void transpose(long long, long long, std::complex<double> const[], std:
 }
 
 
+void TasmanianTridiagonalSolver::getSymmetricEigenvalues(
+      int n,
+      std::vector<double> &diag,
+      std::vector<double> &offdiag) {
+    #ifdef Tasmanian_ENABLE_BLAS
+    TasBLAS::sterf(n, diag.data(), offdiag.data());
+    #else
+    throw std::runtime_error("getSymmetricEigenvalues() requires BLAS acceleration to be enabled!");
+    #endif
+}
+
 void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z){
     const double tol = Maths::num_tol;
     if (n == 1){ z[0] = z[0]*z[0]; return; }

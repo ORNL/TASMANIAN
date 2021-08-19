@@ -101,7 +101,13 @@ namespace TasmanianDenseSolver{
  * \ingroup TasmanianLinearSolvers
  * \brief Methods for tridiagonal eigenvalue problems.
  */
-namespace TasmanianTridiagonalSolver{
+namespace TasmanianTridiagonalSolver {
+
+    //! \brief Method for computing the eigenvalues of a symmetric matrix in place, using an LAPACK  wrapper.
+    void getSymmetricEigenvalues(int n,
+                                 std::vector<double> &diag,
+                                 std::vector<double> &offdiag);
+
     //! \brief Method for tridiagonal eigenvalue decomposition, used to compute nodes and weights for Gaussian rules.
     void decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z);
 }
