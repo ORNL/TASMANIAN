@@ -2237,24 +2237,33 @@ void ExternalTester::debugTest(){
     //     std::cout << std::endl;
     // }
 
-    // Test 3 (Create CustomTabulated)
+    // Test 3 (Create CustomTabulated + OneDimensionalWrapper)
     int n = 7;
     int nref = 101;
     double shift = 1.0;
     auto sinc = [](double x)->double{return(x == 0.0 ? 1.0 : sin(x) / x);};
+    // Output to cout.
+    std::cout << std::endl;
+    std::cout << "RAW FILE CONTENTS:" << std::endl;
     OneDimensionalExoticQuad::writeExoticGaussLegendreCache(std::cout, n, shift, sinc);
-    // Create a one dimensional rule.
+    // Test the CustomTabulated instance.
+    std::cout << std::endl;
+    std::cout << "CUSTOM TABULATED CONTENTS:" << std::endl;
     std::fstream fs("_utest.txt", std::ios::in | std::ios::out | std::ios::app);
     OneDimensionalExoticQuad::writeExoticGaussLegendreCache(fs, n, shift, sinc);
     fs.seekg(0);
     TasGrid::CustomTabulated ct(fs, IO::mode_ascii_type());
-    std::cout << std::endl;
-    std::cout << ct.getDescription() << std::endl;
-    std::cout << ct.getNumLevels() << std::endl;
+    std::cout << "Description: " << ct.getDescription() << std::endl;
+    std::cout << "Number of Levels: " << ct.getNumLevels() << std::endl;
     for (int i=0; i<n; i++) {
-        std::cout << "i=" << i << ", n_i="<< ct.getNumPoints(i) << std::endl;
+        std::cout << "level=" << i
+                  << ", n_points="<< ct.getNumPoints(i)
+                  << ", precision="<< ct.getQExact(i)
+                  << std::endl;
     }
     fs.close();
+    // Test the OneDimensionalWrapper instance.
+    TasGrid::OneDimensionalWrapper odr(ct, n-1, TasGrid::rule_customtabulated, 0.0, 0.0);
     std::remove("_utest.txt");
 }
 
