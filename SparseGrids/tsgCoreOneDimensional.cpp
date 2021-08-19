@@ -363,14 +363,14 @@ const char* OneDimensionalMeta::getHumanString(TypeOneDRule rule){
 
 // Generate the n roots of the n-th degree orthogonal polynomial.
 // ref_points and ref_points are used in the computation of the integrals that form the elements of the Jacobi matrix.
-double poly_eval(std::vector<double> &roots, double x) {
+double poly_eval(const std::vector<double> &roots, double x) {
     double eval_value = 1.0;
     for (size_t i=0; i<roots.size(); i++) {
         eval_value *= (x - roots[i]);
     }
     return eval_value;
 }
-std::vector<std::vector<double>> OneDimensionalOrthPolynomials::getRootCache(
+std::vector<std::vector<double>> OneDimensionalExoticQuad::getRootCache(
         const int n,
         std::function<double(double)> weight_fn,
         const std::vector<double> &ref_weights,
@@ -398,10 +398,10 @@ std::vector<std::vector<double>> OneDimensionalOrthPolynomials::getRootCache(
         double beta_numr = 0.0;
         double beta_denm = 0.0;
         for (int j=0; j<ref_points.size(); j++) {
-            alpha_numr += ref_points[j] * poly_vals[j] * poly_vals[j] * integral_weights[j];
-            alpha_denm += poly_vals[j] * poly_vals[j] * integral_weights[j];
-            beta_numr += poly_vals[j] * poly_vals[j] * integral_weights[j];
-            beta_denm +=  poly_m1_vals[j] * poly_m1_vals[j]  * integral_weights[j];
+            alpha_numr += ref_points[j] * (poly_vals[j] * poly_vals[j]) * integral_weights[j];
+            alpha_denm += (poly_vals[j] * poly_vals[j]) * integral_weights[j];
+            beta_numr += (poly_vals[j] * poly_vals[j]) * integral_weights[j];
+            beta_denm +=  (poly_m1_vals[j] * poly_m1_vals[j])  * integral_weights[j];
         }
         alpha.push_back(alpha_numr / alpha_denm);
         if (i >= 1) {
@@ -426,13 +426,10 @@ std::vector<std::vector<double>> OneDimensionalOrthPolynomials::getRootCache(
     return root_cache;
 }
 
-// Exotic Gauss-Legendre writer. For the case where the integrand F(x) is
-// decomposed as:
-//
+// Get Exotic Gauss-Legendre points and weights. For the case where the
+// integrand F(x) is of the form:
 //     F(x) := f(x) * [weight_fn(x) - shift] + shift * f(x)
-//
-// and separate weights and points are computed for each term.
-double lagrange_eval(int idx, std::vector<double> roots, double x) {
+double lagrange_eval(int idx, const std::vector<double> roots, double x) {
     double eval_value = 1.0;
     for (size_t i=0; i<roots.size(); i++) {
         if (i != idx) {
@@ -441,39 +438,83 @@ double lagrange_eval(int idx, std::vector<double> roots, double x) {
     }
     return eval_value;
 }
-void OneDimensionalWriter::writeExoticGaussLegendre(
-      std::ostream &os,
-      const int m,
-      const double shift,
-      std::function<double(double)> weight_fn,
-      const int nref) {
+void OneDimensionalExoticQuad::getExoticGaussLegendreCache(
+        std::vector<std::vector<double>> &weights_cache,
+        std::vector<std::vector<double>> &points_cache,
+        const int n,
+        const double shift,
+        std::function<double(double)> weight_fn,
+        const int nref) {
 
     // Create the set of points for the first term.
     std::vector<double> ref_weights(nref), ref_points(nref);
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
-    std::vector<std::vector<double>> points_cache(m), weights_cache(m);
-    points_cache = OneDimensionalOrthPolynomials::getRootCache(
-        m, [shift, weight_fn](double x)->double{return (weight_fn(x) + shift);},
+    points_cache.resize(n);
+    points_cache = OneDimensionalExoticQuad::getRootCache(
+        n, [shift, weight_fn](double x)->double{return (weight_fn(x) + shift);},
         ref_weights, ref_points);
 
     // Create the set of weights for the first term.
-    std::vector<double> quad_weights;
-    for (int i=0; i<m; i++) {
-        quad_weights.resize(points_cache[i].size());
+    weights_cache.resize(n);
+    for (int i=0; i<n; i++) {
+        std::vector<double> quad_weights(points_cache[i].size(), 0.0);
         for (size_t j=0; j<points_cache[i].size(); j++) {
-            quad_weights[j] = 0.0;
-            // Integrate the function L_j(x) * [weight_fn(x) + shift].
+            // Integrate the function l_j(x) * [weight_fn(x) + shift].
             for (int k=0; k<nref; k++) {
                 quad_weights[j] +=
-                        lagrange_eval(j, points_cache[j], ref_points[k]) *
+                        lagrange_eval(j, points_cache[i], ref_points[k]) *
                         (weight_fn(ref_points[k]) + shift) *
                         ref_weights[k];
             }
         }
         weights_cache[i] = quad_weights;
     }
+
+    // Create and append the set of points and weights for the second term.
+    for (int i=0; i<n; i++) {
+        std::vector<double>
+                points(points_cache[i].size()),
+                gl_weights(points_cache[i].size());
+        TasGrid::OneDimensionalNodes::getGaussLegendre(points_cache[i].size(),
+                                                       gl_weights,
+                                                       points);
+        std::vector<double> quad_weights(points_cache[i].size());
+        for (size_t j=0; j<points_cache[i].size(); j++) {
+            quad_weights[j] = -shift * gl_weights[j];
+        }
+        points_cache[i].reserve(points_cache[i].size() + points.size());
+        points_cache[i].insert(points_cache[i].end(), points.begin(), points.end());
+        weights_cache[i].reserve(weights_cache[i].size() + quad_weights.size());
+        weights_cache[i].insert(weights_cache[i].end(), quad_weights.begin(), quad_weights.end());
+    }
 }
 
+// Write Exotic Gauss-Legendre points and weights to an ASCII formatted file.
+void OneDimensionalExoticQuad::writeExoticGaussLegendreCache(
+        std::ostream &os,
+        const int n,
+        const double shift,
+        std::function<double(double)> weight_fn,
+        const int nref /* = 101 */) {
+
+    std::vector<std::vector<double>> weights_cache, points_cache;
+    getExoticGaussLegendreCache(weights_cache, points_cache, n, shift, weight_fn, nref);
+    assert(weights_cache.size() == points_cache.size());
+    os << "description: Exotic Gauss-Legendre\n";
+    os << "levels: " << n << "\n";
+    for (int i=0; i<n; i++) {
+        os << points_cache[i].size() << " " << points_cache[i].size()-1;
+        os << (i < n-1 ? " " : "\n");
+    }
+    for (int i=0; i<n; i++) {
+        for (size_t j=0; j<points_cache[i].size(); j++) {
+            assert(weights_cache[i].size() == points_cache[i].size());
+            os << weights_cache[i][j] << " " << points_cache[i][j];
+            os << (j < points_cache[i].size()-1 ? " " : "\n");
+        }
+    }
+    os << std::flush;
+}
 
 // Gauss-Legendre
 void OneDimensionalNodes::getGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x){

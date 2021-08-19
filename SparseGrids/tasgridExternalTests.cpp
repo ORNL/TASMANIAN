@@ -2197,20 +2197,65 @@ bool ExternalTester::testAllAcceleration() const{
 void ExternalTester::debugTest(){
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
-    int n = 10;
+
+    // // Test 1 (Print Roots)
+    // int n = 10;
+    // int nref = 101;
+    // auto sinc_plus1 = [](double x)->double{return(x == 0.0 ? 2.0 : 1.0 + sin(x) / x);};
+    // std::vector<double> ref_weights(nref), ref_points(nref);
+    // std::vector<std::vector<double>> root_cache(n);
+    // TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
+    // root_cache = TasGrid::OneDimensionalExoticQuad::getRootCache(n, sinc_plus1, ref_weights, ref_points);
+    // for (int j=0; j<root_cache.size(); j++) {
+    //     std::cout << "n = " << j + 1 << std::endl;
+    //     for (int k=0; k<root_cache[j].size(); k++) {
+    //         std::cout << root_cache[j][k] << std::endl;
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    // // Test 2 (Print Weights and Points)
+    // int n = 7;
+    // int nref = 101;
+    // double shift = 1.0;
+    // auto sinc = [](double x)->double{return(x == 0.0 ? 1.0 : sin(x) / x);};
+    // std::vector<std::vector<double>> points_cache(n), weights_cache(n);
+    // TasGrid::OneDimensionalExoticQuad::getExoticGaussLegendreCache(
+    //     weights_cache, points_cache, n, shift, sinc, nref);
+    // for (int j=0; j<points_cache.size(); j++) {
+    //     std::cout << "POINTS, n = " << j + 1 << std::endl;
+    //     for (int k=0; k<points_cache[j].size(); k++) {
+    //         std::cout << points_cache[j][k] << std::endl;
+    //     }
+    //     std::cout << std::endl;
+    // }
+    // for (int j=0; j<weights_cache.size(); j++) {
+    //     std::cout << "WEIGHTS, n = " << j + 1 << std::endl;
+    //     for (int k=0; k<weights_cache[j].size(); k++) {
+    //         std::cout << weights_cache[j][k] << std::endl;
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    // Test 3 (Create CustomTabulated)
+    int n = 7;
     int nref = 101;
-    auto sinc_plus1 = [](double x)->double{return(x == 0.0 ? 2.0 : 1.0 + sin(x) / x);};
-    std::vector<double> ref_weights(nref), ref_points(nref);
-    std::vector<std::vector<double>> root_cache(n);
-    TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
-    root_cache = TasGrid::OneDimensionalOrthPolynomials::getRootCache(n, sinc_plus1, ref_weights, ref_points);
-    for (int j=0; j<root_cache.size(); j++) {
-        std::cout << "n = " << j + 1 << std::endl;
-        for (int k=0; k<root_cache[j].size(); k++) {
-            std::cout << root_cache[j][k] << std::endl;
-        }
-        std::cout << std::endl;
+    double shift = 1.0;
+    auto sinc = [](double x)->double{return(x == 0.0 ? 1.0 : sin(x) / x);};
+    OneDimensionalExoticQuad::writeExoticGaussLegendreCache(std::cout, n, shift, sinc);
+    // Create a one dimensional rule.
+    std::fstream fs("_utest.txt", std::ios::in | std::ios::out | std::ios::app);
+    OneDimensionalExoticQuad::writeExoticGaussLegendreCache(fs, n, shift, sinc);
+    fs.seekg(0);
+    TasGrid::CustomTabulated ct(fs, IO::mode_ascii_type());
+    std::cout << std::endl;
+    std::cout << ct.getDescription() << std::endl;
+    std::cout << ct.getNumLevels() << std::endl;
+    for (int i=0; i<n; i++) {
+        std::cout << "i=" << i << ", n_i="<< ct.getNumPoints(i) << std::endl;
     }
+    fs.close();
+    std::remove("_utest.txt");
 }
 
 void ExternalTester::debugTestII(){
