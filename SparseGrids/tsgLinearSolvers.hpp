@@ -101,7 +101,7 @@ namespace TasmanianDenseSolver{
  * \ingroup TasmanianLinearSolvers
  * \brief Methods for tridiagonal eigenvalue problems.
  */
-namespace TasmanianTridiagonalSolver {
+namespace TasmanianTridiagonalSolver{
 
     //! \brief Method for computing the eigenvalues of a symmetric matrix in place, using an LAPACK  wrapper.
     void getSymmetricEigenvalues(int n,
