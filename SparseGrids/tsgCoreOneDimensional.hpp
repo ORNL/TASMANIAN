@@ -72,8 +72,13 @@ public:
         if (std::is_same<iomode, IO::mode_ascii_type>::value)
             read<mode_ascii>(is); else read<mode_binary>(is);
     }
-    //! \brief Destructor, clear the rule.
-    ~CustomTabulated() = default;
+    //! \brief Assume ownership of existing data instead of reading from a file.
+    CustomTabulated(int cnum_levels, std::vector<int> &&cnum_nodes, std::vector<int> &&cprecision,
+                    std::vector<std::vector<double>> &&cnodes, std::vector<std::vector<double>> &&cweights,
+                    std::string &&cdescription) :
+        num_levels(cnum_levels), num_nodes(std::move(cnum_nodes)), precision(std::move(cprecision)),
+        nodes(std::move(cnodes)), weights(std::move(cweights)), description(std::move(cdescription))
+    {}
 
     //! \brief Write to an already open ASCII/binary file, used in conjunction with \b GlobalGrid::write()
     template<bool useAscii> void write(std::ostream &os) const;
