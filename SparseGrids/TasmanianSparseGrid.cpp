@@ -161,6 +161,24 @@ void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth,
     llimits = level_limits;
     base = Utils::make_unique<GridGlobal>(acceleration.get(), dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename, llimits);
 }
+void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, CustomTabulated &&crule,
+                                         const int *anisotropic_weights, const int *level_limits){
+    makeGlobalGrid(dimensions, outputs, depth, type, std::move(crule),
+                   Utils::copyArray(anisotropic_weights, (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions),
+                   Utils::copyArray(level_limits, dimensions));
+}
+void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, CustomTabulated &&rule, std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits){
+    if (dimensions < 1) throw std::invalid_argument("ERROR: makeGlobalGrid() requires positive dimensions");
+    if (outputs < 0) throw std::invalid_argument("ERROR: makeGlobalGrid() requires non-negative outputs");
+    if (depth < 0) throw std::invalid_argument("ERROR: makeGlobalGrid() requires non-negative depth");
+    size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dimensions : dimensions;
+    if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: makeGlobalGrid() requires anisotropic_weights with either 0 or dimenions entries");
+    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeGlobalGrid() requires level_limits with either 0 or dimensions entries");
+    clear();
+    llimits = level_limits;
+    base = Utils::make_unique<GridGlobal>(acceleration.get(), dimensions, outputs, depth, type, std::move(rule), anisotropic_weights, llimits);
+}
+
 
 void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule, const int *anisotropic_weights, const int *level_limits){
     makeSequenceGrid(dimensions, outputs, depth, type, rule,

@@ -393,6 +393,20 @@ public:
     void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, TypeOneDRule rule,
                         const int *anisotropic_weights = nullptr, double alpha = 0.0, double beta = 0.0,
                         const char* custom_filename = nullptr, const int *level_limits = nullptr);
+    /*!
+     * \brief Overload make a Global Grid using the provided custom rule.
+     *
+     * Compared to makeGlobalGrid(), this uses the provided CustomTabulated rule with rule_customtabulated.
+     */
+    void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, CustomTabulated &&crule,
+                        std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits = std::vector<int>());
+    /*!
+     * \brief Overload using raw-arrays.
+     *
+     * Same as the other CustomTabulated overload but uses raw-arrays.
+     */
+    void makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, CustomTabulated &&crule,
+                        const int *anisotropic_weights = nullptr, const int *level_limits = nullptr);
 
     /*!
      * \brief Make Sequence Grid using Newton polynomials with support over the entire domain.
