@@ -117,6 +117,8 @@ public:
 
     static const char* findGaussPattersonTable();
 
+    static const char* testName(TestType type);
+
 private:
     int num_mc;
     bool verbose;

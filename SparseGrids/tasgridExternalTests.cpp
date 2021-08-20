@@ -126,6 +126,14 @@ const char* ExternalTester::findGaussPattersonTable(){
     throw std::runtime_error("Cannot open custom file GaussPattersonRule.table in any of the expected locations in the build or install folders!");
     return nullptr;
 }
+const char* ExternalTester::testName(TestType type){
+    if (type == type_integration)
+        return "integration test";
+    else if (type == type_nodal_interpolation)
+        return "w-interpolation";
+    else
+        return "interpolation";
+}
 
 TestList ExternalTester::hasTest(std::string const &s){
     std::map<std::string, TestList> string_to_test = {
@@ -278,18 +286,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
         if (R.error > tols[i]){
             bPass = false;
             cout << setw(18) << "ERROR: FAILED " << (rule == rule_fourier ? "fourier" : "global") << setw(25) << IO::getRuleString(rule);
-            if (interpolation){
-                if (tests[i%3] == type_integration){
-                    cout << setw(25) << "integration test";
-                }else if (tests[i%3] == type_nodal_interpolation){
-                    cout << setw(25) << "w-interpolation";
-                }else{
-                    cout << setw(25) << "interpolation";
-                }
-            }else{
-                cout << setw(25) << "integration test";
-            }
-            cout << "   failed function: " << f->getDescription();
+            cout << setw(25) << testName((interpolation) ? tests[i%3] : type_integration) << "   failed function: " << f->getDescription();
             cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
         }
     }
@@ -309,18 +306,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
             if (R.error > tols[(i < num_global_tests) ? i : i - num_global_tests]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED global" << setw(25) << IO::getRuleString(rule);
-                if (interpolation){
-                    if (tests[i%3] == type_integration){
-                        cout << setw(25) << "integration test";
-                    }else if (tests[i%3] == type_nodal_interpolation){
-                        cout << setw(25) << "w-interpolation";
-                    }else{
-                        cout << setw(25) << "interpolation";
-                    }
-                }else{
-                    cout << setw(25) << "integration test";
-                }
-                cout << "   failed function: " << f->getDescription();
+                cout << setw(25) << testName((interpolation) ? tests[i%3] : type_integration) << "   failed function: " << f->getDescription();
                 cout << setw(10) << "observed: " << R.error << "  expected: " << tols[(i < num_global_tests) ? i : i - num_global_tests] << endl;
             }
         }
@@ -339,18 +325,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
             if (R.error > tols[i]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED sequence" << setw(25) << IO::getRuleString(rule);
-                if (interpolation){
-                    if (tests[i%3] == type_integration){
-                        cout << setw(25) << "integration test";
-                    }else if (tests[i%3] == type_nodal_interpolation){
-                        cout << setw(25) << "w-interpolation";
-                    }else{
-                        cout << setw(25) << "interpolation";
-                    }
-                }else{
-                    cout << setw(25) << "integration test";
-                }
-                cout << "   failed function: " << f->getDescription();
+                cout << setw(25) << testName((interpolation) ? tests[i%3] : type_integration) << "   failed function: " << f->getDescription();
                 cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
             }
         }
@@ -821,18 +796,8 @@ bool ExternalTester::testLocalPolynomialRule(const BaseFunction *f, TasGrid::Typ
         if (R.error > tols[i]){
             bPass = false;
             cout << setw(18) << "ERROR: FAILED ";
-            cout << setw(6) << IO::getRuleString(rule);
-            cout << " order: " << orders[i/3];
-
-            if (tests[i%3] == type_integration){
-                cout << setw(25) << "integration test";
-            }else if (tests[i%3] == type_nodal_interpolation){
-                cout << setw(25) << "w-interpolation";
-            }else{
-                cout << setw(25) << "interpolation";
-            }
-
-            cout << "   failed function: " << f->getDescription();
+            cout << setw(6) << IO::getRuleString(rule) << " order: " << orders[i/3];
+            cout << setw(25) << testName(tests[i%3]) << "   failed function: " << f->getDescription();
             cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
         }
     }
@@ -1068,16 +1033,7 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
                 cout << setw(18) << "ERROR: FAILED";
                 cout << setw(6) << IO::getRuleString(rule_wavelet);
                 cout << " order: " << orders[i/3];
-
-                if (tests[i%3] == type_integration){
-                    cout << setw(25) << "integration test";
-                }else if (tests[i%3] == type_nodal_interpolation){
-                    cout << setw(25) << "w-interpolation";
-                }else{
-                    cout << setw(25) << "interpolation";
-                }
-
-                cout << "   failed function: " << f->getDescription();
+                cout << testName(tests[i%3]) << "   failed function: " << f->getDescription();
                 cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
             }
         }
