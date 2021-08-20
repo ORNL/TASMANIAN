@@ -42,8 +42,9 @@ if (NOT DOXYGEN_INTERNAL_DOCS)
         TasGrid::IO::mode_ascii_type TasGrid::IO::mode_binary_type TasGrid::HandleDeleter
         TasGrid::AccHandle::Cublas TasGrid::AccHandle::Cusparse TasGrid::AccHandle::Cusolver
         TasGrid::AccHandle::Rocblas TasGrid::AccHandle::Rocsparse TasGrid::AccHandle::Syclqueue
+        TasGrid::int_gpu_lapack
         TasDREAM::IO TasDREAM::Utils)
-    set(DOXYGEN_PREDEFINED "__TASMANIAN_DOXYGEN_SKIP;__TASMANIAN_DOXYGEN_SKIP_INTERNAL;Tasmanian_ENABLE_BLAS;Tasmanian_ENABLE_CUDA;Tasmanian_ENABLE_MPI")
+    set(DOXYGEN_PREDEFINED "__TASMANIAN_DOXYGEN_SKIP;__TASMANIAN_DOXYGEN_SKIP_INTERNAL;Tasmanian_ENABLE_BLAS;Tasmanian_ENABLE_CUDA;Tasmanian_ENABLE_DPCPP;Tasmanian_ENABLE_HIP;Tasmanian_ENABLE_MPI")
 endif()
 
 ### Add the git-hash to the main page, suppress at release (the stable page needs no hash)

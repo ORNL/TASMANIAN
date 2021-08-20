@@ -81,22 +81,18 @@ inline DreamDomain hypercube(std::vector<double> const &lower, std::vector<doubl
 }
 
 /*!
- * \internal
- * \brief Dummy function that does not make any changes to the vector as default for the \b independent_update() in \b SampleDREAM().
  * \ingroup DREAMSampleCore
+ * \brief Dummy function that does not make any changes to the vector as default for the \b independent_update() in \b SampleDREAM().
  *
- * The function is is a no-op.
- * \endinternal
+ * The function is no-op.
  */
 inline void no_update(std::vector<double> &){}
 
 /*!
- * \internal
  * \brief Dummy function that returns 1.0, used as default for the \b differential_update() in \b SampleDREAM().
  * \ingroup DREAMSampleCore
  *
  * Just an inline function that returns 1.0.
- * \endinternal
  */
 inline double const_one(){ return 1.0; }
 
