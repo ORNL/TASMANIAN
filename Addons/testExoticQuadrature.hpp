@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Miroslav Stoyanov
+ * Copyright (c) 2021, Miroslav Stoyanov & William Kong
  *
  * This file is part of
  * Toolkit for Adaptive Stochastic Modeling And Non-Intrusive ApproximatioN: TASMANIAN
@@ -28,55 +28,48 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#include "testConstructSurrogate.hpp"
-#include "testLoadUnstructured.hpp"
+// TODO: Add full unit tests and documentation.
 
-int main(int argc, char const **argv){
+#include "tsgExoticQuadrature.hpp"
 
-    cout << "\n\n";
-    cout << "---------------------------------------------------------------------" << endl;
-    cout << "          Tasmanian Addons Module: Functionality Test" << endl;
-    cout << "---------------------------------------------------------------------" << endl << endl;
-
-    std::deque<std::string> args = stringArgs(argc, argv);
-
-    bool pass_all = true;
-    bool verbose = false;
-    int gpuid = -1;
-
-    while(not args.empty()){
-        if (hasInfo(args.front())) verbose = true;
-        if (hasGpuID(args.front())){
-            args.pop_front();
-            gpuid = getGpuID(args);
+inline void testGetRoots() {
+    // Test 1 (Print Roots)
+    int n = 10;
+    int nref = 101;
+    std::vector<double> ref_weights(nref), ref_points(nref);
+    TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
+    std::vector<double> ref_integral_weights(ref_weights.size());
+    std::transform(ref_weights.begin(), ref_weights.end(), ref_integral_weights.begin(),
+                   [](double x)->double{return (x == 0.0 ? 2.0 : 1.0 + sin(x) / x);});
+    std::vector<std::vector<double>> roots =
+            TasGrid::getRoots(n, ref_integral_weights, ref_points);
+    for (int j=0; j<roots.size(); j++) {
+        std::cout << "n = " << j + 1 << std::endl;
+        for (int k=0; k<roots[j].size(); k++) {
+            std::cout << roots[j][k] << std::endl;
         }
-        args.pop_front();
+        std::cout << std::endl;
     }
-
-    bool pass = testConstructSurrogate(verbose);
-    cout << std::setw(40) << "Automated construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
-    pass_all = pass_all && pass;
-
-    #if defined(Tasmanian_ENABLE_BLAS) || defined(Tasmanian_ENABLE_GPU)
-    pass = true;
-    pass = testLoadUnstructuredL2(verbose, gpuid);
-    cout << std::setw(40) << "Unstructured construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
-    pass_all = pass_all && pass;
-    #else
-    cout << std::setw(40) << "Unstructured construction" << std::setw(10) << "skipping" << endl;
-    gpuid *= 2; // no op to register the use of gpuid
-    #endif
-
-    cout << "\n";
-    if (pass){
-        cout << "---------------------------------------------------------------------" << endl;
-        cout << "               All Tests Completed Successfully" << endl;
-        cout << "---------------------------------------------------------------------" << endl << endl;
-    }else{
-        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl;
-        cout << "         Some Tests Have Failed" << endl;
-        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl << endl;
+}
+inline void testGetExoticGaussLegendreCache() {
+    int n = 7;
+    int nref = 101;
+    double shift = 1.0;
+    auto sinc = [](double x)->double{return(x == 0.0 ? 1.0 : sin(x) / x);};
+    std::vector<std::vector<double>> points_cache(n), weights_cache(n);
+    TasGrid::getExoticGaussLegendreCache(n, shift, sinc, nref, weights_cache, points_cache);
+    for (int j=0; j<points_cache.size(); j++) {
+        std::cout << "POINTS, n = " << j + 1 << std::endl;
+        for (int k=0; k<points_cache[j].size(); k++) {
+            std::cout << points_cache[j][k] << std::endl;
+        }
+        std::cout << std::endl;
     }
-
-    return ((pass_all) ? 0 : 1);
+    for (int j=0; j<weights_cache.size(); j++) {
+        std::cout << "WEIGHTS, n = " << j + 1 << std::endl;
+        for (int k=0; k<weights_cache[j].size(); k++) {
+            std::cout << weights_cache[j][k] << std::endl;
+        }
+        std::cout << std::endl;
+    }
 }

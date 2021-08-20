@@ -44,6 +44,7 @@
 
 #include "tsgLoadUnstructuredPoints.hpp"
 #include "tsgMPISampleDream.hpp"
+#include "tsgExoticQuadrature.hpp"
 
 /*!
  * \defgroup TasmanianAddons Additional Capabilities
