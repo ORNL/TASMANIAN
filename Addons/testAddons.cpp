@@ -36,9 +36,10 @@ void debugTest() {
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./Addons/addontester debug" << endl;
     // debugGetRoots();
-    // debugGetExoticGaussLegendreCache();
-    debugSincT(10, 0.32099682841103033);
-    debugSincT(1, 1.4321357541271255);
+    debugGetExoticQuadrature();
+    // debugSincT(100, 0.031353648322695503);
+    // debugSincT(10, 0.32099682841103033);
+    // debugSincT(1, 1.4321357541271255);
 }
 
 int main(int argc, char const **argv){

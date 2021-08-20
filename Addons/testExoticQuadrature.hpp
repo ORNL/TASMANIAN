@@ -71,25 +71,23 @@ inline void debugGetRoots() {
     }
 }
 
-inline void debugGetExoticGaussLegendreCache() {
+inline void debugGetExoticQuadrature() {
     int n = 7;
     int nref = 201;
     double shift = 1.0;
     auto sinc = [](double x)->double{return(x == 0.0 ? 1.0 : sin(x) / x);};
-    std::vector<std::vector<double>> points_cache(n), weights_cache(n);
-    TasGrid::getExoticGaussLegendreCache(
-        n, shift, sinc, nref, weights_cache, points_cache);
-    for (int j=0; j<points_cache.size(); j++) {
+    TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(n, shift, sinc, nref, "tmp");
+    std::vector<double> points;
+    std::vector<double> weights;
+    for (int j=0; j<n; j++) {
         std::cout << "POINTS, n = " << j + 1 << std::endl;
-        for (int k=0; k<points_cache[j].size(); k++) {
-            std::cout << points_cache[j][k] << std::endl;
+        ct.getWeightsNodes(j, weights, points);
+        for (size_t k=0; k<points.size(); k++) {
+            std::cout << points[k] << std::endl;
         }
-        std::cout << std::endl;
-    }
-    for (int j=0; j<weights_cache.size(); j++) {
         std::cout << "WEIGHTS, n = " << j + 1 << std::endl;
-        for (int k=0; k<weights_cache[j].size(); k++) {
-            std::cout << weights_cache[j][k] << std::endl;
+        for (size_t k=0; k<weights.size(); k++) {
+            std::cout << weights[k] << std::endl;
         }
         std::cout << std::endl;
     }
@@ -97,34 +95,34 @@ inline void debugGetExoticGaussLegendreCache() {
 
 inline void debugSincT(float T, double exact) {
 
-    int max_n = 10;
-    int nref = 501;
-    double shift = 1.0;
-    auto f = [](double x)->double{return exp(-x * x);};
-    auto sinc = [T](double x)->double{return(x == 0.0 ? 1.0 : sin(T * x) / (T * x));};
+    // int max_n = 15;
+    // int nref = 1001;
+    // double shift = 1.0;
+    // auto f = [](double x)->double{return exp(-x * x);};
+    // auto sinc = [T](double x)->double{return(x == 0.0 ? 1.0 : sin(T * x) / (T * x));};
 
-    std::vector<std::vector<double>> points_cache(max_n), weights_cache(max_n);
-    TasGrid::getExoticGaussLegendreCache(max_n, shift, sinc, nref, weights_cache, points_cache);
+    // std::vector<std::vector<double>> points_cache(max_n), weights_cache(max_n);
+    // TasGrid::getExoticGaussLegendreCache(max_n, shift, sinc, nref, weights_cache, points_cache);
 
-    std::cout << std::fixed << std::setprecision(6) << "Exotic     \t GL" << std::endl;
-    for (int n=1; n<max_n; n++) {
-        // Exotic Quadrature
-        double approx_exotic = 0.0;
-        for (size_t i=0; i<weights_cache[n-1].size(); i++) {
-            approx_exotic += f(points_cache[n-1][i]) * weights_cache[n-1][i];
-        }
-        std::cout << log10(std::abs(approx_exotic - exact));
-        std::cout << "\t";
-        // Gauss-Legendre
-        std::vector<double> gl_weights(n), gl_points(n);
-        TasGrid::OneDimensionalNodes::getGaussLegendre(n, gl_weights, gl_points);
-        double approx_GL = 0.0;
-        for (size_t i=0; i<gl_weights.size(); i++) {
-            approx_GL +=
-                    f(gl_points[i]) * sinc(gl_points[i]) * gl_weights[i];
-        }
-        std::cout << log10(std::abs(approx_GL - exact));
-        std::cout << std::endl;
-    }
-    std::cout << endl;
+    // std::cout << std::fixed << std::setprecision(6) << "Exotic     \t GL" << std::endl;
+    // for (int n=1; n<max_n; n++) {
+    //     // Exotic Quadrature
+    //     double approx_exotic = 0.0;
+    //     for (size_t i=0; i<weights_cache[n-1].size(); i++) {
+    //         approx_exotic += f(points_cache[n-1][i]) * weights_cache[n-1][i];
+    //     }
+    //     std::cout << log10(std::abs(approx_exotic - exact));
+    //     std::cout << "\t";
+    //     // Gauss-Legendre
+    //     std::vector<double> gl_weights(n), gl_points(n);
+    //     TasGrid::OneDimensionalNodes::getGaussLegendre(n, gl_weights, gl_points);
+    //     double approx_GL = 0.0;
+    //     for (size_t i=0; i<gl_weights.size(); i++) {
+    //         approx_GL +=
+    //                 f(gl_points[i]) * sinc(gl_points[i]) * gl_weights[i];
+    //     }
+    //     std::cout << log10(std::abs(approx_GL - exact));
+    //     std::cout << std::endl;
+    // }
+    // std::cout << endl;
 }

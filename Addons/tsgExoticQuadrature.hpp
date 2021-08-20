@@ -127,13 +127,11 @@ inline double lagrange_eval(int idx, const std::vector<double> &roots, double x)
 //!
 //! The integrand is assumed to be of the form F(x) = f(x) * weight_fn(x) and
 //! the function x->weight_fn(x)+shift is nonnegative.
-inline void getExoticGaussLegendreCache(
-        const int n,
-        const double shift,
-        std::function<double(double)> weight_fn,
-        const int nref,
-        std::vector<std::vector<double>> &weights_cache,
-        std::vector<std::vector<double>> &points_cache) {
+inline TasGrid::CustomTabulated getExoticQuadrature(const int n,
+                                                    const double shift,
+                                                    std::function<double(double)> weight_fn,
+                                                    const int nref,
+                                                    const char* description) {
 
     // Create the set of reference weights and points for the first term. These
     // reference weights are with respect to the measure induced by the
@@ -143,10 +141,10 @@ inline void getExoticGaussLegendreCache(
     for (size_t k=0; k<nref; k++) {
         ref_weights[k] *= (weight_fn(ref_points[k]) + shift);
     }
-    points_cache = getRoots(n, ref_weights, ref_points);
+    std::vector<std::vector<double>> points_cache = getRoots(n, ref_weights, ref_points);
 
     // Create the set of weights for the first term.
-    weights_cache = std::vector<std::vector<double>>(n);
+    std::vector<std::vector<double>> weights_cache(n);
     for (int i=0; i<n; i++) {
         weights_cache[i] = std::vector<double>(points_cache[i].size(), 0.0);
         for (size_t j=0; j<points_cache[i].size(); j++) {
@@ -160,26 +158,39 @@ inline void getExoticGaussLegendreCache(
         }
     }
 
-    // Create and append the set of points and weights for the second term.
-    for (int i=0; i<n; i++) {
-        std::vector<double>
-                correction_points(points_cache[i].size()),
-                correction_weights(points_cache[i].size());
-        TasGrid::OneDimensionalNodes::getGaussLegendre(points_cache[i].size(),
-                                                       correction_weights,
-                                                       correction_points);
-        for (auto &w : correction_weights) w *= -shift;
-        if (correction_points.size() % 2 == 1) {
-            // Zero out for stability.
-            correction_points[(correction_points.size() - 1) / 2] = 0.0;
+    // Create and append the set of points and weights for the second term if
+    // the shift is nonzero.
+    if (shift != 0.0) {
+        for (int i=0; i<n; i++) {
+            std::vector<double>
+                    correction_points(points_cache[i].size()),
+                    correction_weights(points_cache[i].size());
+            TasGrid::OneDimensionalNodes::getGaussLegendre(points_cache[i].size(),
+                                                           correction_weights,
+                                                           correction_points);
+            for (auto &w : correction_weights) w *= -shift;
+            if (correction_points.size() % 2 == 1) {
+                // Zero out for stability.
+                correction_points[(correction_points.size() - 1) / 2] = 0.0;
+            }
+            points_cache[i].insert(points_cache[i].end(),
+                                   correction_points.begin(),
+                                   correction_points.end());
+            weights_cache[i].insert(weights_cache[i].end(),
+                                    correction_weights.begin(),
+                                    correction_weights.end());
         }
-        points_cache[i].insert(points_cache[i].end(),
-                               correction_points.begin(),
-                               correction_points.end());
-        weights_cache[i].insert(weights_cache[i].end(),
-                                correction_weights.begin(),
-                                correction_weights.end());
     }
+
+    // Output to a CustomTabulated instance.
+    std::vector<int> num_nodes(n), precision(n);
+    for (int i=0; i<n; i++) {
+        num_nodes[i] = points_cache[i].size();
+        precision[i] = num_nodes[i] - 1;
+    }
+    return TasGrid::CustomTabulated(
+        n, std::move(num_nodes), std::move(precision), std::move(points_cache),
+        std::move(weights_cache), description);
 }
 
 } // namespace(TasGrid)
