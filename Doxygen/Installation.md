@@ -79,7 +79,7 @@ will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` follo
 ```
   -D CMAKE_INSTALL_PREFIX:PATH=<install-prefix> (install folder for the make install command)
   -D CMAKE_BUILD_TYPE:STRING=<Debug/Release>    (set debug flags or default optimization flags)
-  -D BUILD_SHARED_LIBS:BOOL=<ON/OFF>            (pick shared/static libs)
+  -D BUILD_SHARED_LIBS:BOOL=<ON/OFF>            (pick shared or static libs)
   -D CMAKE_CXX_COMPILER:PATH=<path>             (specify the C++ compiler, or HIP/ROCm compiler)
   -D CMAKE_CUDA_COMPILER:PATH=<path>            (specify the CUDA nvcc compiler)
   -D CMAKE_CXX_FLAGS:STING=<flags>              (set additional flags)
@@ -337,7 +337,6 @@ The imported targets will be named:
   Tasmanian::Fortran    (links to the C++ libraries and the Fortran wrappers)
 ```
 * `Tasmanian::Tasmanian` and `Tasmanian::Fortran` targets are no longer equivalent, as of version 7.1
-* `::shared` and `::static` targets are deprecated since Tasmanian builds only one type of libraries now
 
 
 In addition, the following variables will be set:

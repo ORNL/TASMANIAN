@@ -81,6 +81,13 @@
 
 namespace TasGrid{
 
+    /*!
+     * \internal
+     * \ingroup TasmanianEnumerates
+     * \brief Defines the integer used by the LAPACK methods, usually int but DPC++ uses int64_t.
+     *
+     * \endinternal
+     */
 #ifdef Tasmanian_ENABLE_DPCPP
     using int_gpu_lapack = std::int64_t;
 #else

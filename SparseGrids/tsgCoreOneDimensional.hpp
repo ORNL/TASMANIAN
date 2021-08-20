@@ -103,6 +103,7 @@ public:
     const char* getDescription() const;
 
 protected:
+    //! \brief Throws a std::rumtime_error() if the given \b level is more than the stored levels, \b op is used to report the failed operation.
     void checkLevel(int level, std::string const &op) const{
         if (level >= num_levels)
             throw std::runtime_error(std::string("ERROR: needed custom rule ") + op + " with level " + std::to_string(level) + " but the table ends at " + std::to_string(num_levels - 1));
