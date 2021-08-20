@@ -130,38 +130,6 @@ void CustomTabulated::read(const char* filename){
     ifs.close();
 }
 
-int CustomTabulated::getNumLevels() const{ return num_levels; }
-int CustomTabulated::getNumPoints(int level) const{
-    if (level >= num_levels){
-        std::string message = "ERROR: requested custom rule number of points with level ";
-        message += std::to_string(level);
-        message += " the tabulated rules end at ";
-        message += std::to_string(num_levels-1);
-        throw std::runtime_error(message);
-    }
-    return num_nodes[level];
-}
-int CustomTabulated::getIExact(int level) const{
-    if (level >= num_levels){
-        std::string message = "ERROR: requested custom rule i-exactness with level ";
-        message += std::to_string(level);
-        message += " the tabulated rules end at ";
-        message += std::to_string(num_levels-1);
-        throw std::runtime_error(message);
-    }
-    return num_nodes[level] -1;
-}
-int CustomTabulated::getQExact(int level) const{
-    if (level >= num_levels){
-        std::string message = "ERROR: requested custom rule q-exactness with level ";
-        message += std::to_string(level);
-        message += " the tabulated rules end at ";
-        message += std::to_string(num_levels-1);
-        throw std::runtime_error(message);
-    }
-    return precision[level];
-}
-
 void CustomTabulated::getWeightsNodes(int level, std::vector<double> &w, std::vector<double> &x) const{
     w = weights[level];
     x = nodes[level];
