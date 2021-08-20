@@ -197,7 +197,7 @@ namespace OneDimensionalMeta{
 }
 
 //! \internal
-//! \brief Contains algorithms for generating Gauss, Chebyshev, and Fourier nodes and weights.
+//! \brief Contains algorithms for generating Gauss,Chebyshev, and Fourier nodes and weights.
 //! \ingroup TasmanianCoreOneDimensional
 namespace OneDimensionalNodes{
     // non-nested rules
