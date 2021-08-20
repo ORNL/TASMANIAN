@@ -57,7 +57,7 @@ if (Tasmanian_ENABLE_BLAS)
 endif()
 
 # test for non-MPI capabilities
-add_executable(Tasmanian_addontester testAddons.cpp testConstructSurrogate.hpp)
+add_executable(Tasmanian_addontester testAddons.cpp testConstructSurrogate.hpp testLoadUnstructured.hpp)
 add_test(AddonTests addontester -gpuid ${Tasmanian_TESTS_GPU_ID})
 
 list(APPEND Tasmanian_addons_executables "addontester")
@@ -67,7 +67,7 @@ list(APPEND Tasmanian_addons_tests "AddonTests")
 foreach(_tsg_exec ${Tasmanian_addons_executables})
     set_target_properties(Tasmanian_${_tsg_exec} PROPERTIES OUTPUT_NAME "${_tsg_exec}" CXX_EXTENSIONS OFF)
     Tasmanian_rpath_target(TARGET Tasmanian_${_tsg_exec} USE_CURRENT COMPONENTS SparseGrids DREAM)
-    target_link_libraries(Tasmanian_${_tsg_exec} Tasmanian_addons Tasmanian_libsparsegrid Tasmanian_libdream)
+    target_link_libraries(Tasmanian_${_tsg_exec} Tasmanian_addons Tasmanian_libdream)
 endforeach()
 unset(_tsg_exec)
 

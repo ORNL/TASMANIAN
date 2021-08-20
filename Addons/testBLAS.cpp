@@ -28,7 +28,7 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-// TODO: Add CLI and documentation.
+// TODO: Add CLI and documentation + add tests to CMakeLists.txt.
 
 #include "testExoticQuadrature.hpp"
 
