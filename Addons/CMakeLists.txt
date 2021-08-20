@@ -50,12 +50,6 @@ if (Tasmanian_ENABLE_MPI)
     list(APPEND Tasmanian_addons_tests "MPISparseGridsIO")
 endif()
 
-# Test addons that require BLAS/LAPACK 
-if (Tasmanian_ENABLE_BLAS)
-    add_executable(Tasmanian_blastester testBLAS.cpp testExoticQuadrature.hpp tsgExoticQuadrature.hpp tsgExoticQuadrature.cpp)
-    list(APPEND Tasmanian_addons_executables "blastester")
-endif()
-
 # test for non-MPI capabilities
 add_executable(Tasmanian_addontester testAddons.cpp testConstructSurrogate.hpp testLoadUnstructured.hpp)
 add_test(AddonTests addontester -gpuid ${Tasmanian_TESTS_GPU_ID})

@@ -71,7 +71,7 @@ inline void testGetRoots() {
 }
 inline void testGetExoticGaussLegendreCache() {
     int n = 7;
-    int nref = 101;
+    int nref = 201;
     double shift = 1.0;
     auto sinc = [](double x)->double{return(x == 0.0 ? 1.0 : sin(x) / x);};
     std::vector<std::vector<double>> points_cache(n), weights_cache(n);
