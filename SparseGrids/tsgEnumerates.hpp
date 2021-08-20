@@ -522,21 +522,28 @@ enum TypeRefinement{
  * to not have such limitations.
  *
  * \par Library Handles
- * The Nvidia libraries use context handles to manage metadata such as active device and device pointer type.
+ * The GPU libraries use context handles to manage metadata such as active device and device pointer type.
  * By default, Tasmanian will automatically create the handles whenever needed and will destroy them whenever
  * the object is destroyed or the acceleration mode is updated.
  * However, Tasmanian also provides an API where the user can provide the corresponding handles:
  * \code
- *  grid.getAccelerationContext()->setCuBlasHandle(cublas_handle);
- *  grid.getAccelerationContext()->setCuSparseHandle(cusparse_handle);
- *  grid.getAccelerationContext()->setCuSolverDnHandle(cusolverdn_handle);
+ *  // Nvidia CUDA framework
+ *  grid.setCuBlasHandle(cublas_handle);
+ *  grid.setCuSparseHandle(cusparse_handle);
+ *  grid.setCuSolverHandle(cusolverdn_handle);
+ *  // AMD ROCm framework
+ *  grid.setRocBlasHandle(rocblas_handle);
+ *  grid.setRocSparseHandle(rocsparse_handle);
+ *  // Intel DPC++ framework
+ *  grid.setSycleQueue(pointer_to_sycl_queue);
  * \endcode
- *  - Each handle must be a valid, i.e., already created by the corresponding CUDA call and must be associated
+ *  - Each handle must be a valid, i.e., already created by the corresponding API call and must be associated
  *    with the currently selected GPU device ID.
- *  - Tasmanian assumes that the pointer mode is "host pointer" and if a different mode is set in-between Tasmanian
+ *  - Tasmanian assumes that the pointer mode is "host pointer" (for Nvidia and AMD) and if a different mode is set in-between Tasmanian
  *    API calls, the mode must be reset before the next Tasmanian call.
- *  - The methods interact directly with the CUDA TPL API and hence the methods do not have fallback modes
- *    if CUDA has not been enabled.
+ *  - The SYCL queue is accepted as a pointer, which is different then the usual SYCL approach but it is consistent within the Tasmanian API.
+ *  - The methods interact directly with the TPL API and hence the methods do not have fallback modes
+ *    if GPU has not been enabled.
  */
 enum TypeAcceleration{
     //! \brief Usually the slowest mode, uses only OpenMP multi-threading, but optimized for memory and could be the fastest mode for small problems.
