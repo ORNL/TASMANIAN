@@ -72,8 +72,13 @@ public:
         if (std::is_same<iomode, IO::mode_ascii_type>::value)
             read<mode_ascii>(is); else read<mode_binary>(is);
     }
-    //! \brief Destructor, clear the rule.
-    ~CustomTabulated() = default;
+    //! \brief Assume ownership of existing data instead of reading from a file.
+    CustomTabulated(int cnum_levels, std::vector<int> &&cnum_nodes, std::vector<int> &&cprecision,
+                    std::vector<std::vector<double>> &&cnodes, std::vector<std::vector<double>> &&cweights,
+                    std::string &&cdescription) :
+        num_levels(cnum_levels), num_nodes(std::move(cnum_nodes)), precision(std::move(cprecision)),
+        nodes(std::move(cnodes)), weights(std::move(cweights)), description(std::move(cdescription))
+    {}
 
     //! \brief Write to an already open ASCII/binary file, used in conjunction with \b GlobalGrid::write()
     template<bool useAscii> void write(std::ostream &os) const;
@@ -84,18 +89,24 @@ public:
     void read(const char* filename);
 
     //! \brief Returns the number of loaded levels.
-    int getNumLevels() const;
+    int getNumLevels() const{ return num_levels; }
     //! \brief Returns the number of points associated with the selected \b level.
-    int getNumPoints(int level) const;
+    int getNumPoints(int level) const{ checkLevel(level, "number of points"); return num_nodes[level]; }
     //! \brief Return the exactness of the interpolation rule at \b level, usually one less than the number of points.
-    int getIExact(int level) const;
+    int getIExact(int level) const{ checkLevel(level, "i-exactness"); return num_nodes[level] -1; }
     //! \brief Return the exactness of the integration/quadrature rule at \b level, provided by the user in the custom file.
-    int getQExact(int level) const;
+    int getQExact(int level) const{ checkLevel(level, "q-exactness"); return precision[level]; }
 
     //! \brief Get the points \b x and quadrature weights \b w associated with the rule at the \b level.
     void getWeightsNodes(int level, std::vector<double> &w, std::vector<double> &x) const;
     //! \brief Returns the user provided human readable description string.
     const char* getDescription() const;
+
+protected:
+    void checkLevel(int level, std::string const &op) const{
+        if (level >= num_levels)
+            throw std::runtime_error(std::string("ERROR: needed custom rule ") + op + " with level " + std::to_string(level) + " but the table ends at " + std::to_string(num_levels - 1));
+    }
 
 private:
     int num_levels;

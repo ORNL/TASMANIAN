@@ -45,7 +45,13 @@ public:
     GridGlobal(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule, const std::vector<int> &anisotropic_weights, double calpha, double cbeta, const char* custom_filename, const std::vector<int> &level_limits) : BaseCanonicalGrid(acc){
         makeGrid(cnum_dimensions, cnum_outputs, depth, type, crule, anisotropic_weights, calpha, cbeta, custom_filename, level_limits);
     }
-    ~GridGlobal() = default;
+    GridGlobal(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type,
+               CustomTabulated &&crule, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits)
+        : BaseCanonicalGrid(acc), custom(std::move(crule))
+    {
+        setTensors(selectTensors((size_t) cnum_dimensions, depth, type, anisotropic_weights, rule_customtabulated, level_limits),
+                   cnum_outputs, rule_customtabulated, 0.0, 0.0);
+    }
 
     bool isGlobal() const override{ return true; }
 

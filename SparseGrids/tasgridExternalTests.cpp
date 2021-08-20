@@ -295,11 +295,18 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     }
     if (rule == rule_customtabulated){
         TasGrid::TasmanianSparseGrid grid_copy;
-        for(int i=0; i<num_global_tests; i++){
-            grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+        for(int i=0; i<2*num_global_tests; i++){
+            if (i < num_global_tests){
+                grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+            }else{
+                CustomTabulated custom;
+                custom.read(custom_filename);
+                grid = TasmanianSparseGrid();
+                grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i-num_global_tests], type, std::move(custom), anisotropic);
+            }
             grid_copy = grid;
-            R = getError(f, grid_copy, ((interpolation) ? tests[i] : type_integration), x);
-            if (R.error > tols[i]){
+            R = getError(f, grid_copy, ((interpolation) ? tests[(i < num_global_tests) ? i : i - num_global_tests] : type_integration), x);
+            if (R.error > tols[(i < num_global_tests) ? i : i - num_global_tests]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED global" << setw(25) << IO::getRuleString(rule);
                 if (interpolation){
@@ -314,7 +321,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
                     cout << setw(25) << "integration test";
                 }
                 cout << "   failed function: " << f->getDescription();
-                cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
+                cout << setw(10) << "observed: " << R.error << "  expected: " << tols[(i < num_global_tests) ? i : i - num_global_tests] << endl;
             }
         }
     }
