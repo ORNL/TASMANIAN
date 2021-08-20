@@ -33,7 +33,7 @@
 
 // system headers used in many/many places
 #ifdef _MSC_VER
-// without this MSVC++ is not compliant with the C++ sandard and does not accepts keywords such as "not" and "or"
+// without this MSVC++ does not accepts keywords such as "not" and "or"
 #include <iso646.h>
 #endif
 #include <cstdint>
@@ -55,7 +55,7 @@
 #include <type_traits>
 
 #include "TasmanianConfig.hpp" // contains build options passed down from CMake
-#include "tsgUtils.hpp" // contains array wrapper and size_mult for int-to-size_t
+#include "tsgUtils.hpp" // contains small utilities
 
 /*!
  * \internal
