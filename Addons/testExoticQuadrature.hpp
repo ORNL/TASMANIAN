@@ -45,9 +45,10 @@
 
 // TODO: Add full unit tests and documentation.
 
-#include "tsgExoticQuadrature.hpp"
+#include "TasmanianAddons.hpp"
+#include "tasgridCLICommon.hpp"
 
-inline void testGetRoots() {
+inline void debugGetRoots() {
     // Test 1 (Print Roots)
     int n = 10;
     int nref = 101;
@@ -69,7 +70,8 @@ inline void testGetRoots() {
         std::cout << std::endl;
     }
 }
-inline void testGetExoticGaussLegendreCache() {
+
+inline void debugGetExoticGaussLegendreCache() {
     int n = 7;
     int nref = 201;
     double shift = 1.0;
@@ -91,4 +93,38 @@ inline void testGetExoticGaussLegendreCache() {
         }
         std::cout << std::endl;
     }
+}
+
+inline void debugSincT(float T, double exact) {
+
+    int max_n = 10;
+    int nref = 501;
+    double shift = 1.0;
+    auto f = [](double x)->double{return exp(-x * x);};
+    auto sinc = [T](double x)->double{return(x == 0.0 ? 1.0 : sin(T * x) / (T * x));};
+
+    std::vector<std::vector<double>> points_cache(max_n), weights_cache(max_n);
+    TasGrid::getExoticGaussLegendreCache(max_n, shift, sinc, nref, weights_cache, points_cache);
+
+    std::cout << std::fixed << std::setprecision(6) << "Exotic     \t GL" << std::endl;
+    for (int n=1; n<max_n; n++) {
+        // Exotic Quadrature
+        double approx_exotic = 0.0;
+        for (size_t i=0; i<weights_cache[n-1].size(); i++) {
+            approx_exotic += f(points_cache[n-1][i]) * weights_cache[n-1][i];
+        }
+        std::cout << log10(std::abs(approx_exotic - exact));
+        std::cout << "\t";
+        // Gauss-Legendre
+        std::vector<double> gl_weights(n), gl_points(n);
+        TasGrid::OneDimensionalNodes::getGaussLegendre(n, gl_weights, gl_points);
+        double approx_GL = 0.0;
+        for (size_t i=0; i<gl_weights.size(); i++) {
+            approx_GL +=
+                    f(gl_points[i]) * sinc(gl_points[i]) * gl_weights[i];
+        }
+        std::cout << log10(std::abs(approx_GL - exact));
+        std::cout << std::endl;
+    }
+    std::cout << endl;
 }

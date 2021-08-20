@@ -35,8 +35,10 @@
 void debugTest() {
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./Addons/addontester debug" << endl;
-    testGetRoots();
-    testGetExoticGaussLegendreCache();
+    // debugGetRoots();
+    // debugGetExoticGaussLegendreCache();
+    debugSincT(10, 0.32099682841103033);
+    debugSincT(1, 1.4321357541271255);
 }
 
 int main(int argc, char const **argv){
@@ -60,6 +62,7 @@ int main(int argc, char const **argv){
 
     if (debug) {
         debugTest();
+        return 0;
     } else {
         cout << "\n\n";
         cout << "---------------------------------------------------------------------" << endl;
@@ -90,7 +93,7 @@ int main(int argc, char const **argv){
             cout << "         Some Tests Have Failed" << endl;
             cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl << endl;
         }
+        return ((pass_all) ? 0 : 1);
     }
 
-    return ((pass_all) ? 0 : 1);
 }
