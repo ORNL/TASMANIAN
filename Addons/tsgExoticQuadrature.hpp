@@ -163,10 +163,11 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n,
     // the shift is nonzero.
     if (shift != 0.0) {
         for (int i=0; i<n; i++) {
+            const int init_size = points_cache[i].size();
             std::vector<double>
-                    correction_points(points_cache[i].size()),
-                    correction_weights(points_cache[i].size());
-            TasGrid::OneDimensionalNodes::getGaussLegendre(points_cache[i].size(),
+                    correction_points(init_size),
+                    correction_weights(init_size);
+            TasGrid::OneDimensionalNodes::getGaussLegendre(init_size,
                                                            correction_weights,
                                                            correction_points);
             for (auto &w : correction_weights) w *= -shift;
@@ -174,12 +175,23 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n,
                 // Zero out for stability.
                 correction_points[(correction_points.size() - 1) / 2] = 0.0;
             }
-            points_cache[i].insert(points_cache[i].end(),
-                                   correction_points.begin(),
-                                   correction_points.end());
-            weights_cache[i].insert(weights_cache[i].end(),
-                                    correction_weights.begin(),
-                                    correction_weights.end());
+            // Combine the correction points and weights, accounting for duplicates, up to a certain tolerance.
+            assert(correction_points.size() == correction_weights.size());
+            for (size_t j=0; j<correction_points.size(); j++) {
+                int nonunique_idx = -1;
+                for (size_t k=0; k<init_size; k++) {
+                    if (std::abs(correction_points[j] - points_cache[i][k]) <= Maths::num_tol) {
+                        nonunique_idx = k;
+                        break;
+                    }
+                }
+                if (nonunique_idx == -1) {
+                    points_cache[i].push_back(correction_points[j]);
+                    weights_cache[i].push_back(correction_weights[j]);
+                } else {
+                    weights_cache[i][nonunique_idx] += correction_weights[j];
+                }
+            }
         }
     }
 
