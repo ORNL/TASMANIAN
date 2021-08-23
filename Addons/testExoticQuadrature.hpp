@@ -47,61 +47,133 @@
 
 #include "TasmanianAddons.hpp"
 #include "tasgridCLICommon.hpp"
+#include <cstring>
 
-inline void debugGetRoots() {
-    // Test 1 (Print Roots)
-    int n = 10;
-    int nref = 101;
+// Tests for getRoots().
+inline bool testRootSizes() {
+    bool passed = true;
+    std::vector<std::vector<double>> roots;
+    int nref = 5;
     std::vector<double> ref_weights(nref), ref_points(nref);
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
-    std::vector<double> ref_integral_weights(ref_weights.size());
-    std::transform(ref_weights.begin(),
-                   ref_weights.end(),
-                   ref_integral_weights.begin(),
-                   [](double x)->double{
-                       return (x == 0.0 ? 2.0 : 1.0 + sin(x) / x);});
-    std::vector<std::vector<double>> roots =
-            TasGrid::getRoots(n, ref_integral_weights, ref_points);
-    for (int j=0; j<roots.size(); j++) {
-        std::cout << "n = " << j + 1 << std::endl;
-        for (int k=0; k<roots[j].size(); k++) {
-            std::cout << roots[j][k] << std::endl;
+    // n = 0, 1, 5
+    std::vector<int> n_vec = {1, 2, 5};
+    for (auto n : n_vec) {
+        roots = TasGrid::getRoots(0, ref_weights, ref_points);
+        if (roots.size() != 0) {
+            std::cout << "ERROR: Test failed in testRootSizes() for n = "
+                      << n << std::endl;
+            passed = false;
         }
-        std::cout << std::endl;
     }
+    return passed;
 }
 
-inline void debugGetExoticQuadrature() {
-    int n = 7;
-    int nref = 201;
-    double shift = 1.0;
-    auto sinc = [](double x)->double{return(x == 0.0 ? 1.0 : sin(x) / x);};
-<<<<<<< HEAD
-    TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(n, shift, sinc, nref, "tmp");
-    std::vector<double> points;
-    std::vector<double> weights;
-    for (int j=0; j<n; j++) {
-=======
-    std::vector<std::vector<double>> points_cache(n), weights_cache(n);
-    TasGrid::getExoticGaussLegendreCache(
-        n, shift, sinc, nref, weights_cache, points_cache);
-    for (int j=0; j<points_cache.size(); j++) {
->>>>>>> 04869c0b... Optimizations + corrections in logic.
-        std::cout << "POINTS, n = " << j + 1 << std::endl;
-        ct.getWeightsNodes(j, weights, points);
-        for (size_t k=0; k<points.size(); k++) {
-            std::cout << points[k] << std::endl;
+// Tests for getExoticQuadrature().
+inline bool testBasicAttributes() {
+    bool passed = true;
+    const int n = 3;
+    const int nref = 11;
+    const char *descr = "TEST_DESCRIPTION";
+    auto sinc = [](double x) -> double {
+      return (x == 0.0 ? 1.0 : sin(x) / (x));
+    };
+    // Different behaviors expected for shift == 0.0 vs shift != 0.0.
+    std::vector<double> shifts = {0.0, 1.0};
+    for (auto shift : shifts) {
+        TasGrid::CustomTabulated ct =
+                TasGrid::getExoticQuadrature(n, shift, sinc, nref, descr);
+        if (strcmp(ct.getDescription(), descr) != 0) {
+            std::cout << "ERROR: Test failed in testCtAttributes() for shift = "
+                      << shift << " on getDescription()"<< std::endl;
+            passed = false;
         }
-        std::cout << "WEIGHTS, n = " << j + 1 << std::endl;
-        for (size_t k=0; k<weights.size(); k++) {
-            std::cout << weights[k] << std::endl;
+        if (ct.getNumLevels() != n) {
+            std::cout << "ERROR: Test failed in testCtAttributes() for shift = "
+                      << shift << " on getNumLevels()" << std::endl;
+            passed = false;
         }
-        std::cout << std::endl;
+        for (int i=0; i<n; i++) {
+            if (shift == 0.0 && ct.getNumPoints(i) != i+1) {
+                std::cout << "ERROR: Test failed in testCtAttributes() for shift = "
+                          << shift << ", i = " << i
+                          << " on getNumPoints()" << std::endl;
+                passed = false;
+            }
+            if (shift != 0.0 && ct.getNumPoints(i) != 2*(i+1)) {
+                std::cout << "ERROR: Test failed in testCtAttributes() for shift = "
+                          << shift << ", i = " << i
+                          << " on getNumPoints()" << std::endl;
+                passed = false;
+            }
+            if (ct.getQExact(i) != 2*(i+1)-1) {
+                std::cout << "ERROR: Test failed in testCtAttributes() for shift = "
+                          << shift << ", i = " << i
+                          << " on getQExact()" << std::endl;
+                passed = false;
+            }
+        }
     }
+    return passed;
 }
 
-inline void debugSincT(float T, double exact) {
+// Integrates the function f(x) * sinc(freq * x) over [-1, 1]  using Exotic
+// quadrature at level n and a specified shift.
+inline double integrateFnTimesSinc(std::function<double(double)> f,
+                                   int n,
+                                   double freq,
+                                   double shift) {
+  auto sinc = [freq](double x)->double {
+    return (x == 0.0 ? 1.0 : sin(freq * x) / (freq * x));
+  };
+  TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(n, shift, sinc);
+  TasGrid::TasmanianSparseGrid sg;
+  sg.makeGlobalGrid(1, 1, n, TasGrid::type_qptotal, std::move(ct));
+  std::vector<double> quad_points = sg.getPoints();
+  std::vector<double> quad_weights = sg.getQuadratureWeights();
+  double integral = 0.0;
+  for (size_t i=0; i<quad_weights.size(); i++) {
+      integral += f(quad_points[i]) * quad_weights[i];
+  }
+  return integral;
+}
 
+// Test the accuracy of 1D problem instances.
+inline bool wrapSincTest1D(std::function<double(double)> f,
+                           int level,
+                           double freq,
+                           double shift,
+                           double exact_integral) {
+    bool passed = true;
+    double precision = 1e-12;
+    double approx_integral = integrateFnTimesSinc(f, level, 1.0, 0.0);
+    if (std::abs(approx_integral - exact_integral) > precision) {
+        std::cout << "ERROR: " << std::setprecision(16)
+                  << "Computed integral value " << approx_integral
+                  << " does not match exact integral " << exact_integral
+                  << std::endl;
+        passed = false;
+    }
+    return passed;
+}
+inline bool testExpMx2_sinc1_shift0() {
+    auto f = [](double x)->double {return std::exp(-x*x);};
+    bool passed = wrapSincTest1D(f, 20, 1.0, 0.0, 1.4321357541271255);
+    if (not passed) {
+        std::cout << "ERROR: Test failed in testExpMx_sinc1_shift0().";
+    }
+    return passed;
+}
+inline bool testExpMx2_sinc1_shift1() {
+    auto f = [](double x)->double {return std::exp(-x*x);};
+    bool passed = wrapSincTest1D(f, 20, 1.0, 1.0, 1.4321357541271255);
+    if (not passed) {
+        std::cout << "ERROR: Test failed in testExpMx_sinc1_shift0().";
+    }
+    return passed;
+}
+
+// inline void debugSincT(float T, double exact) {
     // int max_n = 15;
     // int nref = 1001;
     // double shift = 1.0;
@@ -132,4 +204,5 @@ inline void debugSincT(float T, double exact) {
     //     std::cout << std::endl;
     // }
     // std::cout << endl;
-}
+// }
+

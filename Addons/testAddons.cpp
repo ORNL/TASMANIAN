@@ -35,8 +35,6 @@
 void debugTest() {
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./Addons/addontester debug" << endl;
-    // debugGetRoots();
-    debugGetExoticQuadrature();
     // debugSincT(100, 0.031353648322695503);
     // debugSincT(10, 0.32099682841103033);
     // debugSincT(1, 1.4321357541271255);
@@ -82,6 +80,19 @@ int main(int argc, char const **argv){
         #else
         cout << std::setw(40) << "Unstructured construction" << std::setw(10) << "skipping" << endl;
         gpuid *= 2; // no op to register the use of gpuid
+        #endif
+
+        // Tests for Exotic Quadrature.
+        #ifdef Tasmanian_ENABLE_BLAS
+        pass = true;
+        pass = testRootSizes();
+        pass = testBasicAttributes();
+        pass = testExpMx2_sinc1_shift0();
+        pass = testExpMx2_sinc1_shift1();
+        cout << std::setw(40) << "Exotic quadrature" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
+        pass_all = pass_all && pass;
+        #else
+        cout << std::setw(40) << "Exotic quadrature" << std::setw(10) << "skipping" << endl;
         #endif
 
         cout << "\n";
