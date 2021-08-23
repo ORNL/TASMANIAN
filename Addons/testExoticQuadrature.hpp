@@ -146,7 +146,7 @@ inline bool wrapSincTest1D(std::function<double(double)> f,
                            double exact_integral) {
     bool passed = true;
     double precision = 1e-12;
-    double approx_integral = integrateFnTimesSinc(f, level, 1.0, 0.0);
+    double approx_integral = integrateFnTimesSinc(f, level, freq, shift);
     if (std::abs(approx_integral - exact_integral) > precision) {
         std::cout << "ERROR: " << std::setprecision(16)
                   << "Computed integral value " << approx_integral
@@ -160,7 +160,8 @@ inline bool testExpMx2_sinc1_shift0() {
     auto f = [](double x)->double {return std::exp(-x*x);};
     bool passed = wrapSincTest1D(f, 20, 1.0, 0.0, 1.4321357541271255);
     if (not passed) {
-        std::cout << "ERROR: Test failed in testExpMx_sinc1_shift0().";
+        std::cout << "ERROR: Test failed in testExpMx2_sinc1_shift0()"
+                  << std::endl;
     }
     return passed;
 }
@@ -168,10 +169,31 @@ inline bool testExpMx2_sinc1_shift1() {
     auto f = [](double x)->double {return std::exp(-x*x);};
     bool passed = wrapSincTest1D(f, 20, 1.0, 1.0, 1.4321357541271255);
     if (not passed) {
-        std::cout << "ERROR: Test failed in testExpMx_sinc1_shift0().";
+        std::cout << "ERROR: Test failed in testExpMx2_sinc1_shift1()"
+                  << std::endl;
     }
     return passed;
 }
+inline bool testExpMx2_sinc10_shift1() {
+    auto f = [](double x)->double {return std::exp(-x*x);};
+    bool passed = wrapSincTest1D(f, 20, 10.0, 1.0, 0.32099682841103033);
+    if (not passed) {
+        std::cout << "ERROR: Test failed in testExpMx2_sinc10_shift1()"
+                  << std::endl;
+    }
+    return passed;
+}
+inline bool testExpMx2_sinc100_shift1() {
+    auto f = [](double x)->double {return std::exp(-x*x);};
+    bool passed = wrapSincTest1D(f, 20, 100.0, 1.0, 0.031353648322695503);
+    if (not passed) {
+        std::cout << "ERROR: Test failed in testExpMx2_sinc100_shift1()"
+                  << std::endl;
+    }
+    return passed;
+}
+
+
 
 // inline void debugSincT(float T, double exact) {
     // int max_n = 15;
