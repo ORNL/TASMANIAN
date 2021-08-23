@@ -59,10 +59,10 @@ int main(int argc, char const **argv){
         args.pop_front();
     }
 
-    if (debug) {
+    if (debug){
         debugTest();
         return 0;
-    } else {
+    }else{
         cout << "\n\n";
         cout << "---------------------------------------------------------------------" << endl;
         cout << "          Tasmanian Addons Module: Functionality Test" << endl;
