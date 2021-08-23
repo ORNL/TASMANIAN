@@ -118,35 +118,29 @@ inline bool testBasicAttributes() {
 }
 
 // Integrates the function f(x) * sinc(freq * x) over [-1, 1]  using Exotic
-// quadrature at level n and a specified shift.
-inline double integrateFnTimesSinc(std::function<double(double)> f,
-                                   int n,
-                                   double freq,
-                                   double shift) {
-  auto sinc = [freq](double x)->double {
-    return (x == 0.0 ? 1.0 : sin(freq * x) / (freq * x));
-  };
-  TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(n, shift, sinc);
-  TasGrid::TasmanianSparseGrid sg;
-  sg.makeGlobalGrid(1, 1, n, TasGrid::type_qptotal, std::move(ct));
-  std::vector<double> quad_points = sg.getPoints();
-  std::vector<double> quad_weights = sg.getQuadratureWeights();
-  double integral = 0.0;
-  for (size_t i=0; i<quad_weights.size(); i++) {
-      integral += f(quad_points[i]) * quad_weights[i];
-  }
-  return integral;
-}
-
-// Test the accuracy of 1D problem instances.
+// quadrature at level n and a specified shift. Then, compares this integral
+// against a given exact integral value.
 inline bool wrapSincTest1D(std::function<double(double)> f,
-                           int level,
+                           int n,
                            double freq,
                            double shift,
                            double exact_integral) {
     bool passed = true;
     double precision = 1e-12;
-    double approx_integral = integrateFnTimesSinc(f, level, freq, shift);
+    auto sinc = [freq](double x)->double {
+        return (x == 0.0 ? 1.0 : sin(freq * x) / (freq * x));
+    };
+    TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(n, shift, sinc);
+    TasGrid::TasmanianSparseGrid sg;
+    sg.makeGlobalGrid(1, 1, n-1, TasGrid::type_qptotal, std::move(ct));
+    std::vector<double> quad_points = sg.getPoints();
+    std::vector<double> quad_weights = sg.getQuadratureWeights();
+    double approx_integral = 0.0;
+    assert(quad_weights.size() == quad_points.size());
+    std::cout << quad_weights.size() << std::endl;
+    for (size_t i=0; i<quad_weights.size(); i++) {
+        approx_integral += f(quad_points[i]) * quad_weights[i];
+    }
     if (std::abs(approx_integral - exact_integral) > precision) {
         std::cout << "ERROR: " << std::setprecision(16)
                   << "Computed integral value " << approx_integral
@@ -156,6 +150,8 @@ inline bool wrapSincTest1D(std::function<double(double)> f,
     }
     return passed;
 }
+
+// Test the accuracy of the exotic quadrature over some 1D functions.
 inline bool testExpMx2_sinc1_shift0() {
     auto f = [](double x)->double {return std::exp(-x*x);};
     bool passed = wrapSincTest1D(f, 20, 1.0, 0.0, 1.4321357541271255);
