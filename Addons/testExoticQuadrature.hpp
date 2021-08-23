@@ -76,10 +76,17 @@ inline void debugGetExoticQuadrature() {
     int nref = 201;
     double shift = 1.0;
     auto sinc = [](double x)->double{return(x == 0.0 ? 1.0 : sin(x) / x);};
+<<<<<<< HEAD
     TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(n, shift, sinc, nref, "tmp");
     std::vector<double> points;
     std::vector<double> weights;
     for (int j=0; j<n; j++) {
+=======
+    std::vector<std::vector<double>> points_cache(n), weights_cache(n);
+    TasGrid::getExoticGaussLegendreCache(
+        n, shift, sinc, nref, weights_cache, points_cache);
+    for (int j=0; j<points_cache.size(); j++) {
+>>>>>>> 04869c0b... Optimizations + corrections in logic.
         std::cout << "POINTS, n = " << j + 1 << std::endl;
         ct.getWeightsNodes(j, weights, points);
         for (size_t k=0; k<points.size(); k++) {

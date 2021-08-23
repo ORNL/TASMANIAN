@@ -57,54 +57,49 @@ namespace TasGrid {
 // Evaluates a polynomial with roots given by \b roots at the point \b x.
 double poly_eval(const std::vector<double> &roots, double x) {
     double eval_value = 1.0;
-    for (size_t i=0; i<roots.size(); i++) {
-        eval_value *= (x - roots[i]);
-    }
+    for (auto r : roots) eval_value *= (x - r);
     return eval_value;
 }
 // Generate roots.
 std::vector<std::vector<double>> getRoots(
       const int n,
-      const std::vector<double> &ref_integral_weights,
+      const std::vector<double> &ref_weights,
       const std::vector<double> &ref_points) {
 
     // Compute the roots incrementally.
-    assert(ref_points.size() == ref_integral_weights.size());
+    assert(ref_points.size() == ref_weights.size());
     std::vector<double>
             poly_m1_vals(ref_points.size(), 0.0),
-            poly_vals(ref_points.size(), 1.0);
-    std::vector<double> alpha, beta;
+           poly_vals(ref_points.size(), 1.0);
+    std::vector<double> diag, offdiag;
     std::vector<std::vector<double>> roots(n);
     for (int i=0; i<n; i++) {
         // Form the tridiagonal vectors, alpha and beta, of the Jacobi matrix.
-        double alpha_numr = 0.0;
-        double alpha_denm = 0.0;
-        double beta_numr = 0.0;
-        double beta_denm = 0.0;
+        double diag_numr = 0.0;
+        double diag_denm = 0.0;
+        double sqr_offdiag_numr = 0.0;
+        double sqr_offdiag_denm = 0.0;
         for (int j=0; j<ref_points.size(); j++) {
-            alpha_numr += ref_points[j] * (poly_vals[j] * poly_vals[j]) * ref_integral_weights[j];
-            alpha_denm += (poly_vals[j] * poly_vals[j]) * ref_integral_weights[j];
-            beta_numr += (poly_vals[j] * poly_vals[j]) * ref_integral_weights[j];
-            beta_denm +=  (poly_m1_vals[j] * poly_m1_vals[j])  * ref_integral_weights[j];
+            diag_numr += ref_points[j] * (poly_vals[j] * poly_vals[j]) * ref_weights[j];
+            diag_denm += (poly_vals[j] * poly_vals[j]) * ref_weights[j];
+            sqr_offdiag_numr += (poly_vals[j] * poly_vals[j]) * ref_weights[j];
+            sqr_offdiag_denm +=  (poly_m1_vals[j] * poly_m1_vals[j])  * ref_weights[j];
         }
-        alpha.push_back(alpha_numr / alpha_denm);
+        diag.push_back(diag_numr / diag_denm);
         if (i >= 1) {
-            beta.push_back(beta_numr / beta_denm);
+            offdiag.push_back(std::sqrt(sqr_offdiag_numr / sqr_offdiag_denm));
         }
-        // Compute the roots. alpha and beta need to be copied because the
+        // Compute the roots. The inputs need to be copied because the
         // tridiagonal eigensolver generates the eigenvalues in place and
         // destroys some of its inputs.
-        roots[i] = alpha;
-        std::vector<double> offdiag(n-1);
-        for (int k=0; k<i; k++) {
-            offdiag[k] = sqrt(beta[k]);
-        }
-        TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, roots[i], offdiag);
+        roots[i] = diag;
+        std::vector<double> offdiag_dummy = offdiag;
+        TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, roots[i], offdiag_dummy);
         if (roots[i].size() % 2 == 1) {
             roots[i][(roots[i].size() - 1) / 2] = 0.0; // Zero out the center for stability.
         }
         // Update the values of the polynomials at ref_points.
-        poly_m1_vals = poly_vals;
+        std::swap(poly_m1_vals, poly_vals);
         std::transform(ref_points.begin(), ref_points.end(), poly_vals.begin(),
                        [&roots, i](double x){return poly_eval(roots[i], x);});
     }
@@ -112,12 +107,13 @@ std::vector<std::vector<double>> getRoots(
 }
 
 //! \brief Evaluates a Lagrange basis polynomial at a point \b x.
-double lagrange_eval(int idx, const std::vector<double> roots, double x) {
+double lagrange_eval(int idx, const std::vector<double> &roots, double x) {
     double eval_value = 1.0;
-    for (size_t i=0; i<roots.size(); i++) {
-        if (i != idx) {
-            eval_value *= (x - roots[i]) / (roots[idx] - roots[i]);
-        }
+    for (size_t i=0; i<idx-1; i++) {
+        eval_value *= (x - roots[i]) / (roots[idx] - roots[i]);
+    }
+    for (size_t i=idx+1; i<roots.size(); i++) {
+        eval_value *= (x - roots[i]) / (roots[idx] - roots[i]);
     }
     return eval_value;
 }
@@ -133,24 +129,25 @@ void getExoticGaussLegendreCache(
         std::vector<std::vector<double>> &weights_cache,
         std::vector<std::vector<double>> &points_cache) {
 
-    // Create the set of points for the first term.
+    // Create the set of reference weights and points for the first term. These
+    // weights are with respect to the measure induced by weight_fn().
     std::vector<double> ref_weights(nref), ref_points(nref);
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
-    std::vector<double> ref_integral_weights(nref);
-    std::transform(ref_weights.begin(), ref_weights.end(), ref_integral_weights.begin(),
-                   [shift, weight_fn](double x)->double{return (weight_fn(x) + shift);});
-    points_cache = getRoots(n, ref_integral_weights, ref_points);
+    for (size_t i=0; i<ref_points.size(); i++) {
+        ref_weights[i] = ref_weights[i] * (weight_fn(ref_points[i]) + shift);
+    }
+    points_cache = getRoots(n, ref_weights, ref_points);
 
     // Create the set of weights for the first term.
     weights_cache = std::vector<std::vector<double>>(n);
     for (int i=0; i<n; i++) {
         weights_cache[i] = std::vector<double>(points_cache[i].size(), 0.0);
         for (size_t j=0; j<points_cache[i].size(); j++) {
-            // Integrate the function l_j(x) * [weight_fn(x) + shift].
+            // Integrate the function l_j(x) relative to the measure given by
+            // ref_weights().
             for (int k=0; k<nref; k++) {
                 weights_cache[i][j] +=
                         lagrange_eval(j, points_cache[i], ref_points[k]) *
-                        ref_integral_weights[k] *
                         ref_weights[k];
             }
         }
@@ -159,20 +156,18 @@ void getExoticGaussLegendreCache(
     // Create and append the set of points and weights for the second term.
     for (int i=0; i<n; i++) {
         std::vector<double>
-                points(points_cache[i].size()),
+                correction_points(points_cache[i].size()),
                 correction_weights(points_cache[i].size());
         TasGrid::OneDimensionalNodes::getGaussLegendre(points_cache[i].size(),
                                                        correction_weights,
-                                                       points);
-        for (size_t j=0; j<points_cache[i].size(); j++) {
-            correction_weights[j] = -shift * correction_weights[j]; // In-place.
-        }
-        if (points.size() % 2 == 1) {
-            points[(points.size() - 1) / 2] = 0.0; // Zero out for stability.
+                                                       correction_points);
+        for (auto &w : correction_weights) w *= -shift; // In-place.
+        if (correction_points.size() % 2 == 1) {
+            correction_points[(correction_points.size() - 1) / 2] = 0.0; // Zero out for stability.
         }
         points_cache[i].insert(points_cache[i].end(),
-                               points.begin(),
-                               points.end());
+                               correction_points.begin(),
+                               correction_points.end());
         weights_cache[i].insert(weights_cache[i].end(),
                                 correction_weights.begin(),
                                 correction_weights.end());
