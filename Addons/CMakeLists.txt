@@ -23,7 +23,7 @@ target_include_directories(Tasmanian_addons INTERFACE $<BUILD_INTERFACE:${CMAKE_
 target_link_libraries(Tasmanian_addons INTERFACE Tasmanian_libdream)
 
 if (Tasmanian_ENABLE_PYTHON) # the C addons are used by Python
-    add_library(Tasmanian_caddons SHARED tsgCLoadNeededValues.cpp tsgCConstructSurrogate.cpp tsgCLoadUnstructuredPoints.cpp tsgExoticQuadrature.cpp)
+    add_library(Tasmanian_caddons SHARED tsgCLoadNeededValues.cpp tsgCConstructSurrogate.cpp tsgCLoadUnstructuredPoints.cpp)
 
     target_link_libraries(Tasmanian_caddons  Tasmanian_addons)
 
@@ -50,8 +50,14 @@ if (Tasmanian_ENABLE_MPI)
     list(APPEND Tasmanian_addons_tests "MPISparseGridsIO")
 endif()
 
+# Test addons that require BLAS/LAPACK 
+if (Tasmanian_ENABLE_BLAS)
+    add_executable(Tasmanian_blastester testBLAS.cpp testExoticQuadrature.hpp tsgExoticQuadrature.hpp tsgExoticQuadrature.cpp)
+    list(APPEND Tasmanian_addons_executables "blastester")
+endif()
+
 # test for non-MPI capabilities
-add_executable(Tasmanian_addontester testAddons.cpp testConstructSurrogate.hpp testLoadUnstructured.hpp)
+add_executable(Tasmanian_addontester testAddons.cpp testConstructSurrogate.hpp)
 add_test(AddonTests addontester -gpuid ${Tasmanian_TESTS_GPU_ID})
 
 list(APPEND Tasmanian_addons_executables "addontester")
@@ -61,7 +67,7 @@ list(APPEND Tasmanian_addons_tests "AddonTests")
 foreach(_tsg_exec ${Tasmanian_addons_executables})
     set_target_properties(Tasmanian_${_tsg_exec} PROPERTIES OUTPUT_NAME "${_tsg_exec}" CXX_EXTENSIONS OFF)
     Tasmanian_rpath_target(TARGET Tasmanian_${_tsg_exec} USE_CURRENT COMPONENTS SparseGrids DREAM)
-    target_link_libraries(Tasmanian_${_tsg_exec} Tasmanian_addons Tasmanian_libdream)
+    target_link_libraries(Tasmanian_${_tsg_exec} Tasmanian_addons Tasmanian_libsparsegrid Tasmanian_libdream)
 endforeach()
 unset(_tsg_exec)
 

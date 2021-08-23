@@ -2,53 +2,59 @@
  * Copyright (c) 2021, Miroslav Stoyanov & William Kong
  *
  * This file is part of
- * Toolkit for Adaptive Stochastic Modeling And Non-Intrusive ApproximatioN: TASMANIAN
+ * Toolkit for Adaptive Stochastic Modeling And Non-Intrusive ApproximatioN:
+ * TASMANIAN
  *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions
- *    and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
  *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse
- *    or promote products derived from this software without specific prior written permission.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
- * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
- * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
- * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  *
- * UT-BATTELLE, LLC AND THE UNITED STATES GOVERNMENT MAKE NO REPRESENTATIONS AND DISCLAIM ALL WARRANTIES, BOTH EXPRESSED AND IMPLIED.
- * THERE ARE NO EXPRESS OR IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY PATENT,
- * COPYRIGHT, TRADEMARK, OR OTHER PROPRIETARY RIGHTS, OR THAT THE SOFTWARE WILL ACCOMPLISH THE INTENDED RESULTS OR THAT THE SOFTWARE OR ITS USE WILL NOT RESULT IN INJURY OR DAMAGE.
- * THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING FROM OR ARISING OUT OF,
- * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
+ * UT-BATTELLE, LLC AND THE UNITED STATES GOVERNMENT MAKE NO REPRESENTATIONS AND
+ * DISCLAIM ALL WARRANTIES, BOTH EXPRESSED AND IMPLIED. THERE ARE NO EXPRESS OR
+ * IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR
+ * THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY PATENT, COPYRIGHT,
+ * TRADEMARK, OR OTHER PROPRIETARY RIGHTS, OR THAT THE SOFTWARE WILL ACCOMPLISH
+ * THE INTENDED RESULTS OR THAT THE SOFTWARE OR ITS USE WILL NOT RESULT IN
+ * INJURY OR DAMAGE. THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES,
+ * PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED
+ * BY, RESULTING FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR
+ * DISPOSAL OF THE SOFTWARE.
  */
+
+// TODO: Add better documentation.
+
 #ifndef __TASMANIAN_ADDONS_EXOTICQUADRATURE_CPP
 #define __TASMANIAN_ADDONS_EXOTICQUADRATURE_CPP
 
-#include "TasmanianAddons.hpp"
+#include "tsgCoreOneDimensional.hpp"
 #include "tsgLinearSolvers.hpp"
 #include <cassert>
 
-//! \internal
-//! \brief Contains algorithms for generating exotic quadrature rules.
-//! \endinternal
-
-// Generate the n roots of the n-th degree orthogonal polynomial.
-// ref_integral_weights and ref_points are used in the computation of the
-// integrals that form the elements of the Jacobi matrix.
-
-// Get Exotic Gauss-Legendre points and weights. Specific to the case where the
-// integrand F(x) is of the form:
-//     F(x) := f(x) * [weight_fn(x) - shift] + shift * f(x)
-
 namespace TasGrid {
 
-//! \brief Evaluates a polynomial with roots given by \b roots at the point \b x.
+// Evaluates a polynomial with roots given by \b roots at the point \b x.
 double poly_eval(const std::vector<double> &roots, double x) {
     double eval_value = 1.0;
     for (size_t i=0; i<roots.size(); i++) {
@@ -56,8 +62,8 @@ double poly_eval(const std::vector<double> &roots, double x) {
     }
     return eval_value;
 }
-//! \brief Generate all roots up to the n roots of the n-th degree orthogonal polynomial.
-std::vector<std::vector<double>> getRootCache(
+// Generate roots.
+std::vector<std::vector<double>> getRoots(
       const int n,
       const std::vector<double> &ref_integral_weights,
       const std::vector<double> &ref_points) {
@@ -133,7 +139,7 @@ void getExoticGaussLegendreCache(
     std::vector<double> ref_integral_weights(nref);
     std::transform(ref_weights.begin(), ref_weights.end(), ref_integral_weights.begin(),
                    [shift, weight_fn](double x)->double{return (weight_fn(x) + shift);});
-    points_cache = getRootCache(n, ref_integral_weights, ref_points);
+    points_cache = getRoots(n, ref_integral_weights, ref_points);
 
     // Create the set of weights for the first term.
     weights_cache = std::vector<std::vector<double>>(n);
@@ -164,10 +170,14 @@ void getExoticGaussLegendreCache(
         if (points.size() % 2 == 1) {
             points[(points.size() - 1) / 2] = 0.0; // Zero out for stability.
         }
-        points_cache[i].insert(points_cache[i].end(), points.begin(), points.end());
-        weights_cache[i].insert(weights_cache[i].end(), correction_weights.begin(), correction_weights.end());
+        points_cache[i].insert(points_cache[i].end(),
+                               points.begin(),
+                               points.end());
+        weights_cache[i].insert(weights_cache[i].end(),
+                                correction_weights.begin(),
+                                correction_weights.end());
     }
 }
 
-} // End namespace(TasGrid)
+} // namespace(TasGrid)
 #endif
