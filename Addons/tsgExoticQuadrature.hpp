@@ -2,48 +2,34 @@
  * Copyright (c) 2021, Miroslav Stoyanov & William Kong
  *
  * This file is part of
- * Toolkit for Adaptive Stochastic Modeling And Non-Intrusive ApproximatioN:
- * TASMANIAN
+ * Toolkit for Adaptive Stochastic Modeling And Non-Intrusive ApproximatioN: TASMANIAN
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following
+ * conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice,
- * this list of conditions and the following disclaimer.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditions and the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+ *    and the following disclaimer in the documentation and/or other materials provided with the distribution.
  *
- * 3. Neither the name of the copyright holder nor the names of its contributors
- * may be used to endorse or promote products derived from this software without
- * specific prior written permission.
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse
+ *    or promote products derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+ * INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+ * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+ * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * UT-BATTELLE, LLC AND THE UNITED STATES GOVERNMENT MAKE NO REPRESENTATIONS AND
- * DISCLAIM ALL WARRANTIES, BOTH EXPRESSED AND IMPLIED. THERE ARE NO EXPRESS OR
- * IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR
- * THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE ANY PATENT, COPYRIGHT,
- * TRADEMARK, OR OTHER PROPRIETARY RIGHTS, OR THAT THE SOFTWARE WILL ACCOMPLISH
- * THE INTENDED RESULTS OR THAT THE SOFTWARE OR ITS USE WILL NOT RESULT IN
- * INJURY OR DAMAGE. THE USER ASSUMES RESPONSIBILITY FOR ALL LIABILITIES,
- * PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED
- * BY, RESULTING FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR
- * DISPOSAL OF THE SOFTWARE.
+ * UT-BATTELLE, LLC AND THE UNITED STATES GOVERNMENT MAKE NO REPRESENTATIONS AND DISCLAIM ALL WARRANTIES, BOTH EXPRESSED AND
+ * IMPLIED. THERE ARE NO EXPRESS OR IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR THAT THE USE
+ * OF THE SOFTWARE WILL NOT INFRINGE ANY PATENT, COPYRIGHT, TRADEMARK, OR OTHER PROPRIETARY RIGHTS, OR THAT THE SOFTWARE WILL
+ * ACCOMPLISH THE INTENDED RESULTS OR THAT THE SOFTWARE OR ITS USE WILL NOT RESULT IN INJURY OR DAMAGE. THE USER ASSUMES
+ * RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING
+ * FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
-
-// TODO: Add better documentation.
 
 #ifndef __TASMANIAN_ADDONS_EXOTICQUADRATURE_HPP
 #define __TASMANIAN_ADDONS_EXOTICQUADRATURE_HPP
@@ -60,20 +46,16 @@ inline double poly_eval(const std::vector<double> &roots, double x) {
     for (auto r : roots) eval_value *= (x - r);
     return eval_value;
 }
-//! \brief Generate the roots of all orthogonal polynomials up to degree n,
-//! where orthogonality is with respect to the measure given by ref_weights. It
-//! is assumed that the values of ref_weights are nonnegative.
-inline std::vector<std::vector<double>> getRoots(
-        const int n,
-        const std::vector<double> &ref_weights,
-        const std::vector<double> &ref_points) {
+
+//! \brief Generate the roots of all orthogonal polynomials up to degree n, where orthogonality is with respect to the measure
+//! given by ref_weights. It is assumed that the values of ref_weights are nonnegative.
+inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<double> &ref_weights,
+                                                 const std::vector<double> &ref_points) {
 
     // Compute the roots incrementally.
     assert(ref_points.size() == ref_weights.size());
     assert(ref_points.size() > 0);
-    std::vector<double>
-            poly_m1_vals(ref_points.size(), 0.0),
-            poly_vals(ref_points.size(), 1.0);
+    std::vector<double> poly_m1_vals(ref_points.size(), 0.0), poly_vals(ref_points.size(), 1.0);
     std::vector<double> diag, offdiag;
     std::vector<std::vector<double>> roots(n);
     for (int i=0; i<n; i++) {
@@ -121,22 +103,18 @@ inline double lagrange_eval(int idx, const std::vector<double> &roots, double x)
     }
     return eval_value;
 }
-//! \brief Generate the full cache of Exotic (weighted and possibly shifted)
-//! Gauss-Legendre weights and points for an (input) max level \b n, using
-//! parameters \b shift, \b weight_fn, and \b nref. By default, the reference
-//! points and reference weights are generated by the Gauss-Legendre rule.
-//!
-//! The integrand is assumed to be of the form F(x) = f(x) * weight_fn(x) and
-//! the function x->weight_fn(x)+shift is nonnegative.
-inline TasGrid::CustomTabulated getExoticQuadrature(const int n,
-                                                    const double shift,
-                                                    std::function<double(double)> weight_fn,
-                                                    const int nref,
-                                                    const char* description) {
 
-    // Create the set of reference weights and points for the first term. These
-    // reference weights are with respect to the measure induced by the
-    // function [weight_fn(x) + shift].
+//! \brief Generate the full cache of Exotic (weighted and possibly shifted) Gauss-Legendre weights and points for
+//! an (input) max level \b n, using parameters \b shift, \b weight_fn, and \b nref. By default, the reference points
+//! and reference weights are generated by the Gauss-Legendre rule.
+//!
+//! The integrand is assumed to be of the form F(x) = f(x) * weight_fn(x) and the function x->weight_fn(x)+shift
+//! is nonnegative.
+inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, std::function<double(double)> weight_fn,
+                                                    const int nref, const char* description) {
+
+    // Create the set of reference weights and points for the first term. These reference weights are with respect
+    // to the measure induced by the function [weight_fn(x) + shift].
     std::vector<double> ref_weights(nref), ref_points(nref);
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
     for (size_t k=0; k<nref; k++) {
@@ -149,33 +127,27 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n,
     for (int i=0; i<n; i++) {
         weights_cache[i] = std::vector<double>(points_cache[i].size(), 0.0);
         for (size_t j=0; j<points_cache[i].size(); j++) {
-            // Integrate the function l_j(x) according to the measure induced
-            // by the function [weight_fn(x) + shift].
+            // Integrate the function l_j(x) according to the measure induced by the function [weight_fn(x) + shift].
             for (int k=0; k<nref; k++) {
-                weights_cache[i][j] +=
-                        lagrange_eval(j, points_cache[i], ref_points[k]) *
-                        ref_weights[k];
+                weights_cache[i][j] += lagrange_eval(j, points_cache[i], ref_points[k]) * ref_weights[k];
             }
         }
     }
 
-    // Create and append the set of points and weights for the second term if
-    // the shift is nonzero.
+    // Create and append the set of correction points and weights for the second term only if the shift is nonzero.
     if (shift != 0.0) {
         for (int i=0; i<n; i++) {
             const int init_size = points_cache[i].size();
             std::vector<double>
                     correction_points(init_size),
                     correction_weights(init_size);
-            TasGrid::OneDimensionalNodes::getGaussLegendre(init_size,
-                                                           correction_weights,
-                                                           correction_points);
+            TasGrid::OneDimensionalNodes::getGaussLegendre(init_size, correction_weights, correction_points);
             for (auto &w : correction_weights) w *= -shift;
             if (correction_points.size() % 2 == 1) {
                 // Zero out for stability.
                 correction_points[(correction_points.size() - 1) / 2] = 0.0;
             }
-            // Combine the correction points and weights, accounting for duplicates, up to a certain tolerance.
+            // Account for duplicates up to a certain tolerance.
             assert(correction_points.size() == correction_weights.size());
             for (size_t j=0; j<correction_points.size(); j++) {
                 int nonunique_idx = -1;
@@ -201,18 +173,15 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n,
         num_nodes[i] = points_cache[i].size();
         precision[i] = 2 * (i + 1) - 1;
     }
-    return TasGrid::CustomTabulated(
-        n, std::move(num_nodes), std::move(precision), std::move(points_cache),
-        std::move(weights_cache), description);
-}
-// Basic overloads.
-inline TasGrid::CustomTabulated getExoticQuadrature(
-    const int n,
-    const double shift,
-    std::function<double(double)> weight_fn) {
-    return getExoticQuadrature(n, shift, weight_fn, 50*n+1, "Exotic quadrature");
+    return TasGrid::CustomTabulated(n, std::move(num_nodes), std::move(precision), std::move(points_cache),
+                                    std::move(weights_cache), description);
 }
 
+// Basic function overloads.
+inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift,
+                                                    std::function<double(double)> weight_fn) {
+    return getExoticQuadrature(n, shift, weight_fn, 50*n+1, "Exotic quadrature");
+}
 
 } // namespace(TasGrid)
 #endif

@@ -155,10 +155,7 @@ template void transpose(long long, long long, std::complex<double> const[], std:
 }
 
 
-void TasmanianTridiagonalSolver::getSymmetricEigenvalues(
-      int n,
-      std::vector<double> &diag,
-      std::vector<double> &offdiag) {
+void TasmanianTridiagonalSolver::getSymmetricEigenvalues(int n, std::vector<double> &diag, std::vector<double> &offdiag) {
     #ifdef Tasmanian_ENABLE_BLAS
     TasBLAS::sterf(n, diag.data(), offdiag.data());
     #else
