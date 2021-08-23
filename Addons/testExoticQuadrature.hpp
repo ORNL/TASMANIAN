@@ -132,11 +132,12 @@ inline bool wrapSincTest1D(std::function<double(double)> f,
     };
     TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(n, shift, sinc);
     TasGrid::TasmanianSparseGrid sg;
-    sg.makeGlobalGrid(1, 1, n-1, TasGrid::type_qptotal, std::move(ct));
+    sg.makeGlobalGrid(1, 1, n, TasGrid::type_qptotal, std::move(ct));
     std::vector<double> quad_points = sg.getPoints();
     std::vector<double> quad_weights = sg.getQuadratureWeights();
     double approx_integral = 0.0;
     assert(quad_weights.size() == quad_points.size());
+    std::cout << quad_points[0] << " " << quad_weights[0] << std::endl;
     for (size_t i=0; i<quad_weights.size(); i++) {
         approx_integral += f(quad_points[i]) * quad_weights[i];
     }
@@ -189,10 +190,10 @@ inline bool testExpMx2_sinc100_shift1() {
 }
 inline bool testAccuracy1D() {
     bool passed = true;
-    passed = testExpMx2_sinc1_shift0();
-    passed = testExpMx2_sinc1_shift1();
-    passed = testExpMx2_sinc10_shift1();
-    passed = testExpMx2_sinc100_shift1();
+    passed = passed & testExpMx2_sinc1_shift0();
+    passed = passed & testExpMx2_sinc1_shift1();
+    passed = passed & testExpMx2_sinc10_shift1();
+    passed = passed & testExpMx2_sinc100_shift1();
     return passed;
 }
 
@@ -261,44 +262,19 @@ inline bool testExpMx2My2_sinc100_shift1() {
 }
 inline bool testAccuracy2D() {
     bool passed = true;
-    passed = testExpMx2My2_sinc1_shift1();
-    passed = testExpMx2My2_sinc10_shift1();
-    passed = testExpMx2My2_sinc100_shift1();
+    passed = passed & testExpMx2My2_sinc1_shift1();
+    passed = passed & testExpMx2My2_sinc10_shift1();
+    passed = passed & testExpMx2My2_sinc100_shift1();
     return passed;
 }
 
-
-
-// inline void debugSincT(float T, double exact) {
-    // int max_n = 15;
-    // int nref = 1001;
-    // double shift = 1.0;
-    // auto f = [](double x)->double{return exp(-x * x);};
-    // auto sinc = [T](double x)->double{return(x == 0.0 ? 1.0 : sin(T * x) / (T * x));};
-
-    // std::vector<std::vector<double>> points_cache(max_n), weights_cache(max_n);
-    // TasGrid::getExoticGaussLegendreCache(max_n, shift, sinc, nref, weights_cache, points_cache);
-
-    // std::cout << std::fixed << std::setprecision(6) << "Exotic     \t GL" << std::endl;
-    // for (int n=1; n<max_n; n++) {
-    //     // Exotic Quadrature
-    //     double approx_exotic = 0.0;
-    //     for (size_t i=0; i<weights_cache[n-1].size(); i++) {
-    //         approx_exotic += f(points_cache[n-1][i]) * weights_cache[n-1][i];
-    //     }
-    //     std::cout << log10(std::abs(approx_exotic - exact));
-    //     std::cout << "\t";
-    //     // Gauss-Legendre
-    //     std::vector<double> gl_weights(n), gl_points(n);
-    //     TasGrid::OneDimensionalNodes::getGaussLegendre(n, gl_weights, gl_points);
-    //     double approx_GL = 0.0;
-    //     for (size_t i=0; i<gl_weights.size(); i++) {
-    //         approx_GL +=
-    //                 f(gl_points[i]) * sinc(gl_points[i]) * gl_weights[i];
-    //     }
-    //     std::cout << log10(std::abs(approx_GL - exact));
-    //     std::cout << std::endl;
-    // }
-    // std::cout << endl;
-// }
+// Main wrapper
+inline bool testExoticQuadrature() {
+    bool passed = true;
+    passed = passed & testRootSizes();
+    passed = passed & testBasicAttributes();
+    passed = passed & testAccuracy1D();
+    passed = passed & testAccuracy2D();
+    return passed;
+}
 

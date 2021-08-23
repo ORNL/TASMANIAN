@@ -35,9 +35,6 @@
 void debugTest() {
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./Addons/addontester debug" << endl;
-    // debugSincT(100, 0.031353648322695503);
-    // debugSincT(10, 0.32099682841103033);
-    // debugSincT(1, 1.4321357541271255);
 }
 
 int main(int argc, char const **argv){
@@ -62,50 +59,48 @@ int main(int argc, char const **argv){
     if (debug){
         debugTest();
         return 0;
-    }else{
-        cout << "\n\n";
-        cout << "---------------------------------------------------------------------" << endl;
-        cout << "          Tasmanian Addons Module: Functionality Test" << endl;
-        cout << "---------------------------------------------------------------------" << endl << endl;
-
-        bool pass = testConstructSurrogate(verbose);
-        cout << std::setw(40) << "Automated construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
-        pass_all = pass_all && pass;
-
-        #if defined(Tasmanian_ENABLE_BLAS) || defined(Tasmanian_ENABLE_GPU)
-        pass = true;
-        pass = testLoadUnstructuredL2(verbose, gpuid);
-        cout << std::setw(40) << "Unstructured construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
-        pass_all = pass_all && pass;
-        #else
-        cout << std::setw(40) << "Unstructured construction" << std::setw(10) << "skipping" << endl;
-        gpuid *= 2; // no op to register the use of gpuid
-        #endif
-
-        // Tests for Exotic Quadrature.
-        #ifdef Tasmanian_ENABLE_BLAS
-        pass = true;
-        pass = testRootSizes();
-        pass = testBasicAttributes();
-        pass = testAccuracy1D();
-        pass = testAccuracy2D();
-        cout << std::setw(40) << "Exotic quadrature" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
-        pass_all = pass_all && pass;
-        #else
-        cout << std::setw(40) << "Exotic quadrature" << std::setw(10) << "skipping" << endl;
-        #endif
-
-        cout << "\n";
-        if (pass){
-            cout << "---------------------------------------------------------------------" << endl;
-            cout << "               All Tests Completed Successfully" << endl;
-            cout << "---------------------------------------------------------------------" << endl << endl;
-        }else{
-            cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl;
-            cout << "         Some Tests Have Failed" << endl;
-            cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl << endl;
-        }
-        return ((pass_all) ? 0 : 1);
     }
+
+    cout << "\n\n";
+    cout << "---------------------------------------------------------------------" << endl;
+    cout << "          Tasmanian Addons Module: Functionality Test" << endl;
+    cout << "---------------------------------------------------------------------" << endl << endl;
+
+    bool pass = testConstructSurrogate(verbose);
+    cout << std::setw(40) << "Automated construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
+    pass_all = pass_all && pass;
+
+    #if defined(Tasmanian_ENABLE_BLAS) || defined(Tasmanian_ENABLE_GPU)
+    pass = true;
+    pass = testLoadUnstructuredL2(verbose, gpuid);
+    cout << std::setw(40) << "Unstructured construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
+    pass_all = pass_all && pass;
+    #else
+    cout << std::setw(40) << "Unstructured construction" << std::setw(10) << "skipping" << endl;
+    gpuid *= 2; // no op to register the use of gpuid
+    #endif
+
+    // Tests for Exotic Quadrature.
+    #ifdef Tasmanian_ENABLE_BLAS
+    pass = true;
+    pass = testExoticQuadrature();
+    cout << std::setw(40) << "Exotic quadrature" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
+    pass_all = pass_all && pass;
+    #else
+    cout << std::setw(40) << "Exotic quadrature" << std::setw(10) << "skipping" << endl;
+    #endif
+
+    cout << "\n";
+    if (pass){
+        cout << "---------------------------------------------------------------------" << endl;
+        cout << "               All Tests Completed Successfully" << endl;
+        cout << "---------------------------------------------------------------------" << endl << endl;
+    }else{
+        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl;
+        cout << "         Some Tests Have Failed" << endl;
+        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl << endl;
+    }
+
+    return ((pass_all) ? 0 : 1);
 
 }
