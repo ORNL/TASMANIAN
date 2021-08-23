@@ -87,10 +87,8 @@ int main(int argc, char const **argv){
         pass = true;
         pass = testRootSizes();
         pass = testBasicAttributes();
-        pass = testExpMx2_sinc1_shift0();
-        pass = testExpMx2_sinc1_shift1();
-        pass = testExpMx2_sinc10_shift1();
-        pass = testExpMx2_sinc10_shift1();
+        pass = testAccuracy1D();
+        pass = testAccuracy2D();
         cout << std::setw(40) << "Exotic quadrature" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
         pass_all = pass_all && pass;
         #else
