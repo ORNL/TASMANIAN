@@ -33,7 +33,6 @@
 
 #include "tsgCoreOneDimensional.hpp"
 #include "tsgIOHelpers.hpp"
-#include "tsgTPLWrappers.hpp"
 #include <cassert>
 
 namespace TasGrid{
@@ -364,7 +363,7 @@ const char* OneDimensionalMeta::getHumanString(TypeOneDRule rule){
 
 // Generate the n roots of the n-th degree orthogonal polynomial.
 // ref_points and ref_points are used in the computation of the integrals that form the elements of the Jacobi matrix.
-double poly_eval(std::vector<double> roots, double x) {
+double poly_eval(std::vector<double> &roots, double x) {
     double eval_value = 1.0;
     for (size_t i=0; i<roots.size(); i++) {
         eval_value *= (x - roots[i]);
@@ -416,7 +415,7 @@ std::vector<std::vector<double>> OneDimensionalOrthPolynomials::getRootCache(
         for (int k=0; k<i; k++) {
             offdiag[k] = sqrt(beta[k]);
         }
-        TasBLAS::sterf(i + 1, roots.data(), offdiag.data());
+        TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, roots, offdiag);
         root_cache[i] = roots;
         // Update the values of the polynomials at ref_points.
         poly_m1_vals = poly_vals;
