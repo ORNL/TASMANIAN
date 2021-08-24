@@ -46,7 +46,7 @@ namespace TasGrid{
 
 void InternalSyclQueue::init_testing(){
     use_testing = true;
-    test_queue = makeNewQueue();
+    test_queue = makeNewQueue(0);
 }
 InternalSyclQueue test_queue;
 
@@ -114,16 +114,14 @@ void GpuEngine::setSyclQueue(void *queue){
 }
 
 int AccelerationMeta::getNumGpuDevices(){
-    return 1; // fake device for now, will actually use the CPU
+    return readSyclDevices().names.size();
 }
 void AccelerationMeta::setDefaultGpuDevice(int){}
-unsigned long long AccelerationMeta::getTotalGPUMemory(int){ // int deviceID
-    sycl::queue q;
-    return q.get_device().get_info<sycl::info::device::global_mem_size>();
+unsigned long long AccelerationMeta::getTotalGPUMemory(int deviceID){ // int deviceID
+    return readSyclDevices().memory[deviceID];
 }
-std::string AccelerationMeta::getGpuDeviceName(int){ // int deviceID
-    sycl::queue q;
-    return q.get_device().get_info<sycl::info::device::name>();
+std::string AccelerationMeta::getGpuDeviceName(int deviceID){ // int deviceID
+    return readSyclDevices().names[deviceID];
 }
 template<typename T> void AccelerationMeta::recvGpuArray(AccelerationContext const *acc, size_t num_entries, const T *gpu_data, std::vector<T> &cpu_data){
     sycl::queue *q = getSyclQueue(acc);
