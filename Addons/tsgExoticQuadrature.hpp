@@ -138,9 +138,7 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
     if (shift != 0.0) {
         for (int i=0; i<n; i++) {
             const int init_size = points_cache[i].size();
-            std::vector<double>
-                    correction_points(init_size),
-                    correction_weights(init_size);
+            std::vector<double> correction_points, correction_weights;
             TasGrid::OneDimensionalNodes::getGaussLegendre(init_size, correction_weights, correction_points);
             for (auto &w : correction_weights) w *= -shift;
             if (correction_points.size() % 2 == 1) {
