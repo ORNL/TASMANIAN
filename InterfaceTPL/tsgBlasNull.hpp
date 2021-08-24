@@ -56,6 +56,8 @@ namespace TasBLAS{
     inline void getrf(int, int, double[], int, int[]){}
     inline void getrs(char, int, int, double const[], int, int const[], double[], int){}
 
+    inline void sterf(int, double[], double[]){}
+
     template<typename T>
     inline void denseMultiply(int, int, int, T, const T[], const T[], T, T[]){}
 

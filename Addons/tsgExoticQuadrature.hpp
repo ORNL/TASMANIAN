@@ -64,7 +64,7 @@ inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<
         double diag_denm = 0.0;
         double sqr_offdiag_numr = 0.0;
         double sqr_offdiag_denm = 0.0;
-        for (int j=0; j<ref_points.size(); j++) {
+        for (size_t j=0; j<ref_points.size(); j++) {
             diag_numr += ref_points[j] * (poly_vals[j] * poly_vals[j]) * ref_weights[j];
             diag_denm += (poly_vals[j] * poly_vals[j]) * ref_weights[j];
             sqr_offdiag_numr += (poly_vals[j] * poly_vals[j]) * ref_weights[j];
@@ -117,7 +117,7 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
     // to the measure induced by the function [weight_fn(x) + shift].
     std::vector<double> ref_weights(nref), ref_points(nref);
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
-    for (size_t k=0; k<nref; k++) {
+    for (int k=0; k<nref; k++) {
         ref_weights[k] *= (weight_fn(ref_points[k]) + shift);
     }
     std::vector<std::vector<double>> points_cache = getRoots(n, ref_weights, ref_points);
@@ -149,7 +149,7 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
             assert(correction_points.size() == correction_weights.size());
             for (size_t j=0; j<correction_points.size(); j++) {
                 int nonunique_idx = -1;
-                for (size_t k=0; k<init_size; k++) {
+                for (int k=0; k<init_size; k++) {
                     if (std::abs(correction_points[j] - points_cache[i][k]) <= Maths::num_tol) {
                         nonunique_idx = k;
                         break;

@@ -156,9 +156,8 @@ template void transpose(long long, long long, std::complex<double> const[], std:
 
 
 void TasmanianTridiagonalSolver::getSymmetricEigenvalues(int n, std::vector<double> &diag, std::vector<double> &offdiag) {
-    #ifdef Tasmanian_ENABLE_BLAS
     TasBLAS::sterf(n, diag.data(), offdiag.data());
-    #else
+    #ifndef Tasmanian_ENABLE_BLAS
     throw std::runtime_error("getSymmetricEigenvalues() requires BLAS acceleration to be enabled!");
     #endif
 }
