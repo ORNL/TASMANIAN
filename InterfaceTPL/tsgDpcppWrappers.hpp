@@ -56,18 +56,69 @@ namespace TasGrid{
 /*!
  * \internal
  * \ingroup TasmanianTPLWrappers
- * \brief Return a new sycl::queue wrapped in a unique_ptr object in owning mode.
+ * \brief Derives from sycl::device_selector and creates a list of device names to be used in Tasmanian.
  *
  * \endinternal
  */
-inline std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>> makeNewQueue(){
+class tsg_gpu_selector : public sycl::device_selector{
+public:
+    //! \brief Default constructor.
+    tsg_gpu_selector() : has_gpu(false), deviceID(-1){}
+    //! \brief Constructor that selects a specific GPU device.
+    tsg_gpu_selector(int device) : has_gpu(false), deviceID(device){}
+    //! \brief Used during the device selection, also populates the two lists.
+    int operator()(const sycl::device &device) const override{
+        if (device.is_gpu()){
+            names.push_back(device.get_info<sycl::info::device::name>());
+            memory.push_back(device.get_info<sycl::info::device::global_mem_size>());
+            has_gpu = true;
+        }
+        if (deviceID > -1 and static_cast<size_t>(deviceID + 1) == names.size())
+            return 100; // if a specific device is desired, mark it high
+        else
+            return 1;
+    }
+    //! \brief The ID of the GPU device to be selected.
+    int const deviceID;
+    //! \brief Returns true if a GPU device has been found.
+    mutable bool has_gpu;
+    //! \brief Holds a list of the device names.
+    mutable std::vector<std::string> names;
+    //! \brief Holds a list of the device memory.
+    mutable std::vector<unsigned long long> memory;
+};
+/*!
+ * \internal
+ * \ingroup TasmanianTPLWrappers
+ * \brief Creates a new tsg_gpu_selector and populates it with the names and memory for each device.
+ *
+ * \endinternal
+ */
+inline tsg_gpu_selector readSyclDevices(){
+    tsg_gpu_selector selector;
+    sycl::queue q(selector);
+    if (not selector.has_gpu){ // add the default CPU device
+        q = sycl::queue();
+        selector.names.push_back(q.get_device().get_info<sycl::info::device::name>());
+        selector.memory.push_back(q.get_device().get_info<sycl::info::device::global_mem_size>());
+    }
+    return selector;
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianTPLWrappers
+ * \brief Return a new sycl::queue wrapped in a unique_ptr object in owning mode and associated with the given deviceID.
+ *
+ * \endinternal
+ */
+inline std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>> makeNewQueue(int deviceID){
     sycl::queue *qq = nullptr;
-    try{
-        sycl::gpu_selector g_selector;
-        qq = new sycl::queue(g_selector);
-    }catch(sycl::exception const&){
-        sycl::cpu_selector c_selector;
-        qq = new sycl::queue(c_selector);
+    if (readSyclDevices().has_gpu){
+        tsg_gpu_selector selector(deviceID);
+        qq = new sycl::queue(selector);
+    }else{
+        qq = new sycl::queue();
     }
     return std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>>(
                                     reinterpret_cast<int*>(qq),
@@ -92,7 +143,7 @@ inline sycl::queue* getSyclQueue(AccelerationContext const *acceleration){
         if (test_queue.use_testing){
             acceleration->engine->internal_queue = test_queue; // take non-owning copy of the pointer
         }else{
-            acceleration->engine->internal_queue = makeNewQueue();
+            acceleration->engine->internal_queue = makeNewQueue(acceleration->device);
         }
     }
     return reinterpret_cast<sycl::queue*>(acceleration->engine->internal_queue.get());
