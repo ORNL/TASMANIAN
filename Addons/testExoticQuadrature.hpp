@@ -36,7 +36,7 @@
 #include "tasgridCLICommon.hpp"
 #include <cstring>
 
-// Tests for getRoots().
+// Test the output of getRoots().
 inline bool testRootSizes() {
     bool passed = true;
     std::vector<std::vector<double>> roots;
@@ -55,7 +55,7 @@ inline bool testRootSizes() {
     return passed;
 }
 
-// Tests for getExoticQuadrature().
+// Test the attributes of the output of getExoticQuadrature().
 inline bool testBasicAttributes() {
     bool passed = true;
     const int n = 3;
@@ -85,130 +85,69 @@ inline bool testBasicAttributes() {
     return passed;
 }
 
-// Integrates the function f(x) * sinc(freq * x) over [-1, 1]  using Exotic
-// quadrature at level n and a specified shift. Then, compares this integral
-// against a given exact integral value.
-inline bool wrapSincTest1D(std::function<double(double)> f, int level, double freq, double shift, double exact_integral) {
+
+// Given a dimension, integrates the function f(x[1],...,x[dimension]) * sinc(freq * x[1]) * ... * sinc(freq * x[dimension]) over
+// [-1, 1]^dimension  using Exotic quadrature at a given depth and a specified shift. Then, compares this integral against a given exact
+// integral value.
+inline bool wrapSincTest(std::function<double(std::vector<double>)> f, int dimension, int depth, double freq, double shift,
+                         double exact_integral, double precision = 1e-10) {
+
+    // Initialize.
     bool passed = true;
-    double precision = 1e-10;
     auto sinc = [freq](double x)->double {return (x == 0.0 ? 1.0 : sin(freq * x) / (freq * x));};
+    int level = depth % 2 == 1 ? (depth + 1) / 2 : depth / 2 + 1;
     TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(level, shift, sinc);
     TasGrid::TasmanianSparseGrid sg;
-    sg.makeGlobalGrid(1, 1, 2*level-1, TasGrid::type_qptotal, std::move(ct));
+    sg.makeGlobalGrid(dimension, 1, depth, TasGrid::type_qptotal, std::move(ct));
+
+    // Compute the integral and compare to the reference value.
     std::vector<double> quad_points = sg.getPoints();
     std::vector<double> quad_weights = sg.getQuadratureWeights();
     double approx_integral = 0.0;
-    assert(quad_weights.size() == quad_points.size());
+    assert(quad_weights.size() * dimension == quad_points.size());
     for (size_t i=0; i<quad_weights.size(); i++) {
-        approx_integral += f(quad_points[i]) * quad_weights[i];
+        std::vector<double> x(dimension);
+        for (int d=0; d<dimension; d++) {
+            x[d] = quad_points[dimension * i + d];
+        }
+        approx_integral += f(x) * quad_weights[i];
     }
     if (std::abs(approx_integral - exact_integral) > precision) {
         std::cout << "ERROR: " << std::setprecision(16) << "Computed integral value " << approx_integral
-                  << " does not match exact integral " << exact_integral << std::endl;
+                  << " does not match exact integral " << exact_integral << " for test problem " << std::endl
+                  << "∫_[-1,1]^n f(x[1],...,x[n]) * sinc(freq*x[n]) * ... * sinc(freq*x[n]) dx[1] ... dx[n]" << std::endl
+                  << "with inputs: " << std::endl << std::endl << std::left
+                  << std::setw(10) << "dimension" << " = " << dimension << std::endl
+                  << std::setw(10) << "depth"     << " = " << depth     << std::endl
+                  << std::setw(10) << "freq"      << " = " << freq      << std::endl
+                  << std::setw(10) << "shift"     << " = " << shift     << std::endl
+                  << std::setw(10) << "precision" << " = " << precision << std::endl << std::endl;
         passed = false;
     }
     return passed;
+
 }
 
-// Test the accuracy of the exotic quadrature over some 1D functions.
-inline bool testExpMx2_sinc1_shift0() {
-    auto f = [](double x)->double {return std::exp(-x*x);};
-    bool passed = wrapSincTest1D(f, 20, 1.0, 0.0, 1.4321357541271255);
-    if (not passed) {
-        std::cout << "ERROR: Test failed in testExpMx2_sinc1_shift0()" << std::endl;
-    }
-    return passed;
-}
-inline bool testExpMx2_sinc1_shift1() {
-    auto f = [](double x)->double {return std::exp(-x*x);};
-    bool passed = wrapSincTest1D(f, 20, 1.0, 1.0, 1.4321357541271255);
-    if (not passed) {
-        std::cout << "ERROR: Test failed in testExpMx2_sinc1_shift1()" << std::endl;
-    }
-    return passed;
-}
-inline bool testExpMx2_sinc10_shift1() {
-    auto f = [](double x)->double {return std::exp(-x*x);};
-    bool passed = wrapSincTest1D(f, 20, 10.0, 1.0, 0.32099682841103033);
-    if (not passed) {
-        std::cout << "ERROR: Test failed in testExpMx2_sinc10_shift1()" << std::endl;
-    }
-    return passed;
-}
-inline bool testExpMx2_sinc100_shift1() {
-    auto f = [](double x)->double {return std::exp(-x*x);};
-    bool passed = wrapSincTest1D(f, 20, 100.0, 1.0, 0.031353648322695503);
-    if (not passed) {
-        std::cout << "ERROR: Test failed in testExpMx2_sinc100_shift1()" << std::endl;
-    }
-    return passed;
-}
-inline bool testAccuracy1D() {
+// Tests for the accuracy of getExoticQuadrature() when weight_fn(x) is sinc(freq * x) and f(x) is exp(-x'*x).
+inline bool testAccuracy() {
     bool passed = true;
-    passed = passed && testExpMx2_sinc1_shift0();
-    passed = passed && testExpMx2_sinc1_shift1();
-    passed = passed && testExpMx2_sinc10_shift1();
-    passed = passed && testExpMx2_sinc100_shift1();
-    return passed;
-}
-
-// Integrates the function f(x, y) * sinc(freq * x) * sinc(freq * y) over
-// [-1, 1] ^ 2  using Exotic quadrature at a specified level and shift. Then,
-// compares this integral against a given exact integral value.
-inline bool wrapSincTest2D(std::function<double(double, double)> f, int level, double freq, double shift, double exact_intgr) {
-    bool passed = true;
-    double precision = 1e-10;
-    auto sinc = [freq](double x)->double {return (x == 0.0 ? 1.0 : sin(freq * x) / (freq * x));};
-    TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(level, shift, sinc);
-    TasGrid::TasmanianSparseGrid sg;
-    sg.makeGlobalGrid(2, 1, 2*level-1, TasGrid::type_qptotal, std::move(ct));
-    std::vector<double> quad_points = sg.getPoints();
-    std::vector<double> quad_weights = sg.getQuadratureWeights();
-    double approx_integral = 0.0;
-    assert(quad_weights.size() * 2 == quad_points.size());
-    for (size_t i=0; i<quad_weights.size(); i++) {
-        double x = quad_points[2*i + 0];
-        double y = quad_points[2*i + 1];
-        approx_integral += f(x, y) * quad_weights[i];
-    }
-    if (std::abs(approx_integral - exact_intgr) > precision) {
-        std::cout << "ERROR: " << std::setprecision(16) << "Computed integral value " << approx_integral
-                  << " does not match exact integral " << exact_intgr << std::endl;
-        passed = false;
-    }
-    return passed;
-}
-
-// Test the accuracy of the exotic quadrature over some 2D functions.
-inline bool testExpMx2My2_sinc1_shift1() {
-    auto f = [](double x, double y)->double {return std::exp(-x*x-y*y);};
-    bool passed = wrapSincTest2D(f, 20, 1.0, 1.0, 2.051012818249270);
-    if (not passed) {
-        std::cout << "ERROR: Test failed in testExpMx2My2_sinc1_shift1()" << std::endl;
-    }
-    return passed;
-}
-inline bool testExpMx2My2_sinc10_shift1() {
-    auto f = [](double x, double y)->double {return std::exp(-x*x-y*y);};
-    bool passed = wrapSincTest2D(f, 20, 10.0, 1.0, 0.1030389638499404);
-    if (not passed) {
-        std::cout << "ERROR: Test failed in testExpMx2My2_sinc10_shift1()" << std::endl;
-    }
-    return passed;
-}
-inline bool testExpMx2My2_sinc100_shift1() {
-    auto f = [](double x, double y)->double {return std::exp(-x*x-y*y);};
-    bool passed = wrapSincTest2D(f, 20, 100.0, 1.0, 0.0009830512631432665);
-    if (not passed) {
-        std::cout << "ERROR: Test failed in testExpMx2My2_sinc10_shift1()" << std::endl;
-    }
-    return passed;
-}
-inline bool testAccuracy2D() {
-    bool passed = true;
-    passed = passed && testExpMx2My2_sinc1_shift1();
-    passed = passed && testExpMx2My2_sinc10_shift1();
-    passed = passed && testExpMx2My2_sinc100_shift1();
+    int depth, dimension;
+    // 1D problem instances.
+    depth = 20;
+    dimension = 1;
+    auto f1 = [](std::vector<double> x)->double{return std::exp(-x[0]*x[0]);};
+    passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 0.0, 1.4321357541271255);
+    passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 1.0, 1.4321357541271255);
+    passed = passed && wrapSincTest(f1, dimension, depth, 10.0, 1.0, 0.32099682841103033);
+    passed = passed && wrapSincTest(f1, dimension, depth, 100.0, 1.0, 0.031353648322695503);
+    // 2D problem instances.
+    depth = 40;
+    dimension = 2;
+    auto f2 = [](std::vector<double> x)->double{return std::exp(-x[0]*x[0]-x[1]*x[1]);};
+    passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 0.0, 2.051012818249270);
+    passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 1.0, 2.051012818249270);
+    passed = passed && wrapSincTest(f2, dimension, depth, 10.0, 1.0, 0.1030389638499404);
+    passed = passed && wrapSincTest(f2, dimension, depth, 100.0, 1.0, 0.0009830512631432665);
     return passed;
 }
 
@@ -217,7 +156,7 @@ inline bool testExoticQuadrature() {
     bool passed = true;
     passed = passed && testRootSizes();
     passed = passed && testBasicAttributes();
-    passed = passed && testAccuracy1D();
-    passed = passed && testAccuracy2D();
+    passed = passed && testAccuracy();
     return passed;
 }
+
