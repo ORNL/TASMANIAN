@@ -89,8 +89,8 @@ inline bool testBasicAttributes() {
 // Given a dimension, integrates the function f(x[1],...,x[dimension]) * sinc(freq * x[1]) * ... * sinc(freq * x[dimension]) over
 // [-1, 1]^dimension  using Exotic quadrature at a given depth and a specified shift. Then, compares this integral against a given exact
 // integral value.
-inline bool wrapSincTest(std::function<double(std::vector<double>)> f, int dimension, int depth, double freq, double shift,
-                         double exact_integral, double precision = 1e-10) {
+inline bool wrapSincTest(std::function<double(const double*)> f, int dimension, int depth, double freq, double shift,
+                         double exact_integral, double tolerance = 1e-10) {
 
     // Initialize.
     bool passed = true;
@@ -103,25 +103,21 @@ inline bool wrapSincTest(std::function<double(std::vector<double>)> f, int dimen
     // Compute the integral and compare to the reference value.
     std::vector<double> quad_points = sg.getPoints();
     std::vector<double> quad_weights = sg.getQuadratureWeights();
-    double approx_integral = 0.0;
     assert(quad_weights.size() * dimension == quad_points.size());
+    double approx_integral = 0.0;
     for (size_t i=0; i<quad_weights.size(); i++) {
-        std::vector<double> x(dimension);
-        for (int d=0; d<dimension; d++) {
-            x[d] = quad_points[dimension * i + d];
-        }
-        approx_integral += f(x) * quad_weights[i];
+        approx_integral += f(&quad_points[dimension * i]) * quad_weights[i];
     }
-    if (std::abs(approx_integral - exact_integral) > precision) {
+    if (std::abs(approx_integral - exact_integral) > tolerance) {
         std::cout << "ERROR: " << std::setprecision(16) << "Computed integral value " << approx_integral
-                  << " does not match exact integral " << exact_integral << " for test problem " << std::endl
-                  << "∫_[-1,1]^n f(x[1],...,x[n]) * sinc(freq*x[n]) * ... * sinc(freq*x[n]) dx[1] ... dx[n]" << std::endl
-                  << "with inputs: " << std::endl << std::endl << std::left
-                  << std::setw(10) << "dimension" << " = " << dimension << std::endl
-                  << std::setw(10) << "depth"     << " = " << depth     << std::endl
-                  << std::setw(10) << "freq"      << " = " << freq      << std::endl
-                  << std::setw(10) << "shift"     << " = " << shift     << std::endl
-                  << std::setw(10) << "precision" << " = " << precision << std::endl << std::endl;
+                  << " does not match exact integral " << exact_integral << " for test problem\n"
+                  << "∫_[-1,1]^n f(x[1],...,x[n]) * sinc(freq*x[n]) * ... * sinc(freq*x[n]) dx[1] ... dx[n]\n"
+                  << "with inputs: \n\n" << std::left
+                  << std::setw(10) << "dimension" << " = " << dimension << "\n"
+                  << std::setw(10) << "depth"     << " = " << depth     << "\n"
+                  << std::setw(10) << "freq"      << " = " << freq      << "\n"
+                  << std::setw(10) << "shift"     << " = " << shift     << "\n"
+                  << std::setw(10) << "precision" << " = " << tolerance << "\n" << std::endl;
         passed = false;
     }
     return passed;
@@ -135,7 +131,8 @@ inline bool testAccuracy() {
     // 1D problem instances.
     depth = 20;
     dimension = 1;
-    auto f1 = [](std::vector<double> x)->double{return std::exp(-x[0]*x[0]);};
+    // function f1 is {x -> exp(-x^2)}.
+    auto f1 = [](const double* x)->double{return std::exp(-(*x)*(*x));};
     passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 0.0, 1.4321357541271255);
     passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 1.0, 1.4321357541271255);
     passed = passed && wrapSincTest(f1, dimension, depth, 10.0, 1.0, 0.32099682841103033);
@@ -143,7 +140,8 @@ inline bool testAccuracy() {
     // 2D problem instances.
     depth = 40;
     dimension = 2;
-    auto f2 = [](std::vector<double> x)->double{return std::exp(-x[0]*x[0]-x[1]*x[1]);};
+    // function f2 is {(x,y) -> exp(-x^2-y^2)}.
+    auto f2 = [](const double* x)->double{return std::exp(-(*x)*(*x)-(*(x+1))*(*(x+1)));};
     passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 0.0, 2.051012818249270);
     passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 1.0, 2.051012818249270);
     passed = passed && wrapSincTest(f2, dimension, depth, 10.0, 1.0, 0.1030389638499404);
