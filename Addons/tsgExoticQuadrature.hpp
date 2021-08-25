@@ -34,9 +34,7 @@
 #ifndef __TASMANIAN_ADDONS_EXOTICQUADRATURE_HPP
 #define __TASMANIAN_ADDONS_EXOTICQUADRATURE_HPP
 
-#include "tsgCoreOneDimensional.hpp"
-#include "tsgLinearSolvers.hpp"
-#include <cassert>
+#include "tsgAddonsCommon.hpp"
 
 namespace TasGrid {
 
@@ -68,18 +66,13 @@ inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<
             diag_numr += ref_points[j] * (poly_vals[j] * poly_vals[j]) * ref_weights[j];
             diag_denm += (poly_vals[j] * poly_vals[j]) * ref_weights[j];
             sqr_offdiag_numr += (poly_vals[j] * poly_vals[j]) * ref_weights[j];
-            sqr_offdiag_denm +=  (poly_m1_vals[j] * poly_m1_vals[j])  * ref_weights[j];
+            sqr_offdiag_denm += (poly_m1_vals[j] * poly_m1_vals[j])  * ref_weights[j];
         }
         diag.push_back(diag_numr / diag_denm);
         if (i >= 1) {
             offdiag.push_back(std::sqrt(sqr_offdiag_numr / sqr_offdiag_denm));
         }
-        // Compute the roots. The inputs need to be copied because the
-        // tridiagonal eigensolver generates the eigenvalues in place and
-        // destroys some of its inputs.
-        roots[i] = diag;
-        std::vector<double> offdiag_dummy = offdiag;
-        TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, roots[i], offdiag_dummy);
+        roots[i] = TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, diag, offdiag);
         if (roots[i].size() % 2 == 1) {
             // Zero out the center for stability.
             roots[i][(roots[i].size() - 1) / 2] = 0.0;
@@ -93,9 +86,9 @@ inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<
 }
 
 //! \brief Evaluates a Lagrange basis polynomial at a point \b x.
-inline double lagrange_eval(int idx, const std::vector<double> &roots, double x) {
+inline double lagrange_eval(size_t idx, const std::vector<double> &roots, double x) {
     double eval_value = 1.0;
-    for (int i=0; i<idx; i++) {
+    for (size_t i=0; i<idx; i++) {
         eval_value *= (x - roots[i]) / (roots[idx] - roots[i]);
     }
     for (size_t i=idx+1; i<roots.size(); i++) {
@@ -115,7 +108,7 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
 
     // Create the set of reference weights and points for the first term. These reference weights are with respect
     // to the measure induced by the function [weight_fn(x) + shift].
-    std::vector<double> ref_weights(nref), ref_points(nref);
+    std::vector<double> ref_weights, ref_points;
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
     for (int k=0; k<nref; k++) {
         ref_weights[k] *= (weight_fn(ref_points[k]) + shift);
@@ -146,7 +139,6 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
                 correction_points[(correction_points.size() - 1) / 2] = 0.0;
             }
             // Account for duplicates up to a certain tolerance.
-            assert(correction_points.size() == correction_weights.size());
             for (size_t j=0; j<correction_points.size(); j++) {
                 int nonunique_idx = -1;
                 for (int k=0; k<init_size; k++) {
