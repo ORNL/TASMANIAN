@@ -47,6 +47,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <cassert>
 
 #include "TasmanianDREAM.hpp" // also brings in TasmanianSparseGrids.hpp
 
