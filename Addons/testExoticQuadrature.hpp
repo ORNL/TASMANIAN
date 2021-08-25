@@ -46,7 +46,7 @@ inline bool testRootSizes() {
     // n = 0, 1, 5
     std::vector<int> n_vec = {1, 2, 5};
     for (auto n : n_vec) {
-        roots = TasGrid::getRoots(0, ref_weights, ref_points);
+        roots = TasGrid::getRoots<true>(0, ref_weights, ref_points);
         if (roots.size() != 0) {
             std::cout << "ERROR: Test failed in testRootSizes() for n = " << n << std::endl;
             passed = false;
@@ -89,8 +89,9 @@ inline bool testBasicAttributes() {
 // Given a dimension, integrates the function f(x[1],...,x[dimension]) * sinc(freq * x[1]) * ... * sinc(freq * x[dimension]) over
 // [-1, 1]^dimension  using Exotic quadrature at a given depth and a specified shift. Then, compares this integral against a given exact
 // integral value.
-inline bool wrapSincTest(std::function<double(const double*)> f, int dimension, int depth, double freq, double shift,
-                         double exact_integral, double tolerance = 1e-10) {
+inline bool wrapSincTest(std::function<double(const double*)> f, const int dimension, const int depth, const double freq,
+                         const double shift, const double exact_integral, const bool symmetric_weights = false,
+                         const double tolerance = 1e-10) {
 
     // Initialize.
     bool passed = true;
@@ -113,11 +114,12 @@ inline bool wrapSincTest(std::function<double(const double*)> f, int dimension, 
                   << " does not match exact integral " << exact_integral << " for test problem\n"
                   << "∫_[-1,1]^n f(x[1],...,x[n]) * sinc(freq*x[n]) * ... * sinc(freq*x[n]) dx[1] ... dx[n]\n"
                   << "with inputs: \n\n" << std::left
-                  << std::setw(10) << "dimension" << " = " << dimension << "\n"
-                  << std::setw(10) << "depth"     << " = " << depth     << "\n"
-                  << std::setw(10) << "freq"      << " = " << freq      << "\n"
-                  << std::setw(10) << "shift"     << " = " << shift     << "\n"
-                  << std::setw(10) << "precision" << " = " << tolerance << "\n" << std::endl;
+                  << std::setw(10) << "dimension" << " = " << dimension                               << "\n"
+                  << std::setw(10) << "depth"     << " = " << depth                                   << "\n"
+                  << std::setw(10) << "freq"      << " = " << freq                                    << "\n"
+                  << std::setw(10) << "shift"     << " = " << shift                                   << "\n"
+                  << std::setw(10) << "symmetry"  << " = " << (symmetric_weights ? "true" : "false")  << "\n"
+                  << std::setw(10) << "precision" << " = " << tolerance                               << "\n" << std::endl;
         passed = false;
     }
     return passed;
@@ -135,6 +137,7 @@ inline bool testAccuracy() {
     auto f1 = [](const double* x)->double{return std::exp(-(*x)*(*x));};
     passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 0.0, 1.4321357541271255);
     passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 1.0, 1.4321357541271255);
+    passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 1.0, 1.4321357541271255, true);
     passed = passed && wrapSincTest(f1, dimension, depth, 10.0, 1.0, 0.32099682841103033);
     passed = passed && wrapSincTest(f1, dimension, depth, 100.0, 1.0, 0.031353648322695503);
     // 2D problem instances.
@@ -144,6 +147,7 @@ inline bool testAccuracy() {
     auto f2 = [](const double* x)->double{return std::exp(-(*x)*(*x)-(*(x+1))*(*(x+1)));};
     passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 0.0, 2.051012818249270);
     passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 1.0, 2.051012818249270);
+    passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 1.0, 2.051012818249270, true);
     passed = passed && wrapSincTest(f2, dimension, depth, 10.0, 1.0, 0.1030389638499404);
     passed = passed && wrapSincTest(f2, dimension, depth, 100.0, 1.0, 0.0009830512631432665);
     return passed;
