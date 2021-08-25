@@ -72,12 +72,7 @@ inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<
         if (i >= 1) {
             offdiag.push_back(std::sqrt(sqr_offdiag_numr / sqr_offdiag_denm));
         }
-        // Compute the roots. The inputs need to be copied because the
-        // tridiagonal eigensolver generates the eigenvalues in place and
-        // destroys some of its inputs.
-        roots[i] = diag;
-        std::vector<double> offdiag_dummy = offdiag;
-        TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, roots[i], offdiag_dummy);
+        roots[i] = TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, diag, offdiag);
         if (roots[i].size() % 2 == 1) {
             // Zero out the center for stability.
             roots[i][(roots[i].size() - 1) / 2] = 0.0;
