@@ -30,21 +30,24 @@
 
 #include "testConstructSurrogate.hpp"
 #include "testLoadUnstructured.hpp"
+#include "testExoticQuadrature.hpp"
+
+void debugTest() {
+    cout << "Debug Test (callable from the CMake build folder)" << endl;
+    cout << "Put testing code here and call with ./Addons/addontester debug" << endl;
+}
 
 int main(int argc, char const **argv){
 
-    cout << "\n\n";
-    cout << "---------------------------------------------------------------------" << endl;
-    cout << "          Tasmanian Addons Module: Functionality Test" << endl;
-    cout << "---------------------------------------------------------------------" << endl << endl;
-
     std::deque<std::string> args = stringArgs(argc, argv);
 
+    bool debug = false;
     bool pass_all = true;
     bool verbose = false;
     int gpuid = -1;
 
     while(not args.empty()){
+        if (args.front() == "debug") debug = true;
         if (hasInfo(args.front())) verbose = true;
         if (hasGpuID(args.front())){
             args.pop_front();
@@ -52,6 +55,16 @@ int main(int argc, char const **argv){
         }
         args.pop_front();
     }
+
+    if (debug){
+        debugTest();
+        return 0;
+    }
+
+    cout << "\n\n";
+    cout << "---------------------------------------------------------------------" << endl;
+    cout << "          Tasmanian Addons Module: Functionality Test" << endl;
+    cout << "---------------------------------------------------------------------" << endl << endl;
 
     bool pass = testConstructSurrogate(verbose);
     cout << std::setw(40) << "Automated construction" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
@@ -67,6 +80,16 @@ int main(int argc, char const **argv){
     gpuid *= 2; // no op to register the use of gpuid
     #endif
 
+    // Tests for Exotic Quadrature.
+    #ifdef Tasmanian_ENABLE_BLAS
+    pass = true;
+    pass = testExoticQuadrature();
+    cout << std::setw(40) << "Exotic quadrature" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
+    pass_all = pass_all && pass;
+    #else
+    cout << std::setw(40) << "Exotic quadrature" << std::setw(10) << "skipping" << endl;
+    #endif
+
     cout << "\n";
     if (pass){
         cout << "---------------------------------------------------------------------" << endl;
@@ -79,4 +102,5 @@ int main(int argc, char const **argv){
     }
 
     return ((pass_all) ? 0 : 1);
+
 }

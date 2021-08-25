@@ -13,6 +13,7 @@ foreach(_tsg_file tsgAddonsCommon.hpp
                   tsgCandidateManager.hpp
                   tsgConstructSurrogate.hpp
                   tsgMPIConstructGrid.hpp
+                  tsgExoticQuadrature.hpp
                   TasmanianAddons.hpp)
     target_sources(Tasmanian_addons INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${_tsg_file}>
                                               $<INSTALL_INTERFACE:${Tasmanian_final_install_path}/include/${_tsg_file}>)
