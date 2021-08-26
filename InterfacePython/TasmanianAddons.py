@@ -393,7 +393,7 @@ def loadUnstructuredDataL2(points, model_data, tolerance, grid):
 
 def loadExoticQuadrature(depth, dimension, shift, weight_fn, nref, description, is_symmetric, grid):
     '''
-    Calls TasGrid::getExoticQuadrature() and loads its output into a TasmanianSparseGrid named grid.
+    Calls TasGrid::getExoticQuadrature() and loads its output into a TasmanianSparseGrid instance named grid.
     See the C++ reference for more information.
 
     depth:        a positive integer representing the maximum polynomial degree.
@@ -402,9 +402,9 @@ def loadExoticQuadrature(depth, dimension, shift, weight_fn, nref, description, 
     weight_fn:    a function that takes in a double and returns the evaluation of the weight function at that double.
     nref:         a positive integer that specifies the number of Gauss-Legendre points used in estimating the entries of the
                   Jacobi matrix.
-    grid:         a TasmanianSparseGrid to load the data into
     description:  a string that sets grid.getDescription().
     is_symmetric: a boolean that should be set to True it weight_fn is symmetric.
+    grid:         a TasmanianSparseGrid to load the data into
     '''
     pLibCTSG.tsgLoadExoticQuadratureGrid(c_int(depth), c_int(dimension), c_double(shift), type_1Dfunc(weight_fn),
                                          c_int(nref), description, is_symmetric, grid.pGrid)
