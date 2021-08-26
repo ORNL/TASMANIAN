@@ -38,6 +38,7 @@ TasmanianInputError = TasmanianConfig.TasmanianInputError
 
 pLibCTSG = cdll.LoadLibrary(TasmanianConfig.__path_libcaddons__)
 
+type_1Dfunc = CFUNCTYPE(c_double, c_double)
 type_lpnmodel = CFUNCTYPE(None, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int, POINTER(c_int))
 type_scsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int, POINTER(c_int))
 type_icsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, c_int, POINTER(c_double), c_int, POINTER(c_int))
@@ -403,9 +404,9 @@ def loadUnstructuredDataL2(points, model_data, tolerance, grid):
     pLibCTSG.tsgLoadUnstructuredDataL2(np.ctypeslib.as_ctypes(points.reshape((points.size,))), num_data,
                                        np.ctypeslib.as_ctypes(model_data.reshape((model_data.size,))), tolerance, grid.pGrid)
 
-def createExoticQuadratureGrid(depth, dimension, shift, weight_fn, nref, description = "Exotic Quadrature", is_symmetric = False):
+def loadExoticQuadrature(depth, dimension, shift, weight_fn, nref, description, is_symmetric, grid):
     '''
-    Calls TasGrid::getExoticQuadrature() and loads its output into a TasmanianSparseGrid  named grid. Then, returns grid.
+    Calls TasGrid::getExoticQuadrature() and loads its output into a TasmanianSparseGrid named grid.
     See the C++ reference for more information.
 
     depth:        a positive integer representing the maximum polynomial degree.
@@ -414,11 +415,9 @@ def createExoticQuadratureGrid(depth, dimension, shift, weight_fn, nref, descrip
     weight_fn:    a function that takes in a double and returns the evaluation of the weight function at that double.
     nref:         a positive integer that specifies the number of Gauss-Legendre points used in estimating the entries of the
                   Jacobi matrix.
+    grid:         a TasmanianSparseGrid to load the data into
     description:  a string that sets grid.getDescription().
     is_symmetric: a boolean that should be set to True it weight_fn is symmetric.
     '''
-    type_weight_fn = CFUNCTYPE(c_double, c_double)
-    sg = TasmanianSG.TasmanianSparseGrid()
-    sg.pGrid = pLibCTSG.tsgCreateExoticQuadratureGrid(c_int(depth), c_int(dimension), c_double(shift), type_weight_fn(weight_fn),
-                                                      c_int(nref), description, is_symmetric)
-    return sg
+    pLibCTSG.tsgLoadExoticQuadratureGrid(c_int(depth), c_int(dimension), c_double(shift), type_1Dfunc(weight_fn),
+                                         c_int(nref), description, is_symmetric, grid.pGrid)
