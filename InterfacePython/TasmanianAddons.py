@@ -402,3 +402,23 @@ def loadUnstructuredDataL2(points, model_data, tolerance, grid):
     num_data = points.shape[0]
     pLibCTSG.tsgLoadUnstructuredDataL2(np.ctypeslib.as_ctypes(points.reshape((points.size,))), num_data,
                                        np.ctypeslib.as_ctypes(model_data.reshape((model_data.size,))), tolerance, grid.pGrid)
+
+def createExoticQuadratureGrid(depth, dimension, shift, weight_fn, nref, description = "Exotic Quadrature", is_symmetric = False):
+    '''
+    Calls TasGrid::getExoticQuadrature() and loads its output into a TasmanianSparseGrid  named grid. Then, returns grid.
+    See the C++ reference for more information.
+
+    depth:        a positive integer representing the maximum polynomial degree.
+    dimension:    a positive integer that sets grid.getNumDimensions().
+    shift:        a double where [weight_fn(x) + shift] is nonegative for every x in [-1,1].
+    weight_fn:    a function that takes in a double and returns the evaluation of the weight function at that double.
+    nref:         a positive integer that specifies the number of Gauss-Legendre points used in estimating the entries of the
+                  Jacobi matrix.
+    description:  a string that sets grid.getDescription().
+    is_symmetric: a boolean that should be set to True it weight_fn is symmetric.
+    '''
+    type_weight_fn = CFUNCTYPE(c_double, c_double)
+    sg = TasmanianSG.TasmanianSparseGrid()
+    sg.pGrid = pLibCTSG.tsgCreateExoticQuadratureGrid(c_int(depth), c_int(dimension), c_double(shift), type_weight_fn(weight_fn),
+                                                      c_int(nref), description, is_symmetric)
+    return sg

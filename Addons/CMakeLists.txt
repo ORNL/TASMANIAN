@@ -23,7 +23,10 @@ target_include_directories(Tasmanian_addons INTERFACE $<BUILD_INTERFACE:${CMAKE_
 target_link_libraries(Tasmanian_addons INTERFACE Tasmanian_libdream)
 
 if (Tasmanian_ENABLE_PYTHON) # the C addons are used by Python
-    add_library(Tasmanian_caddons SHARED tsgCLoadNeededValues.cpp tsgCConstructSurrogate.cpp tsgCLoadUnstructuredPoints.cpp)
+    add_library(Tasmanian_caddons SHARED tsgCExoticQuadrature.cpp 
+                                         tsgCLoadNeededValues.cpp 
+                                         tsgCConstructSurrogate.cpp 
+                                         tsgCLoadUnstructuredPoints.cpp)
 
     target_link_libraries(Tasmanian_caddons  Tasmanian_addons)
 
