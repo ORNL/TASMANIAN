@@ -21,3 +21,17 @@ import math
 ###############################################################################
 
 print("Add code to this file to test, debug, or develop features")
+
+import TasmanianAddons
+from ctypes import CFUNCTYPE, c_double
+depth = 10
+dimension = 1
+shift = 1
+nref = 51
+weight_fn = lambda x : 1.0 if x == 0.0 else math.sin(x) / x
+
+g = TasmanianAddons.createExoticQuadratureGrid(depth, dimension, shift, weight_fn, nref)
+pts = g.getPoints()
+print(pts)
+wts = g.getQuadratureWeights()
+print(wts)
