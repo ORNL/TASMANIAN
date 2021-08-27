@@ -419,5 +419,5 @@ def loadExoticQuadrature(depth, dimension, shift, weight_fn, nref, description, 
     is_symmetric: a boolean that should be set to True it weight_fn is symmetric.
     grid:         a TasmanianSparseGrid to load the data into
     '''
-    pLibCTSG.tsgLoadExoticQuadratureGrid(c_int(depth), c_int(dimension), c_double(shift), type_1Dfunc(weight_fn),
-                                         c_int(nref), description, is_symmetric, grid.pGrid)
+    pLibCTSG.tsgLoadExoticQuadratureGrid(grid.pGrid, c_int(depth), c_int(dimension), c_double(shift), type_1Dfunc(weight_fn),
+                                         c_int(nref), description, is_symmetric)
