@@ -28,7 +28,7 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-from ctypes import c_int, c_double, c_char_p, c_void_p, POINTER, CFUNCTYPE, cdll
+from ctypes import c_bool, c_int, c_double, c_char_p, c_wchar_p, c_void_p, POINTER, CFUNCTYPE, cdll
 import numpy as np
 import sys
 
@@ -58,6 +58,8 @@ pLibCTSG.tsgConstructSurrogateWiIGAnisoFixed.argtypes = [type_icsmodel, c_int, c
                                                          POINTER(c_int), POINTER(c_int), c_char_p, POINTER(c_int)]
 
 pLibCTSG.tsgLoadUnstructuredDataL2.argtypes = [POINTER(c_double), c_int, POINTER(c_double), c_double, c_void_p]
+
+pLibCTSG.tsgLoadExoticQuadratureGrid.argtypes = [c_int, c_int, c_double, type_1Dfunc, c_int, c_wchar_p, c_bool, c_void_p]
 
 def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID, pErrInfo):
     '''
@@ -426,4 +428,5 @@ def loadExoticQuadrature(depth, dimension, shift, weight_fn, nref, description, 
     if (nref <= 0):
         raise TasmanianInputError("nref", "ERROR: nref should be a positive integer")
     pLibCTSG.tsgLoadExoticQuadratureGrid(c_int(depth), c_int(dimension), c_double(shift), type_1Dfunc(weight_fn),
-                                         c_int(nref), description, is_symmetric, grid.pGrid)
+                                         c_int(nref), c_wchar_p(description), c_bool(is_symmetric), grid.pGrid)
+
