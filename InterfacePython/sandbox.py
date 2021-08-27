@@ -59,14 +59,19 @@ def testSincInstance(f, freq, shift, dimension, true_integral, max_level = 25):
     err_gl_arr = np.array([])
     sinc = np.vectorize(lambda x: 1.0 if x == 0.0 else math.sin(freq * x) / (freq * x))
     weight_fn = lambda xs: np.prod(sinc(xs))
+    # Exotic Quadrature
     for i in range(max_level):
-        num_eq, val_eq = getExoticIntegral(i+dimension, f, weight_fn, shift, dimension, is_symmetric=True)
+        num_eq, val_eq = getExoticIntegral(i + dimension, f, weight_fn, shift, dimension, is_symmetric=True)
         num_eq_arr = np.append(num_eq_arr, num_eq)
         err_eq_arr = np.append(err_eq_arr, math.log10(abs(val_eq - true_integral)+1e-16))
-    for j in range(2 * max_level):
+    # Gauss-Legendre
+    num_gl = 0
+    j = 0
+    while num_gl < num_eq:
         num_gl, val_gl = getGaussLegendreIntegral(j+dimension, f, weight_fn, dimension)
         num_gl_arr = np.append(num_gl_arr, num_gl)
         err_gl_arr = np.append(err_gl_arr, math.log10(abs(val_gl - true_integral)+1e-16))
+        j += 1
     plt.plot(num_eq_arr, err_eq_arr)
     plt.plot(num_gl_arr, err_gl_arr)
     plt.xlabel(r'Number of Points')
@@ -81,4 +86,9 @@ f = lambda xs: math.exp(-xs.dot(xs))
 # testSincInstance(f, 1.0, 1.0, 1, 1.4321357541271255)
 # testSincInstance(f, 10.0, 1.0, 1, 0.32099682841103033)
 # testSincInstance(f, 100.0, 1.0, 1, 0.031353648322695503)
+# testSincInstance(f, 10.0, 1.0, 2, 0.32099682841103033 ** 2)
 testSincInstance(f, 100.0, 1.0, 2, 0.031353648322695503 ** 2)
+# testSincInstance(f, 10.0, 1.0, 3, 0.32099682841103033 ** 3)
+# testSincInstance(f, 100.0, 1.0, 3, 0.031353648322695503 ** 3)
+# testSincInstance(f, 10.0, 1.0, 4, 0.32099682841103033 ** 4, max_level=15)
+# testSincInstance(f, 100.0, 1.0, 4, 0.031353648322695503 ** 4, max_level=15)
