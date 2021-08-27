@@ -38,8 +38,8 @@
 
 using tsg_weight_fn = double(*)(double);
 extern "C"{
-    void tsgLoadExoticQuadratureGrid(void* grid_vptr, const int depth, const int dimension, const double shift, tsg_weight_fn weight_fn,
-                                     const int nref, const char* description, const bool is_symmetric) {
+    void tsgLoadExoticQuadratureGrid(const int depth, const int dimension, const double shift, tsg_weight_fn weight_fn,
+                                     const int nref, const char* description, const bool is_symmetric, void* grid_vptr) {
     int level = depth % 2 == 1 ? (depth + 1) / 2 : depth / 2 + 1;
     TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(level, shift, weight_fn, nref, description, is_symmetric);
     ((TasGrid::TasmanianSparseGrid*) grid_vptr)->makeGlobalGrid(dimension, 1, depth, TasGrid::type_qptotal, std::move(ct));

@@ -412,5 +412,5 @@ def loadExoticQuadrature(depth, dimension, shift, weight_fn, nref, description, 
         raise TasmanianInputError("depth", "ERROR: depth should be a non-negative integer")
     if (nref <= 0):
         raise TasmanianInputError("nref", "ERROR: nref should be a positive integer")
-    pLibCTSG.tsgLoadExoticQuadratureGrid(grid.pGrid, c_int(depth), c_int(dimension), c_double(shift), type_1Dfunc(weight_fn),
-                                         c_int(nref), description, is_symmetric)
+    pLibCTSG.tsgLoadExoticQuadratureGrid(c_int(depth), c_int(dimension), c_double(shift), type_1Dfunc(weight_fn),
+                                         c_int(nref), description, is_symmetric, grid.pGrid)
