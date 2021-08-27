@@ -47,7 +47,9 @@ import example_dream_05
 if __name__ == "__main__":
     example_dream_01.example_01()
     example_dream_02.example_02()
-    example_dream_03.example_03()
-    example_dream_04.example_04()
-    example_dream_05.example_05()
+    if len(sys.argv) < 2:
+        # if running a long test
+        example_dream_03.example_03()
+        example_dream_04.example_04()
+        example_dream_05.example_05()
     print("")

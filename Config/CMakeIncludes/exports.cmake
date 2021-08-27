@@ -2,14 +2,19 @@
 # Testing: post install, make test_install
 # checks if the executables run and if the examples compile and run
 ########################################################################
+set(Tasmanian_langs "CXX")
 set(Tasmanian_compilers  "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
 if (Tasmanian_ENABLE_FORTRAN)
+    set(Tasmanian_langs "${Tasmanian_langs} Fortran")
     set(Tasmanian_compilers  "${Tasmanian_compilers} -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}")
 endif()
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Testing/test_post_install.in.sh" "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh")
-add_custom_target(test_install COMMAND "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh")
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh"
-        DESTINATION "share/Tasmanian/"
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Testing/test_post_install.in.sh" "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Testing/CMakeLists.test.cmake" "${CMAKE_CURRENT_BINARY_DIR}/configured/testing/CMakeLists.txt" @ONLY)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tasmanian_test_install)
+add_custom_target(test_install COMMAND "${CMAKE_CURRENT_BINARY_DIR}/test_post_install.sh"
+                               WORKING_DIRECTORY tasmanian_test_install)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/testing/CMakeLists.txt"
+        DESTINATION "share/Tasmanian/testing/"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
 ########################################################################
@@ -67,10 +72,6 @@ endforeach()
 unset(_comp)
 if (NOT "${Tasmanian_MATLAB_WORK_FOLDER}" STREQUAL "")
     set(Tasmanian_components "${Tasmanian_components} MATLAB")
-endif()
-set(Tasmanian_langs "CXX")
-if (Tasmanian_ENABLE_FORTRAN)
-    set(Tasmanian_langs "${Tasmanian_langs} Fortran")
 endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeLists.examples.cmake" "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/CMakeLists.txt"

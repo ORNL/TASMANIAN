@@ -54,12 +54,14 @@ if __name__ == "__main__":
     example_sparse_grids_02.example_02()
     example_sparse_grids_03.example_03()
     example_sparse_grids_04.example_04()
-    example_sparse_grids_05.example_05()
-    example_sparse_grids_06.example_06()
-    example_sparse_grids_07.example_07()
-    example_sparse_grids_08.example_08()
-    example_sparse_grids_09.example_09()
-    example_sparse_grids_10.example_10()
+    if len(sys.argv) < 2:
+        # if running a long test
+        example_sparse_grids_05.example_05()
+        example_sparse_grids_06.example_06()
+        example_sparse_grids_07.example_07()
+        example_sparse_grids_08.example_08()
+        example_sparse_grids_09.example_09()
+        example_sparse_grids_10.example_10()
     print("")
 
 
