@@ -35,11 +35,10 @@ def getExoticIntegral(depth, f, weight_fn, shift, nref=101, description="Exotic 
     return np.sum(f(pts[:, 0]) * wts)
 
 def getGaussLegendreIntegral(depth, f, weight_fn):
-    grid = TasmanianSG.makeGlobalGrid(1, 0, depth, "level", "gauss-legendre")
+    grid = TasmanianSG.makeGlobalGrid(1, 0, depth, "qptotal", "gauss-legendre")
     pts = grid.getPoints()
     wts = grid.getQuadratureWeights()
     return np.sum(f(pts[:, 0]) * weight_fn(pts[:, 0]) * wts)
-
 
 def testSincInstance(f, freq, shift, true_integral):
     num_eq = np.array([])
@@ -47,7 +46,7 @@ def testSincInstance(f, freq, shift, true_integral):
     num_gl = np.array([])
     err_gl= np.array([])
     weight_fn = np.vectorize(lambda x: 1.0 if x == 0.0 else math.sin(freq * x) / (freq * x))
-    num_problems = 20
+    num_problems = 40
     for i in range(num_problems):
         num_eq = np.append(num_eq, i+2)
         val_eq = getExoticIntegral(i+1, f, weight_fn, shift)
