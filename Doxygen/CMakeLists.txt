@@ -57,6 +57,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  ${CMAKE_CURRENT_BINARY_DIR}/README.md
                  Doxygen/Installation.md
                  Doxygen/InterfacePython.md
+                 Doxygen/InterfaceLibEnsemble.md
                  Doxygen/InterfaceCLI.md
                  Doxygen/InterfaceMATLAB.md
                  Doxygen/InterfaceFortran90.md
