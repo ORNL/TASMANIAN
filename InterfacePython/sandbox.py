@@ -23,49 +23,62 @@ import math
 print("Add code to this file to test, debug, or develop features")
 
 # Test Exotic Quadrature.
-import TasmanianAddons as TA
+import sys, math, matplotlib
+matplotlib.rcParams['text.usetex'] = True
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-def getExoticIntegral(depth, f, weight_fn, shift, nref=101, description="Exotic Quadrature", is_symmetric=False):
-    grid = TasmanianSG.TasmanianSparseGrid()
-    TA.loadExoticQuadrature(depth, 1, shift, weight_fn, nref, description, is_symmetric, grid)
-    pts = grid.getPoints()
-    wts = grid.getQuadratureWeights()
-    return np.sum(f(pts[:, 0]) * wts)
+import TasmanianSG as TSG
+import TasmanianAddons as TA
 
-def getGaussLegendreIntegral(depth, f, weight_fn):
-    grid = TasmanianSG.makeGlobalGrid(1, 0, depth, "qptotal", "gauss-legendre")
+# Test Exotic Quadrature.
+def getExoticIntegral(depth, f, weight_fn, shift, dimension, nref=101, description="Exotic Quadrature", is_symmetric=False):
+    grid = TSG.TasmanianSparseGrid()
+    TA.loadExoticQuadrature(depth, dimension, shift, weight_fn, nref, description, is_symmetric, grid)
+    n_pts = grid.getNumPoints()
     pts = grid.getPoints()
-    wts = grid.getQuadratureWeights()
-    return np.sum(f(pts[:, 0]) * weight_fn(pts[:, 0]) * wts)
+    quad_wts = grid.getQuadratureWeights()
+    f_vals = np.apply_along_axis(f, 1, pts)
+    return n_pts, np.sum(f_vals * quad_wts)
 
-def testSincInstance(f, freq, shift, true_integral):
-    num_eq = np.array([])
-    err_eq = np.array([])
-    num_gl = np.array([])
-    err_gl= np.array([])
-    weight_fn = np.vectorize(lambda x: 1.0 if x == 0.0 else math.sin(freq * x) / (freq * x))
-    num_problems = 40
-    for i in range(num_problems):
-        num_eq = np.append(num_eq, i+2)
-        val_eq = getExoticIntegral(i+1, f, weight_fn, shift)
-        err_eq = np.append(err_eq, math.log10(abs(val_eq - true_integral)+1e-12))
-    for j in range(num_problems * 2):
-        num_gl = np.append(num_gl, (j+2)/2 if j % 2 == 0 else (j+3)/2)
-        val_gl = getGaussLegendreIntegral(j+1, f, weight_fn)
-        err_gl = np.append(err_gl, math.log10(abs(val_gl - true_integral)+1e-12))
-    plt.plot(num_eq, err_eq)
-    plt.plot(num_gl, err_gl)
-    plt.xlabel('Number of Points')
-    plt.ylabel('Log10 Error')
-    plt.title('Log10 Error with ρ(x)=sinc(' + str(int(freq)) + 'x), f(x)=exp(-x^2)')
+def getGaussLegendreIntegral(depth, f, weight_fn, dimension):
+    grid = TSG.TasmanianSparseGrid()
+    grid.makeGlobalGrid(dimension, 1, depth, "qptotal", "gauss-legendre")
+    n_pts = grid.getNumPoints()
+    pts = grid.getPoints()
+    quad_wts = grid.getQuadratureWeights()
+    f_vals = np.apply_along_axis(f, 1, pts)
+    weight_fn_vals = np.apply_along_axis(weight_fn, 1, pts)
+    return n_pts, np.sum(f_vals * weight_fn_vals * quad_wts)
+
+def testSincInstance(f, freq, shift, dimension, true_integral, max_level = 25):
+    num_eq_arr = np.array([])
+    err_eq_arr = np.array([])
+    num_gl_arr = np.array([])
+    err_gl_arr = np.array([])
+    sinc = np.vectorize(lambda x: 1.0 if x == 0.0 else math.sin(freq * x) / (freq * x))
+    weight_fn = lambda xs: np.prod(sinc(xs))
+    for i in range(max_level):
+        num_eq, val_eq = getExoticIntegral(i+dimension, f, weight_fn, shift, dimension, is_symmetric=True)
+        num_eq_arr = np.append(num_eq_arr, num_eq)
+        err_eq_arr = np.append(err_eq_arr, math.log10(abs(val_eq - true_integral)+1e-16))
+    for j in range(2 * max_level):
+        num_gl, val_gl = getGaussLegendreIntegral(j+dimension, f, weight_fn, dimension)
+        num_gl_arr = np.append(num_gl_arr, num_gl)
+        err_gl_arr = np.append(err_gl_arr, math.log10(abs(val_gl - true_integral)+1e-16))
+    plt.plot(num_eq_arr, err_eq_arr)
+    plt.plot(num_gl_arr, err_gl_arr)
+    plt.xlabel(r'Number of Points')
+    plt.ylabel(r'$\log_{10}$ Error')
+    plt.title(r'$\log_{10}$ Error with $d=' + str(int(dimension)) + r', \rho(x)={\rm sinc}(' + str(int(freq)) +
+              r'x), f(\bf{x})=\exp(-\|\bf{x}\|^2)$')
     plt.legend(['Exotic Quadrature', 'Gauss-Legendre'])
     plt.show()
 
 # Test the integral of exp(-x*x) * sinc(x).
-f = np.vectorize(lambda x: math.exp(-x * x))
-# testSincInstance(f, 1.0, 1.0, 1.4321357541271255)
-# testSincInstance(f, 10.0, 1.0, 0.32099682841103033)
-testSincInstance(f, 100.0, 1.0, 0.031353648322695503)
-
+f = lambda xs: math.exp(-xs.dot(xs))
+# testSincInstance(f, 1.0, 1.0, 1, 1.4321357541271255)
+# testSincInstance(f, 10.0, 1.0, 1, 0.32099682841103033)
+# testSincInstance(f, 100.0, 1.0, 1, 0.031353648322695503)
+testSincInstance(f, 100.0, 1.0, 2, 0.031353648322695503 ** 2)
