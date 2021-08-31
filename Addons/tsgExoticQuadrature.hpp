@@ -54,7 +54,9 @@ inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<
     // Compute the roots incrementally.
     assert(ref_points.size() == ref_weights.size());
     assert(ref_points.size() > 0);
-    assert(std::all_of(ref_weights.begin(), ref_weights.end(), [](double x){return x>=0.0;}));
+    if (not std::all_of(ref_weights.begin(), ref_weights.end(), [](double x){return x>=0.0;})) {
+        throw std::invalid_argument("ref_weights needs to be a nonnegative vector!");
+    }
     std::vector<double> poly_m1_vals(ref_points.size(), 0.0), poly_vals(ref_points.size(), 1.0);
     std::vector<double> diag, offdiag;
     std::vector<std::vector<double>> roots(n);
