@@ -478,6 +478,18 @@ void tsgGetGPUName(int gpu, int num_buffer, char *buffer, int *num_actual){
 
 void tsgDeleteInts(int *p){ delete[] p; }
 
+void* tsgConstructCustomTabulated(){ return (void*) new CustomTabulated(); }
+void tsgDestructCustomTabulated(void* ct){ delete ((CustomTabulated*) ct); }
+
+int tsgGetNumLevelsCustomTabulated(void* ct){ return ((CustomTabulated*) ct)->getNumLevels(); }
+int tsgGetNumPointsCustomTabulated(void* ct, int level){ return ((CustomTabulated*) ct)->getNumPoints(level); }
+int tsgGetIExactCustomTabulated(void* ct, int level){ return ((CustomTabulated*) ct)->getIExact(level); }
+int tsgGetQExactCustomTabulated(void* ct, int level){ return ((CustomTabulated*) ct)->getQExact(level); }
+const char* tsgGetDescriptionCustomTabulated(void* ct) { return ((CustomTabulated*) ct)->getDescription(); }
+
+void tsgGetWeightsNodesStaticCustomTabulated(void* ct, int level, const double* w, const double* x) {((CustomTabulated*) ct)->getWeightsNodes(level, w, x);
+}
+
 }
 }
 

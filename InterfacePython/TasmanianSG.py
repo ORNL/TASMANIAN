@@ -2317,6 +2317,86 @@ class TasmanianSparseGrid:
 
         pAxisObject.imshow(ZZ, cmap=sCmap, extent=[fXmin, fXmax, fYmin, fYmax])
 
+class CustomTabulated:
+    def __init__(self, tasmanian_library=0):
+        '''
+        Constructor that creates an empty CustomTabulated instance.
+        
+        tasmanian_library: indicates the libtasmaniansparsegrids.so file
+        
+        if tasmanian_library is an int: look for the library in the
+                                        default locaiton
+                                        "libtasmaniansparsegrid.so"
+                                        or
+                                        the lirary install prefix given
+                                        to cmake
+
+        if tasmanian_library is a string: use it as path, for example:
+                TasmanianSparseGrid(
+                           tasmanian_library =
+                           "opt/Tasmanian/lib/libtasmaniansparsegrid.so"
+                          )
+
+        otherwise:  tasmanian_library must be an instance of ctypes.cdll
+                    this is useful when creating lots of instances of
+                    TasmanianSparseGrid in order to avoid having each
+                    instance load a sepatate copy of the common library
+
+        '''
+        if (isinstance(tasmanian_library, int)):
+            self.pLibTSG = cdll.LoadLibrary(TasmanianConfig.__path_libsparsegrid__)
+        elif (sys.version_info.major == 3):
+            if (isinstance(tasmanian_library, str)):
+                self.pLibTSG = cdll.LoadLibrary(tasmanian_library)
+            else:
+                self.pLibTSG = tasmanian_library
+        elif (isinstance(tasmanian_library, basestring)):
+            self.pLibTSG = cdll.LoadLibrary(tasmanian_library)
+        else:
+            self.pLibTSG = tasmanian_library
+
+        # ctypes requires that we manually specify the return types of functions
+        # in C this is done by header files, so this serves as a header
+        self.pLibTSG.tsgConstructCustomTabulated.restype = c_void_p;
+        self.pLibTSG.tsgGetNumLevelsCustomTabulated.restype = c_int;
+        self.pLibTSG.tsgGetNumPointsCustomTabulated.restype = c_int;
+        self.pLibTSG.tsgGetIExactCustomTabulated.restype = c_int;
+        self.pLibTSG.tsgGetQExactCustomTabulated.restype = c_int;
+        self.pLibTSG.tsgGetDescriptionCustomTabulated.restype = c_char_p;
+
+        self.pLibTSG.tsgDestructCustomTabulated.argtypes = [c_void_p];
+        self.pLibTSG.tsgGetNumLevelsCustomTabulated.argtypes = [c_void_p];
+        self.pLibTSG.tsgGetNumPointsCustomTabulated.argtypes = [c_void_p, c_int];
+        self.pLibTSG.tsgGetIExactCustomTabulated.argtypes = [c_void_p, c_int];
+        self.pLibTSG.tsgGetQExactCustomTabulated.argtypes = [c_void_p, c_int];
+        self.pLibTSG.tsgGetDescriptionCustomTabulated.argtypes = [c_void_p];
+
+        self.pCustomTabulated = self.pLibTSG.tsgConstructCustomTabulated()
+
+    def __del__(self):
+        '''
+        Destructor that calls the C++ destructor and releases all memory used by this instance of the class.
+        Make sure to call this to avoid memory leaks.
+        '''
+        self.pLibTSG.tsgDestructCustomTabulated(self.pCustomTabulated)
+
+    def getNumLevels(self):
+        return self.pLibTSG.tsgGetNumLevelsCustomTabulated(self.pCustomTabulated)
+
+    def getNumPoints(self, level):
+        return self.pLibTSG.tsgGetNumPointsCustomTabulated(self.pCustomTabulated, level)
+
+    def getIExact(self, level):
+        return self.pLibTSG.tsgGetIExactCustomTabulated(self.pCustomTabulated, level)
+
+    def getQExact(self, level):
+        return self.pLibTSG.tsgGetQExactCustomTabulated(self.pCustomTabulated, level)
+
+    def getDescription(self):
+        return self.pLibTSG.tsgGetDescriptionCustomTabulated(self.pCustomTabulated)
+
+    def getWeightsNodes(self, level):
+        return 0
 
 def makeGlobalGrid(iDimension, iOutputs, iDepth, sType, sRule, liAnisotropicWeights=[], fAlpha=0.0, fBeta=0.0, sCustomFilename="", liLevelLimits=[]):
     '''
