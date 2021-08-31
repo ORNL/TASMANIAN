@@ -114,8 +114,8 @@ inline double lagrange_eval(size_t idx, const std::vector<double> &roots, double
 //! I ≈ sum{f(roots[i])*(weight_fn_vals[i]+shift)*ref_weights[i]} - shift * sum{f(correction_points[i])*correction_weights[i]}.
 //!
 //! It is assumed that (weight_fn_vals[i]+shift) is nonnegative for every i.
-inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, std::vector<double> &&weight_fn_vals,
-                                                    std::vector<double> &&ref_weights, std::vector<double> &&ref_points,
+inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, const std::vector<double> &weight_fn_vals,
+                                                    std::vector<double> &ref_weights, const std::vector<double> &ref_points,
                                                     const int nref, const char* description, const bool is_symmetric = false) {
 
     // Create the set of points (roots) for the first term.
