@@ -133,8 +133,8 @@ inline bool wrapSincTest(std::function<double(const double*)> f, const int dimen
 inline bool testAccuracy() {
     bool passed = true;
     int depth, dimension;
-    auto f1 = [](const double* x)->double{return std::exp(-(*x)*(*x));};
-    auto f2 = [](const double* x)->double{return std::exp(-(*x)*(*x)-(*(x+1))*(*(x+1)));};
+    auto f1 = [](const double* x)->double{return std::exp(-x[0]*x[0]);};
+    auto f2 = [](const double* x)->double{return std::exp(-x[0]*x[0]-x[1]*x[1]);};
     // 1D symmetric problem instances.
     depth = 20;
     dimension = 1;
