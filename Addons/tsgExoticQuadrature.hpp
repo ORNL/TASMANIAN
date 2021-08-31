@@ -54,9 +54,6 @@ inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<
     // Compute the roots incrementally.
     assert(ref_points.size() == ref_weights.size());
     assert(ref_points.size() > 0);
-    if (not std::all_of(ref_weights.begin(), ref_weights.end(), [](double x){return x>=0.0;})) {
-        throw std::invalid_argument("ref_weights needs to be a nonnegative vector!");
-    }
     std::vector<double> poly_m1_vals(ref_points.size(), 0.0), poly_vals(ref_points.size(), 1.0);
     std::vector<double> diag, offdiag;
     std::vector<std::vector<double>> roots(n);
@@ -73,13 +70,13 @@ inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<
             }
             diag.push_back(diag_numr / diag_denm);
         }
-        double sqr_offdiag_numr = 0.0;
-        double sqr_offdiag_denm = 0.0;
-        for (size_t j=0; j<ref_points.size(); j++) {
-            sqr_offdiag_numr += (poly_vals[j] * poly_vals[j]) * ref_weights[j];
-            sqr_offdiag_denm += (poly_m1_vals[j] * poly_m1_vals[j])  * ref_weights[j];
-        }
         if (i >= 1) {
+            double sqr_offdiag_numr = 0.0;
+            double sqr_offdiag_denm = 0.0;
+            for (size_t j=0; j<ref_points.size(); j++) {
+                sqr_offdiag_numr += (poly_vals[j] * poly_vals[j]) * ref_weights[j];
+                sqr_offdiag_denm += (poly_m1_vals[j] * poly_m1_vals[j])  * ref_weights[j];
+            }
             offdiag.push_back(std::sqrt(sqr_offdiag_numr / sqr_offdiag_denm));
         }
         roots[i] = TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, diag, offdiag);
@@ -108,12 +105,13 @@ inline double lagrange_eval(size_t idx, const std::vector<double> &roots, double
 }
 
 //! \brief Generate the full cache of Exotic (weighted and possibly shifted) quadrature weights and points for an (input) max level
-//! \b n, using parameters \b shift, \b weight_vals, \b ref_points, and \b nref.
+//! \b n, using parameters \b shift, \b weight_fn_vals, \b shifted_weights, \b ref_points, and \b nref.
 //!
-//! The integral  I := ∫F(x)*weight_fn(x)dx, for a given level, is approximated as:
-//! I ≈ sum{f(roots[i])*(weight_fn_vals[i]+shift)*ref_weights[i]} - shift * sum{f(correction_points[i])*correction_weights[i]}.
+//! The integral  I := ∫ F(x) * weight_fn(x) dx, for a given level, is approximated as:
+//! I ≈ sum{f(roots[i]) * shifted_weights[i]} - shift * sum{f(correction_points[i]) * correction_weights[i]}.
 //!
-//! It is assumed that (weight_fn_vals[i]+shift) is nonnegative for every i.
+//! It is assumed that shifted_weights[i] is nonnegative and it is computed as shifted_weights[i] = ref_weights[i] *
+//! (weight_fn_vals[i] + shift) for every i, where ref_weights are the quadrature weights corresponding to ref_points.
 inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, const std::vector<double> &weight_fn_vals,
                                                     const std::vector<double> &shifted_weights, const std::vector<double> &ref_points,
                                                     const int nref, const char* description, const bool is_symmetric = false) {
@@ -188,7 +186,7 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
                                                     const int nref, const char* description, const bool is_symmetric = false) {
     std::vector<double> shifted_weights, ref_points, weight_fn_vals(nref);
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, shifted_weights, ref_points);
-    std::transform(ref_points.begin(), ref_points.end(), weight_fn_vals.begin(), [weight_fn](double x){return weight_fn(x);});
+    std::transform(ref_points.begin(), ref_points.end(), weight_fn_vals.begin(), weight_fn);
     if (not std::all_of(weight_fn_vals.begin(), weight_fn_vals.end(), [shift](double x){return (x+shift)>=0.0;})) {
         throw std::invalid_argument("shift needs to be chosen so that weight_fn(x)+shift is nonnegative!");
     }
