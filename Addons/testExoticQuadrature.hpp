@@ -86,16 +86,18 @@ inline bool testBasicAttributes() {
 }
 
 
-// Given a dimension, integrates the function f(x[1],...,x[dimension]) * sinc(freq * x[1]) * ... * sinc(freq * x[dimension]) over
-// [-1, 1]^dimension  using Exotic quadrature at a given depth and a specified shift. Then, compares this integral against a given exact
-// integral value.
+// Given a dimension, integrates the function f(x[1],...,x[dimension]) * sinc(freq * (x[1] - phase_shift)) * ... *
+// sinc(freq * (x[dimension] - phase_shift)) over [-1, 1]^dimension using Exotic quadrature at a given depth and a specified
+// shift. Then, compares this integral against a given exact integral value.
 inline bool wrapSincTest(std::function<double(const double*)> f, const int dimension, const int depth, const double freq,
-                         const double shift, const double exact_integral, const bool symmetric_weights = false,
+                         const double phase_shift, const double shift, const double exact_integral, const bool symmetric_weights,
                          const double tolerance = 1e-10) {
 
     // Initialize.
     bool passed = true;
-    auto sinc = [freq](double x)->double {return (x == 0.0 ? 1.0 : sin(freq * x) / (freq * x));};
+    auto sinc = [freq, phase_shift](double x)->double {return (fabs(freq * (x - phase_shift)) <= 1e-20) ?
+                                                              0.0 :
+                                                              sin(freq * (x - phase_shift)) / (freq * (x - phase_shift));};
     int level = depth % 2 == 1 ? (depth + 1) / 2 : depth / 2 + 1;
     TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(level, shift, sinc);
     TasGrid::TasmanianSparseGrid sg;
@@ -112,14 +114,15 @@ inline bool wrapSincTest(std::function<double(const double*)> f, const int dimen
     if (std::abs(approx_integral - exact_integral) > tolerance) {
         std::cout << "ERROR: " << std::setprecision(16) << "Computed integral value " << approx_integral
                   << " does not match exact integral " << exact_integral << " for test problem\n"
-                  << "∫_[-1,1]^n f(x[1],...,x[n]) * sinc(freq*x[n]) * ... * sinc(freq*x[n]) dx[1] ... dx[n]\n"
+                  << "∫_[-1,1]^n f(x[1],...,x[n]) * sinc(freq*(x[n]-phase_shift)) * ... * sinc(freq*(x[n]-phase_shift)) dx[1] ... dx[n]\n"
                   << "with inputs: \n\n" << std::left
-                  << std::setw(10) << "dimension" << " = " << dimension                               << "\n"
-                  << std::setw(10) << "depth"     << " = " << depth                                   << "\n"
-                  << std::setw(10) << "freq"      << " = " << freq                                    << "\n"
-                  << std::setw(10) << "shift"     << " = " << shift                                   << "\n"
-                  << std::setw(10) << "symmetry"  << " = " << (symmetric_weights ? "true" : "false")  << "\n"
-                  << std::setw(10) << "precision" << " = " << tolerance                               << "\n" << std::endl;
+                  << std::setw(12) << "dimension"   << " = " << dimension                              << "\n"
+                  << std::setw(12) << "depth"       << " = " << depth                                  << "\n"
+                  << std::setw(12) << "freq"        << " = " << freq                                   << "\n"
+                  << std::setw(12) << "phase_shift" << " = " << phase_shift                            << "\n"
+                  << std::setw(12) << "shift"       << " = " << shift                                  << "\n"
+                  << std::setw(12) << "symmetry"    << " = " << (symmetric_weights ? "true" : "false") << "\n"
+                  << std::setw(12) << "precision"   << " = " << tolerance                              << "\n" << std::endl;
         passed = false;
     }
     return passed;
@@ -130,26 +133,31 @@ inline bool wrapSincTest(std::function<double(const double*)> f, const int dimen
 inline bool testAccuracy() {
     bool passed = true;
     int depth, dimension;
-    // 1D problem instances.
+    auto f1 = [](const double* x)->double{return std::exp(-(*x)*(*x));};
+    auto f2 = [](const double* x)->double{return std::exp(-(*x)*(*x)-(*(x+1))*(*(x+1)));};
+    // 1D symmetric problem instances.
     depth = 20;
     dimension = 1;
-    // function f1 is {x -> exp(-x^2)}.
-    auto f1 = [](const double* x)->double{return std::exp(-(*x)*(*x));};
-    passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 0.0, 1.4321357541271255);
-    passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 1.0, 1.4321357541271255);
-    passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 1.0, 1.4321357541271255, true);
-    passed = passed && wrapSincTest(f1, dimension, depth, 10.0, 1.0, 0.32099682841103033);
-    passed = passed && wrapSincTest(f1, dimension, depth, 100.0, 1.0, 0.031353648322695503);
-    // 2D problem instances.
+    passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 0.0, 0.0, 1.4321357541271255, true);
+    passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 0.0, 1.0, 1.4321357541271255, true);
+    passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 0.0, 1.0, 1.4321357541271255, false);
+    passed = passed && wrapSincTest(f1, dimension, depth, 10.0, 0.0, 1.0, 0.32099682841103033, true);
+    passed = passed && wrapSincTest(f1, dimension, depth, 100.0, 0.0, 1.0, 0.031353648322695503, true);
+    // 1D nonsymmetric problem instances.
+    depth = 20;
+    dimension = 1;
+    passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 0.5, 0.0, 1.3751962080889306, false);
+    passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 0.5, 1.0, 1.3751962080889306, false);
+    passed = passed && wrapSincTest(f1, dimension, depth, 10.0, 0.5, 1.0, 0.24655852538340614, false);
+    passed = passed && wrapSincTest(f1, dimension, depth, 50.0, 0.5, 1.0, 0.048558733457525547, false);
+    // 2D symmetric problem instances.
     depth = 40;
     dimension = 2;
-    // function f2 is {(x,y) -> exp(-x^2-y^2)}.
-    auto f2 = [](const double* x)->double{return std::exp(-(*x)*(*x)-(*(x+1))*(*(x+1)));};
-    passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 0.0, 2.051012818249270);
-    passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 1.0, 2.051012818249270);
-    passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 1.0, 2.051012818249270, true);
-    passed = passed && wrapSincTest(f2, dimension, depth, 10.0, 1.0, 0.1030389638499404);
-    passed = passed && wrapSincTest(f2, dimension, depth, 100.0, 1.0, 0.0009830512631432665);
+    passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 0.0, 0.0, 2.051012818249270, true);
+    passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 0.0, 1.0, 2.051012818249270, true);
+    passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 0.0, 1.0, 2.051012818249270, false);
+    passed = passed && wrapSincTest(f2, dimension, depth, 10.0, 0.0, 1.0, 0.1030389638499404, true);
+    passed = passed && wrapSincTest(f2, dimension, depth, 100.0, 0.0, 1.0, 0.0009830512631432665, true);
     return passed;
 }
 
