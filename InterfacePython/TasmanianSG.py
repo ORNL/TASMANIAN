@@ -101,6 +101,8 @@ class TasmanianSparseGrid:
     def __init__(self, tasmanian_library=0):
         '''
         constructor, creates an empty grid instance
+
+        tasmanian_library: see getTsgLib().
         '''
         self.pLibTSG = getTsgLib(tasmanian_library)
         # ctypes requires that we manually specify the return types of functions
@@ -2359,7 +2361,7 @@ def copyGrid(source, iOutputsBegin = 0, iOutputsEnd = -1):
     grid.copyGrid(source, iOutputsBegin, iOutputsEnd)
     return grid
 
-def convert_to_ctype(np_data, np_type=np.int32):
+def np_arr_to_ctype(np_data, np_type=np.int32):
     '''
     Utility function that safely converts a NumPy array to a C pointer.
     '''
@@ -2373,6 +2375,8 @@ class CustomTabulated:
     def __init__(self, tasmanian_library=0):
         '''
         Constructor that creates an empty CustomTabulated instance.
+
+        tasmanian_library: see getTsgLib().
         '''
         self.pLibTSG = getTsgLib(tasmanian_library)
         # ctypes requires that we manually specify the return types of functions
@@ -2411,12 +2415,11 @@ class CustomTabulated:
         Reads the CustomTabulated object from a file and discards any existing grid held by this class.
 
         sFilename: string indicating a CustomTabulated that was already written using write from Python or any other
-                   Tasmanian interface
+                   Tasmanian interfaces.
 
         output: boolean
-                True: the read was successful
-                False: the read failed,
-                       check the CLI output for an error message
+            True: the read was successful
+            False: the read failed, check the CLI output for an error message
         '''
         effective_filename = bytes(sFilename, encoding='utf8') if sys.version_info.major == 3 else sFilename
         if self.pLibTSG.tsgReadCustomTabulated(self.pCustomTabulated, c_char_p(effective_filename)) == 0:
@@ -2426,11 +2429,10 @@ class CustomTabulated:
         '''
         Writes the CustomTabulated object to a file.
 
-        sFilename: string indicating a location where the CustomTabulated will be written to.
-
+        sFilename: string indicating a location where the CustomTabulated instance will be written to.
         bUseBinaryFormat: boolean
-                True: write to a binary file
-                False: write to an ASCII file
+            True: write to a binary file
+            False: write to an ASCII file
         '''
         effective_filename = bytes(sFilename, encoding='utf8') if sys.version_info.major == 3 else sFilename
         self.pLibTSG.tsgWriteCustomTabulated(self.pCustomTabulated, c_char_p(effective_filename), c_int(bUseBinaryFormat))
@@ -2451,25 +2453,65 @@ class CustomTabulated:
         return self.pLibTSG.tsgGetDescriptionCustomTabulated(self.pCustomTabulated)
 
     def getWeightsNodes(self, level):
+        '''
+        Outputs the weights and nodes (in that order) of the CustomTabulated instance for a given level.
+
+        level: int indicating the level where the weights/nodes will be pulled from.
+
+        output: int (weights), int (nodes)
+        '''
         iNumPoints = self.getNumPoints(level)
         if (iNumPoints == 0):
             return np.empty([0], np.float64), np.empty([0], np.float64)
         weights, nodes = np.zeros([iNumPoints]), np.zeros([iNumPoints])
-        self.pLibTSG.tsgGetWeightsNodesStaticCustomTabulated(self.pCustomTabulated, c_int(level), convert_to_ctype(weights, np.float64),
-                                                             convert_to_ctype(nodes, np.float64))
+        self.pLibTSG.tsgGetWeightsNodesStaticCustomTabulated(self.pCustomTabulated, c_int(level), np_arr_to_ctype(weights, np.float64),
+                                                             np_arr_to_ctype(nodes, np.float64))
         return weights, nodes
 
 def makeCustomTabulatedFromFile(filename, tasmanian_library=0):
+    '''
+    Wrapper that calls the CustomTabulated constructor which reads its data from a file.
+
+    filename: string indicating the location of the file.
+    tasmanian_library: see getTsgLib().
+
+    output: CustomTabulated
+    '''
     ct = CustomTabulated(tasmanian_library)
     ct.read(filename)
     return ct
 
 def makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights, description, tasmanian_library=0):
-    # TODO: check input lengths here!
+    '''
+    Wrapper that calls the CustomTabulated constructor which takes ownership of its input data.
+
+    num_levels: int indicating the number of levels of the instance.
+    num_nodes: 1D NumPy array of length num_levels whose i-th entry is the number of nodes at level i.
+    precision: 1D NumPy array of length num_levels whose i-th entry is the (quadrature/integration) precision at level i.
+    nodes: Python list of length num_levels whose i-th entry is a 1D NumPy array containing the nodes at level i.
+    weights: Python list of length num_levels whose i-th entry is a 1D NumPy array containing the quadrature weights at level i.
+    description: string that briefly describes the instance.
+    tasmanian_library: see getTsgLib()
+
+    output: CustomTabulated
+    '''
+    if len(num_nodes) != num_levels:
+        raise TasmanianInputError("num_nodes", "ERROR: the length of num_nodes should match num_levels")
+    if len(precision) != num_levels:
+        raise TasmanianInputError("precision", "ERROR: the length of precision should match num_levels")
+    if len(nodes) != num_levels:
+        raise TasmanianInputError("nodes", "ERROR: the length of nodes should match num_levels")
+    if len(weights) != num_levels:
+        raise TasmanianInputError("weights", "ERROR: the length of weights should match num_levels")
+    for i in range(num_levels):
+        if len(nodes[i]) != num_nodes[i]:
+            raise TasmanianInputError("nodes", "ERROR: the length of nodes["+str(i)+"] should match num_nodes["+str(i)+"]")
+        if len(weights[i]) != num_nodes[i]:
+            raise TasmanianInputError("weights", "ERROR: the length of weights["+str(i)+"] should match num_nodes["+str(i)+"]")
     ct = CustomTabulated(tasmanian_library)
     effective_description = bytes(description, encoding='utf8') if sys.version_info.major == 3 else description
-    ct.pCustomTabulated = ct.pLibTSG.tsgMakeCustomTabulatedFromData(c_int(num_levels), convert_to_ctype(num_nodes), convert_to_ctype(precision),
-                                                                    convert_to_ctype(np.concatenate(nodes), np.float64),
-                                                                    convert_to_ctype(np.concatenate(weights), np.float64),
+    ct.pCustomTabulated = ct.pLibTSG.tsgMakeCustomTabulatedFromData(c_int(num_levels), np_arr_to_ctype(num_nodes), np_arr_to_ctype(precision),
+                                                                    np_arr_to_ctype(np.concatenate(nodes), np.float64),
+                                                                    np_arr_to_ctype(np.concatenate(weights), np.float64),
                                                                     c_char_p(effective_description))
     return ct
