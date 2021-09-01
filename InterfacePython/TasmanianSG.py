@@ -104,6 +104,7 @@ class TasmanianSparseGrid:
 
         tasmanian_library: see getTsgLib().
         '''
+        self.TasmanianSparseGridObject = True
         self.pLibTSG = getTsgLib(tasmanian_library)
         # ctypes requires that we manually specify the return types of functions
         # in C this is done by header files, so this serves as a header
