@@ -60,7 +60,10 @@ endfunction()
 macro(Tasmanian_macro_add_libdfortran03)
 #
 # Build the Fortran module from an existing generated source file
-#
+#   - there is a hack here that adds a new methods inside the TasmanianSparseGrid class
+#   - the generated files are read, then modified, then written to a "regenerated" folder
+#   - only the updated files are compiled
+#   - the original SWIG modules all have _swig in their names, the regenerated ones don't
 
     file(READ "${Tasmanian_GENERATE_DIR}/tasmanian_swig.f90" Tasmanian_generated_f90)
     string(REPLACE "module tasmanian_swig" "module tasmanian" Tasmanian_generated_f90 ${Tasmanian_generated_f90})
