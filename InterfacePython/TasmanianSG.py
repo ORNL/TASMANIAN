@@ -2313,6 +2313,7 @@ class TasmanianSparseGrid:
 
         pAxisObject.imshow(ZZ, cmap=sCmap, extent=[fXmin, fXmax, fYmin, fYmax])
 
+
 def makeGlobalGrid(iDimension, iOutputs, iDepth, sType, sRule, liAnisotropicWeights=[], fAlpha=0.0, fBeta=0.0, sCustomFilename="", liLevelLimits=[]):
     '''
     Factory method equivalent to TasmanianSparseGrid.makeGlobalGrid().
@@ -2467,6 +2468,7 @@ class CustomTabulated:
         self.pLibTSG.tsgGetWeightsNodesStaticCustomTabulated(self.pCustomTabulated, c_int(level), np_arr_to_ctype(weights, np.float64),
                                                              np_arr_to_ctype(nodes, np.float64))
         return weights, nodes
+
 
 def makeCustomTabulatedFromFile(filename, tasmanian_library=0):
     '''

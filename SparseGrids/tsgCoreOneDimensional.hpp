@@ -97,7 +97,7 @@ public:
     //! \brief Return the exactness of the integration/quadrature rule at \b level, provided by the user in the custom file.
     int getQExact(int level) const{ checkLevel(level, "q-exactness"); return precision[level]; }
 
-    //! \brief Loads the points \b x and quadrature weights \b w associated with the rule at the \b level.
+    //! \brief Get the points \b x and quadrature weights \b w associated with the rule at the \b level.
     void getWeightsNodes(int level, std::vector<double> &w, std::vector<double> &x) const;
     //! \brief Returns the user provided human readable description string.
     const char* getDescription() const;
