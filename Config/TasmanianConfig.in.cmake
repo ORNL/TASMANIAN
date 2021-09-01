@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 
+if (TARGET Tasmanian::Tasmanian)
+    return() # exit if Tasmanian has already been found and defined
+endif()
+
 @PACKAGE_INIT@
 
 # https://cmake.org/cmake/help/v3.5/module/CMakePackageConfigHelpers.html#module:CMakePackageConfigHelpers
