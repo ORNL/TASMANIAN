@@ -169,26 +169,6 @@ will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` follo
   -D DOXYGEN_INTERNAL_DOCS=YES  (include the documentation of the Tasmanian internals)
 ```
 
-### Install with the install script-wrapper around CMake
-
-Tasmanian also includes an `install` script that wraps around CMake and automatically calls the build commands.
-The script uses `Tasmanian_ENABLE_RECOMMENDED` option and allows for other options to be enabled/disabled
-with command line switches.
-
-* Basic usage of the `install` script
-```
-  ./install <install-path> <optional: matlab-work-folder> <extra switches>
-  ./install --help  (list all switches)
-```
-* Example call that enables MATLAB/Octave and CUDA
-```
-  ./install /home/me/Tasmanian /home/me/Tasmanian/WorkFolder -cuda=/usr/local/cuda-9.2/bin/nvcc
-```
-* Additional notes:
-    * the script must be called from the main source code folder
-    * using absolute paths is strongly recommended
-    * if the MATLAB work-folder is omitted, the MATLAB interface will be disabled
-
 ### Install with (basic) GNU Make
 
 The core capabilities of Tasmanian can be build with a few simple GNU Make commands.
@@ -280,6 +260,28 @@ Tasmanian has been tested with MS Visual Studio 2017 and 2019.
 ```
 * Both Debug and Release are supported config modes, but do not use them simultaneously,
   pick only one Release or Debug.
+
+### Install with the install script-wrapper around CMake
+
+*the install script is deprecated and will be removed in the future*
+
+Tasmanian also includes an `install` script that wraps around CMake and automatically calls the build commands.
+The script uses `Tasmanian_ENABLE_RECOMMENDED` option and allows for other options to be enabled/disabled
+with command line switches.
+
+* Basic usage of the `install` script
+```
+  ./install <install-path> <optional: matlab-work-folder> <extra switches>
+  ./install --help  (list all switches)
+```
+* Example call that enables MATLAB/Octave and CUDA
+```
+  ./install /home/me/Tasmanian /home/me/Tasmanian/WorkFolder -cuda=/usr/local/cuda-9.2/bin/nvcc
+```
+* Additional notes:
+    * the script must be called from the main source code folder
+    * using absolute paths is strongly recommended
+    * if the MATLAB work-folder is omitted, the MATLAB interface will be disabled
 
 ### Install folder structure
 

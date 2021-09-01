@@ -1,5 +1,7 @@
 # Interface Fortran 90/95
 
+*note that the Fortran 90 interface is deprecated, the object oriented Fortran 2003 interface is the currently recommended one*
+
 Tasmanian 7.0 comes with a mostly-stable Fortran 90/95 module that wraps around the C++ sparse grids library and gives access to all of the core functionality. The interface uses a user defined type that is effectively a pointer to a **TasmanainSparseGrid** objects. A new grid has to be initialized with **tsgAllocateGrid()**  which creates an empty grid, then the grid can be used in all follow on calls to the Fortran module. Once work is done with the grid, **tsgDeallocateGrid()** must be called to free all memory used by this grid. For example:
 ```
 program foo
