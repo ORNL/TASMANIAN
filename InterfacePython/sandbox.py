@@ -20,4 +20,8 @@ import math
 # You can also use the file without cmake
 ###############################################################################
 
-print("Add code to this file to test, debug, or develop features")
+# print("Add code to this file to test, debug, or develop features")
+import Tasmanian
+ct = Tasmanian.CustomTabulated()
+ct.write("./tmp.ct")
+ct.read("./tmp.ct")

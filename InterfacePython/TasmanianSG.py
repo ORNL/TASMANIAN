@@ -2317,87 +2317,6 @@ class TasmanianSparseGrid:
 
         pAxisObject.imshow(ZZ, cmap=sCmap, extent=[fXmin, fXmax, fYmin, fYmax])
 
-class CustomTabulated:
-    def __init__(self, tasmanian_library=0):
-        '''
-        Constructor that creates an empty CustomTabulated instance.
-        
-        tasmanian_library: indicates the libtasmaniansparsegrids.so file
-        
-        if tasmanian_library is an int: look for the library in the
-                                        default locaiton
-                                        "libtasmaniansparsegrid.so"
-                                        or
-                                        the lirary install prefix given
-                                        to cmake
-
-        if tasmanian_library is a string: use it as path, for example:
-                TasmanianSparseGrid(
-                           tasmanian_library =
-                           "opt/Tasmanian/lib/libtasmaniansparsegrid.so"
-                          )
-
-        otherwise:  tasmanian_library must be an instance of ctypes.cdll
-                    this is useful when creating lots of instances of
-                    TasmanianSparseGrid in order to avoid having each
-                    instance load a sepatate copy of the common library
-
-        '''
-        if (isinstance(tasmanian_library, int)):
-            self.pLibTSG = cdll.LoadLibrary(TasmanianConfig.__path_libsparsegrid__)
-        elif (sys.version_info.major == 3):
-            if (isinstance(tasmanian_library, str)):
-                self.pLibTSG = cdll.LoadLibrary(tasmanian_library)
-            else:
-                self.pLibTSG = tasmanian_library
-        elif (isinstance(tasmanian_library, basestring)):
-            self.pLibTSG = cdll.LoadLibrary(tasmanian_library)
-        else:
-            self.pLibTSG = tasmanian_library
-
-        # ctypes requires that we manually specify the return types of functions
-        # in C this is done by header files, so this serves as a header
-        self.pLibTSG.tsgConstructCustomTabulated.restype = c_void_p;
-        self.pLibTSG.tsgGetNumLevelsCustomTabulated.restype = c_int;
-        self.pLibTSG.tsgGetNumPointsCustomTabulated.restype = c_int;
-        self.pLibTSG.tsgGetIExactCustomTabulated.restype = c_int;
-        self.pLibTSG.tsgGetQExactCustomTabulated.restype = c_int;
-        self.pLibTSG.tsgGetDescriptionCustomTabulated.restype = c_char_p;
-
-        self.pLibTSG.tsgDestructCustomTabulated.argtypes = [c_void_p];
-        self.pLibTSG.tsgGetNumLevelsCustomTabulated.argtypes = [c_void_p];
-        self.pLibTSG.tsgGetNumPointsCustomTabulated.argtypes = [c_void_p, c_int];
-        self.pLibTSG.tsgGetIExactCustomTabulated.argtypes = [c_void_p, c_int];
-        self.pLibTSG.tsgGetQExactCustomTabulated.argtypes = [c_void_p, c_int];
-        self.pLibTSG.tsgGetDescriptionCustomTabulated.argtypes = [c_void_p];
-
-        self.pCustomTabulated = self.pLibTSG.tsgConstructCustomTabulated()
-
-    def __del__(self):
-        '''
-        Destructor that calls the C++ destructor and releases all memory used by this instance of the class.
-        Make sure to call this to avoid memory leaks.
-        '''
-        self.pLibTSG.tsgDestructCustomTabulated(self.pCustomTabulated)
-
-    def getNumLevels(self):
-        return self.pLibTSG.tsgGetNumLevelsCustomTabulated(self.pCustomTabulated)
-
-    def getNumPoints(self, level):
-        return self.pLibTSG.tsgGetNumPointsCustomTabulated(self.pCustomTabulated, level)
-
-    def getIExact(self, level):
-        return self.pLibTSG.tsgGetIExactCustomTabulated(self.pCustomTabulated, level)
-
-    def getQExact(self, level):
-        return self.pLibTSG.tsgGetQExactCustomTabulated(self.pCustomTabulated, level)
-
-    def getDescription(self):
-        return self.pLibTSG.tsgGetDescriptionCustomTabulated(self.pCustomTabulated)
-
-    def getWeightsNodes(self, level):
-        return 0
-
 def makeGlobalGrid(iDimension, iOutputs, iDepth, sType, sRule, liAnisotropicWeights=[], fAlpha=0.0, fBeta=0.0, sCustomFilename="", liLevelLimits=[]):
     '''
     Factory method equivalent to TasmanianSparseGrid.makeGlobalGrid().
@@ -2445,3 +2364,124 @@ def copyGrid(source, iOutputsBegin = 0, iOutputsEnd = -1):
     grid = TasmanianSparseGrid()
     grid.copyGrid(source, iOutputsBegin, iOutputsEnd)
     return grid
+
+class CustomTabulated:
+    def __init__(self, tasmanian_library=0):
+        '''
+        Constructor that creates an empty CustomTabulated
+
+        tasmanian_library: indicates the libtasmaniansparsegrids.so
+
+            if tasmanian_library is an int:
+                look for the library in the default location "libtasmaniansparsegrid.so" or the library install prefix given to CMake
+
+            if tasmanian_library is a string:
+                use it as a path; for example, TasmanianSparseGrid(tasmanian_library = "opt/Tasmanian/lib/libtasmaniansparsegrid.so")
+
+            otherwise:
+                tasmanian_library must be an instance of ctypes.cdll this is useful when creating lots of instances of TasmanianSparseGrid
+                in order to avoid having each instance load a sepatate copy of the common library
+        '''
+        if (isinstance(tasmanian_library, int)):
+            self.pLibTSG = cdll.LoadLibrary(TasmanianConfig.__path_libsparsegrid__)
+        elif (sys.version_info.major == 3):
+            if (isinstance(tasmanian_library, str)):
+                self.pLibTSG = cdll.LoadLibrary(tasmanian_library)
+            else:
+                self.pLibTSG = tasmanian_library
+        elif (isinstance(tasmanian_library, basestring)):
+            self.pLibTSG = cdll.LoadLibrary(tasmanian_library)
+        else:
+            self.pLibTSG = tasmanian_library
+
+        # ctypes requires that we manually specify the return types of functions
+        # in C this is done by header files, so this serves as a header
+        self.pLibTSG.tsgConstructCustomTabulated.restype = c_void_p;
+        self.pLibTSG.tsgReadCustomTabulated.restype = c_int
+        self.pLibTSG.tsgGetNumLevelsCustomTabulated.restype = c_int;
+        self.pLibTSG.tsgGetNumPointsCustomTabulated.restype = c_int;
+        self.pLibTSG.tsgGetIExactCustomTabulated.restype = c_int;
+        self.pLibTSG.tsgGetQExactCustomTabulated.restype = c_int;
+        self.pLibTSG.tsgGetDescriptionCustomTabulated.restype = c_char_p;
+        self.pLibTSG.tsgMakeCustomTabulatedFromData.restype = c_void_p;
+
+        self.pLibTSG.tsgDestructCustomTabulated.argtypes = [c_void_p];
+        self.pLibTSG.tsgReadCustomTabulated.argtypes = [c_void_p, c_char_p]
+        self.pLibTSG.tsgWriteCustomTabulated.argtypes = [c_void_p, c_char_p, c_int]
+        self.pLibTSG.tsgGetNumLevelsCustomTabulated.argtypes = [c_void_p];
+        self.pLibTSG.tsgGetNumPointsCustomTabulated.argtypes = [c_void_p, c_int];
+        self.pLibTSG.tsgGetIExactCustomTabulated.argtypes = [c_void_p, c_int];
+        self.pLibTSG.tsgGetQExactCustomTabulated.argtypes = [c_void_p, c_int];
+        self.pLibTSG.tsgGetDescriptionCustomTabulated.argtypes = [c_void_p];
+        self.pLibTSG.tsgMakeCustomTabulatedFromData.argtype = [c_int, POINTER(c_int), POINTER(c_int), POINTER(POINTER(c_int)),
+                                                               POINTER(POINTER(c_int)), c_char_p]
+
+        self.pCustomTabulated = self.pLibTSG.tsgConstructCustomTabulated()
+
+    def __del__(self):
+        '''
+        Destructor that calls the C++ destructor and releases all memory used by this instance of the class.
+        Make sure to call this to avoid memory leaks.
+        '''
+        self.pLibTSG.tsgDestructCustomTabulated(self.pCustomTabulated)
+
+    def read(self, sFilename):
+        '''
+        Reads the CustomTabulated object from a file and discards any existing grid held by this class.
+
+        sFilename: string indicating a CustomTabulated that was already written using write from Python or any other
+                   Tasmanian interface
+
+        output: boolean
+                True: the read was successful
+                False: the read failed,
+                       check the CLI output for an error message
+        '''
+        effective_filename = bytes(sFilename, encoding='utf8') if sys.version_info.major == 3 else sFilename
+        if self.pLibTSG.tsgReadCustomTabulated(self.pCustomTabulated, c_char_p(effective_filename)) == 0:
+            raise TasmanianInputError("sFilename", "ERROR: {0:1s} does not appear to be a valid Tasmanian file.".format(sFilename))
+
+    def write(self, sFilename, bUseBinaryFormat = True):
+        '''
+        Writes the CustomTabulated object to a file.
+
+        sFilename: string indicating a location where the CustomTabulated will be written to.
+
+        bUseBinaryFormat: boolean
+                True: write to a binary file
+                False: write to an ASCII file
+        '''
+        effective_filename = bytes(sFilename, encoding='utf8') if sys.version_info.major == 3 else sFilename
+        self.pLibTSG.tsgWriteCustomTabulated(self.pCustomTabulated, c_char_p(effective_filename), bUseBinaryFormat)
+
+    def getNumLevels(self):
+        return self.pLibTSG.tsgGetNumLevelsCustomTabulated(self.pCustomTabulated)
+
+    def getNumPoints(self, level):
+        return self.pLibTSG.tsgGetNumPointsCustomTabulated(self.pCustomTabulated, level)
+
+    def getIExact(self, level):
+        return self.pLibTSG.tsgGetIExactCustomTabulated(self.pCustomTabulated, level)
+
+    def getQExact(self, level):
+        return self.pLibTSG.tsgGetQExactCustomTabulated(self.pCustomTabulated, level)
+
+    def getDescription(self):
+        return self.pLibTSG.tsgGetDescriptionCustomTabulated(self.pCustomTabulated)
+
+    def getWeightsNodes(self, level):
+        iNumPoints = self.getNumPoints(level)
+        if (iNumPoints == 0):
+            return np.empty([0], np.float64), np.empty([0], np.float64)
+        weights, nodes = np.zeros([iNumPoints]), np.zeros([iNumPoints])
+        self.pLibTSG.tsgIntegrateHierarchicalFunctionsStatic(self.pCustomTabulated, np.ctypeslib.as_ctypes(weights),
+                                                             np.ctypeslib.as_ctypes(weights))
+        return weights, nodes
+
+def makeCustomTabulatedFromFile(filename):
+    ct = CustomTabulated()
+    ct.read(filename)
+
+def makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights, description):
+    effective_description = bytes(description, encoding='utf8') if sys.version_info.major == 3 else description
+    return 0

@@ -481,13 +481,39 @@ void tsgDeleteInts(int *p){ delete[] p; }
 void* tsgConstructCustomTabulated(){ return (void*) new CustomTabulated(); }
 void tsgDestructCustomTabulated(void* ct){ delete ((CustomTabulated*) ct); }
 
+void tsgWriteCustomTabulated(void *ct, const char* filename, const bool use_binary_format){
+    std::ofstream ofs(filename, std::ios::out);
+    if (use_binary_format) {
+        ((CustomTabulated*) ct)->write<false>(ofs);
+    } else {
+        ((CustomTabulated*) ct)->write<true>(ofs);
+    }
+}
+int tsgReadCustomTabulated(void *ct, const char* filename){
+    try{
+        ((CustomTabulated*) ct)->read(filename);
+        return 1;
+    }catch(std::runtime_error &e){
+        cerr << e.what() << endl;
+        return 0;
+    }
+}
+
 int tsgGetNumLevelsCustomTabulated(void* ct){ return ((CustomTabulated*) ct)->getNumLevels(); }
-int tsgGetNumPointsCustomTabulated(void* ct, int level){ return ((CustomTabulated*) ct)->getNumPoints(level); }
-int tsgGetIExactCustomTabulated(void* ct, int level){ return ((CustomTabulated*) ct)->getIExact(level); }
-int tsgGetQExactCustomTabulated(void* ct, int level){ return ((CustomTabulated*) ct)->getQExact(level); }
+int tsgGetNumPointsCustomTabulated(void* ct, const int level){ return ((CustomTabulated*) ct)->getNumPoints(level); }
+int tsgGetIExactCustomTabulated(void* ct, const int level){ return ((CustomTabulated*) ct)->getIExact(level); }
+int tsgGetQExactCustomTabulated(void* ct, const int level){ return ((CustomTabulated*) ct)->getQExact(level); }
 const char* tsgGetDescriptionCustomTabulated(void* ct) { return ((CustomTabulated*) ct)->getDescription(); }
 
-void tsgGetWeightsNodesStaticCustomTabulated(void* ct, int level, const double* w, const double* x) {((CustomTabulated*) ct)->getWeightsNodes(level, w, x);
+void tsgGetWeightsNodesStaticCustomTabulated(void* ct, int level, const double* w, const double* x) {
+    ((CustomTabulated*) ct)->getWeightsNodes(level, w, x);
+}
+
+void* tsgMakeCustomTabulatedFromData(const int cnum_levels, const int* cnum_nodes, const int* cprecision, const double** cnodes,
+                                     const double** cweights, char* cdescription) {
+    // TasGrid::CustomTabulated(cnum_levels, std::vector<int>(cnum_nodes, cnum_nodes + cnum_levels),
+    //                          std::vector<int>(cprecision, cprecision + cnum_levels))
+
 }
 
 }
