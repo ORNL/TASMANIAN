@@ -63,9 +63,9 @@ namespace TasGrid{
 class tsg_gpu_selector : public sycl::device_selector{
 public:
     //! \brief Default constructor.
-    tsg_gpu_selector() : has_gpu(false), deviceID(-1){}
+    tsg_gpu_selector() : deviceID(-1), has_gpu(false){}
     //! \brief Constructor that selects a specific GPU device.
-    tsg_gpu_selector(int device) : has_gpu(false), deviceID(device){}
+    tsg_gpu_selector(int device) : deviceID(device), has_gpu(false){}
     //! \brief Used during the device selection, also populates the two lists.
     int operator()(const sycl::device &device) const override{
         if (device.is_gpu()){
