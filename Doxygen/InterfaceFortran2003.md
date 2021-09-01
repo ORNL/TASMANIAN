@@ -47,6 +47,18 @@ call grid%getPoints(points(:, 1))
 ### See the Included Examples
 Several Fortran examples are provided that duplicate the functionality in C++ and Python, which makes it easy to compare and contrast.
 
+### Filenames and Strings
+Strings works differently between the Fortran, C and C++ languages. Tasmanian I/O methods accept C-style of null-terminated character arrays, but Fortran character arrays are often padded with white spaces. The Fortran `trim()` command can be used to remove trailing white spaces from the filenames and avoid confusion with C++. See the following example that assumes a file with the name "123" is holding a valid Tasmanian sparse grid and we want to read the grid into a Tasmanian object:
+```
+    character(len = 3), parameter :: filename = "123"
+    character(len = 4), parameter :: padded = "123"
+
+    grid = TasmanianSparseGrid()
+    grid%read(filename)     ! OK, reads from "123"
+    ! grid%read(padded)     ! Bad, tries to read from "123 "
+    grid%read(trim(padded)) ! OK, removes the extra space
+```
+
 ### Row-vs-Column Format
 C and C++-14 standards do not have a native two dimensional data-structure and many of the inputs and outputs for Tasmanain are logically organized in strips of data with a fixed stride. When interfacing with a language that supports two dimensional data (e.g., matrix type) it is beneficial to make the translation, but without a copy or manual transposing of the data to avoid performance degradation. Therefore, the strips of data are aligned to the dimension of the fastest index, e.g., the rows for a row-major language (Python-numpy) and columns for a column-major one (Fortran). The Matlab interface uses row-major format due to the ascii file standard used in the background.
 
