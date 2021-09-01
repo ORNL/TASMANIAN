@@ -22,6 +22,20 @@ import math
 
 # print("Add code to this file to test, debug, or develop features")
 import Tasmanian
-ct = Tasmanian.CustomTabulated()
-ct.write("./tmp.ct")
-ct.read("./tmp.ct")
+num_levels = 3
+num_nodes = np.array([2, 3, 4])
+precision = np.array([4, 5, 2])
+nodes = [np.array([0.0001, 0.7]), np.array([-0.5, 0.5, 0.7]), np.array([0.1, 0.2, 0.3, 0.4])]
+weights = [np.array([1.5, 0.5]), np.array([1.0, 0.9, 0.1]), np.array([2.0, 0.0, 0.0, 0.0])]
+description = "Exotic Quadrature"
+ct = Tasmanian.makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights, description)
+
+print(ct.getNumLevels())
+print(ct.getNumPoints(1))
+print(ct.getIExact(1))
+print(ct.getQExact(1))
+
+print('Grabbing weights and nodes...')
+w, x = ct.getWeightsNodes(1)
+print(w)
+print(x)

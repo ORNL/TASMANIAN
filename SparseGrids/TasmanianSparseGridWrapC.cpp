@@ -505,15 +505,27 @@ int tsgGetIExactCustomTabulated(void* ct, const int level){ return ((CustomTabul
 int tsgGetQExactCustomTabulated(void* ct, const int level){ return ((CustomTabulated*) ct)->getQExact(level); }
 const char* tsgGetDescriptionCustomTabulated(void* ct) { return ((CustomTabulated*) ct)->getDescription(); }
 
-void tsgGetWeightsNodesStaticCustomTabulated(void* ct, int level, const double* w, const double* x) {
-    ((CustomTabulated*) ct)->getWeightsNodes(level, w, x);
+void tsgGetWeightsNodesStaticCustomTabulated(void* ct, int level, double* w, double* x) {
+    int num_points = ((CustomTabulated*) ct)->getNumPoints(level);
+    std::vector<double> vec_w(num_points), vec_x(num_points);
+    ((CustomTabulated*) ct)->getWeightsNodes(level, vec_w, vec_x);
+    std::copy(vec_w.begin(), vec_w.end(), w);
+    std::copy(vec_x.begin(), vec_x.end(), x);
 }
 
-void* tsgMakeCustomTabulatedFromData(const int cnum_levels, const int* cnum_nodes, const int* cprecision, const double** cnodes,
-                                     const double** cweights, char* cdescription) {
-    // TasGrid::CustomTabulated(cnum_levels, std::vector<int>(cnum_nodes, cnum_nodes + cnum_levels),
-    //                          std::vector<int>(cprecision, cprecision + cnum_levels))
-
+// Note: cnodes and cweights are passed as 1D arrays, but represent a list of vectors.
+void* tsgMakeCustomTabulatedFromData(const int cnum_levels, const int* cnum_nodes, const int* cprecision, const double* cnodes,
+                                     const double* cweights, char* cdescription) {
+    std::vector<std::vector<double>> vec_cnodes(cnum_levels), vec_cweights(cnum_levels);
+    int ptr_idx = 0;
+    for (int l=0; l<cnum_levels; l++) {
+        vec_cnodes[l] = std::vector<double>(&cnodes[ptr_idx], &cnodes[ptr_idx] + cnum_nodes[l]);
+        vec_cweights[l] = std::vector<double>(&cweights[ptr_idx], &cweights[ptr_idx] + cnum_nodes[l]);
+        ptr_idx += cnum_nodes[l];
+    }
+    return new TasGrid::CustomTabulated(cnum_levels, std::move(std::vector<int>(cnum_nodes, cnum_nodes + cnum_levels)),
+                                        std::move(std::vector<int>(cprecision, cprecision + cnum_levels)), std::move(vec_cnodes),
+                                        std::move(vec_cweights), cdescription);
 }
 
 }
