@@ -502,12 +502,7 @@ int tsgGetIExactCustomTabulated(void* ct, const int level){ return ((CustomTabul
 int tsgGetQExactCustomTabulated(void* ct, const int level){ return ((CustomTabulated*) ct)->getQExact(level); }
 const char* tsgGetDescriptionCustomTabulated(void* ct) { return ((CustomTabulated*) ct)->getDescription(); }
 
-void tsgGetWeightsNodesStaticCustomTabulated(void* ct, int level, double* w, double* x) {
-    int num_points = ((CustomTabulated*) ct)->getNumPoints(level);
-    std::vector<double> vec_w(num_points), vec_x(num_points);
-    ((CustomTabulated*) ct)->getWeightsNodes(level, vec_w, vec_x);
-    std::copy(vec_w.begin(), vec_w.end(), w);
-    std::copy(vec_x.begin(), vec_x.end(), x);
+void tsgGetWeightsNodesStaticCustomTabulated(void* ct, int level, double* w, double* x) {((CustomTabulated*) ct)->getWeightsNodes(level, w, x);
 }
 
 // Note: cnodes and cweights are passed as 1D arrays, but represent a list of vectors.

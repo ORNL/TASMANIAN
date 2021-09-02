@@ -130,9 +130,9 @@ void CustomTabulated::read(const char* filename){
     ifs.close();
 }
 
-void CustomTabulated::getWeightsNodes(int level, std::vector<double> &w, std::vector<double> &x) const{
-    w = weights[level];
-    x = nodes[level];
+void CustomTabulated::getWeightsNodes(int level, double w[], double x[]) const{
+    std::copy(weights[level].begin(), weights[level].end(), w);
+    std::copy(nodes[level].begin(), nodes[level].end(), x);
 }
 const char* CustomTabulated::getDescription() const{ return description.c_str(); }
 
