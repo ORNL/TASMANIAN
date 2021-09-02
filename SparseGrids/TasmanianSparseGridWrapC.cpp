@@ -481,13 +481,10 @@ void tsgDeleteInts(int *p){ delete[] p; }
 void* tsgConstructCustomTabulated(){ return (void*) new CustomTabulated(); }
 void tsgDestructCustomTabulated(void* ct){ delete ((CustomTabulated*) ct); }
 
-void tsgWriteCustomTabulated(void *ct, const char* filename, const bool use_binary_format){
+void tsgWriteCustomTabulated(void *ct, const char* filename){
     std::ofstream ofs(filename, std::ios::out);
-    if (use_binary_format) {
-        ((CustomTabulated*) ct)->write<false>(ofs);
-    } else {
-        ((CustomTabulated*) ct)->write<true>(ofs);
-    }
+    if (!ofs.good()) std::cerr << "ERROR: must provide valid filename!" << std::endl;
+    ((CustomTabulated*) ct)->write<true>(ofs);
 }
 int tsgReadCustomTabulated(void *ct, const char* filename){
     try{

@@ -2394,17 +2394,14 @@ class CustomTabulated:
         if pLibTSG.tsgReadCustomTabulated(self.pCustomTabulated, c_char_p(effective_filename)) == 0:
             raise TasmanianInputError("sFilename", "ERROR: {0:1s} does not appear to be a valid Tasmanian file.".format(sFilename))
 
-    def write(self, sFilename, bUseBinaryFormat = True):
+    def write(self, sFilename):
         '''
-        Writes the CustomTabulated object to a file.
+        Writes the CustomTabulated object to a file in ASCII format.
 
         sFilename: string indicating a location where the CustomTabulated instance will be written to.
-        bUseBinaryFormat: boolean
-            True: write to a binary file
-            False: write to an ASCII file
         '''
         effective_filename = bytes(sFilename, encoding='utf8') if sys.version_info.major == 3 else sFilename
-        pLibTSG.tsgWriteCustomTabulated(self.pCustomTabulated, c_char_p(effective_filename), c_int(bUseBinaryFormat))
+        pLibTSG.tsgWriteCustomTabulated(self.pCustomTabulated, c_char_p(effective_filename))
 
     def getNumLevels(self):
         return pLibTSG.tsgGetNumLevelsCustomTabulated(self.pCustomTabulated)
