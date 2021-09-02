@@ -814,6 +814,16 @@ public:
      */
     void loadNeededPoints(const double *vals);
     /*!
+     * \brief Alias of loadNeededPoints().
+     */
+    void loadNeededValues(std::vector<double> const &vals) {loadNeededPoints(vals);}
+    /*!
+     * \brief Overload that uses a raw-array, does not check the array size.
+     *
+     * Identical to loadNeededValues() but does not throw if \b vals has an incorrect size (but will segfault).
+     */
+    void loadNeededValues(const double *vals) {loadNeededPoints(vals);}
+    /*!
      * \brief Returns the model values that have been loaded in the gird.
      *
      * Returns a pointer to the internal data-structures, which \b must \b not be modified
