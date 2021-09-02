@@ -1,4 +1,4 @@
-FROM rocm/dev-ubuntu-20.04:3.7
+FROM rocm/dev-ubuntu-20.04:latest
 
 ENV TZ=America/New_York
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
