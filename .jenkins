@@ -112,7 +112,7 @@ cmake \
                             filename 'Dockerfile.rocm'
                             dir 'docker'
                             additionalBuildArgs '--build-arg BASE=rocm/dev-ubuntu-20.04:4.3'
-                            args '--device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined --group-add video --env HIP_VISIBLE_DEVICES=${HIP_VISIBLE_DEVICES:-0}'
+                            args '--device=/dev/kfd --device=/dev/dri --security-opt seccomp=unconfined --group-add video --group-add render --env HIP_VISIBLE_DEVICES=${HIP_VISIBLE_DEVICES:-0}'
                             label 'rocm-docker && vega'
                         }
                     }
@@ -135,6 +135,7 @@ cmake \
   -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
 .. &&
                               make -j4 &&
+                              ./SparseGrids/tasgrid -v &&
                               ctest -j4 -V --no-compress-output -T Test &&
                               make install &&
                               make test_install
