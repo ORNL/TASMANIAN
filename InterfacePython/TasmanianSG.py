@@ -2365,6 +2365,17 @@ def np_arr_to_ctype(np_data, np_type=np.int32):
         np_data = np_data.astype(np_type)
     return np.ctypeslib.as_ctypes(np_data)
 
+def check_np_arr(np_data_name, np_data, expected_length, expected_dimension):
+    '''
+    Utility function that checks if a NumPy array conforms to given input lengths and dimensions.
+    '''
+    if len(np_data.shape) != expected_dimension:
+        raise TasmanianInputError(np_data_name, "ERROR: the dimension of "  + np_data_name +
+                                  " does not match the expected dimension of " + str(expected_dimension))
+    if len(np_data) != expected_length:
+        raise TasmanianInputError(np_data_name, "ERROR: the length of "  + np_data_name +
+                                  " does not match the expected length of " + str(expected_length))
+
 class CustomTabulated:
     def __init__(self):
         '''
@@ -2460,19 +2471,16 @@ def makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights
 
     output: CustomTabulated
     '''
-    if len(num_nodes) != num_levels:
-        raise TasmanianInputError("num_nodes", "ERROR: the length of num_nodes should match num_levels")
-    if len(precision) != num_levels:
-        raise TasmanianInputError("precision", "ERROR: the length of precision should match num_levels")
+    # nodes and weights are expected to be Python lists.
     if len(nodes) != num_levels:
-        raise TasmanianInputError("nodes", "ERROR: the length of nodes should match num_levels")
+        raise TasmanianInputError("nodes", "ERROR: the length of nodes does not match the expected length " + str(num_levels))
     if len(weights) != num_levels:
-        raise TasmanianInputError("weights", "ERROR: the length of weights should match num_levels")
+        raise TasmanianInputError("weights", "ERROR: the length of weights does not match the expected length " + str(num_levels))
+    check_np_arr("num_nodes", num_nodes, num_levels, 1);
+    check_np_arr("precision", precision, num_levels, 1);
     for i in range(num_levels):
-        if len(nodes[i]) != num_nodes[i]:
-            raise TasmanianInputError("nodes", "ERROR: the length of nodes["+str(i)+"] should match num_nodes["+str(i)+"]")
-        if len(weights[i]) != num_nodes[i]:
-            raise TasmanianInputError("weights", "ERROR: the length of weights["+str(i)+"] should match num_nodes["+str(i)+"]")
+        check_np_arr("nodes["+str(i)+"]", nodes[i], num_nodes[i], 1);
+        check_np_arr("weights["+str(i)+"]", weights[i], num_nodes[i], 1);
     ct = CustomTabulated()
     effective_description = bytes(description, encoding='utf8') if sys.version_info.major == 3 else description
     ct.pCustomTabulated = pLibTSG.tsgMakeCustomTabulatedFromData(c_int(num_levels), np_arr_to_ctype(num_nodes), np_arr_to_ctype(precision),
