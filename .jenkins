@@ -123,6 +123,7 @@ cmake \
   -D CMAKE_BUILD_TYPE=Release \
   -D CMAKE_CXX_FLAGS="-Wall -Wextra -Wshadow" \
   -D CMAKE_CXX_COMPILER=/opt/rocm/bin/hipcc \
+  -D PYTHON_EXECUTABLE=/usr/bin/python3 \
   -D Tasmanian_ENABLE_OPENMP=ON \
   -D Tasmanian_ENABLE_BLAS=ON \
   -D Tasmanian_ENABLE_CUDA=OFF \
