@@ -191,11 +191,11 @@ inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const do
 //     (i)   grid.getPoints() returns the quadrature reference points.
 //     (ii)  grid.getQuadratureWeights() returns the quadrature reference weights corresponding to grid.getPoints().
 //     (iii) grid.getLoadedValues() returns the values of the weight function at grid.getPoints().
-inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, TasGrid::TasmanianSparseGrid tsg,
+inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, TasGrid::TasmanianSparseGrid grid,
                                                     const char* description, const bool is_symmetric = false) {
-    std::vector<double> ref_points = tsg.getPoints();
-    std::vector<double> shifted_weights = tsg.getQuadratureWeights();
-    std::vector<double> weight_fn_vals = tsg.getLoadedPoints();
+    std::vector<double> ref_points = grid.getPoints();
+    std::vector<double> shifted_weights = grid.getQuadratureWeights();
+    std::vector<double> weight_fn_vals = std::vector<double>(grid.getLoadedValues(), grid.getLoadedValues() + grid.getNumLoaded());
     assert(ref_points.size() == shifted_weights.size());
     assert(ref_points.size() == weight_fn_vals.size());
     if (not std::all_of(weight_fn_vals.begin(), weight_fn_vals.end(), [shift](double x){return (x+shift)>=0.0;})) {
