@@ -202,6 +202,8 @@ double* tsgGetInterpolationWeights(void *grid, const double *x){
 
 void tsgLoadNeededPoints(void *grid, const double *vals){ ((TasmanianSparseGrid*) grid)->loadNeededPoints(vals); }
 
+void tsgLoadNeededValues(void *grid, const double *vals){ ((TasmanianSparseGrid*) grid)->loadNeededValues(vals); }
+
 const double* tsgGetLoadedValues(void *grid){
     return ((TasmanianSparseGrid*) grid)->getLoadedValues();
 }
