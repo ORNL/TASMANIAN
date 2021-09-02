@@ -520,8 +520,8 @@ void* tsgMakeCustomTabulatedFromData(const int cnum_levels, const int* cnum_node
         vec_cweights[l] = std::vector<double>(&cweights[ptr_idx], &cweights[ptr_idx] + cnum_nodes[l]);
         ptr_idx += cnum_nodes[l];
     }
-    return new TasGrid::CustomTabulated(cnum_levels, std::move(std::vector<int>(cnum_nodes, cnum_nodes + cnum_levels)),
-                                        std::move(std::vector<int>(cprecision, cprecision + cnum_levels)), std::move(vec_cnodes),
+    return new TasGrid::CustomTabulated(cnum_levels, std::vector<int>(cnum_nodes, cnum_nodes + cnum_levels),
+                                        std::vector<int>(cprecision, cprecision + cnum_levels), std::move(vec_cnodes),
                                         std::move(vec_cweights), cdescription);
 }
 
