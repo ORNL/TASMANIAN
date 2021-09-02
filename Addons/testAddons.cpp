@@ -45,12 +45,13 @@ void debugTest() {
     std::vector<double> nodes = tsg.getPoints();
     std::vector<double> fvals(tsg.getNumNeeded());
     std::transform(nodes.begin(), nodes.end(), fvals.begin(), sinc);
-    // tsg.loadNeededPoints(fvals);
+    tsg.loadNeededPoints(fvals);
 
     std::vector<double> grid_points = tsg.getPoints();
-    std::vector<double> grid_loaded_points = tsg.getLoadedPoints();
+    std::vector<double> grid_values = std::vector<double>(tsg.getLoadedValues(), tsg.getLoadedValues() + tsg.getNumLoaded());
+
     for (int i=0; i<tsg.getNumLoaded(); i++) {
-        cout << grid_points[i] << " // " << grid_loaded_points[i] << endl;
+        cout << grid_points[i] << " // " << grid_values[i] << endl;
     }
 
 }

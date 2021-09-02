@@ -196,6 +196,7 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
     std::vector<double> ref_points = grid.getPoints();
     std::vector<double> shifted_weights = grid.getQuadratureWeights();
     std::vector<double> weight_fn_vals = std::vector<double>(grid.getLoadedValues(), grid.getLoadedValues() + grid.getNumLoaded());
+    // TODO: make the below checks throw an invalid_argument error.
     assert(ref_points.size() == shifted_weights.size());
     assert(ref_points.size() == weight_fn_vals.size());
     if (not std::all_of(weight_fn_vals.begin(), weight_fn_vals.end(), [shift](double x){return (x+shift)>=0.0;})) {
