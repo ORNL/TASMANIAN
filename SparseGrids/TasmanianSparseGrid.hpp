@@ -181,8 +181,8 @@ namespace TasGrid{
  * coefficients, e.g., computed externally with a regression method using
  * an unstructured set of samples, or the user can provide the model values
  * at the needed points and let Tasmanian do the computations.
- * - TasGrid::loadNeededPoints(), TasGrid::loadNeededValues()
- * - loadNeededPoints(), loadNeededValues()
+ * - TasGrid::loadNeededPoints()
+ * - loadNeededPoints(), loadNeededValues(), getLoadedValues()
  * - setHierarchicalCoefficients()
  *
  * \par Update and Adaptive Refinement
