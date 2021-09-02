@@ -99,6 +99,9 @@ public:
 
     //! \brief Get the points \b x and quadrature weights \b w associated with the rule at the \b level.
     void getWeightsNodes(int level, std::vector<double> &w, std::vector<double> &x) const;
+    //! \brief Overload that writes to an array directly rather than a container. For interface purposes mostly, e.g. Python.
+    void getWeightsNodes(int level, double w[], double x[]) const;
+
     //! \brief Returns the user provided human readable description string.
     const char* getDescription() const;
 

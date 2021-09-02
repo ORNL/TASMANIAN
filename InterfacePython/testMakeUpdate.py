@@ -27,16 +27,6 @@ class TestTasClass(unittest.TestCase):
         Check different ways to specify the library path and check the
         version number.
         '''
-        if (tdata.bEnableSyncTests):
-            grid = Tasmanian.TasmanianSparseGrid(tdata.sLibPath)
-            sVersion = "{0:1d}.{1:1d}".format(grid.getVersionMajor(), grid.getVersionMinor())
-            self.assertEqual(sVersion, Tasmanian.__version__, "version mismatch")
-
-            pLibTSG = cdll.LoadLibrary(tdata.sLibPath)
-            grid = Tasmanian.TasmanianSparseGrid(pLibTSG)
-            sVersion = "{0:1d}.{1:1d}".format(grid.getVersionMajor(), grid.getVersionMinor())
-            self.assertEqual(sVersion, Tasmanian.__version__, "version mismatch")
-
         grid = Tasmanian.TasmanianSparseGrid()
 
         sVersion = "{0:1d}.{1:1d}".format(grid.getVersionMajor(), grid.getVersionMinor())
