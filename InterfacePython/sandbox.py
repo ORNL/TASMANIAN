@@ -20,22 +20,4 @@ import math
 # You can also use the file without cmake
 ###############################################################################
 
-# print("Add code to this file to test, debug, or develop features")
-import Tasmanian
-num_levels = 3
-num_nodes = np.array([2, 3, 2])
-precision = np.array([4, 5, 6])
-nodes = [np.array([0.0001, 0.7]), np.array([-0.5, 0.5, 0.7]), np.array([0.66, 0.4])]
-weights = [np.array([1.5, 0.5]), np.array([1.0, 0.9, 0.1]), np.array([2.0, 0.000000001])]
-description = "Exotic Quadrature"
-ct = Tasmanian.makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights, description)
-
-print(ct.getNumLevels())
-print(ct.getNumPoints(1))
-print(ct.getIExact(1))
-print(ct.getQExact(1))
-
-print('Grabbing weights and nodes...')
-w, x = ct.getWeightsNodes(2)
-print(w)
-print(x)
+print("Add code to this file to test, debug, or develop features")
