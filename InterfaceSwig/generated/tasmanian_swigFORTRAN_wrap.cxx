@@ -614,6 +614,36 @@ SWIGEXPORT int _wrap_TasmanianSparseGrid_isOpenMPEnabled() {
 }
 
 
+SWIGEXPORT int _wrap_TasmanianSparseGrid_isCudaEnabled() {
+  int fresult ;
+  bool result;
+  
+  result = (bool)TasGrid::TasmanianSparseGrid::isCudaEnabled();
+  fresult = (result ? 1 : 0);
+  return fresult;
+}
+
+
+SWIGEXPORT int _wrap_TasmanianSparseGrid_isHipEnabled() {
+  int fresult ;
+  bool result;
+  
+  result = (bool)TasGrid::TasmanianSparseGrid::isHipEnabled();
+  fresult = (result ? 1 : 0);
+  return fresult;
+}
+
+
+SWIGEXPORT int _wrap_TasmanianSparseGrid_isDpcppEnabled() {
+  int fresult ;
+  bool result;
+  
+  result = (bool)TasGrid::TasmanianSparseGrid::isDpcppEnabled();
+  fresult = (result ? 1 : 0);
+  return fresult;
+}
+
+
 SWIGEXPORT void _wrap_TasmanianSparseGrid_write__SWIG_0(SwigClassWrapper *farg1, SwigArrayWrapper *farg2, int const *farg3) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   char *arg2 = (char *) 0 ;

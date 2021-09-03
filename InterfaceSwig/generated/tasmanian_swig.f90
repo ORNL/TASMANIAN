@@ -172,6 +172,9 @@ module tasmanian_swig
   procedure, nopass :: getGitCommitHash => swigf_TasmanianSparseGrid_getGitCommitHash
   procedure, nopass :: getCmakeCxxFlags => swigf_TasmanianSparseGrid_getCmakeCxxFlags
   procedure, nopass :: isOpenMPEnabled => swigf_TasmanianSparseGrid_isOpenMPEnabled
+  procedure, nopass :: isCudaEnabled => swigf_TasmanianSparseGrid_isCudaEnabled
+  procedure, nopass :: isHipEnabled => swigf_TasmanianSparseGrid_isHipEnabled
+  procedure, nopass :: isDpcppEnabled => swigf_TasmanianSparseGrid_isDpcppEnabled
   procedure, private :: swigf_TasmanianSparseGrid_write__SWIG_0
   procedure, private :: swigf_TasmanianSparseGrid_write__SWIG_1
   procedure, private :: swigf_TasmanianSparseGrid_read__SWIG_0
@@ -420,6 +423,27 @@ end function
 
 function swigc_TasmanianSparseGrid_isOpenMPEnabled() &
 bind(C, name="_wrap_TasmanianSparseGrid_isOpenMPEnabled") &
+result(fresult)
+use, intrinsic :: ISO_C_BINDING
+integer(C_INT) :: fresult
+end function
+
+function swigc_TasmanianSparseGrid_isCudaEnabled() &
+bind(C, name="_wrap_TasmanianSparseGrid_isCudaEnabled") &
+result(fresult)
+use, intrinsic :: ISO_C_BINDING
+integer(C_INT) :: fresult
+end function
+
+function swigc_TasmanianSparseGrid_isHipEnabled() &
+bind(C, name="_wrap_TasmanianSparseGrid_isHipEnabled") &
+result(fresult)
+use, intrinsic :: ISO_C_BINDING
+integer(C_INT) :: fresult
+end function
+
+function swigc_TasmanianSparseGrid_isDpcppEnabled() &
+bind(C, name="_wrap_TasmanianSparseGrid_isDpcppEnabled") &
 result(fresult)
 use, intrinsic :: ISO_C_BINDING
 integer(C_INT) :: fresult
@@ -1667,7 +1691,7 @@ function tsgGetComplexHierarchicalCoefficients(grid) result(fresult)
     use, intrinsic :: ISO_C_BINDING
     class(TasmanianSparseGrid), intent(in) :: grid
     real(C_DOUBLE), dimension(:, :), pointer :: real_coeff
-    complex(C_DOUBLE), dimension(:, :), pointer :: fresult
+    complex(C_DOUBLE_COMPLEX), dimension(:, :), pointer :: fresult
     integer :: i, j, numo, numl
 
     real_coeff => tsgGetHierarchicalCoefficients(grid)
@@ -1687,7 +1711,7 @@ end function
 subroutine tsgSetComplexHierarchicalCoefficients(grid, coeffs)
     use, intrinsic :: ISO_C_BINDING
     class(TasmanianSparseGrid), intent(inout) :: grid
-    complex(C_DOUBLE), dimension(:, :) :: coeffs
+    complex(C_DOUBLE_COMPLEX), dimension(:, :) :: coeffs
     real(C_DOUBLE), dimension(:, :), pointer :: real_coeff
     integer :: i, j, numo, numl
 
@@ -1823,6 +1847,36 @@ logical :: swig_result
 integer(C_INT) :: fresult 
 
 fresult = swigc_TasmanianSparseGrid_isOpenMPEnabled()
+call SWIGTM_fout_bool(fresult, swig_result)
+end function
+
+function swigf_TasmanianSparseGrid_isCudaEnabled() &
+result(swig_result)
+use, intrinsic :: ISO_C_BINDING
+logical :: swig_result
+integer(C_INT) :: fresult 
+
+fresult = swigc_TasmanianSparseGrid_isCudaEnabled()
+call SWIGTM_fout_bool(fresult, swig_result)
+end function
+
+function swigf_TasmanianSparseGrid_isHipEnabled() &
+result(swig_result)
+use, intrinsic :: ISO_C_BINDING
+logical :: swig_result
+integer(C_INT) :: fresult 
+
+fresult = swigc_TasmanianSparseGrid_isHipEnabled()
+call SWIGTM_fout_bool(fresult, swig_result)
+end function
+
+function swigf_TasmanianSparseGrid_isDpcppEnabled() &
+result(swig_result)
+use, intrinsic :: ISO_C_BINDING
+logical :: swig_result
+integer(C_INT) :: fresult 
+
+fresult = swigc_TasmanianSparseGrid_isDpcppEnabled()
 call SWIGTM_fout_bool(fresult, swig_result)
 end function
 
