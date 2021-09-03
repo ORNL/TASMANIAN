@@ -279,7 +279,7 @@ function tsgGetComplexHierarchicalCoefficients(grid) result(fresult)
     use, intrinsic :: ISO_C_BINDING
     class(TasmanianSparseGrid), intent(in) :: grid
     real(C_DOUBLE), dimension(:, :), pointer :: real_coeff
-    complex(C_DOUBLE), dimension(:, :), pointer :: fresult
+    complex(C_DOUBLE_COMPLEX), dimension(:, :), pointer :: fresult
     integer :: i, j, numo, numl
 
     real_coeff => tsgGetHierarchicalCoefficients(grid)
@@ -299,7 +299,7 @@ end function
 subroutine tsgSetComplexHierarchicalCoefficients(grid, coeffs)
     use, intrinsic :: ISO_C_BINDING
     class(TasmanianSparseGrid), intent(inout) :: grid
-    complex(C_DOUBLE), dimension(:, :) :: coeffs
+    complex(C_DOUBLE_COMPLEX), dimension(:, :) :: coeffs
     real(C_DOUBLE), dimension(:, :), pointer :: real_coeff
     integer :: i, j, numo, numl
 
