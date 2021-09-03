@@ -44,6 +44,13 @@ namespace TasGrid {
 %ignore TasmanianSparseGrid::isUsingConstruction;
 %ignore TasmanianSparseGrid::loadConstructedPoints;
 %ignore TasmanianSparseGrid::finishConstruction;
+
+%ignore TasmanianSparseGrid::setCuBlasHandle;
+%ignore TasmanianSparseGrid::setCuSparseHandle;
+%ignore TasmanianSparseGrid::setCuSolverHandle;
+%ignore TasmanianSparseGrid::setRocBlasHandle;
+%ignore TasmanianSparseGrid::setRocSparseHandle;
+%ignore TasmanianSparseGrid::setSycleQueue;
 }
 
 // Using custom factory methods to take advantage of the Fortran optional parameters
