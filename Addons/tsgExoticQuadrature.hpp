@@ -40,6 +40,7 @@ namespace TasGrid {
 
 /*!
  * \internal
+ * \ingroup TasmanianAddonsExoticQuad
  * \brief Evaluates a polynomial with roots given by \b roots at the point \b x.
  * \endinternal
  */
@@ -51,6 +52,7 @@ inline double poly_eval(const std::vector<double> &roots, double x) {
 
 /*!
  * \internal
+ * \ingroup TasmanianAddonsExoticQuad
  * \brief Generate the roots of all orthogonal polynomials up to degree n, where orthogonality is with respect to the
  * measure given by ref_weights. Specializes depending on if the underlying weight function is symmetric or not.
  * \endinternal
@@ -102,6 +104,7 @@ inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<
 
 /*!
  * \internal
+ * \ingroup TasmanianAddonsExoticQuad
  * \brief Evaluates a Lagrange basis polynomial at a point \b x.
  * \endinternal
  */
