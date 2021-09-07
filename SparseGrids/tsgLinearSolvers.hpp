@@ -109,8 +109,8 @@ namespace TasmanianTridiagonalSolver{
     void decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z);
 
     //! \brief A version of decompose() based on the ALGOL code for Golub's 1969 paper "Calculation of Quadrature Rules".
-    void decompose2(int n, const std::vector<double> &diag, const std::vector<double> &offdiag, const double mu0,
-                    std::vector<double> nodes, std::vector<double> weights);
+    void decompose2(std::vector<double> &diag, std::vector<double> &offdiag, const double mu0, std::vector<double> &nodes,
+                    std::vector<double> &weights);
 
 //! \internal
 //! \brief Methods for Fast-Fourier-Transform.

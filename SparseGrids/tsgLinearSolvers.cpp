@@ -237,8 +237,8 @@ void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::v
     }
 }
 
-void decompose2(const std::vector<double> &diag, const std::vector<double> &off_diag, const double mu0, std::vector<double> nodes,
-                std::vector<double> weights) {
+void decompose2(std::vector<double> &diag, std::vector<double> &off_diag, const double mu0, std::vector<double> &nodes,
+                std::vector<double> &weights) {
 
     // Initialize.
     int n = diag.size();
