@@ -78,7 +78,7 @@ void sparse_grids_example_04(){
         }
 
         // feed the data to the grid
-        grid.loadNeededPoints(model_values);
+        grid.loadNeededValues(model_values);
 
         // interpolation can be performed after loadNeededPoints() is called
         // note that we don't need to set the size, Tasmanian will automatically set the right size

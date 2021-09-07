@@ -77,7 +77,7 @@ def example_05():
     while(bBelowBudget):
         sInfo = ""
         if (grid_isotropic.getNumLoaded() < iBudget):
-            Tasmanian.loadNeededPoints(lambda x, tid : model(x), grid_isotropic, iNumThreads)
+            Tasmanian.loadNeededValues(lambda x, tid : model(x), grid_isotropic, iNumThreads)
             sInfo += "{0:>8d}{1:>14s}".format(grid_isotropic.getNumLoaded(),
                      "{0:1.4e}".format(testGrid(grid_isotropic, aTestPoints, aReferenceValues)))
 
@@ -89,7 +89,7 @@ def example_05():
             sInfo += "{0:>22s}".format("")
 
         if (grid_iptotal.getNumLoaded() < iBudget):
-            Tasmanian.loadNeededPoints(lambda x, tid : model(x), grid_iptotal, iNumThreads)
+            Tasmanian.loadNeededValues(lambda x, tid : model(x), grid_iptotal, iNumThreads)
             sInfo += "{0:>8d}{1:>14s}".format(grid_iptotal.getNumLoaded(),
                      "{0:1.4e}".format(testGrid(grid_iptotal, aTestPoints, aReferenceValues)))
 
@@ -98,7 +98,7 @@ def example_05():
             sInfo += "{0:>22s}".format("")
 
         if (grid_icurved.getNumLoaded() < iBudget):
-            Tasmanian.loadNeededPoints(lambda x, tid : model(x), grid_icurved, iNumThreads)
+            Tasmanian.loadNeededValues(lambda x, tid : model(x), grid_icurved, iNumThreads)
             sInfo += "{0:>8d}{1:>14s}".format(grid_icurved.getNumLoaded(),
                      "{0:1.4e}".format(testGrid(grid_icurved, aTestPoints, aReferenceValues)))
 
@@ -107,7 +107,7 @@ def example_05():
             sInfo += "{0:>22s}".format("")
 
         if (grid_surplus.getNumLoaded() < iBudget):
-            Tasmanian.loadNeededPoints(lambda x, tid : model(x), grid_surplus, iNumThreads)
+            Tasmanian.loadNeededValues(lambda x, tid : model(x), grid_surplus, iNumThreads)
             sInfo += "{0:>8d}{1:>14s}".format(grid_surplus.getNumLoaded(),
                      "{0:1.4e}".format(testGrid(grid_surplus, aTestPoints, aReferenceValues)))
 

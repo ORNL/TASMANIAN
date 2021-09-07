@@ -37,7 +37,7 @@ using namespace std;
  * but the two processes can have very different computational overhead.
  * Sequence grids offer much faster TasmanianSparseGrid::evaluate() and TasmanianSparseGrid::evaluateBatch()
  * algorithms, at the cost of nearly double the storage and more than double the cost
- * of TasmanianSparseGrid::loadNeededPoints().
+ * of TasmanianSparseGrid::loadNeededValues().
  *
  * This example serves as a simple demonstration of the difference.
  *
@@ -82,13 +82,13 @@ void sparse_grids_example_07(){
 
     // load the model values into the grids
     time_start = std::chrono::system_clock::now();
-    global.loadNeededPoints(model(global.getNeededPoints()));
+    global.loadNeededValues(model(global.getNeededPoints()));
     time_end = std::chrono::system_clock::now();
     long long load_global =
         std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start).count();
 
     time_start = std::chrono::system_clock::now();
-    sequence.loadNeededPoints(model(sequence.getNeededPoints()));
+    sequence.loadNeededValues(model(sequence.getNeededPoints()));
     time_end = std::chrono::system_clock::now();
     long long load_sequence =
         std::chrono::duration_cast<std::chrono::microseconds>(time_end - time_start).count();

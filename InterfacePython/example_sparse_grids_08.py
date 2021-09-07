@@ -60,8 +60,8 @@ def example_08():
     grid_localp     = Tasmanian.makeLocalPolynomialGrid(iNumInputs, 1, 7, iOrder, "localp")
     grid_semilocalp = Tasmanian.makeLocalPolynomialGrid(iNumInputs, 1, 7, iOrder, "semi-localp")
 
-    Tasmanian.loadNeededPoints(lambda x, tid : smooth_model(x), grid_localp, 4)
-    Tasmanian.loadNeededPoints(lambda x, tid : smooth_model(x), grid_semilocalp, 4)
+    Tasmanian.loadNeededValues(lambda x, tid : smooth_model(x), grid_localp, 4)
+    Tasmanian.loadNeededValues(lambda x, tid : smooth_model(x), grid_semilocalp, 4)
 
     print("Using smooth model: f(x, y) = exp(-x*x) * cos(y)")
     print(" rule_localp,     points = {0:1d}   error = {1:1.4e}".format(
@@ -76,7 +76,7 @@ def example_08():
     grid_localp0 = Tasmanian.makeLocalPolynomialGrid(iNumInputs, 1, 6, iOrder, "localp-zero")
 
     Tasmanian.reloadLoadedPoints(lambda x, tid : zero_model(x), grid_localp, 4)
-    Tasmanian.loadNeededPoints(lambda x, tid : zero_model(x), grid_localp0, 4)
+    Tasmanian.loadNeededValues(lambda x, tid : zero_model(x), grid_localp0, 4)
 
     print("Using homogeneous model: f(x, y) = cos(pi * x / 2) * cos(pi * y / 2)")
     print(" rule_localp,  points = {0:1d}   error = {1:1.4e}".format(

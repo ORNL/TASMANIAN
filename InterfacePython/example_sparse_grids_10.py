@@ -64,8 +64,8 @@ def example_10():
 
     fTolerance = 1.E-5;
     while((grid_poly.getNumNeeded() > 0) or (grid_wavelet.getNumNeeded() > 0)):
-        Tasmanian.loadNeededPoints(lambda x, tid: sharp_model(x), grid_poly, 4);
-        Tasmanian.loadNeededPoints(lambda x, tid: sharp_model(x), grid_wavelet, 4);
+        Tasmanian.loadNeededValues(lambda x, tid: sharp_model(x), grid_poly, 4);
+        Tasmanian.loadNeededValues(lambda x, tid: sharp_model(x), grid_wavelet, 4);
 
         # print the results at this stage
         print("{0:>8d}{1:>14.4e}{2:>8d}{3:>14.4e}".format(

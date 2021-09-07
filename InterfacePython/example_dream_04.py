@@ -33,7 +33,7 @@
 from Tasmanian import DREAM
 from Tasmanian import SparseGrid
 from Tasmanian import makeSequenceGrid
-from Tasmanian import loadNeededPoints
+from Tasmanian import loadNeededValues
 import numpy
 
 def example_04():
@@ -70,7 +70,7 @@ def example_04():
     domain_upper = numpy.array([1.2, 4.0, 1.2, 4.0])
     grid.setDomainTransform(numpy.column_stack([domain_lower, domain_upper]))
 
-    loadNeededPoints(lambda x, tid : model(x), grid, 1)
+    loadNeededValues(lambda x, tid : model(x), grid, 1)
 
     likely = DREAM.LikelihoodGaussIsotropic(1.0 / float(iNumOutputs), aData)
 

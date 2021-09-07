@@ -48,7 +48,7 @@ def example_04():
         aPoints = grid.getNeededPoints()
 
         aModelValues = np.exp(-aPoints[:,0]**2) * np.cos(aPoints[:,1])
-        grid.loadNeededPoints(aModelValues.reshape((aModelValues.shape[0], iNumOutputs)))
+        grid.loadNeededValues(aModelValues.reshape((aModelValues.shape[0], iNumOutputs)))
 
         # when using multiple points at once, evaluateBatch() is more efficient
         aResult = grid.evaluate(aPointOfInterest)
