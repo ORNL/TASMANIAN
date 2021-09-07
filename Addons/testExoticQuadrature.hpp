@@ -102,7 +102,7 @@ inline bool wrapSincTest(std::function<double(const double*)> f, const int dimen
     TasGrid::CustomTabulated ct;
     if (use_lambda) {
         // Create the CustomTabulated object using the function lambda.
-        ct = TasGrid::getExoticQuadrature(level, shift, sinc, symmetric_weights);
+        ct = TasGrid::getExoticQuadrature(level, shift, sinc, 50 * depth + 1, "Sinc-Weighted Quadrature", symmetric_weights);
     } else {
         // Create the CustomTabulated object using a Gauss-Legendre reference grid.
         TasGrid::TasmanianSparseGrid ref_grid;
@@ -111,7 +111,7 @@ inline bool wrapSincTest(std::function<double(const double*)> f, const int dimen
         std::vector<double> fvals(ref_grid.getNumNeeded());
         std::transform(nodes.begin(), nodes.end(), fvals.begin(), sinc);
         ref_grid.loadNeededValues(fvals);
-        ct = TasGrid::getExoticQuadrature(level, shift, ref_grid, symmetric_weights);
+        ct = TasGrid::getExoticQuadrature(level, shift, ref_grid, "Sinc-Weighted Quadrature", symmetric_weights);
     }
 
     // Compute the integral and compare to the reference value for each type of CustomTabulated object.
