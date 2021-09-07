@@ -112,6 +112,7 @@ pLibTSG.tsgGetQuadratureWeightsStatic.argtypes = [c_void_p]
 pLibTSG.tsgGetInterpolationWeights.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgGetInterpolationWeightsStatic.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
 pLibTSG.tsgLoadNeededPoints.argtypes = [c_void_p, POINTER(c_double)]
+pLibTSG.tsgLoadNeededValues.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgGetLoadedValuesStatic.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgEvaluate.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
 pLibTSG.tsgEvaluateFast.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
@@ -1127,6 +1128,12 @@ class TasmanianSparseGrid:
         iNumPoints = llfVals.shape[0]
         iNumDims = llfVals.shape[1]
         pLibTSG.tsgLoadNeededPoints(self.pGrid, np.ctypeslib.as_ctypes(llfVals.reshape([iNumPoints * iNumDims])))
+
+    def loadNeededValues(self, llfVals):
+        '''
+        Alias of loadNeededPoints().
+        '''
+        self.loadNeededPoints(llfVals)
 
     def getLoadedValues(self):
         '''
