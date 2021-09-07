@@ -381,14 +381,14 @@ void TasmanianSparseGrid::getInterpolationWeights(const double x[], double weigh
 
 void TasmanianSparseGrid::loadNeededValues(const double *vals){
     if (empty()) throw std::runtime_error("Cannot load model values into an empty grid!");
-    base->loadNeededPoints(vals);
+    base->loadNeededValues(vals);
 }
 void TasmanianSparseGrid::loadNeededValues(const std::vector<double> &vals){
     size_t nump = (size_t) base->getNumNeeded();
     if (nump == 0) nump = (size_t) base->getNumPoints();
     nump *= (size_t) base->getNumOutputs();
     if (vals.size() != nump) throw std::runtime_error("ERROR: loadNeededPoints() given the wrong number of inputs, should be getNumNeeded() * getNumOutputs() or (if getNumNeeded() == 0) getNumPoints() * getNumOutputs()");
-    loadNeededPoints(vals.data());
+    loadNeededValues(vals.data());
 }
 
 void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{

@@ -59,7 +59,7 @@ public:
 
     TypeOneDRule getRule() const override{ return rule_fourier; }
 
-    void loadNeededPoints(const double *vals) override;
+    void loadNeededValues(const double *vals) override;
 
     void getLoadedPoints(double *x) const override;
     void getNeededPoints(double *x) const override;
