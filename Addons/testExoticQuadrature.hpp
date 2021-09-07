@@ -99,31 +99,43 @@ inline bool wrapSincTest(std::function<double(const double*)> f, const int dimen
                                                               0.0 :
                                                               sin(freq * (x - phase_shift)) / (freq * (x - phase_shift));};
     int level = depth % 2 == 1 ? (depth + 1) / 2 : depth / 2 + 1;
-    TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(level, shift, sinc);
-    TasGrid::TasmanianSparseGrid sg;
-    sg.makeGlobalGrid(dimension, 1, depth, TasGrid::type_qptotal, std::move(ct));
-
-    // Compute the integral and compare to the reference value.
-    std::vector<double> quad_points = sg.getPoints();
-    std::vector<double> quad_weights = sg.getQuadratureWeights();
-    assert(quad_weights.size() * dimension == quad_points.size());
-    double approx_integral = 0.0;
-    for (size_t i=0; i<quad_weights.size(); i++) {
-        approx_integral += f(&quad_points[dimension * i]) * quad_weights[i];
-    }
-    if (std::abs(approx_integral - exact_integral) > tolerance) {
-        std::cout << "ERROR: " << std::setprecision(16) << "Computed integral value " << approx_integral
-                  << " does not match exact integral " << exact_integral << " for test problem\n"
-                  << "∫_[-1,1]^n f(x[1],...,x[n]) * sinc(freq*(x[n]-phase_shift)) * ... * sinc(freq*(x[n]-phase_shift)) dx[1] ... dx[n]\n"
-                  << "with inputs: \n\n" << std::left
-                  << std::setw(12) << "dimension"   << " = " << dimension                              << "\n"
-                  << std::setw(12) << "depth"       << " = " << depth                                  << "\n"
-                  << std::setw(12) << "freq"        << " = " << freq                                   << "\n"
-                  << std::setw(12) << "phase_shift" << " = " << phase_shift                            << "\n"
-                  << std::setw(12) << "shift"       << " = " << shift                                  << "\n"
-                  << std::setw(12) << "symmetry"    << " = " << (symmetric_weights ? "true" : "false") << "\n"
-                  << std::setw(12) << "precision"   << " = " << tolerance                              << "\n" << std::endl;
-        passed = false;
+    for (int i=0; i<2; i++) {
+        TasGrid::CustomTabulated ct;
+        if (i == 0) {
+            // Create the CustomTabulated object using the function lambda.
+            ct = TasGrid::getExoticQuadrature(level, shift, sinc);
+        } else {
+            // Create the CustomTabulated object using a Gauss-Legendre reference grid.
+            TasGrid::TasmanianSparseGrid ref_grid;
+            ref_grid.makeGlobalGrid(1, 1, 50 * depth + 1, TasGrid::type_qptotal, TasGrid::rule_gausslegendre);
+            std::vector<double> nodes = ref_grid.getPoints();
+            std::vector<double> fvals(ref_grid.getNumNeeded());
+            std::transform(nodes.begin(), nodes.end(), fvals.begin(), sinc);
+            ref_grid.loadNeededPoints(fvals);
+            ct = TasGrid::getExoticQuadrature(level, shift, ref_grid);
+        }
+        // Compute the integral and compare to the reference value for each type of CustomTabulated object.
+        TasGrid::TasmanianSparseGrid sg;
+        sg.makeGlobalGrid(dimension, 1, depth, TasGrid::type_qptotal, std::move(ct));
+        std::vector<double> quad_points = sg.getPoints();
+        std::vector<double> quad_weights = sg.getQuadratureWeights();
+        assert(quad_weights.size() * dimension == quad_points.size());
+        double approx_integral = 0.0;
+        for (size_t i=0; i<quad_weights.size(); i++) {
+            approx_integral += f(&quad_points[dimension * i]) * quad_weights[i];
+        }
+        if (std::abs(approx_integral - exact_integral) > tolerance) {
+            std::cout << "ERROR: " << std::setprecision(16) << "Computed integral value " << approx_integral
+                      << " does not match exact integral " << exact_integral << " for test problem with inputs: \n\n" << std::left
+                      << std::setw(12) << "input type"  << " = " << (i == 0 ? "function lambda" : "TasmanianSparseGrid") << "\n"
+                      << std::setw(12) << "weight_fn"   << " = " << "sinc(" << freq << "*[x-" << phase_shift << "])"     << "\n"
+                      << std::setw(12) << "dimension"   << " = " << dimension                                            << "\n"
+                      << std::setw(12) << "depth"       << " = " << depth                                                << "\n"
+                      << std::setw(12) << "shift"       << " = " << shift                                                << "\n"
+                      << std::setw(12) << "symmetry"    << " = " << (symmetric_weights ? "true" : "false")               << "\n"
+                      << std::setw(12) << "precision"   << " = " << tolerance                                            << "\n" << std::endl;
+            passed = false;
+        }
     }
     return passed;
 

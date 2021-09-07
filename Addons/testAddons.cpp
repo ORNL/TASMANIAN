@@ -35,25 +35,6 @@
 void debugTest() {
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./Addons/addontester debug" << endl;
-
-    cout << "Running Exotic Quadrature" << endl;
-
-    int level = 101;
-    TasGrid::TasmanianSparseGrid tsg;
-    tsg.makeGlobalGrid(1, 1, level, TasGrid::type_qptotal, TasGrid::rule_gausslegendre);
-    auto sinc = [](double x)->double{return x == 0.0 ? 1.0 : sin(x) / x;};
-    std::vector<double> nodes = tsg.getPoints();
-    std::vector<double> fvals(tsg.getNumNeeded());
-    std::transform(nodes.begin(), nodes.end(), fvals.begin(), sinc);
-    tsg.loadNeededPoints(fvals);
-
-    std::vector<double> grid_points = tsg.getPoints();
-    std::vector<double> grid_values = std::vector<double>(tsg.getLoadedValues(), tsg.getLoadedValues() + tsg.getNumLoaded());
-
-    for (int i=0; i<tsg.getNumLoaded(); i++) {
-        cout << grid_points[i] << " // " << grid_values[i] << endl;
-    }
-
 }
 
 int main(int argc, char const **argv){
