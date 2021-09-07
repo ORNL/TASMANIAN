@@ -199,15 +199,15 @@ inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const do
  * scalar \b shift, a reference TasmanianSparseGrid \b grid containing loaded values of the weight function, a string \b description,
  * and an optional bool \b is_symmetric that should be set to true if the weight function is symmetric.
  *
- * It is assumed that grid is a sparse grid interpolant/surrogate to the weight function. Only the nodes in grid.getLoadedPoints(),
+ * It is assumed that grid is a one dimensional interpolant/surrogate to the weight function. Only the nodes in grid.getLoadedPoints(),
  * the quadrature weights in grid.getQuadratureWeights(), and the loaded weight function values in grid.getLoadedValues() are used
  * in the computation of the exotic quadrature. Specifically, these vectors are used to orthogonalize the polynomial basis needed
  * to compute the optimal exotic quadrature.
  */
 inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, const TasGrid::TasmanianSparseGrid &grid,
                                                     const char* description, const bool is_symmetric = false) {
-    if (grid.getPoints().size() == 0) {
-        throw std::invalid_argument("ERROR: grid needs to contain a nonzero number of nodes returned by grid.getPoints()!");
+    if (grid.getNumLoaded() == 0) {
+        throw std::invalid_argument("ERROR: grid needs to contain a nonzero number of loaded points returned by grid.getLoadedPoints()!");
     }
     if (grid.getNumDimensions() != 1) {
         throw std::invalid_argument("ERROR: grid needs to be one dimensional!");
