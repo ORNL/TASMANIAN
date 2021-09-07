@@ -91,8 +91,8 @@ void sparse_grids_example_09(){
 
     double const tolerance = 1.E-5;
     while((grid_classic.getNumNeeded() > 0) || (grid_fds.getNumNeeded() > 0)){
-        TasGrid::loadNeededPoints(sharp_model, grid_classic, 4);
-        TasGrid::loadNeededPoints(sharp_model, grid_fds, 4);
+        TasGrid::loadNeededValues(sharp_model, grid_classic, 4);
+        TasGrid::loadNeededValues(sharp_model, grid_fds, 4);
 
         // output the grids and results at the current stage
         cout << setw(8) << grid_classic.getNumLoaded()

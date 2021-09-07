@@ -217,7 +217,7 @@ void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[])
     }
 }
 
-void GridLocalPolynomial::loadNeededPointsGPU(const double *vals){
+void GridLocalPolynomial::loadNeededValuesGPU(const double *vals){
     updateValues(vals);
 
     std::vector<int> levels = HierarchyManipulations::computeLevels(points, rule.get());
@@ -406,11 +406,11 @@ void GridLocalPolynomial::updateValues(double const *vals){
         }
     }
 }
-void GridLocalPolynomial::loadNeededPoints(const double *vals){
+void GridLocalPolynomial::loadNeededValues(const double *vals){
     #ifdef Tasmanian_ENABLE_GPU
     if (acceleration->on_gpu()){
         acceleration->setDevice();
-        loadNeededPointsGPU(vals);
+        loadNeededValuesGPU(vals);
         return;
     }
     #endif

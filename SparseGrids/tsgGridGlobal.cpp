@@ -297,7 +297,7 @@ void GridGlobal::acceptUpdatedTensors(){
     }
 }
 
-void GridGlobal::loadNeededPoints(const double *vals){
+void GridGlobal::loadNeededValues(const double *vals){
     clearGpuValues();
     if (points.empty() || needed.empty()){
         values.setValues(vals);
@@ -669,7 +669,7 @@ std::vector<double> GridGlobal::computeSurpluses(int output, bool normalize) con
 
         GridSequence seq(acceleration, MultiIndexSet(points), 1, rule); // there is an extra copy here, but the sequence grid does the surplus computation automatically
 
-        seq.loadNeededPoints(surp.data());
+        seq.loadNeededValues(surp.data());
 
         std::copy_n(seq.getSurpluses(), surp.size(), surp.data());
 
@@ -777,7 +777,7 @@ void GridGlobal::setSurplusRefinement(double tolerance, int output, const std::v
 void GridGlobal::setHierarchicalCoefficients(const double c[]){
     clearGpuValues();
     if (!points.empty()) clearRefinement();
-    loadNeededPoints(c);
+    loadNeededValues(c);
 }
 void GridGlobal::integrateHierarchicalFunctions(double integrals[]) const{ getQuadratureWeights(integrals); }
 

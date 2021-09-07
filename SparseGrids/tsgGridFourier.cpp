@@ -180,7 +180,7 @@ void GridFourier::acceptUpdatedTensors(){
     }
 }
 
-void GridFourier::loadNeededPoints(const double *vals){
+void GridFourier::loadNeededValues(const double *vals){
     clearGpuCoefficients(); // changing values and Fourier coefficients, clear the cache
     if (points.empty() || needed.empty()){
         values.setValues(vals);

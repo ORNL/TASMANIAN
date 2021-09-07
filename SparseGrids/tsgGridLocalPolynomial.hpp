@@ -75,7 +75,7 @@ public:
     void getQuadratureWeights(double weights[]) const override;
     void getInterpolationWeights(const double x[], double weights[]) const override;
 
-    void loadNeededPoints(const double *vals) override;
+    void loadNeededValues(const double *vals) override;
 
     void evaluate(const double x[], double y[]) const override;
     void integrate(double q[], double *conformal_correction) const override;
@@ -83,7 +83,7 @@ public:
     void evaluateBatchOpenMP(const double x[], int num_x, double y[]) const;
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
-    void loadNeededPointsGPU(const double *vals);
+    void loadNeededValuesGPU(const double *vals);
     void evaluateGpuMixed(const double x[], int num_x, double y[]) const;
     void evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const override;
     void evaluateBatchGPU(const float gpu_x[], int cpu_num_x, float gpu_y[]) const override;

@@ -181,8 +181,8 @@ namespace TasGrid{
  * coefficients, e.g., computed externally with a regression method using
  * an unstructured set of samples, or the user can provide the model values
  * at the needed points and let Tasmanian do the computations.
- * - TasGrid::loadNeededPoints()
- * - loadNeededPoints(), loadNeededValues(), getLoadedValues()
+ * - TasGrid::loadNeededValues(), TasGrid::loadNeededPoints()
+ * - loadNeededValues(), getLoadedValues(), loadNeededPoints()
  * - setHierarchicalCoefficients()
  *
  * \par Update and Adaptive Refinement
@@ -244,7 +244,7 @@ namespace TasGrid{
  *
  * \par Acceleration Back-end Selection
  * Allows specifying the acceleration used for evaluation methods and (in some
- * cases) for computing the basis coefficients during loadNeededPoints().
+ * cases) for computing the basis coefficients during loadNeededValues().
  * For example, methods are provided to check the number of available CUDA
  * devices and to select an active device on a multi-GPU system.
  * - enableAcceleration(), getAccelerationType(), favorSparseAcceleration()
@@ -414,7 +414,7 @@ public:
      * Mathematically the Sequence and Global grids do not differ in properties;
      * however, the implementation of the Sequence grids uses optimized internal data structures
      * which leads to massive increase in speed when calling evaluate methods
-     * at the expense of doubled memory size and increased cost of \b loadNeededPoints().
+     * at the expense of doubled memory size and increased cost of \b loadNeededValues().
      * The inputs are identical to \b makeGlobalGrid() with the restriction that \b rule
      * must be one of:
      * \code
@@ -633,9 +633,9 @@ public:
      */
     const char* getCustomRuleDescription() const; // used only for Global Grids with rule_customtabulated
 
-    //! \brief Return the number of points already associated with model values via loadNeededPoints().
+    //! \brief Return the number of points already associated with model values via loadNeededValues().
     int getNumLoaded() const{ return (base) ? base->getNumLoaded() : 0; }
-    //! \brief Return the number of points that should be provided to the next call of loadNeededPoints().
+    //! \brief Return the number of points that should be provided to the next call of loadNeededValues().
     int getNumNeeded() const{ return (base) ? base->getNumNeeded() : 0; }
     //! \brief Returns getNumLoaded() if positive, otherwise returns getNumNeeded(), see getPoints().
     int getNumPoints() const{ return (base) ? base->getNumPoints() : 0; }
@@ -743,7 +743,7 @@ public:
      *
      * The sum of the model values times the weights will produce the approximation at \b x.
      * For problems where the model outputs can be represented by a vector,
-     * it is recommended to use loadNeededPoints() and evaluate() methods
+     * it is recommended to use loadNeededValues() and evaluate() methods
      * which have much better performance.
      * However, not all models can be easily represented as vector valued functions,
      * e.g., the discretization of the operators in a parametrized partial
@@ -806,29 +806,29 @@ public:
      * \b Note: The needed points can always be cleared with clearRefinement()
      * and new needed points can be assigned with setAnisotropicRefinement() or setSurplusRefinement().
      */
-    void loadNeededPoints(std::vector<double> const &vals); // checks if vals has size num_outputs X getNumNeeded()
+    void loadNeededValues(std::vector<double> const &vals); // checks if vals has size num_outputs X getNumNeeded()
     /*!
      * \brief Overload that uses a raw-array, does not check the array size.
      *
      * Identical to loadNeededPoints() but does not throw if \b vals has an incorrect size (but will segfault).
      */
-    void loadNeededPoints(const double *vals);
+    void loadNeededValues(const double *vals);
     /*!
-     * \brief Alias of loadNeededPoints().
+     * \brief Alias of loadNeededValues().
      */
-    void loadNeededValues(std::vector<double> const &vals) {loadNeededPoints(vals);}
+    void loadNeededPoints(std::vector<double> const &vals) {loadNeededValues(vals);}
     /*!
      * \brief Overload that uses a raw-array, does not check the array size.
      *
-     * Identical to loadNeededValues() but does not throw if \b vals has an incorrect size (but will segfault).
+     * Identical to loadNeededPoints() but does not throw if \b vals has an incorrect size (but will segfault).
      */
-    void loadNeededValues(const double *vals) {loadNeededPoints(vals);}
+    void loadNeededPoints(const double *vals) {loadNeededValues(vals);}
     /*!
      * \brief Returns the model values that have been loaded in the gird.
      *
      * Returns a pointer to the internal data-structures, which \b must \b not be modified
      * and will be invalidated by any operation that affects the loaded points,
-     * e.g., mergeRefinement() or loadNeededPoints().
+     * e.g., mergeRefinement() or loadNeededValues().
      * The model values will follow the internal Tasmanian order, identical to getLoadedPoints().
      */
     const double* getLoadedValues() const{ return (empty()) ? nullptr : base->getLoadedValues(); }
@@ -1357,7 +1357,7 @@ public:
     /*!
      * \brief Add pairs of points with associated model values.
      *
-     * This is the construction equivalent to loadNeededPoints(), the main difference is that any
+     * This is the construction equivalent to loadNeededValues(), the main difference is that any
      * number of points can be loaded here and the points can be in any arbitrary order
      * (they have to correspond to the model values in this call only).
      *
@@ -1433,7 +1433,7 @@ public:
      *
      * Discards the current set of loaded values and the associated hierarchical coefficients,
      * and replaces both with the data provided here. The coefficients are overwritten,
-     * while the values are inferred, i.e., the opposed from the use case of loadNeededPoints()
+     * while the values are inferred, i.e., the opposed from the use case of loadNeededValues()
      * where the model values are provided and the coefficients are computed.
      *
      * \param c is a vector of getNumLoaded() strips of size getNumOutputs(),
@@ -1888,7 +1888,7 @@ public:
      * The purpose of this call is to reduce the number of points and thus the memory footprint of the grid.
      * As such, points will be removed with no regard of preserving lower completeness or connectivity of the hierarchical graphs;
      * therefore, it is possible that the grid no longer has a valid state with respect to the update and refinement algorithms.
-     * Calling loadNeededPoints() or any refinement or construction method after the removal of points may lead to undefined behavior;
+     * Calling loadNeededValues() or any refinement or construction method after the removal of points may lead to undefined behavior;
      * get, evaluate and file I/O methods are safe to call.
      *
      * \param tolerance the cut-off tolerance for the point removal.

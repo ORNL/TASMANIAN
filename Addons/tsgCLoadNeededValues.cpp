@@ -37,7 +37,7 @@ extern "C"{
 // x.size(), x.data(), y.size(), y.data(), thread_id
 using tsg_lnp_model = void (*)(int, double const*, int, double*, int, int*);
 
-void tsgLoadNeededPoints(int overwrite, tsg_lnp_model pymodel, void *grid_pntr, int num_threads, int *err){
+void tsgLoadNeededValues(int overwrite, tsg_lnp_model pymodel, void *grid_pntr, int num_threads, int *err){
     *err = 1; // produce an error code, if not ended early
     try{
         TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_pntr);
@@ -49,7 +49,7 @@ void tsgLoadNeededPoints(int overwrite, tsg_lnp_model pymodel, void *grid_pntr, 
             void{
                 int error_code = 0;
                 pymodel(num_dimensions, x, num_outputs, y, (int) thread_id, &error_code);
-                if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgLoadNeededPoints()");
+                if (error_code != 0) throw std::runtime_error("The Python callback returned an error in tsgLoadNeededValues()");
             };
 
         constexpr bool needed = true;
@@ -57,15 +57,15 @@ void tsgLoadNeededPoints(int overwrite, tsg_lnp_model pymodel, void *grid_pntr, 
 
         if (num_threads > 1){
             if (overwrite != 0){
-                TasGrid::loadNeededPoints<TasGrid::mode_parallel, needed>(cpp_model, grid, num_threads);
+                TasGrid::loadNeededValues<TasGrid::mode_parallel, needed>(cpp_model, grid, num_threads);
             }else{
-                TasGrid::loadNeededPoints<TasGrid::mode_parallel, loaded>(cpp_model, grid, num_threads);
+                TasGrid::loadNeededValues<TasGrid::mode_parallel, loaded>(cpp_model, grid, num_threads);
             }
         }else{
             if (overwrite != 0){
-                TasGrid::loadNeededPoints<TasGrid::mode_sequential, needed>(cpp_model, grid, 1);
+                TasGrid::loadNeededValues<TasGrid::mode_sequential, needed>(cpp_model, grid, 1);
             }else{
-                TasGrid::loadNeededPoints<TasGrid::mode_sequential, loaded>(cpp_model, grid, 1);
+                TasGrid::loadNeededValues<TasGrid::mode_sequential, loaded>(cpp_model, grid, 1);
             }
         }
         *err = 0; // got here, no exceptions were encountered

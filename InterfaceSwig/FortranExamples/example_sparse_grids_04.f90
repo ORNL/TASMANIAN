@@ -28,7 +28,7 @@ subroutine example_sparse_grid_04()
             ! fill the values with the model values at the points
             values(1, i) = exp(-points(1,i)**2) * cos(points(2,i))
         enddo
-        call surrogate%loadNeededPoints(values(:,1))
+        call surrogate%loadNeededValues(values(:,1))
         ! after the load call, the surrogate model is ready
 
         ! let y = surrogate(x)

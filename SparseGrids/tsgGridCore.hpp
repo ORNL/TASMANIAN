@@ -87,7 +87,7 @@ public:
     virtual void getQuadratureWeights(double weights[]) const = 0;
     virtual void getInterpolationWeights(const double x[], double weights[]) const = 0;
 
-    virtual void loadNeededPoints(const double *vals) = 0;
+    virtual void loadNeededValues(const double *vals) = 0;
     const double* getLoadedValues() const{ return (points.empty()) ? nullptr : values.getValues(0); }
 
     virtual void evaluate(const double x[], double y[]) const = 0;

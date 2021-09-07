@@ -46,7 +46,7 @@ void sparse_grids_example_05(){
 
     // define the model as a C++ lambda expression, the advantage of lambdas
     // is that they can wrap around much more complex models
-    // see the documentation for TasGrid::loadNeededPoints()
+    // see the documentation for TasGrid::loadNeededValues()
     int const num_inputs  = 2;
     int const num_outputs = 1;
     auto model = [](double const x[], double y[], size_t)->
@@ -96,7 +96,7 @@ void sparse_grids_example_05(){
     // loop while at least one grid hasn't exhausted the budget
     do{
         if (grid_isotropic.getNumLoaded() < budget){
-            TasGrid::loadNeededPoints(model, grid_isotropic, 0);
+            TasGrid::loadNeededValues(model, grid_isotropic, 0);
             cout << setw(8) << grid_isotropic.getNumLoaded()
                  << setw(14) << test_grid(grid_isotropic);
 
@@ -109,7 +109,7 @@ void sparse_grids_example_05(){
         }
 
         if (grid_iptotal.getNumLoaded() < budget){
-            TasGrid::loadNeededPoints(model, grid_iptotal, 0);
+            TasGrid::loadNeededValues(model, grid_iptotal, 0);
             cout << setw(8) << grid_iptotal.getNumLoaded() << setw(14) << test_grid(grid_iptotal);
 
            // set anisotropic total degree update using at least 10 new points
@@ -119,7 +119,7 @@ void sparse_grids_example_05(){
         }
 
         if (grid_icurved.getNumLoaded() < budget){
-            TasGrid::loadNeededPoints(model, grid_icurved, 0);
+            TasGrid::loadNeededValues(model, grid_icurved, 0);
             auto w = grid_icurved.estimateAnisotropicCoefficients(TasGrid::type_ipcurved, 0);
             cout << setw(8) << grid_icurved.getNumLoaded() << setw(14) << test_grid(grid_icurved);
 
@@ -130,7 +130,7 @@ void sparse_grids_example_05(){
         }
 
         if (grid_surplus.getNumLoaded() < budget){
-            TasGrid::loadNeededPoints(model, grid_surplus, 0);
+            TasGrid::loadNeededValues(model, grid_surplus, 0);
             cout << setw(8) << grid_surplus.getNumLoaded() << setw(14) << test_grid(grid_surplus);
 
             // set surplus based update using tolerance of 1.E-8

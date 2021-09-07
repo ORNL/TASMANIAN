@@ -79,8 +79,8 @@ void sparse_grids_example_08(){
     auto grid_semilocalp = TasGrid::makeLocalPolynomialGrid(num_inputs, 1, 7, order,
                                                             TasGrid::rule_semilocalp);
 
-    TasGrid::loadNeededPoints(smooth_model, grid_localp, 4);
-    TasGrid::loadNeededPoints(smooth_model, grid_semilocalp, 4);
+    TasGrid::loadNeededValues(smooth_model, grid_localp, 4);
+    TasGrid::loadNeededValues(smooth_model, grid_semilocalp, 4);
 
     cout << "Using smooth model: f(x, y) = exp(-x*x) * cos(y)\n"
          << " rule_localp,     points = " << grid_localp.getNumPoints()
@@ -98,8 +98,8 @@ void sparse_grids_example_08(){
                                                         TasGrid::rule_localp0);
 
     // the true value indicates overwrite of the currently loaded model
-    TasGrid::loadNeededPoints<TasGrid::mode_parallel, true>(zero_model, grid_localp, 4);
-    TasGrid::loadNeededPoints(zero_model, grid_localp0, 4);
+    TasGrid::loadNeededValues<TasGrid::mode_parallel, true>(zero_model, grid_localp, 4);
+    TasGrid::loadNeededValues(zero_model, grid_localp0, 4);
 
     cout << "Using homogeneous model: f(x, y) = cos(pi * x / 2) * cos(pi * y / 2)\n"
          << " rule_localp,   points = " << grid_localp.getNumPoints()

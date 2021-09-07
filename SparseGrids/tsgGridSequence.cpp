@@ -174,7 +174,7 @@ void GridSequence::getInterpolationWeights(const double x[], double *weights) co
     applyTransformationTransposed(weights);
 }
 
-void GridSequence::loadNeededPoints(const double *vals){
+void GridSequence::loadNeededValues(const double *vals){
     clearGpuSurpluses(); // changing values and surpluses, clear the cache
     if (needed.empty()){ // overwrite the existing values
         values.setValues(vals);

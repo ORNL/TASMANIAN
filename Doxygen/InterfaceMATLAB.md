@@ -38,7 +38,7 @@ The Matlab or Octave interface to **tasgrid** consists of several functions that
   tsgGetQuadrature.m                    ->  getQuadratureWeights()/getPoints()
   tsgIntegrate.m                        ->  integrate()
   tsgLoadHCoefficients.m                ->  setHierarchicalCoefficients()
-  tsgLoadValues.m                       ->  loadNeededPoints()
+  tsgLoadValues.m                       ->  loadNeededValues()
   tsgMakeFourier.m                      ->  makeFourierGrid()
   tsgMakeGlobal.m                       ->  makeGlobalGrid()
   tsgMakeLocalPolynomial.m              ->  makeLocalPolynomialGrid()
