@@ -111,7 +111,6 @@ pLibTSG.tsgGetQuadratureWeights.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgGetQuadratureWeightsStatic.argtypes = [c_void_p]
 pLibTSG.tsgGetInterpolationWeights.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgGetInterpolationWeightsStatic.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
-pLibTSG.tsgLoadNeededPoints.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgLoadNeededValues.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgGetLoadedValuesStatic.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgEvaluate.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
@@ -1102,7 +1101,7 @@ class TasmanianSparseGrid:
             np.ctypeslib.as_ctypes(aWeights.reshape([iNumX * iNumPoints])))
         return aWeights
 
-    def loadNeededPoints(self, llfVals):
+    def loadNeededValues(self, llfVals):
         '''
         loads the values of the target function at the needed points
         if there are no needed points, this reset the currently loaded
@@ -1127,13 +1126,13 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("llfVals", "ERROR: second dimension of llfVals is {0:1d} but the number of outputs is set to {1:1d}".format(llfVals.shape[1], self.getNumOutputs()))
         iNumPoints = llfVals.shape[0]
         iNumDims = llfVals.shape[1]
-        pLibTSG.tsgLoadNeededPoints(self.pGrid, np.ctypeslib.as_ctypes(llfVals.reshape([iNumPoints * iNumDims])))
+        pLibTSG.tsgLoadNeededValues(self.pGrid, np.ctypeslib.as_ctypes(llfVals.reshape([iNumPoints * iNumDims])))
 
-    def loadNeededValues(self, llfVals):
+    def loadNeededPoints(self, llfVals):
         '''
-        Alias of loadNeededPoints().
+        Alias of loadNeededValues().
         '''
-        self.loadNeededPoints(llfVals)
+        self.loadNeededValues(llfVals)
 
     def getLoadedValues(self):
         '''

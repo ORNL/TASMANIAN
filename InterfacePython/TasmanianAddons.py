@@ -42,7 +42,7 @@ type_lpnmodel = CFUNCTYPE(None, c_int, POINTER(c_double), c_int, POINTER(c_doubl
 type_scsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int, POINTER(c_int))
 type_icsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, c_int, POINTER(c_double), c_int, POINTER(c_int))
 
-pLibCTSG.tsgLoadNeededPoints.argtypes = [c_int, type_lpnmodel, c_void_p, c_int, POINTER(c_int)]
+pLibCTSG.tsgLoadNeededValues.argtypes = [c_int, type_lpnmodel, c_void_p, c_int, POINTER(c_int)]
 
 pLibCTSG.tsgConstructSurrogateNoIGSurplus.argtypes = [type_scsmodel, c_int, c_int, c_int, c_void_p, c_double, c_char_p,
                                                       c_int, POINTER(c_int), c_char_p, POINTER(c_int)]
@@ -61,7 +61,7 @@ pLibCTSG.tsgLoadUnstructuredDataL2.argtypes = [POINTER(c_double), c_int, POINTER
 def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID, pErrInfo):
     '''
     DO NOT CALL DIRECTLY
-    This is callback from C++, see TasGrid::loadNeededPoints()
+    This is callback from C++, see TasGrid::loadNeededValues()
 
     Creates an interface between a user callable object and
     the Tasmanian callback from C++.
@@ -92,9 +92,9 @@ def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID, pErrInfo):
     pErrInfo[0] = 0
 
 
-def loadNeededPoints(callableModel, grid, iNumThreads = 1):
+def loadNeededValues(callableModel, grid, iNumThreads = 1):
     '''
-    Wrapper to TasGrid::loadNeededPoints(), non-overwrite version.
+    Wrapper to TasGrid::loadNeededValues(), non-overwrite version.
 
     If the grid has needed points, the callableModel will be called
     for each grid point (i.e., model input) and the resulting values
@@ -122,18 +122,24 @@ def loadNeededPoints(callableModel, grid, iNumThreads = 1):
 
     iNumThreads: integer, if greater than 1 the model will be called
         in parallel from multiple threads.
-        See TasGrid::loadNeededPoints().
+        See TasGrid::loadNeededValues().
 
     '''
     iOverwrite = 0 # do not overwrite
     pErrorCode = (c_int * 1)()
-    pLibCTSG.tsgLoadNeededPoints(iOverwrite,
+    pLibCTSG.tsgLoadNeededValues(iOverwrite,
                                  type_lpnmodel(lambda nx, x, ny, y, tid, err : tsgLnpModelWrapper(callableModel, nx, x, ny, y, tid, err)),
                                  grid.pGrid, iNumThreads, pErrorCode)
     if pErrorCode[0] != 0:
-        raise TasmanianInputError("loadNeededPoints", "An error occurred during the call to Tasmanian.")
+        raise TasmanianInputError("loadNeededValues", "An error occurred during the call to Tasmanian.")
 
-def reloadLoadedPoints(callableModel, grid, iNumThreads = 1):
+def loadNeededPoints(callableModel, grid, iNumThreads = 1):
+    '''
+    Alias to loadNeededValues()
+    '''
+    loadNeededValues(callableModel, grid, iNumThreads)
+
+def reloadLoadedValues(callableModel, grid, iNumThreads = 1):
     '''
     Wrapper to TasGrid::loadNeededPoints(), overwrite version.
 
@@ -145,11 +151,18 @@ def reloadLoadedPoints(callableModel, grid, iNumThreads = 1):
     '''
     iOverwrite = 1 # do overwrite
     pErrorCode = (c_int * 1)()
-    pLibCTSG.tsgLoadNeededPoints(iOverwrite,
+    pLibCTSG.tsgLoadNeededValues(iOverwrite,
                                  type_lpnmodel(lambda nx, x, ny, y, tid, err : tsgLnpModelWrapper(callableModel, nx, x, ny, y, tid, err)),
                                  grid.pGrid, iNumThreads, pErrorCode)
     if pErrorCode[0] != 0:
         raise TasmanianInputError("reloadLoadedPoints()", "An error occurred during the call to Tasmanian.")
+
+def reloadLoadedPoints(callableModel, grid, iNumThreads = 1):
+    '''
+    Alias to reloadLoadedValues()
+    '''
+    reloadLoadedValues(callableModel, grid, iNumThreads)
+
 
 ###############################################################################
 ################### Construct Surrogate #######################################
