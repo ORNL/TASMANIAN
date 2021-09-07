@@ -91,7 +91,7 @@ inline bool testBasicAttributes() {
 // shift. Then, compares this integral against a given exact integral value.
 inline bool wrapSincTest(std::function<double(const double*)> f, const int dimension, const int depth, const double freq,
                          const double phase_shift, const double shift, const double exact_integral, const bool symmetric_weights,
-                         const double tolerance = 1e-10) {
+                         const double tolerance = 1e-10, const int use_lambda = true) {
 
     // Initialize.
     bool passed = true;
@@ -99,11 +99,24 @@ inline bool wrapSincTest(std::function<double(const double*)> f, const int dimen
                                                               0.0 :
                                                               sin(freq * (x - phase_shift)) / (freq * (x - phase_shift));};
     int level = depth % 2 == 1 ? (depth + 1) / 2 : depth / 2 + 1;
-    TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(level, shift, sinc);
+    TasGrid::CustomTabulated ct;
+    if (use_lambda) {
+        // Create the CustomTabulated object using the function lambda.
+        ct = TasGrid::getExoticQuadrature(level, shift, sinc, 50 * depth + 1, "Sinc-Weighted Quadrature", symmetric_weights);
+    } else {
+        // Create the CustomTabulated object using a Gauss-Legendre reference grid.
+        TasGrid::TasmanianSparseGrid ref_grid;
+        ref_grid.makeGlobalGrid(1, 1, depth + 1, TasGrid::type_level, TasGrid::rule_gausslegendre);
+        std::vector<double> nodes = ref_grid.getPoints();
+        std::vector<double> fvals(ref_grid.getNumNeeded());
+        std::transform(nodes.begin(), nodes.end(), fvals.begin(), sinc);
+        ref_grid.loadNeededValues(fvals);
+        ct = TasGrid::getExoticQuadrature(level, shift, ref_grid, "Sinc-Weighted Quadrature", symmetric_weights);
+    }
+
+    // Compute the integral and compare to the reference value for each type of CustomTabulated object.
     TasGrid::TasmanianSparseGrid sg;
     sg.makeGlobalGrid(dimension, 1, depth, TasGrid::type_qptotal, std::move(ct));
-
-    // Compute the integral and compare to the reference value.
     std::vector<double> quad_points = sg.getPoints();
     std::vector<double> quad_weights = sg.getQuadratureWeights();
     assert(quad_weights.size() * dimension == quad_points.size());
@@ -113,16 +126,14 @@ inline bool wrapSincTest(std::function<double(const double*)> f, const int dimen
     }
     if (std::abs(approx_integral - exact_integral) > tolerance) {
         std::cout << "ERROR: " << std::setprecision(16) << "Computed integral value " << approx_integral
-                  << " does not match exact integral " << exact_integral << " for test problem\n"
-                  << "∫_[-1,1]^n f(x[1],...,x[n]) * sinc(freq*(x[n]-phase_shift)) * ... * sinc(freq*(x[n]-phase_shift)) dx[1] ... dx[n]\n"
-                  << "with inputs: \n\n" << std::left
-                  << std::setw(12) << "dimension"   << " = " << dimension                              << "\n"
-                  << std::setw(12) << "depth"       << " = " << depth                                  << "\n"
-                  << std::setw(12) << "freq"        << " = " << freq                                   << "\n"
-                  << std::setw(12) << "phase_shift" << " = " << phase_shift                            << "\n"
-                  << std::setw(12) << "shift"       << " = " << shift                                  << "\n"
-                  << std::setw(12) << "symmetry"    << " = " << (symmetric_weights ? "true" : "false") << "\n"
-                  << std::setw(12) << "precision"   << " = " << tolerance                              << "\n" << std::endl;
+                  << " does not match exact integral " << exact_integral << " for test problem with inputs: \n\n" << std::left
+                  << std::setw(12) << "input_type" << " = " << (use_lambda ? "function lambda" : "TasmanianSparseGrid") << "\n"
+                  << std::setw(12) << "weight_fn"  << " = " << "sinc(" << freq << "*[x-" << phase_shift << "])"         << "\n"
+                  << std::setw(12) << "dimension"  << " = " << dimension                                                << "\n"
+                  << std::setw(12) << "depth"      << " = " << depth                                                    << "\n"
+                  << std::setw(12) << "shift"      << " = " << shift                                                    << "\n"
+                  << std::setw(12) << "symmetry"   << " = " << (symmetric_weights ? "true" : "false")                   << "\n"
+                  << std::setw(12) << "precision"  << " = " << tolerance                                                << "\n" << std::endl;
         passed = false;
     }
     return passed;
@@ -136,7 +147,7 @@ inline bool testAccuracy() {
     auto f1 = [](const double* x)->double{return std::exp(-x[0]*x[0]);};
     auto f2 = [](const double* x)->double{return std::exp(-x[0]*x[0]-x[1]*x[1]);};
     // 1D symmetric problem instances.
-    depth = 20;
+    depth = 40;
     dimension = 1;
     passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 0.0, 0.0, 1.4321357541271255, true);
     passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 0.0, 1.0, 1.4321357541271255, true);
@@ -144,7 +155,7 @@ inline bool testAccuracy() {
     passed = passed && wrapSincTest(f1, dimension, depth, 10.0, 0.0, 1.0, 0.32099682841103033, true);
     passed = passed && wrapSincTest(f1, dimension, depth, 100.0, 0.0, 1.0, 0.031353648322695503, true);
     // 1D nonsymmetric problem instances.
-    depth = 20;
+    depth = 40;
     dimension = 1;
     passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 0.5, 0.0, 1.3751962080889306, false);
     passed = passed && wrapSincTest(f1, dimension, depth, 1.0, 0.5, 1.0, 1.3751962080889306, false);
@@ -158,6 +169,12 @@ inline bool testAccuracy() {
     passed = passed && wrapSincTest(f2, dimension, depth, 1.0, 0.0, 1.0, 2.051012818249270, false);
     passed = passed && wrapSincTest(f2, dimension, depth, 10.0, 0.0, 1.0, 0.1030389638499404, true);
     passed = passed && wrapSincTest(f2, dimension, depth, 100.0, 0.0, 1.0, 0.0009830512631432665, true);
+    // 1D symmetric problem instances using a reference grid.
+    depth = 40;
+    dimension = 1;
+    passed = passed && wrapSincTest(f1, dimension, depth, 10.0, 0.0, 1.0, 0.32099682841103033, true, 1e-10, false);
+    passed = passed && wrapSincTest(f1, dimension, depth, 10.0, 0.0, 1.0, 0.32099682841103033, false, 1e-10, false);
+    passed = passed && wrapSincTest(f1, dimension, depth, 10.0, 0.5, 1.0, 0.24655852538340614, false, 1e-10, false);
     return passed;
 }
 

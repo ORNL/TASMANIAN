@@ -38,15 +38,25 @@
 
 namespace TasGrid {
 
-// Evaluates a polynomial with roots given by \b roots at the point \b x.
+/*!
+ * \internal
+ * \ingroup TasmanianAddonsExoticQuad
+ * \brief Evaluates a polynomial with roots given by \b roots at the point \b x.
+ * \endinternal
+ */
 inline double poly_eval(const std::vector<double> &roots, double x) {
     double eval_value = 1.0;
     for (auto r : roots) eval_value *= (x - r);
     return eval_value;
 }
 
-//! \brief Generate the roots of all orthogonal polynomials up to degree n, where orthogonality is with respect to the
-// measure given by ref_weights. Specializes depending on if the underlying weight function is symmetric or not.
+/*!
+ * \internal
+ * \ingroup TasmanianAddonsExoticQuad
+ * \brief Generate the roots of all orthogonal polynomials up to degree n, where orthogonality is with respect to the
+ * measure given by ref_weights. Specializes depending on if the underlying weight function is symmetric or not.
+ * \endinternal
+ */
 template <bool is_symmetric>
 inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<double> &ref_weights,
                                                  const std::vector<double> &ref_points) {
@@ -92,7 +102,12 @@ inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<
     return roots;
 }
 
-//! \brief Evaluates a Lagrange basis polynomial at a point \b x.
+/*!
+ * \internal
+ * \ingroup TasmanianAddonsExoticQuad
+ * \brief Evaluates a Lagrange basis polynomial at a point \b x.
+ * \endinternal
+ */
 inline double lagrange_eval(size_t idx, const std::vector<double> &roots, double x) {
     double eval_value = 1.0;
     for (size_t i=0; i<idx; i++) {
@@ -104,17 +119,20 @@ inline double lagrange_eval(size_t idx, const std::vector<double> &roots, double
     return eval_value;
 }
 
-//! \brief Generate the full cache of Exotic (weighted and possibly shifted) quadrature weights and points for an (input) max level
-//! \b n, using parameters \b shift, \b weight_fn_vals, \b shifted_weights, \b ref_points, and \b nref.
-//!
-//! The integral  I := ∫ F(x) * weight_fn(x) dx, for a given level, is approximated as:
-//! I ≈ sum{f(roots[i]) * shifted_weights[i]} - shift * sum{f(correction_points[i]) * correction_weights[i]}.
-//!
-//! It is assumed that shifted_weights[i] is nonnegative and it is computed as shifted_weights[i] = ref_weights[i] *
-//! (weight_fn_vals[i] + shift) for every i, where ref_weights are the quadrature weights corresponding to ref_points.
-inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, const std::vector<double> &weight_fn_vals,
-                                                    const std::vector<double> &shifted_weights, const std::vector<double> &ref_points,
-                                                    const int nref, const char* description, const bool is_symmetric = false) {
+
+/*!
+ * \internal
+ * \ingroup TasmanianAddonsExoticQuad
+ * \brief Generate the full cache of Exotic (weighted and possibly shifted) quadrature weights and points for an (input) max level
+ * \b n, using parameters \b shift, \b weight_fn_vals, \b shifted_weights, and \b ref_points.
+ *
+ * It is assumed that shifted_weights[i] is nonnegative and is already computed as shifted_weights[i] = ref_weights[i] *
+ * (weight_fn_vals[i] + shift) for every i.
+ * \endinternal
+ */
+inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const double shift, const std::vector<double> &weight_fn_vals,
+                                                           const std::vector<double> &shifted_weights, const std::vector<double> &ref_points,
+                                                           const char* description, const bool is_symmetric = false) {
 
     // Create the set of points (roots) for the first term.
     assert(shifted_weights.size() == ref_points.size());
@@ -132,7 +150,7 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
         weights_cache[i] = std::vector<double>(points_cache[i].size(), 0.0);
         for (size_t j=0; j<points_cache[i].size(); j++) {
             // Integrate the function l_j(x) according to the measure induced by the function [weight_fn(x) + shift].
-            for (int k=0; k<nref; k++) {
+            for (size_t k=0; k<ref_points.size(); k++) {
                 weights_cache[i][j] += lagrange_eval(j, points_cache[i], ref_points[k]) * shifted_weights[k];
             }
         }
@@ -178,29 +196,62 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
                                     std::move(weights_cache), description);
 }
 
-// Basic function overloads.
+/*
+ * \ingroup TasmanianAddonsExoticQuad
+ * \brief Constructs a CustomTabulated object containing the exotic quadrature nodes and quadrature weights for a given level \b n,
+ * scalar \b shift, a reference TasmanianSparseGrid \b grid containing loaded values of the weight function, a string \b description,
+ * and an optional bool \b is_symmetric that should be set to true if the weight function is symmetric.
+ *
+ * It is assumed that grid is a one dimensional interpolant/surrogate to the weight function. Only the nodes in grid.getLoadedPoints(),
+ * the quadrature weights in grid.getQuadratureWeights(), and the loaded weight function values in grid.getLoadedValues() are used
+ * in the computation of the exotic quadrature. Specifically, these vectors are used to orthogonalize the polynomial basis needed
+ * to compute the optimal exotic quadrature.
+ */
+inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, const TasGrid::TasmanianSparseGrid &grid,
+                                                    const char* description, const bool is_symmetric = false) {
+    if (grid.getNumLoaded() == 0) {
+        throw std::invalid_argument("ERROR: grid needs to contain a nonzero number of loaded points returned by grid.getLoadedPoints()!");
+    }
+    if (grid.getNumDimensions() != 1) {
+        throw std::invalid_argument("ERROR: grid needs to be one dimensional!");
+    }
+    if (grid.getNumOutputs() != 1) {
+        throw std::invalid_argument("ERROR: grid needs to have scalar outputs!");
+    }
+    std::vector<double> ref_points = grid.getLoadedPoints();
+    std::vector<double> shifted_weights = grid.getQuadratureWeights();
+    std::vector<double> weight_fn_vals = std::vector<double>(grid.getLoadedValues(), grid.getLoadedValues() + grid.getNumLoaded());
+    if (not std::all_of(weight_fn_vals.begin(), weight_fn_vals.end(), [shift](double x){return (x+shift)>=0.0;})) {
+        throw std::invalid_argument("ERROR: shift needs to be chosen so that weight_fn(x)+shift is nonnegative!");
+    }
+    for (size_t k=0; k<ref_points.size(); k++) {
+        shifted_weights[k] *= (weight_fn_vals[k] + shift);
+    }
+    return getShiftedExoticQuadrature(n, shift, weight_fn_vals, shifted_weights, ref_points, description, is_symmetric);
+}
 
-// If only the weight function is provided, the reference points and weights are generated by the GL rule and the weight_fn values
-// are generated by applying the weight function to these reference points.
+/*
+ * \ingroup TasmanianAddonsExoticQuad
+ * \brief Constructs a CustomTabulated object containing the exotic quadrature nodes and quadrature weights for a given level \b n,
+ * scalar \b shift, a 1D function \b weight_fn() that returns the value of the weight function at its input, a positive integer
+ * \b nref that specifies how many points are used in orthogonalizing the polynomial basis, a string \b description, and an optional
+ * bool \b is_symmetric that should be set to true if the weight function is symmetric.
+ *
+ * The reference points and weights used for orthogonalizing the polynomial basis are generated by the Gauss-Legendre rule
+ * with \b nref points and the weight function values are generated by applying \b weight_fn() to these reference points.
+ */
 inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, std::function<double(double)> weight_fn,
                                                     const int nref, const char* description, const bool is_symmetric = false) {
     std::vector<double> shifted_weights, ref_points, weight_fn_vals(nref);
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, shifted_weights, ref_points);
     std::transform(ref_points.begin(), ref_points.end(), weight_fn_vals.begin(), weight_fn);
     if (not std::all_of(weight_fn_vals.begin(), weight_fn_vals.end(), [shift](double x){return (x+shift)>=0.0;})) {
-        throw std::invalid_argument("shift needs to be chosen so that weight_fn(x)+shift is nonnegative!");
+        throw std::invalid_argument("ERROR: shift needs to be chosen so that weight_fn(x)+shift is nonnegative!");
     }
     for (int k=0; k<nref; k++) {
         shifted_weights[k] *= (weight_fn_vals[k] + shift);
     }
-    return getExoticQuadrature(n, shift, weight_fn_vals, shifted_weights, ref_points, nref, description, is_symmetric);
-}
-
-// If only the weight function is provided, the reference points are generated by the GL rule.
-
-inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, std::function<double(double)> weight_fn,
-                                                    const bool is_symmetric = true) {
-    return getExoticQuadrature(n, shift, weight_fn, 50*n+1, "Exotic quadrature", is_symmetric);
+    return getShiftedExoticQuadrature(n, shift, weight_fn_vals, shifted_weights, ref_points, description, is_symmetric);
 }
 
 } // namespace(TasGrid)
