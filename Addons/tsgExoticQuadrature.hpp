@@ -262,11 +262,13 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
  * \ingroup TasmanianAddons
  * \brief Overloads of getExoticQuadrature() with some default values.
  */
-inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, TasGrid::TasmanianSparseGrid grid) {
-    return getExoticQuadrature(n, shift, grid, "Exotic quadrature", false);
+inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, TasGrid::TasmanianSparseGrid grid,
+                                                    const bool is_symmetric = false) {
+    return getExoticQuadrature(n, shift, grid, "Exotic quadrature", is_symmetric);
 }
-inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, std::function<double(double)> weight_fn) {
-    return getExoticQuadrature(n, shift, weight_fn, 50*n+1, "Exotic quadrature", false);
+inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double shift, std::function<double(double)> weight_fn,
+                                                    const bool is_symmetric = false) {
+    return getExoticQuadrature(n, shift, weight_fn, 50*n+1, "Exotic quadrature", is_symmetric);
 }
 
 } // namespace(TasGrid)
