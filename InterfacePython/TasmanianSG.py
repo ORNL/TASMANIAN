@@ -2387,6 +2387,7 @@ class CustomTabulated:
         '''
         Constructor that creates an empty CustomTabulated instance.
         '''
+        self.CustomTabulatedObject = True
         self.pCustomTabulated = pLibTSG.tsgConstructCustomTabulated()
 
     def __del__(self):
@@ -2494,3 +2495,4 @@ def makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights
                                                                  np_arr_to_ctype(np.concatenate(weights), np.float64),
                                                                  c_char_p(effective_description))
     return ct
+
