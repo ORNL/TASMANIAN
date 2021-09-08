@@ -240,32 +240,37 @@ void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::v
 void decompose2(std::vector<double> &diag, std::vector<double> &off_diag, const double mu0, std::vector<double> &nodes,
                 std::vector<double> &weights) {
 
+    if (diag.size() != off_diag.size() + 1) {
+        // TODO: throw a runtime error here!
+    }
     // Initialize.
     int n = diag.size();
     nodes.resize(n);
     weights.resize(n);
     double l1_norm = 0.0;
     weights[0] = 1.0;
-    l1_norm = std::max(l1_norm, std::fabs(diag[0]) + std::fabs(off_diag[0]));
+    weights[n-1] = 0.0;
     for (int i=1; i<n-2; i++) {
         weights[i] = 0.0;
         l1_norm = std::max(l1_norm, std::fabs(off_diag[i-1]) + std::fabs(diag[i]) + std::fabs(off_diag[i]));
     }
+    l1_norm = std::max(l1_norm, std::fabs(diag[0]) + std::fabs(off_diag[0]));
     l1_norm = std::max(l1_norm, std::fabs(off_diag[n-1]) + std::fabs(diag[n-1]));
     double lambda{l1_norm}, lambda1{l1_norm}, lambda2{l1_norm}, rho{l1_norm}, eps{l1_norm * std::pow(16.0, -14.0)};
 
-    // Find eigenvalues and eigenvectors starting.
+    // Compute nodes and weights.
     for (int m=n-1; m>=1; m--) {
-        // The decomposition for block diagonals is trivial.
+        // The eigendecomposition for block diagonals can be computed trivially.
         if (std::fabs(off_diag[m-1] <= eps)) {
             nodes[m] = diag[m];
             weights[m] = mu0 * weights[m] * weights[m];
             rho = lambda1 < lambda1 ? lambda1 : lambda2;
             continue;
         }
-        // Apply a QR decomposition for nontrivial blocks.
+        // Find one plus the starting index of the nontrivial block.
         int k=m-1;
         while (k>=1 && std::fabs(off_diag[k])) k--;
+        // Compute the offset for faster convergence of the algorithm.
         double B2 = off_diag[m] * off_diag[m];
         double AA = diag[m-1] + diag[m];
         double det = std::sqrt((diag[m-1] - diag[m]) * (diag[m-1] +- diag[m]) + 4.0 * B2);
@@ -276,7 +281,51 @@ void decompose2(std::vector<double> &diag, std::vector<double> &off_diag, const 
             lambda = eigmax;
         }
         rho = eigmax;
+        // Apply a QR decomposition for the nontrivial block. Note that diag and offdiag are destroyed here.
+        double cj = off_diag[k];
+        off_diag[k-1] = diag[k] - lambda;
         for (int j=k; j<m; j++) {
+            double r = std::sqrt(cj * cj + off_diag[j-1] * off_diag[j-1]);
+            double st = cj / r;
+            double ct = off_diag[j-1] / r;
+            double aj = diag[j];
+            off_diag[j-1] = r;
+            cj = off_diag[j+1] * st;
+            off_diag[j+1] = -off_diag[j+1] * ct;
+            double f = aj * ct + off_diag[j] * st;
+            double q = off_diag[j] * ct + diag[j+1] * st;
+            diag[j] = f * ct + q * st;
+            off_diag[j] = f * st - q * ct;
+            double wj = weights[j];
+            diag[j+1] = aj + diag[j+1] - diag[j];
+            weights[j] = wj * ct + weights[j+1] * st;
+            weights[j+1] = wj * st - weights[j+1] * ct;
+        }
+        off_diag[k-1] = 0.0;
+    }
+
+    // Sort the nodes and weights in-place according to the node ordering (for safety).
+    // NOTE: the original code used an exchange sort, which is O(n^2).
+    size_t I[n];
+    for (int i=0; i<n; i++) I[i] = i;
+    std::sort(I, I+n, [&nodes](int i, int j){return nodes[i] < nodes[j];});
+    for (int i=0; i<n; i++) {
+        if (i != I[i]) {
+            double tmp_node, tmp_weight;
+            tmp_node = nodes[i];
+            tmp_weight = weights[i];
+            int k = i; // points to index being modified.
+            int next = I[k];
+            while (i != I[k]) {
+                nodes[k] = nodes[I[k]];
+                weights[k] = weights[I[k]];
+                I[k] = k;
+                k = next;
+                next = I[k];
+            }
+            nodes[k] = tmp_node;
+            weights[k] = tmp_weight;
+            I[k] = k;
         }
     }
 }

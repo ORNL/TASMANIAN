@@ -108,7 +108,8 @@ namespace TasmanianTridiagonalSolver{
     //! \brief Method for tridiagonal eigenvalue decomposition, used to compute nodes and weights for Gaussian rules.
     void decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z);
 
-    //! \brief A version of decompose() based on the ALGOL code for Golub's 1969 paper "Calculation of Quadrature Rules".
+    //! \brief A version of decompose() based on the ALGOL code for Golub's 1969 paper "Calculation of Quadrature Rules". On return,
+    //! it destroys the inputs \b diag and \b offdiag and writes the outputs to \b nodes and \b weights.
     void decompose2(std::vector<double> &diag, std::vector<double> &offdiag, const double mu0, std::vector<double> &nodes,
                     std::vector<double> &weights);
 
