@@ -2201,6 +2201,27 @@ void ExternalTester::debugTest(){
     // Gauss-Legendre.
     int n_max = 4;
     for (int n=1; n<=n_max; n++) {
+
+        // OLD.
+        int m = n;
+        std::vector<double> w, x;
+        w.resize(m);
+        x.resize(m);
+        std::vector<double> s(m);
+        for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
+
+        for(int i=0; i<m; i++){
+            s[i] = std::sqrt((double) ((i+1)*(i+1)) / ((double) (4*(i+1)*(i+1) - 1)));
+        }
+        w[0] = std::sqrt(2.0);
+        TasmanianTridiagonalSolver::decompose(m, x, s, w);
+        cout << "nodes / weights" << endl;
+        for (int i=0; i<m; i++) {
+            cout << x[i] << " / " << w[i] << endl;
+        }
+        cout << endl;
+
+        // NEW.
         double mu0 = 2.0;
         std::vector<double> diag(n, 0.0), off_diag(n-1), nodes, weights;
         for(int i=0; i<n-1; i++){

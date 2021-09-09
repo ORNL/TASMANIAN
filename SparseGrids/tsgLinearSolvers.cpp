@@ -256,7 +256,7 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
     off_diag[0] = 0.0;
     double norm = 0.0;
     for (size_t i=1; i<=n-1; i++) {
-        norm = std::max(norm, std::fabs(off_diag[i-1]) + std::fabs(diag[i]) + std::fabs(off_diag[i]));
+        norm = std::max(norm, std::fabs(off_diag[i-1]) + std::fabs(diag[i]) + std::fabs(off_diag[i-1]));
         weights[i-1] = 0.0;
     }
     norm = std::max(norm, std::fabs(diag[n]) + std::fabs(off_diag[n-1]));
@@ -312,7 +312,7 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
         }
         off_diag[k-1] = 0.0;
     }
-    
+
     if (sort_outputs) {
         // SORT block from ALGOL code.
         // ALGOL COMMENT: Arrange abscissas in ascending order.

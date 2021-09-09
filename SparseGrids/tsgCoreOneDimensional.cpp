@@ -367,18 +367,27 @@ const char* OneDimensionalMeta::getHumanString(TypeOneDRule rule){
 
 // Gauss-Legendre
 void OneDimensionalNodes::getGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x){
-    w.resize(m);
-    x.resize(m);
+    // // OLD VERSION.
+    // w.resize(m);
+    // x.resize(m);
 
-    std::vector<double> s(m);
-    for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
+    // std::vector<double> s(m);
+    // for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
 
-    for(int i=0; i<m; i++){
-        s[i] = std::sqrt((double) ((i+1)*(i+1)) / ((double) (4*(i+1)*(i+1) - 1)));
+    // for(int i=0; i<m; i++){
+    //     s[i] = std::sqrt((double) ((i+1)*(i+1)) / ((double) (4*(i+1)*(i+1) - 1)));
+    // }
+    // w[0] = std::sqrt(2.0);
+
+    // TasmanianTridiagonalSolver::decompose(m, x, s, w);
+
+    // NEW VERSION.
+    double mu0 = 2.0;
+    std::vector<double> diag(m, 0.0), off_diag(m-1);
+    for(int i=0; i<m-1; i++){
+        off_diag[i] = std::sqrt((double) ((i+1)*(i+1)) / ((double) (4*(i+1)*(i+1) - 1)));
     }
-    w[0] = std::sqrt(2.0);
-
-    TasmanianTridiagonalSolver::decompose(m, x, s, w);
+    TasmanianTridiagonalSolver::decompose2(diag, off_diag, mu0, x, w);
 }
 
 // Chebyshev
@@ -443,27 +452,45 @@ void OneDimensionalNodes::getGaussChebyshev2(int m, std::vector<double> &w, std:
 }
 // get Gauss-Jacobi quadrature points
 void OneDimensionalNodes::getGaussJacobi(int m, std::vector<double> &w, std::vector<double> &x, double alpha, double beta){
-    w.resize(m);
-    x.resize(m);
+    // // OLD VERSION.
+    // w.resize(m);
+    // x.resize(m);
 
-    std::vector<double> s(m);
+    // std::vector<double> s(m);
 
-    for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
+    // for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
 
-    double ab = alpha + beta;
+    // double ab = alpha + beta;
 
-    w[0] = std::sqrt(pow(2.0, 1.0 + ab) * tgamma(alpha + 1.0) * tgamma(beta + 1.0) / tgamma(2.0 + ab));
+    // w[0] = std::sqrt(pow(2.0, 1.0 + ab) * tgamma(alpha + 1.0) * tgamma(beta + 1.0) / tgamma(2.0 + ab));
 
-    x[0] = (beta - alpha) / (2.0 + ab);
-    s[0] = std::sqrt(4.0 * (1.0 + alpha) * (1.0 + beta) / ((3.0 + ab) * (2.0 + ab) * (2.0 + ab)));
-    for(int i=1; i<m; i++){
+    // x[0] = (beta - alpha) / (2.0 + ab);
+    // s[0] = std::sqrt(4.0 * (1.0 + alpha) * (1.0 + beta) / ((3.0 + ab) * (2.0 + ab) * (2.0 + ab)));
+    // for(int i=1; i<m; i++){
+    //     double di = (double) (i+1);
+    //     x[i] = (beta*beta - alpha*alpha) / ((2.0*di + ab -2.0)*(2.0*di + ab));
+    //     s[i] = std::sqrt(4.0 * di * (di + alpha) * (di + beta) * (di + ab)/ (((2.0*di + ab)*(2.0*di + ab) - 1.0) * (2.0*di + ab) * (2.0*di + ab)));
+    // }
+    // s[m-1] = 0.0;
+
+    // TasmanianTridiagonalSolver::decompose(m, x, s, w);
+
+    // NEW VERSION.
+    double mu0 = pow(2.0, 1.0 + alpha + beta) * tgamma(alpha + 1.0) * tgamma(beta + 1.0) / tgamma(1.0 + alpha + beta);
+    std::vector<double> diag(m), off_diag(m-1);
+    double abi = alpha + beta + 2.0;
+    diag[0] = (beta - alpha) / abi;
+    off_diag[0] = std::sqrt(4.0 * (1.0 + alpha) * (1.0 + beta) / ((abi + 1) * abi * abi));
+    double a2b2 = beta * beta - alpha * alpha; 
+    for(int i=1; i<m-1; i++){
         double di = (double) (i+1);
-        x[i] = (beta*beta - alpha*alpha) / ((2.0*di + ab -2.0)*(2.0*di + ab));
-        s[i] = std::sqrt(4.0 * di * (di + alpha) * (di + beta) * (di + ab)/ (((2.0*di + ab)*(2.0*di + ab) - 1.0) * (2.0*di + ab) * (2.0*di + ab)));
+        abi = alpha + beta + 2.0 * i;
+        diag[i] =  a2b2 / (abi * (abi - 1));
+        off_diag[i] = std::sqrt(4.0 * di * (di + alpha) * (di + beta) * (di + alpha + beta) / (abi * abi * (abi * abi - 1)));
     }
-    s[m-1] = 0.0;
-
-    TasmanianTridiagonalSolver::decompose(m, x, s, w);
+    abi = alpha + beta + 2.0 * m;
+    diag[m-1] = a2b2 / (abi * (abi - 2));
+    TasmanianTridiagonalSolver::decompose2(diag, off_diag, mu0, x, w);
 }
 // get Gauss-Hermite quadrature points
 void OneDimensionalNodes::getGaussHermite(int m, std::vector<double> &w, std::vector<double> &x, double alpha){
