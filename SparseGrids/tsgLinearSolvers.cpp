@@ -261,17 +261,17 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
     }
     norm = std::max(norm, std::fabs(diag[n]) + std::fabs(off_diag[n-1]));
     double eps = norm * std::pow(16.0, -14.0); // Relative zero tolerance.
-    weights[n] = 0.0;
-    weights[1] = 1.0;
+    weights[n] = 0.0; weights[1] = 1.0; int m = n;
     double lambda{norm}, lambda1{norm}, lambda2{norm}, rho{norm};
 
     // "INSPECT" block from ALGOL code.
     // Look for convergence of lower diagonal element.
-    for (int m=n; m>=1; m--) {
+    while (m > 0) {
         if (std::fabs(off_diag[m-1] <= eps)) {
             nodes[m] = diag[m];
             weights[m] = mu0 * weights[m] * weights[m];
             rho = lambda1 < lambda1 ? lambda1 : lambda2;
+            m = m-1;
             continue;
         }
         // Small off diagonal element means matrix can be split.
@@ -291,12 +291,6 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
         // Transform block from k to m.
         double cj = off_diag[k];
         off_diag[k-1] = diag[k] - lambda;
-
-        for (auto w : diag) std::cout << w << std::endl;
-        std::cout << std::endl;
-        for (auto w : off_diag) std::cout << w << std::endl;
-        std::cout << std::endl;
-
         for (int j=k; j<=m-1; j++) {
             double r = std::sqrt(cj * cj + off_diag[j-1] * off_diag[j-1]);
             double st = cj / r;            double st2 = st * st;

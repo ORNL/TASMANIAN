@@ -2200,7 +2200,7 @@ void ExternalTester::debugTest(){
 
 
     // Gauss-Legendre.
-    int n = 2;
+    int n = 4;
     double mu0 = 2.0;
     std::vector<double> diag(n, 0.0), off_diag(n-1), nodes, weights;
     for(int i=0; i<n-1; i++){
