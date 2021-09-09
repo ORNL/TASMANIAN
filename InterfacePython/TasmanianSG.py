@@ -88,6 +88,7 @@ pLibTSG.tsgMakeSequenceGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p,
 pLibTSG.tsgMakeLocalPolynomialGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_int, c_char_p, POINTER(c_int)]
 pLibTSG.tsgMakeWaveletGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_int, POINTER(c_int)]
 pLibTSG.tsgMakeFourierGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
+pLibTSG.tsgMakeGridFromCustomTabulated = [c_void_p, c_int, c_int, c_int, c_char_p, c_void_p, POINTER(c_int), POINTER(c_int)]
 pLibTSG.tsgUpdateGlobalGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
 pLibTSG.tsgUpdateSequenceGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
 pLibTSG.tsgUpdateFourierGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
@@ -712,6 +713,61 @@ class TasmanianSparseGrid:
             sType = bytes(sType, encoding='utf8')
 
         pLibTSG.tsgMakeFourierGrid(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), pAnisoWeights, pLevelLimits)
+
+    def makeGridFromCustomTabulated(self, iDimension, iOutputs, iDepth, sType, iCustomTabulated, liAnisotropicWeights=[], liLevelLimits=[]):
+        '''
+        Creates a new sparse grid using a CustomTabulated object. Discards any existing grid held by this class.
+
+        iDimension: positive int specifying the number of inputs.
+        iOutputs: non-negative int specifying the number of outputs.
+        iDepth: non-negative int that controls the density of the grid.
+            The offset for the tensor selection, the meaning of iDepth depends on sType.
+            Example 1: sType == 'iptotal' will give a grid that interpolates exactly all polynomials of degree up to and including iDepth.
+            Example 2: sType == 'qptotal' will give a grid that integrates exactly all polynomials of degree up to and including iDepth.
+        sType: string identifying the tensor selection strategy.
+            Possible values are:
+            'level'     'curved'     'hyperbolic'     'tensor'
+            'iptotal'   'ipcurved'   'iphyperbolic'   'iptensor'
+            'qptotal'   'qpcurved'   'qphyperbolic'   'qptensor'
+        iCustomTabulated: a Python CustomTabulated object that will be consumed by the grid.
+        liAnisotropicWeights: list or numpy.ndarray of weights.
+            Length must be iDimension or 2*iDimension and the first iDimension weights must be positive. See the manual for details.
+        liLevelLimits: list or numpy.ndarray of level limits.
+            Length must be iDimension and the limits themselves should integers. See the manual for details.
+        '''
+        if (iDimension <= 0):
+            raise TasmanianInputError("iDimension", "ERROR: dimension should be a positive integer")
+        if (iOutputs < 0):
+            raise TasmanianInputError("iOutputs", "ERROR: outputs should be a non-negative integer")
+        if (iDepth < 0):
+            raise TasmanianInputError("iDepth", "ERROR: depth should be a non-negative integer")
+        if (sType not in lsTsgGlobalTypes):
+            raise TasmanianInputError("sType", "ERROR: invalid type, see TasmanianSG.lsTsgGlobalTypes for list of accepted types")
+        if not hasattr(iCustomTabulated, "CustomTabulatedObject"):
+            raise TasmanianInputError("iCustomTabulated", "ERROR: iCustomTabulated must be an instance of CustomTabulated")
+        pAnisoWeights = None
+        if (len(liAnisotropicWeights) > 0):
+            if (sType in lsTsgCurvedTypes):
+                iNumWeights = 2*iDimension
+            else:
+                iNumWeights = iDimension
+            if (len(liAnisotropicWeights) != iNumWeights):
+                raise TasmanianInputError("liAnisotropicWeights", "ERROR: wrong number of liAnisotropicWeights, sType '{0:s}' needs {1:1d} weights but len(liAnisotropicWeights) == {2:1d}".format(sType, iNumWeights, len(liAnisotropicWeights)))
+            else:
+                pAnisoWeights = (c_int*iNumWeights)()
+                for iI in range(iNumWeights):
+                    pAnisoWeights[iI] = liAnisotropicWeights[iI]
+        pLevelLimits = None
+        if (len(liLevelLimits) > 0):
+            if (len(liLevelLimits) != iDimension):
+                raise TasmanianInputError("liLevelLimits", "ERROR: invalid number of level limits, must be equal to iDimension")
+            pLevelLimits = (c_int*iDimension)()
+            for iI in range(iDimension):
+                pLevelLimits[iI] = liLevelLimits[iI]
+        effective_sType = bytes(sType, encoding='utf8') if (sys.version_info.major == 3) else sType;
+
+        pLibTSG.tsgMakeGridFromCustomTabulated(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), iCustomTabulated.pCustomTabulated,
+                                               pAnisoWeights, pLevelLimits)
 
     def copyGrid(self, pGrid, iOutputsBegin = 0, iOutputsEnd = -1):
         '''
@@ -2353,6 +2409,15 @@ def makeWaveletGrid(iDimension, iOutputs, iDepth, iOrder=1, liLevelLimits=[]):
     grid.makeWaveletGrid(iDimension, iOutputs, iDepth, iOrder, liLevelLimits)
     return grid
 
+def makeGridFromCustomTabulated(iDimension, iOutputs, iDepth, sType, iCustomTabulated, liAnisotropicWeights=[], liLevelLimits=[]):
+    '''
+    Factory method equivalent to TasmanianSparseGrid.makeGridFromCustomTabulated().
+    '''
+    grid = TasmanianSparseGrid()
+    grid.makeGridFromCustomTabulated(iDimension, iOutputs, iDepth, sType, iCustomTabulated, liAnisotropicWeights, liLevelLimits)
+    return grid
+
+
 def copyGrid(source, iOutputsBegin = 0, iOutputsEnd = -1):
     '''
     Factory method equivalent to TasmanianSparseGrid.copyGrid().
@@ -2387,6 +2452,7 @@ class CustomTabulated:
         '''
         Constructor that creates an empty CustomTabulated instance.
         '''
+        self.CustomTabulatedObject = True
         self.pCustomTabulated = pLibTSG.tsgConstructCustomTabulated()
 
     def __del__(self):
