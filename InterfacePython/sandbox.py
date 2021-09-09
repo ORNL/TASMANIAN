@@ -21,3 +21,8 @@ import math
 ###############################################################################
 
 print("Add code to this file to test, debug, or develop features")
+
+import testConfigureData as tdata # needed for Gauss-Patterson table file
+ct = TasmanianSG.CustomTabulated()
+ct.read(tdata.sGaussPattersonTableFile)
+grid = TasmanianSG.makeGridFromCustomTabulated(2, 1, 1, "level", ct)

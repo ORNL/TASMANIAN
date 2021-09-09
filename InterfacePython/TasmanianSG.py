@@ -88,7 +88,7 @@ pLibTSG.tsgMakeSequenceGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p,
 pLibTSG.tsgMakeLocalPolynomialGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_int, c_char_p, POINTER(c_int)]
 pLibTSG.tsgMakeWaveletGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_int, POINTER(c_int)]
 pLibTSG.tsgMakeFourierGrid.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
-pLibTSG.tsgMakeGridFromCustomTabulated = [c_void_p, c_int, c_int, c_int, c_char_p, c_void_p, POINTER(c_int), POINTER(c_int)]
+pLibTSG.tsgMakeGridFromCustomTabulated.argtypes = [c_void_p, c_int, c_int, c_int, c_char_p, c_void_p, POINTER(c_int), POINTER(c_int)]
 pLibTSG.tsgUpdateGlobalGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
 pLibTSG.tsgUpdateSequenceGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
 pLibTSG.tsgUpdateFourierGrid.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int), POINTER(c_int)]
@@ -767,8 +767,9 @@ class TasmanianSparseGrid:
                 pLevelLimits[iI] = liLevelLimits[iI]
         effective_sType = bytes(sType, encoding='utf8') if (sys.version_info.major == 3) else sType;
 
-        pLibTSG.tsgMakeGridFromCustomTabulated(c_void_p(self.pGrid), c_int(iDimension), c_int(iOutputs), c_int(iDepth), c_char_p(sType),
-                                               c_void_p(iCustomTabulated.pCustomTabulated), pAnisoWeights, pLevelLimits)
+        pLibTSG.tsgMakeGridFromCustomTabulated(c_void_p(self.pGrid), c_int(iDimension), c_int(iOutputs), c_int(iDepth),
+                                               c_char_p(effective_sType), c_void_p(iCustomTabulated.pCustomTabulated),
+                                               pAnisoWeights, pLevelLimits)
 
     def copyGrid(self, pGrid, iOutputsBegin = 0, iOutputsEnd = -1):
         '''
