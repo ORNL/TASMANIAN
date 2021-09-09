@@ -238,46 +238,48 @@ void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::v
 }
 
 void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vector<double> &off_diag, const double mu0,
-                                            std::vector<double> &nodes, std::vector<double> &weights) {
+                                            std::vector<double> &nodes, std::vector<double> &weights, bool sort_outputs) {
 
     // Ensure compatibility with the ALGOL implementation.
     // NOTE: diag and off_diag are 1-indexed, while nodes and weights are 0-indexed after this step.
-    int n = diag.size();
+    size_t n = diag.size();
     if (off_diag.size() != n-1) {
         throw std::invalid_argument("ERROR: off_diag.size() must be equal to diag.size()-1");
     }
-    nodes.resize(n+1);
-    weights.resize(n+1);
+    nodes.resize(n);
+    weights.resize(n);
     diag.insert(diag.begin(), 0.0);
     off_diag.insert(off_diag.begin(), 0.0);
 
-    // "SETUP" block from ALGOL code.
-    // Find the maximum row sum norm and initialize weights.
+    // SETUP block from ALGOL code.
+    // ALGOL COMMENT: Find the maximum row sum norm and initialize weights.
     off_diag[0] = 0.0;
     double norm = 0.0;
-    for (int i=1; i<=n-1; i++) {
-        norm = std::max(norm, std::fabs(off_diag[i-1]) + std::fabs(diag[i]) + std::fabs(off_diag[i-1]));
-        weights[i] = 0.0;
+    for (size_t i=1; i<=n-1; i++) {
+        norm = std::max(norm, std::fabs(off_diag[i-1]) + std::fabs(diag[i]) + std::fabs(off_diag[i]));
+        weights[i-1] = 0.0;
     }
     norm = std::max(norm, std::fabs(diag[n]) + std::fabs(off_diag[n-1]));
-    double eps = norm * std::pow(16.0, -14.0); // Relative zero tolerance.
-    weights[n] = 0.0; weights[1] = 1.0; int m = n;
+    weights[n-1] = 0.0;
+    weights[0] = 1.0; // Fix the bug in the ALGOL code.
+    double eps = norm * std::numeric_limits<double>::epsilon();  // Relative zero tolerance.
+    size_t m = n;
     double lambda{norm}, lambda1{norm}, lambda2{norm}, rho{norm};
 
-    // "INSPECT" block from ALGOL code.
-    // Look for convergence of lower diagonal element.
+    // INSPECT block from ALGOL code.
+    // ALGOL COMMENT: Look for convergence of lower diagonal element.
     while (m > 0) {
-        if (std::fabs(off_diag[m-1] <= eps)) {
-            nodes[m] = diag[m];
-            weights[m] = mu0 * weights[m] * weights[m];
+        if (std::fabs(off_diag[m-1]) <= eps) {
+            nodes[m-1] = diag[m];
+            weights[m-1] = mu0 * weights[m-1] * weights[m-1];
             rho = lambda1 < lambda1 ? lambda1 : lambda2;
             m = m-1;
             continue;
         }
-        // Small off diagonal element means matrix can be split.
+        // ALGOL COMMENT: Small off diagonal element means matrix can be split.
         int k = m-1;
         while (std::fabs(off_diag[k-1]) > eps) k--;
-        // Find eigenvalues of lower 2-by-2 and select accelerating shift.
+        // ALGOL COMMENT: Find eigenvalues of lower 2-by-2 and select accelerating shift.
         double b2 = off_diag[m-1] * off_diag[m-1];
         double det = std::sqrt((diag[m-1] - diag[m]) * (diag[m-1] - diag[m]) + 4.0 * b2);
         double aa = diag[m-1] + diag[m];
@@ -288,15 +290,16 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
             lambda = eigmax;
         }
         rho = eigmax;
-        // Transform block from k to m.
+        // ALGOL COMMENT: Transform block from k to m.
         double cj = off_diag[k];
         off_diag[k-1] = diag[k] - lambda;
-        for (int j=k; j<=m-1; j++) {
+        for (size_t j=k; j<=m-1; j++) {
             double r = std::sqrt(cj * cj + off_diag[j-1] * off_diag[j-1]);
             double st = cj / r;            double st2 = st * st;
             double ct = off_diag[j-1] / r; double ct2 = ct * ct;
             double sc = st * ct;           double aj = diag[j];
-            double bj = off_diag[j];       double wj = weights[j];
+            double bj = off_diag[j];       double wj = weights[j-1];
+            // Order below is important!
             diag[j] = aj * ct2 + 2.0 * bj * sc + diag[j+1] * st2;
             off_diag[j] = (aj - diag[j+1]) * sc + bj * (st2 - ct2);
             diag[j+1] = aj * st2 - 2.0 * bj * sc + diag[j+1] * ct2;
@@ -304,37 +307,39 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
             off_diag[j+1] = -off_diag[j+1] * ct;
             off_diag[j-1] = r;
             // Account for the offset of the indices.
-            weights[j] = wj * ct + weights[j+1] * st;
-            weights[j+1] = wj * st - weights[j+1] * ct;
+            weights[j-1] = wj * ct + weights[j] * st;
+            weights[j] = wj * st - weights[j] * ct;
         }
         off_diag[k-1] = 0.0;
     }
-
-    // // "SORT" block from ALGOL code.
-    // // Arrange abscissas in ascending order.
-    // // NOTE: the original code used an exchange sort, which is O(n^2).
-    // size_t I[n];
-    // for (int i=0; i<n; i++) I[i] = i;
-    // std::sort(I, I+n, [&nodes](int i, int j){return nodes[i] < nodes[j];});
-    // for (int i=0; i<n; i++) {
-    //     if (i != I[i]) {
-    //         double tmp_node, tmp_weight;
-    //         tmp_node = nodes[i];
-    //         tmp_weight = weights[i];
-    //         int k = i; // index that needs to be modified.
-    //         int next = I[k]; // next index to modify.
-    //         while (i != I[k]) {
-    //             nodes[k] = nodes[I[k]];
-    //             weights[k] = weights[I[k]];
-    //             I[k] = k;
-    //             k = next;
-    //             next = I[k];
-    //         }
-    //         nodes[k] = tmp_node;
-    //         weights[k] = tmp_weight;
-    //         I[k] = k;
-    //     }
-    // }
+    
+    if (sort_outputs) {
+        // SORT block from ALGOL code.
+        // ALGOL COMMENT: Arrange abscissas in ascending order.
+        // NOTE: the original code used an exchange sort, which is O(n^2).
+        size_t I[n];
+        for (size_t i=0; i<n; i++) I[i] = i;
+        std::sort(I, I+n, [&nodes](size_t i, size_t j){return nodes[i] < nodes[j];});
+        for (size_t i=0; i<n; i++) {
+            if (i != I[i]) {
+                double tmp_node, tmp_weight;
+                tmp_node = nodes[i];
+                tmp_weight = weights[i];
+                size_t k = i; // index that needs to be modified.
+                size_t next = I[k]; // next index to modify.
+                while (i != I[k]) {
+                    nodes[k] = nodes[I[k]];
+                    weights[k] = weights[I[k]];
+                    I[k] = k;
+                    k = next;
+                    next = I[k];
+                }
+                nodes[k] = tmp_node;
+                weights[k] = tmp_weight;
+                I[k] = k;
+            }
+        }
+    }
 }
 
 void TasmanianFourierTransform::fast_fourier_transform(std::vector<std::vector<std::complex<double>>> &data, std::vector<int> &num_points){
