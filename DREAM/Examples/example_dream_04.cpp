@@ -83,7 +83,7 @@ void dream_example_04(){
     std::vector<double> domain_b = {1.2, 4.0, 1.2, 4.0};
     grid.setDomainTransform(domain_a, domain_b);
 
-    TasGrid::loadNeededPoints<TasGrid::mode_sequential>(
+    TasGrid::loadNeededValues<TasGrid::mode_sequential>(
         [&](std::vector<double> const &x, std::vector<double> &y, size_t)->
         void{
             model(x[0], x[1], x[2], x[3], y);

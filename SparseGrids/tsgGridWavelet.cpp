@@ -143,7 +143,7 @@ void GridWavelet::getInterpolationWeights(const double x[], double *weights) con
     if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
     inter_matrix.invertTransposed(acceleration, weights);
 }
-void GridWavelet::loadNeededPoints(const double *vals){
+void GridWavelet::loadNeededValues(const double *vals){
     clearGpuCoefficients();
     if (points.empty()){
         clearGpuBasis();

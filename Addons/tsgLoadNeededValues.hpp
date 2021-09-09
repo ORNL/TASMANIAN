@@ -77,7 +77,7 @@ namespace TasGrid{
  *              e.g., a separate CUDA device can be associated with each thread.
  *
  * \param grid is the sparse grid that will be loaded. The grid must not be set for construction
- *             and the number of inputs must be positive. The method grid.loadNeededPoints()
+ *             and the number of inputs must be positive. The method grid.loadNeededValues()
  *             will be called with values corresponding to the model outputs at either
  *             the loaded or the needed points.
  *
@@ -96,12 +96,12 @@ namespace TasGrid{
  * auto model = [](double const x[], double y[], size_t)->void{
  *      y[0] = std::exp(x[0] + x[1] + x[2] + x[3]);
  * }
- * loadNeededPoints(model, grid, 4); // using parallel sampling with 4 threads
+ * loadNeededValues(model, grid, 4); // using parallel sampling with 4 threads
  * // at this point, grid is a 10-th order polynomial approximation to exp(x0 + x2 + x3 + x4)
  * \endcode
  */
 template<bool parallel_construction = true, bool overwrite_loaded = false>
-void loadNeededPoints(std::function<void(double const x[], double y[], size_t thread_id)> model, TasmanianSparseGrid &grid, size_t num_threads){
+void loadNeededValues(std::function<void(double const x[], double y[], size_t thread_id)> model, TasmanianSparseGrid &grid, size_t num_threads){
     int num_points = (overwrite_loaded) ? grid.getNumLoaded() : grid.getNumNeeded();
     int num_outputs = grid.getNumOutputs();
     if (grid.isUsingConstruction()) throw std::runtime_error("ERROR: cannot call loadNeededPoints() addon when isUsingConstruction() is true");
@@ -161,16 +161,33 @@ void loadNeededPoints(std::function<void(double const x[], double y[], size_t th
  * without copy.
  */
 template<bool parallel_construction = true, bool overwrite_loaded = false>
-void loadNeededPoints(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
+void loadNeededValues(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
                       TasmanianSparseGrid &grid, size_t num_threads){
     int num_dimensions = grid.getNumDimensions();
     int num_outputs = grid.getNumOutputs();
-    loadNeededPoints<parallel_construction, overwrite_loaded>(
+    loadNeededValues<parallel_construction, overwrite_loaded>(
         [&](double const x[], double y[], size_t thread_id)->void{
             std::vector<double> vecy(num_outputs);
             model(std::vector<double>(x, x + num_dimensions), vecy, thread_id);
             std::copy(vecy.begin(), vecy.end(), y);
         }, grid, num_threads);
+}
+/*!
+ * \ingroup TasmanianAddonsLoadNeededVals
+ * \brief Alias to loadNeededValues(), array variant.
+ */
+template<bool parallel_construction = true, bool overwrite_loaded = false>
+void loadNeededPoints(std::function<void(double const x[], double y[], size_t thread_id)> model, TasmanianSparseGrid &grid, size_t num_threads){
+    loadNeededValues<parallel_construction, overwrite_loaded>(model, grid, num_threads);
+}
+/*!
+ * \ingroup TasmanianAddonsLoadNeededVals
+ * \brief Alias to loadNeededValues(), vector variant.
+ */
+template<bool parallel_construction = true, bool overwrite_loaded = false>
+void loadNeededPoints(std::function<void(std::vector<double> const &x, std::vector<double> &y, size_t thread_id)> model,
+                      TasmanianSparseGrid &grid, size_t num_threads){
+    loadNeededValues<parallel_construction, overwrite_loaded>(model, grid, num_threads);
 }
 
 }

@@ -202,6 +202,8 @@ double* tsgGetInterpolationWeights(void *grid, const double *x){
 
 void tsgLoadNeededPoints(void *grid, const double *vals){ ((TasmanianSparseGrid*) grid)->loadNeededPoints(vals); }
 
+void tsgLoadNeededValues(void *grid, const double *vals){ ((TasmanianSparseGrid*) grid)->loadNeededValues(vals); }
+
 const double* tsgGetLoadedValues(void *grid){
     return ((TasmanianSparseGrid*) grid)->getLoadedValues();
 }
@@ -477,6 +479,48 @@ void tsgGetGPUName(int gpu, int num_buffer, char *buffer, int *num_actual){
 }
 
 void tsgDeleteInts(int *p){ delete[] p; }
+
+void* tsgConstructCustomTabulated(){ return (void*) new CustomTabulated(); }
+void tsgDestructCustomTabulated(void* ct){ delete ((CustomTabulated*) ct); }
+
+void tsgWriteCustomTabulated(void *ct, const char* filename){
+    std::ofstream ofs(filename, std::ios::out);
+    if (!ofs.good()) std::cerr << "ERROR: must provide valid filename!" << std::endl;
+    ((CustomTabulated*) ct)->write<true>(ofs);
+}
+int tsgReadCustomTabulated(void *ct, const char* filename){
+    try{
+        ((CustomTabulated*) ct)->read(filename);
+        return 1;
+    }catch(std::runtime_error &e){
+        cerr << e.what() << endl;
+        return 0;
+    }
+}
+
+int tsgGetNumLevelsCustomTabulated(void* ct){ return ((CustomTabulated*) ct)->getNumLevels(); }
+int tsgGetNumPointsCustomTabulated(void* ct, const int level){ return ((CustomTabulated*) ct)->getNumPoints(level); }
+int tsgGetIExactCustomTabulated(void* ct, const int level){ return ((CustomTabulated*) ct)->getIExact(level); }
+int tsgGetQExactCustomTabulated(void* ct, const int level){ return ((CustomTabulated*) ct)->getQExact(level); }
+const char* tsgGetDescriptionCustomTabulated(void* ct) { return ((CustomTabulated*) ct)->getDescription(); }
+
+void tsgGetWeightsNodesStaticCustomTabulated(void* ct, int level, double* w, double* x) {((CustomTabulated*) ct)->getWeightsNodes(level, w, x);
+}
+
+// Note: cnodes and cweights are passed as 1D arrays, but represent a list of vectors.
+void* tsgMakeCustomTabulatedFromData(const int cnum_levels, const int* cnum_nodes, const int* cprecision, const double* cnodes,
+                                     const double* cweights, char* cdescription) {
+    std::vector<std::vector<double>> vec_cnodes(cnum_levels), vec_cweights(cnum_levels);
+    int ptr_idx = 0;
+    for (int l=0; l<cnum_levels; l++) {
+        vec_cnodes[l] = std::vector<double>(&cnodes[ptr_idx], &cnodes[ptr_idx] + cnum_nodes[l]);
+        vec_cweights[l] = std::vector<double>(&cweights[ptr_idx], &cweights[ptr_idx] + cnum_nodes[l]);
+        ptr_idx += cnum_nodes[l];
+    }
+    return new TasGrid::CustomTabulated(cnum_levels, std::vector<int>(cnum_nodes, cnum_nodes + cnum_levels),
+                                        std::vector<int>(cprecision, cprecision + cnum_levels), std::move(vec_cnodes),
+                                        std::move(vec_cweights), cdescription);
+}
 
 }
 }

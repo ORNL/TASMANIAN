@@ -34,10 +34,11 @@ class TestTasClass(unittest.TestCase):
             if i < 2:
                 gridA.makeGlobalGrid(2, 1, 3, 'level', 'fejer2')
                 gridB.copyGrid(gridA)
-                Tasmanian.loadNeededPoints(lambda x, i : np.ones((1,)) * np.exp(-np.sum(x**2)), gridA, i)
+                Tasmanian.loadNeededValues(lambda x, i : np.ones((1,)) * np.exp(-np.sum(x**2)), gridA, i)
             else:
                 gridA.makeLocalPolynomialGrid(2, 1, 2, 2)
                 gridB.copyGrid(gridA)
+                gridA.printStats()
                 gridA.loadNeededPoints(np.ones((gridA.getNumPoints(), 1)))
                 Tasmanian.reloadLoadedPoints(lambda x, i : np.ones((1,)) * np.exp(-np.sum(x**2)), gridA, i - 2)
 

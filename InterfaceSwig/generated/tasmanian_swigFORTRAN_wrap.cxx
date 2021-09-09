@@ -614,6 +614,36 @@ SWIGEXPORT int _wrap_TasmanianSparseGrid_isOpenMPEnabled() {
 }
 
 
+SWIGEXPORT int _wrap_TasmanianSparseGrid_isCudaEnabled() {
+  int fresult ;
+  bool result;
+  
+  result = (bool)TasGrid::TasmanianSparseGrid::isCudaEnabled();
+  fresult = (result ? 1 : 0);
+  return fresult;
+}
+
+
+SWIGEXPORT int _wrap_TasmanianSparseGrid_isHipEnabled() {
+  int fresult ;
+  bool result;
+  
+  result = (bool)TasGrid::TasmanianSparseGrid::isHipEnabled();
+  fresult = (result ? 1 : 0);
+  return fresult;
+}
+
+
+SWIGEXPORT int _wrap_TasmanianSparseGrid_isDpcppEnabled() {
+  int fresult ;
+  bool result;
+  
+  result = (bool)TasGrid::TasmanianSparseGrid::isDpcppEnabled();
+  fresult = (result ? 1 : 0);
+  return fresult;
+}
+
+
 SWIGEXPORT void _wrap_TasmanianSparseGrid_write__SWIG_0(SwigClassWrapper *farg1, SwigArrayWrapper *farg2, int const *farg3) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -1398,6 +1428,17 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_getInterpolationWeights__SWIG_3(SwigCl
   arg2 = (double *)(farg2);
   arg3 = (double *)(farg3);
   ((TasGrid::TasmanianSparseGrid const *)arg1)->getInterpolationWeights((double const (*))arg2,arg3);
+}
+
+
+SWIGEXPORT void _wrap_TasmanianSparseGrid_loadNeededValues__SWIG_1(SwigClassWrapper *farg1, double *farg2) {
+  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  double *arg2 = (double *) 0 ;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::loadNeededValues(double const *)", return );
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (double *)(farg2);
+  (arg1)->loadNeededValues((double const *)arg2);
 }
 
 

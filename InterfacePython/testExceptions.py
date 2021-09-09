@@ -65,7 +65,7 @@ class TestTasClass(unittest.TestCase):
                    ["grid.makeFourierGrid(2,  1,  4, 'level', liLevelLimits = [1, 2])", "notError"],
                    ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja')", "notError"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'chebyshev')", "notError"],
-                   ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.loadNeededPoints(np.zeros([6,2]))", "notError"],
+                   ["grid.makeSequenceGrid(2, 2, 2, 'level', 'rleja'); grid.loadNeededValues(np.zeros([6,2]))", "notError"],
                    ["grid.makeSequenceGrid(2, 1, 2, 'level', 'rleja'); grid.updateGlobalGrid(1,'iptotal')", "updateGlobalGrid"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'chebyshev'); grid.updateGlobalGrid(-1,'iptotal')", "iDepth"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'chebyshev'); grid.updateGlobalGrid(4,'wrong')", "sType"],
@@ -207,7 +207,7 @@ class TestTasClass(unittest.TestCase):
                    ["grid1 = Tasmanian.SparseGrid(); grid1.setGPUID(1000000);", "iGPUID"],
                    ["grid1 = Tasmanian.SparseGrid(); grid1.setGPUID(grid1.getNumGPUs());", "iGPUID"],
                    ["grid.makeLocalPolynomialGrid(1, 1, 1, 1, 'localp'); Tasmanian.loadNeededPoints(lambda x, tid : x, grid, 1);", "notError"],
-                   ["grid.makeLocalPolynomialGrid(1, 1, 1, 1, 'localp'); Tasmanian.loadNeededPoints(lambda x, tid : np.ones((2,)) * x, grid, 1);", "loadNeededPoints"],
+                   ["grid.makeLocalPolynomialGrid(1, 1, 1, 1, 'localp'); Tasmanian.loadNeededPoints(lambda x, tid : np.ones((2,)) * x, grid, 1);", "loadNeededValues"],
                    ]
 
     def getDreamTests(self):

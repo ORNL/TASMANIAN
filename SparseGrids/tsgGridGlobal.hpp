@@ -78,7 +78,7 @@ public:
     void getQuadratureWeights(double weights[]) const override;
     void getInterpolationWeights(const double x[], double weights[]) const override;
 
-    void loadNeededPoints(const double *vals) override;
+    void loadNeededValues(const double *vals) override;
 
     void evaluate(const double x[], double y[]) const override;
     void integrate(double q[], double *conformal_correction) const override;

@@ -88,8 +88,8 @@ void sparse_grids_example_10(){
 
     double const tolerance = 1.E-5;
     while((grid_poly.getNumNeeded() > 0) || (grid_wavelet.getNumNeeded() > 0)){
-        TasGrid::loadNeededPoints(sharp_model, grid_poly, 4);
-        TasGrid::loadNeededPoints(sharp_model, grid_wavelet, 4);
+        TasGrid::loadNeededValues(sharp_model, grid_poly, 4);
+        TasGrid::loadNeededValues(sharp_model, grid_wavelet, 4);
 
         // output the grids and results at the current stage
         cout << setw(8) << grid_poly.getNumLoaded()

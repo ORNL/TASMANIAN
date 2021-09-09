@@ -97,7 +97,7 @@ subroutine test_exact_eval_cubic()
         values(2, i) = points(1, i) + 2.0D+0 * points(2, i)
         values(3, i) = 5.0D-0 + points(1, i)**3 + 2.0D+0 * points(2, i)**2
     enddo
-    call grid%loadNeededPoints(values(:, 1))
+    call grid%loadNeededValues(values(:, 1))
     lpoints => grid%returnLoadedPoints()
     call approx2d(2, num_points, points, lpoints)
 

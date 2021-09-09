@@ -138,7 +138,9 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DREAM"       "${CMAKE_CURRENT_BINA
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Addons"      "${CMAKE_CURRENT_BINARY_DIR}/Addons")
 
 if (Tasmanian_ENABLE_FORTRAN)
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/InterfaceFortran"  "${CMAKE_CURRENT_BINARY_DIR}/Fortran")
+    if (NOT Tasmanian_DISABLE_F90)
+        add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/InterfaceFortran"  "${CMAKE_CURRENT_BINARY_DIR}/Fortran")
+    endif()
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/InterfaceSwig"
       "${CMAKE_CURRENT_BINARY_DIR}/Fortran03")
 endif()
