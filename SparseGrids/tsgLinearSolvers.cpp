@@ -317,9 +317,9 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
         // SORT block from ALGOL code.
         // ALGOL COMMENT: Arrange abscissas in ascending order.
         // NOTE: the original code used an exchange sort, which is O(n^2).
-        size_t I[n];
+        std::vector<size_t> I(n);
         for (size_t i=0; i<n; i++) I[i] = i;
-        std::sort(I, I+n, [&nodes](size_t i, size_t j){return nodes[i] < nodes[j];});
+        std::sort(I.begin(), I.end(), [&nodes](size_t i, size_t j){return nodes[i] < nodes[j];});
         for (size_t i=0; i<n; i++) {
             if (i != I[i]) {
                 double tmp_node, tmp_weight;
