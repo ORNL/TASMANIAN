@@ -262,7 +262,7 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
     norm = std::max(norm, std::fabs(diag[n]) + std::fabs(off_diag[n-1]));
     weights[n-1] = 0.0;
     weights[0] = 1.0; // Fix the bug in the ALGOL code.
-    double eps = norm * std::numeric_limits<double>::epsilon();  // Relative zero tolerance.
+    double eps = norm * Maths::num_tol;  // Relative zero tolerance.
     size_t m = n;
     double lambda{norm}, lambda1{norm}, lambda2{norm}, rho{norm};
 
