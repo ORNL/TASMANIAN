@@ -38,6 +38,7 @@ TasmanianInputError = TasmanianConfig.TasmanianInputError
 
 pLibCTSG = cdll.LoadLibrary(TasmanianConfig.__path_libcaddons__)
 
+type_1Dfunc = CFUNCTYPE(c_double, c_double)
 type_lpnmodel = CFUNCTYPE(None, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int, POINTER(c_int))
 type_scsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int, POINTER(c_int))
 type_icsmodel = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), c_int, c_int, POINTER(c_double), c_int, POINTER(c_int))
@@ -57,6 +58,9 @@ pLibCTSG.tsgConstructSurrogateWiIGAnisoFixed.argtypes = [type_icsmodel, c_int, c
                                                          POINTER(c_int), POINTER(c_int), c_char_p, POINTER(c_int)]
 
 pLibCTSG.tsgLoadUnstructuredDataL2.argtypes = [POINTER(c_double), c_int, POINTER(c_double), c_double, c_void_p]
+
+pLibCTSG.tsgCreateExoticQuadratureFromGrid.argtypes = [c_void_p, c_int, c_double, c_void_p, c_char_p, c_int]
+pLibCTSG.tsgCreateExoticQuadratureFromGrid.argtypes = [c_void_p, c_int, c_double, type_1Dfunc, c_int, c_char_p, c_int]
 
 def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID, pErrInfo):
     '''
@@ -402,3 +406,46 @@ def loadUnstructuredDataL2(points, model_data, tolerance, grid):
     num_data = points.shape[0]
     pLibCTSG.tsgLoadUnstructuredDataL2(np.ctypeslib.as_ctypes(points.reshape((points.size,))), num_data,
                                        np.ctypeslib.as_ctypes(model_data.reshape((model_data.size,))), tolerance, grid.pGrid)
+
+def createExoticQuadratureFromGrid(level, shift, ref_grid, description, is_symmetric = False):
+    '''
+    Calls TasGrid::getExoticQuadrature() from a one dimensional interpolant/surrogate of the weight function, and output a
+    python CustomTabulated object.
+    See the C++ reference for more information.
+
+    level:        positive integer representing the level of the exotic quadrature grid.
+    shift:        double where [weight_function(x) + shift] is nonegative for every x in the domain of the weight function.
+    ref_grid:     Python TasmanianSparseGrid object that represents the one dimensional surrogate/interpolant of the weight function.
+    description:  string describing the Exotic quadrature instance.
+    is_symmetric: (optional) boolean that should be set to True if the weight function is symmetric.
+
+    output:       a Python CustomTabulated object.
+    '''
+    if not hasattr(ref_grid, "TasmanianSparseGridObject"):
+        raise TasmanianInputError("ref_grid", "ERROR: ref_grid must be an instance of TasmanianSparseGrid")
+    effective_description = bytes(description, encoding='utf8') if sys.version_info.major == 3 else description
+    ct = TasmanianSG.CustomTabulated()
+    pLibCTSG.tsgCreateExoticQuadratureFromGrid(c_void_p(ct.pCustomTabulated), c_int(level), c_double(shift), c_void_p(ref_grid.pGrid),
+                                               c_char_p(effective_description), c_int(is_symmetric))
+    return ct
+
+def createExoticQuadratureFromFunction(level, shift, weight_fn, nref, description, is_symmetric = False):
+    '''
+    Calls TasGrid::getExoticQuadrature() from a function lambda representing the weight function, and output a Python
+    CustomTabulated object.
+    See the C++ reference for more information.
+
+    level:        positive integer representing the level of the exotic quadrature grid.
+    shift:        double where [weight_function(x) + shift] is nonegative for every x in the domain of the weight function.
+    weight_fn:    Python lambda function representing the weight function.
+    nref:         positive integer representing the number of points used to generate the weight function surrogate/interpolant.
+    description:  string describing the Exotic quadrature instance.
+    is_symmetric: (optional) boolean that should be set to True if the weight function is symmetric.
+
+    output:       a Python CustomTabulated object.
+    '''
+    effective_description = bytes(description, encoding='utf8') if sys.version_info.major == 3 else description
+    ct = TasmanianSG.CustomTabulated()
+    pLibCTSG.tsgCreateExoticQuadratureFromFunction(c_void_p(ct.pCustomTabulated), c_int(level), c_double(shift), type_1Dfunc(weight_fn),
+                                                   c_int(nref), c_char_p(effective_description), c_int(is_symmetric))
+    return ct
