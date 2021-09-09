@@ -118,6 +118,7 @@ void tsgMakeGridFromCustomTabulated(void *grid, int dimension, int outputs, int 
                                                   std::move(*reinterpret_cast<TasGrid::CustomTabulated*>(custom_tabulated)),
                                                   anisotropic_weights, limit_levels);
 }
+
 void tsgUpdateGlobalGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels){
     TypeDepth depth_type = IO::getDepthTypeString(sType);
     #ifndef NDEBUG
