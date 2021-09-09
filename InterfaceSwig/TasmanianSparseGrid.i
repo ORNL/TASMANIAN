@@ -332,6 +332,10 @@ namespace TasGrid {
     %template(evaluateFastDbl) TasmanianSparseGrid::evaluateFast<double>;
     %rename(evaluateFast) TasmanianSparseGrid::evaluateFast<float>;
     %template(evaluateFastFlt) TasmanianSparseGrid::evaluateFast<float>;
+    %rename(evaluateBatchGPU) TasmanianSparseGrid::evaluateBatchGPU<double>;
+    %template(evaluateBatchGPUDbl) TasmanianSparseGrid::evaluateBatchGPU<double>;
+    %rename(evaluateBatchGPU) TasmanianSparseGrid::evaluateBatchGPU<float>;
+    %template(evaluateBatchGPUFlt) TasmanianSparseGrid::evaluateBatchGPU<float>;
 }
 
 %extend TasGrid::TasmanianSparseGrid{

@@ -2073,6 +2073,36 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateFast__SWIG_4(SwigClassWrapper 
 }
 
 
+SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateBatchGPU__SWIG_1(SwigClassWrapper *farg1, double *farg2, int const *farg3, double *farg4) {
+  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  double *arg2 ;
+  int arg3 ;
+  double *arg4 ;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::evaluateBatchGPU< double >(double const [],int,double []) const", return );
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (double *)(farg2);
+  arg3 = (int)(*farg3);
+  arg4 = (double *)(farg4);
+  ((TasGrid::TasmanianSparseGrid const *)arg1)->SWIGTEMPLATEDISAMBIGUATOR evaluateBatchGPU< double >((double const (*))arg2,arg3,arg4);
+}
+
+
+SWIGEXPORT void _wrap_TasmanianSparseGrid_evaluateBatchGPU__SWIG_2(SwigClassWrapper *farg1, float *farg2, int const *farg3, float *farg4) {
+  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  float *arg2 ;
+  int arg3 ;
+  float *arg4 ;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid const *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::evaluateBatchGPU< float >(float const [],int,float []) const", return );
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (float *)(farg2);
+  arg3 = (int)(*farg3);
+  arg4 = (float *)(farg4);
+  ((TasGrid::TasmanianSparseGrid const *)arg1)->SWIGTEMPLATEDISAMBIGUATOR evaluateBatchGPU< float >((float const (*))arg2,arg3,arg4);
+}
+
+
 SWIGEXPORT void _wrap_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1(SwigClassWrapper *farg1, int *farg2) {
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
   int *arg2 = (int *) 0 ;
