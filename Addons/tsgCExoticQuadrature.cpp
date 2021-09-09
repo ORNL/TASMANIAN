@@ -38,18 +38,15 @@
 
 using tsg_weight_fn = double(*)(double);
 extern "C"{
-    void* tsgCreateExoticQuadratureFromGrid(const int level, const double shift, void* grid_ptr,
+    void tsgCreateExoticQuadratureFromGrid(void* custom_tabulated, const int level, const double shift, void* grid,
                                            const char* description, const bool is_symmetric) {
-        TasGrid::CustomTabulated *ct = new TasGrid::CustomTabulated;
-        TasGrid::TasmanianSparseGrid &grid = *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid_ptr);
-        *ct = TasGrid::getExoticQuadrature(level, shift, grid, description, is_symmetric);
-        return (void*) ct;
+        *((TasGrid::CustomTabulated*) custom_tabulated) =
+                TasGrid::getExoticQuadrature(level, shift, *reinterpret_cast<TasGrid::TasmanianSparseGrid*>(grid), description, is_symmetric);
     }
-    void* tsgCreateExoticQuadratureFromFunction(const int level, const double shift, tsg_weight_fn weight_fn, const int nref,
-                                                const char* description, const bool is_symmetric) {
-        TasGrid::CustomTabulated *ct = new TasGrid::CustomTabulated;
-        *ct = TasGrid::getExoticQuadrature(level, shift, weight_fn, nref, description, is_symmetric);
-        return (void*) ct;
+    void tsgCreateExoticQuadratureFromFunction(void* custom_tabulated, const int level, const double shift, tsg_weight_fn weight_fn,
+                                               const int nref, const char* description, const bool is_symmetric) {
+        *((TasGrid::CustomTabulated*) custom_tabulated) =
+                TasGrid::getExoticQuadrature(level, shift, weight_fn, nref, description, is_symmetric);
     }
 } // extern "C"
 #endif
