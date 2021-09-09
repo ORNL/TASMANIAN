@@ -237,103 +237,110 @@ void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::v
     }
 }
 
-void decompose2(std::vector<double> &diag, std::vector<double> &off_diag, const double mu0, std::vector<double> &nodes,
-                std::vector<double> &weights) {
+void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vector<double> &off_diag, const double mu0,
+                                            std::vector<double> &nodes, std::vector<double> &weights) {
 
     // Ensure compatibility with the ALGOL implementation.
-    // NOTE: diag and off_diag are 1-indexed while nodes and weights are 0-indexed after this step.
+    // NOTE: diag and off_diag are 1-indexed, while nodes and weights are 0-indexed after this step.
     int n = diag.size();
     if (off_diag.size() != n-1) {
         throw std::invalid_argument("ERROR: off_diag.size() must be equal to diag.size()-1");
     }
-    nodes.resize(n);
-    weights.resize(n);
+    nodes.resize(n+1);
+    weights.resize(n+1);
     diag.insert(diag.begin(), 0.0);
     off_diag.insert(off_diag.begin(), 0.0);
 
     // "SETUP" block from ALGOL code.
-    double l1_norm = 0.0;
-    weights[0] = 1.0;
+    // Find the maximum row sum norm and initialize weights.
+    off_diag[0] = 0.0;
+    double norm = 0.0;
     for (int i=1; i<=n-1; i++) {
+        norm = std::max(norm, std::fabs(off_diag[i-1]) + std::fabs(diag[i]) + std::fabs(off_diag[i-1]));
         weights[i] = 0.0;
-        l1_norm = std::max(l1_norm, std::fabs(off_diag[i-1]) + std::fabs(diag[i]) + std::fabs(off_diag[i]));
     }
-    l1_norm = std::max(l1_norm, std::fabs(diag[n]) + std::fabs(off_diag[n-1]));
-    double lambda{l1_norm}, lambda1{l1_norm}, lambda2{l1_norm}, rho{l1_norm}, eps{l1_norm * std::pow(16.0, -14.0)};
+    norm = std::max(norm, std::fabs(diag[n]) + std::fabs(off_diag[n-1]));
+    double eps = norm * std::pow(16.0, -14.0); // Relative zero tolerance.
+    weights[n] = 0.0;
+    weights[1] = 1.0;
+    double lambda{norm}, lambda1{norm}, lambda2{norm}, rho{norm};
 
     // "INSPECT" block from ALGOL code.
-    for (int m=n; m>=0; m--) {
-        // Compute nodes and weights until we encounter the end of a nontrivial block.
-        if (m == 0) break;
+    // Look for convergence of lower diagonal element.
+    for (int m=n; m>=1; m--) {
         if (std::fabs(off_diag[m-1] <= eps)) {
-            nodes[m-1] = diag[m];
-            weights[m-1] = mu0 * weights[m-1] * weights[m-1];
+            nodes[m] = diag[m];
+            weights[m] = mu0 * weights[m] * weights[m];
             rho = lambda1 < lambda1 ? lambda1 : lambda2;
             continue;
         }
-        // Find the starting index of the nontrivial block.
+        // Small off diagonal element means matrix can be split.
         int k = m-1;
-        while (std::fabs(off_diag[k]) > eps) k--;
-        // Compute an offset lambda for faster convergence of the algorithm.
-        double B2 = off_diag[m-1] * off_diag[m-1];
-        double AA = diag[m-1] + diag[m];
-        double det = std::sqrt((diag[m-1] - diag[m]) * (diag[m-1] +- diag[m]) + 4.0 * B2);
-        lambda2 = 0.5 * (AA >= 0 ? AA + det : AA - det);
-        lambda1 = (diag[m-1] * diag[m] - B2) / lambda2;
+        while (std::fabs(off_diag[k-1]) > eps) k--;
+        // Find eigenvalues of lower 2-by-2 and select accelerating shift.
+        double b2 = off_diag[m-1] * off_diag[m-1];
+        double det = std::sqrt((diag[m-1] - diag[m]) * (diag[m-1] - diag[m]) + 4.0 * b2);
+        double aa = diag[m-1] + diag[m];
+        lambda2 = 0.5 * (aa >= 0 ? aa + det : aa - det);
+        lambda1 = (diag[m-1] * diag[m] - b2) / lambda2;
         double eigmax = std::max(lambda1, lambda2);
-        if (std::fabs(eigmax-rho) <= 0.125 * std::fabs(eigmax)) {
+        if (std::fabs(eigmax - rho) <= 0.125 * std::fabs(eigmax)) {
             lambda = eigmax;
         }
         rho = eigmax;
-        // Apply a heavily specialized QR algorithm to diagonalize the nontrivial block. Note that diag and offdiag are destroyed
-        // during the diagonalization.
+        // Transform block from k to m.
         double cj = off_diag[k];
         off_diag[k-1] = diag[k] - lambda;
+
+        for (auto w : diag) std::cout << w << std::endl;
+        std::cout << std::endl;
+        for (auto w : off_diag) std::cout << w << std::endl;
+        std::cout << std::endl;
+
         for (int j=k; j<=m-1; j++) {
             double r = std::sqrt(cj * cj + off_diag[j-1] * off_diag[j-1]);
-            double st = cj / r;
-            double ct = off_diag[j-1] / r;
-            double aj = diag[j];
-            off_diag[j-1] = r;
+            double st = cj / r;            double st2 = st * st;
+            double ct = off_diag[j-1] / r; double ct2 = ct * ct;
+            double sc = st * ct;           double aj = diag[j];
+            double bj = off_diag[j];       double wj = weights[j];
+            diag[j] = aj * ct2 + 2.0 * bj * sc + diag[j+1] * st2;
+            off_diag[j] = (aj - diag[j+1]) * sc + bj * (st2 - ct2);
+            diag[j+1] = aj * st2 - 2.0 * bj * sc + diag[j+1] * ct2;
             cj = off_diag[j+1] * st;
             off_diag[j+1] = -off_diag[j+1] * ct;
-            double f = aj * ct + off_diag[j] * st;
-            double q = off_diag[j] * ct + diag[j+1] * st;
-            diag[j] = f * ct + q * st;
-            off_diag[j] = f * st - q * ct;
-            double wj = weights[j];
-            diag[j+1] = aj + diag[j+1] - diag[j];
+            off_diag[j-1] = r;
             // Account for the offset of the indices.
-            weights[j-1] = wj * ct + weights[j] * st;
-            weights[j] = wj * st - weights[j] * ct;
+            weights[j] = wj * ct + weights[j+1] * st;
+            weights[j+1] = wj * st - weights[j+1] * ct;
         }
         off_diag[k-1] = 0.0;
     }
 
-    // "SORT" block from ALGOL code (sort the nodes and weights in-place according to the node ordering).
-    // NOTE: the original code used an exchange sort, which is O(n^2).
-    size_t I[n];
-    for (int i=0; i<n; i++) I[i] = i;
-    std::sort(I, I+n, [&nodes](int i, int j){return nodes[i] < nodes[j];});
-    for (int i=0; i<n; i++) {
-        if (i != I[i]) {
-            double tmp_node, tmp_weight;
-            tmp_node = nodes[i];
-            tmp_weight = weights[i];
-            int k = i; // index that needs to be modified.
-            int next = I[k]; // next index to modify.
-            while (i != I[k]) {
-                nodes[k] = nodes[I[k]];
-                weights[k] = weights[I[k]];
-                I[k] = k;
-                k = next;
-                next = I[k];
-            }
-            nodes[k] = tmp_node;
-            weights[k] = tmp_weight;
-            I[k] = k;
-        }
-    }
+    // // "SORT" block from ALGOL code.
+    // // Arrange abscissas in ascending order.
+    // // NOTE: the original code used an exchange sort, which is O(n^2).
+    // size_t I[n];
+    // for (int i=0; i<n; i++) I[i] = i;
+    // std::sort(I, I+n, [&nodes](int i, int j){return nodes[i] < nodes[j];});
+    // for (int i=0; i<n; i++) {
+    //     if (i != I[i]) {
+    //         double tmp_node, tmp_weight;
+    //         tmp_node = nodes[i];
+    //         tmp_weight = weights[i];
+    //         int k = i; // index that needs to be modified.
+    //         int next = I[k]; // next index to modify.
+    //         while (i != I[k]) {
+    //             nodes[k] = nodes[I[k]];
+    //             weights[k] = weights[I[k]];
+    //             I[k] = k;
+    //             k = next;
+    //             next = I[k];
+    //         }
+    //         nodes[k] = tmp_node;
+    //         weights[k] = tmp_weight;
+    //         I[k] = k;
+    //     }
+    // }
 }
 
 void TasmanianFourierTransform::fast_fourier_transform(std::vector<std::vector<std::complex<double>>> &data, std::vector<int> &num_points){

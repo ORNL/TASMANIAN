@@ -2197,9 +2197,22 @@ bool ExternalTester::testAllAcceleration() const{
 void ExternalTester::debugTest(){
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
-    cout << "Foobar" << endl;
-}
 
+
+    // Gauss-Legendre.
+    int n = 2;
+    double mu0 = 2.0;
+    std::vector<double> diag(n, 0.0), off_diag(n-1), nodes, weights;
+    for(int i=0; i<n-1; i++){
+        off_diag[i] = (i+1) / std::sqrt(4*(i+1)*(i+1) - 1);
+    }
+    TasGrid::TasmanianTridiagonalSolver::decompose2(diag, off_diag, mu0, nodes, weights);
+
+    cout << "nodes / weights" << endl;
+    for (int i=0; i<=n; i++) {
+        cout << nodes[i] << " / " << weights[i] << endl;
+    }
+}
 void ExternalTester::debugTestII(){
     cout << "Debug Test II (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester db" << endl;
