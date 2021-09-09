@@ -716,20 +716,20 @@ class TasmanianSparseGrid:
 
     def makeGridFromCustomTabulated(self, iDimension, iOutputs, iDepth, sType, iCustomTabulated, liAnisotropicWeights=[], liLevelLimits=[]):
         '''
-        Creates a new sparse grid using a CustomTabulated object. Discards any existing grid held by this class.
+        Creates a new sparse grid by consuming a CustomTabulated object. Discards any existing grid held by this class.
 
         iDimension: positive int specifying the number of inputs.
         iOutputs: non-negative int specifying the number of outputs.
         iDepth: non-negative int that controls the density of the grid.
-            The offset for the tensor selection, the meaning of iDepth depends on sType.
+            Also known as the offset for the tensor selection. The meaning of iDepth depends on sType.
             Example 1: sType == 'iptotal' will give a grid that interpolates exactly all polynomials of degree up to and including iDepth.
             Example 2: sType == 'qptotal' will give a grid that integrates exactly all polynomials of degree up to and including iDepth.
         sType: string identifying the tensor selection strategy.
             Possible values are:
-            'level'     'curved'     'hyperbolic'     'tensor'
-            'iptotal'   'ipcurved'   'iphyperbolic'   'iptensor'
-            'qptotal'   'qpcurved'   'qphyperbolic'   'qptensor'
-        iCustomTabulated: a Python CustomTabulated object that will be consumed by the grid.
+                'level'     'curved'     'hyperbolic'     'tensor'
+                'iptotal'   'ipcurved'   'iphyperbolic'   'iptensor'
+                'qptotal'   'qpcurved'   'qphyperbolic'   'qptensor'
+        iCustomTabulated: a Python CustomTabulated object that is consumed by the grid.
         liAnisotropicWeights: list or numpy.ndarray of weights.
             Length must be iDimension or 2*iDimension and the first iDimension weights must be positive. See the manual for details.
         liLevelLimits: list or numpy.ndarray of level limits.
@@ -752,7 +752,8 @@ class TasmanianSparseGrid:
             else:
                 iNumWeights = iDimension
             if (len(liAnisotropicWeights) != iNumWeights):
-                raise TasmanianInputError("liAnisotropicWeights", "ERROR: wrong number of liAnisotropicWeights, sType '{0:s}' needs {1:1d} weights but len(liAnisotropicWeights) == {2:1d}".format(sType, iNumWeights, len(liAnisotropicWeights)))
+                raise TasmanianInputError("liAnisotropicWeights", "ERROR: wrong number of liAnisotropicWeights, sType '{0:s}' needs {1:1d} "
+                                          "weights but len(liAnisotropicWeights) == {2:1d}".format(sType, iNumWeights, len(liAnisotropicWeights)))
             else:
                 pAnisoWeights = (c_int*iNumWeights)()
                 for iI in range(iNumWeights):
@@ -766,8 +767,8 @@ class TasmanianSparseGrid:
                 pLevelLimits[iI] = liLevelLimits[iI]
         effective_sType = bytes(sType, encoding='utf8') if (sys.version_info.major == 3) else sType;
 
-        pLibTSG.tsgMakeGridFromCustomTabulated(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), iCustomTabulated.pCustomTabulated,
-                                               pAnisoWeights, pLevelLimits)
+        pLibTSG.tsgMakeGridFromCustomTabulated(c_void_p(self.pGrid), c_int(iDimension), c_int(iOutputs), c_int(iDepth), c_char_p(sType),
+                                               c_void_p(iCustomTabulated.pCustomTabulated), pAnisoWeights, pLevelLimits)
 
     def copyGrid(self, pGrid, iOutputsBegin = 0, iOutputsEnd = -1):
         '''
