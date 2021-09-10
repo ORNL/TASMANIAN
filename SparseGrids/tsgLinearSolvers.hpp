@@ -105,15 +105,15 @@ namespace TasmanianTridiagonalSolver{
     //! \brief Method for computing the eigenvalues of a symmetric matrix in place, using an LAPACK  wrapper.
     std::vector<double> getSymmetricEigenvalues(int n, std::vector<double> const &diag, std::vector<double> const &offdiag);
 
-    //! \brief Method for tridiagonal eigenvalue decomposition, used to compute nodes and weights for Gaussian rules.
+    //! \brief Legacy method for tridiagonal eigenvalue decomposition, used to compute nodes and weights for Gaussian rules.
     void decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z);
 
     //! \brief A version of decompose() based on the ALGOL code for Golub's 1967 report "Calculation of Gauss Quadrature Rules".
     //! On return, it destroys the inputs \b diag and \b offdiag and writes the outputs to \b nodes and \b weights. The parameter
     //! mu0 should be set to \f$ \int \mu(x) dx\f$ where \f$ mu(x) dx\f$ is the measure in the function inner product. The optional
-    //! parameter sort_outputs sorts the outputs in place based on the ordering \b nodes if it is set to true. 
+    //! parameter sort_outputs sorts the outputs in place based on the ordering \b nodes if it is set to true.
     void decompose2(std::vector<double> &diag, std::vector<double> &off_diag, const double mu0, std::vector<double> &nodes,
-                    std::vector<double> &weights, bool sort_outputs=true);
+                    std::vector<double> &weights);
 }
 
 //! \internal

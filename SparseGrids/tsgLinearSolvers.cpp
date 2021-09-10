@@ -238,7 +238,7 @@ void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::v
 }
 
 void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vector<double> &off_diag, const double mu0,
-                                            std::vector<double> &nodes, std::vector<double> &weights, bool sort_outputs) {
+                                            std::vector<double> &nodes, std::vector<double> &weights) {
 
     // Ensure compatibility with the ALGOL implementation.
     // NOTE: diag and off_diag are 1-indexed, while nodes and weights are 0-indexed after this step.
@@ -313,31 +313,29 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
         off_diag[k-1] = 0.0;
     }
 
-    if (sort_outputs) {
-        // SORT block from ALGOL code.
-        // ALGOL COMMENT: Arrange abscissas in ascending order.
-        // NOTE: the original code used an exchange sort, which is O(n^2).
-        std::vector<size_t> I(n);
-        for (size_t i=0; i<n; i++) I[i] = i;
-        std::sort(I.begin(), I.end(), [&nodes](size_t i, size_t j){return nodes[i] < nodes[j];});
-        for (size_t i=0; i<n; i++) {
-            if (i != I[i]) {
-                double tmp_node, tmp_weight;
-                tmp_node = nodes[i];
-                tmp_weight = weights[i];
-                size_t k = i; // index that needs to be modified.
-                size_t next = I[k]; // next index to modify.
-                while (i != I[k]) {
-                    nodes[k] = nodes[I[k]];
-                    weights[k] = weights[I[k]];
-                    I[k] = k;
-                    k = next;
-                    next = I[k];
-                }
-                nodes[k] = tmp_node;
-                weights[k] = tmp_weight;
+    // SORT block from ALGOL code.
+    // ALGOL COMMENT: Arrange abscissas in ascending order.
+    // NOTE: the original code used an exchange sort, which is O(n^2).
+    std::vector<size_t> I(n);
+    for (size_t i=0; i<n; i++) I[i] = i;
+    std::sort(I.begin(), I.end(), [&nodes](size_t i, size_t j){return nodes[i] < nodes[j];});
+    for (size_t i=0; i<n; i++) {
+        if (i != I[i]) {
+            double tmp_node, tmp_weight;
+            tmp_node = nodes[i];
+            tmp_weight = weights[i];
+            size_t k = i; // index that needs to be modified.
+            size_t next = I[k]; // next index to modify.
+            while (i != I[k]) {
+                nodes[k] = nodes[I[k]];
+                weights[k] = weights[I[k]];
                 I[k] = k;
+                k = next;
+                next = I[k];
             }
+            nodes[k] = tmp_node;
+            weights[k] = tmp_weight;
+            I[k] = k;
         }
     }
 }
