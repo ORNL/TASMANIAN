@@ -1735,7 +1735,7 @@ function tsgGetComplexHierarchicalCoefficients(grid) result(fresult)
     allocate(fresult(numo, numl))
     do i = 1, numl
         do j = 1, numo
-            fresult(j,i) = cmplx(real_coeff(j,i), real_coeff(j,i + numl), 16)
+            fresult(j,i) = cmplx(real_coeff(j,i), real_coeff(j,i + numl), 8)
         enddo
     enddo
 
