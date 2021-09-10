@@ -187,7 +187,8 @@ void TasmanianTridiagonalSolver::decompose(std::vector<double> &diag, std::vecto
 }
 
 void TasmanianTridiagonalSolver::decompose1(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z){
-    const double tol = Maths::num_tol;
+    // const double tol = Maths::num_tol;
+    const double tol = std::numeric_limits<double>::epsilon();
     if (n == 1){ z[0] = z[0]*z[0]; return; }
 
     for(int l=0; l<n-1; l++){

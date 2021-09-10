@@ -2198,28 +2198,44 @@ void ExternalTester::debugTest(){
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
 
-    int nobs = 25;
-    double alpha = 0.0;
-    double beta = 0.0;
-    std::vector<int> nvec(nobs);
-    for (int i=0; i<nobs; i++) {
-        nvec[i] = 200 * (i+1);
-    }
-    std::vector<TasGrid::TypeOneDRule> qtype_vec ={
-        TasGrid::rule_gausslegendre,
-        TasGrid::rule_gaussjacobi,
-        TasGrid::rule_gausshermite,
-        TasGrid::rule_gausslaguerre
-    };
-    std::cout << "n\t T1\t T2\t alpha \t beta \t Rule" << std::endl;
-    for (auto qtype : qtype_vec) {
-        auto times = TasGrid::TasmanianTridiagonalSolver::getDecomposeTimes(nvec, qtype, alpha, beta);
-        const char *qname = OneDimensionalMeta::getHumanString(qtype);
-        for (size_t i=0; i<nvec.size(); i++) {
-            std::cout << nvec[i] << "\t " << times[0][i] << "\t " << times[1][i] << "\t " << alpha << "\t " << beta
-                      << "\t " << qname << std::endl;
-        }
-    }
+    // // Check accuracy of Gauss-Laguerre points.
+    // int n = 1000;
+    // double alpha = 0.0;
+    // std::vector<double> w1, w2, x1, x2;
+    // OneDimensionalNodes::getGaussLaguerre(n, w1, x1, alpha, 1);
+    // OneDimensionalNodes::getGaussLaguerre(n, w2, x2, alpha, 2);
+    // double node_err = 0.0;
+    // double weight_err = 0.0;
+    // for (int i=0; i<n; i++) {
+    //     node_err = std::max(node_err, std::fabs(x1[i] - x2[i]));
+    //     weight_err = std::max(weight_err, std::fabs(w1[i] - w2[i]));
+    // }
+    // std::cout << "max node error: " << node_err << std::endl;
+    // std::cout << "max weight error: " << weight_err << std::endl;
+
+    // // Benchmark runtimes.
+    // int nobs = 25;
+    // double alpha = 0.0;
+    // double beta = 0.0;
+    // std::vector<int> nvec(nobs);
+    // for (int i=0; i<nobs; i++) {
+    //     nvec[i] = 200 * (i+1);
+    // }
+    // std::vector<TasGrid::TypeOneDRule> qtype_vec ={
+    //     TasGrid::rule_gausslegendre,
+    //     TasGrid::rule_gaussjacobi,
+    //     TasGrid::rule_gausshermite,
+    //     TasGrid::rule_gausslaguerre
+    // };
+    // std::cout << "n\t T1\t T2\t alpha \t beta \t Rule" << std::endl;
+    // for (auto qtype : qtype_vec) {
+    //     auto times = TasGrid::TasmanianTridiagonalSolver::getDecomposeTimes(nvec, qtype, alpha, beta);
+    //     const char *qname = OneDimensionalMeta::getHumanString(qtype);
+    //     for (size_t i=0; i<nvec.size(); i++) {
+    //         std::cout << nvec[i] << "\t " << times[0][i] << "\t " << times[1][i] << "\t " << alpha << "\t " << beta
+    //                   << "\t " << qname << std::endl;
+    //     }
+    // }
 }
 void ExternalTester::debugTestII(){
     cout << "Debug Test II (callable from the CMake build folder)" << endl;
