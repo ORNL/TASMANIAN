@@ -372,19 +372,7 @@ void OneDimensionalNodes::getGaussLegendre(int m, std::vector<double> &w, std::v
     for(int i=0; i<m-1; i++){
         off_diag[i] = std::sqrt((double) ((i+1)*(i+1)) / ((double) (4*(i+1)*(i+1) - 1)));
     }
-    // Legacy method.
-    if (version == 1) {
-        w.resize(m);
-        x.resize(m);
-        x = diag;
-        w[0] = sqrt(mu0);
-        off_diag.push_back(0.0);
-        TasmanianTridiagonalSolver::decompose(m, x, off_diag, w);
-    }
-    // Golub's (1967) method.
-    if (version == 2) {
-        TasmanianTridiagonalSolver::decompose2(diag, off_diag, mu0, x, w);
-    }
+    TasmanianTridiagonalSolver::decompose(diag, off_diag, mu0, x, w, version);
 }
 
 // Chebyshev
@@ -464,19 +452,7 @@ void OneDimensionalNodes::getGaussJacobi(int m, std::vector<double> &w, std::vec
         double dm = (double) m;
         diag[m-1] = (beta * beta - alpha * alpha) / ((2.0 * dm + ab - 2.0) * (2.0 * dm + ab));;
     }
-    // Legacy method.
-    if (version == 1) {
-        w.resize(m);
-        x.resize(m);
-        x = diag;
-        w[0] = sqrt(mu0);
-        off_diag.push_back(0.0);
-        TasmanianTridiagonalSolver::decompose(m, x, off_diag, w);
-    }
-    // Golub's (1967) method.
-    if (version == 2) {
-        TasmanianTridiagonalSolver::decompose2(diag, off_diag, mu0, x, w);
-    }
+    TasmanianTridiagonalSolver::decompose(diag, off_diag, mu0, x, w, version);
 }
 // get Gauss-Hermite quadrature points
 void OneDimensionalNodes::getGaussHermite(int m, std::vector<double> &w, std::vector<double> &x, double alpha, int version){
@@ -486,19 +462,7 @@ void OneDimensionalNodes::getGaussHermite(int m, std::vector<double> &w, std::ve
         double di = (double) (i+1);
         off_diag[i] = std::sqrt(0.5 * (di + alpha * ((double) ((i + 1) % 2))));
     }
-    // Legacy method.
-    if (version == 1) {
-        w.resize(m);
-        x.resize(m);
-        x = diag;
-        w[0] = sqrt(mu0);
-        off_diag.push_back(0.0);
-        TasmanianTridiagonalSolver::decompose(m, x, off_diag, w);
-    }
-    // Golub's (1967) method.
-    if (version == 2) {
-        TasmanianTridiagonalSolver::decompose2(diag, off_diag, mu0, x, w);
-    }
+    TasmanianTridiagonalSolver::decompose(diag, off_diag, mu0, x, w, version);
 }
 // get Gauss-Laguerre quadrature points
 void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::vector<double> &x, double alpha, int version){
@@ -511,19 +475,7 @@ void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::v
     }
     double dm = (double) m;
     diag[m-1] = 2.0 * dm - 1.0 + alpha;
-    // Legacy method.
-    if (version == 1) {
-        w.resize(m);
-        x.resize(m);
-        x = diag;
-        w[0] = sqrt(mu0);
-        off_diag.push_back(0.0);
-        TasmanianTridiagonalSolver::decompose(m, x, off_diag, w);
-    }
-    // Golub's (1967) method.
-    if (version == 2) {
-        TasmanianTridiagonalSolver::decompose2(diag, off_diag, mu0, x, w);
-    }
+    TasmanianTridiagonalSolver::decompose(diag, off_diag, mu0, x, w, version);
 }
 
 // Clenshaw-Curtis

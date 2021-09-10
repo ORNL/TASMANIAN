@@ -167,7 +167,26 @@ std::vector<double> TasmanianTridiagonalSolver::getSymmetricEigenvalues(int n, s
     return result;
 }
 
-void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z){
+void TasmanianTridiagonalSolver::decompose(std::vector<double> &diag, std::vector<double> &off_diag, const double mu0,
+                                           std::vector<double> &nodes, std::vector<double> &weights, int version) {
+    switch(version) {
+        case 1 :
+            weights.resize(diag.size());
+            nodes.resize(diag.size());
+            nodes = diag;
+            weights[0] = sqrt(mu0);
+            off_diag.push_back(0.0);
+            decompose1(diag.size(), nodes, off_diag, weights);
+            break;
+        case 2 :
+            decompose2(diag, off_diag, mu0, nodes, weights);
+            break;
+        default :
+            throw std::invalid_argument("ERROR: invalid version number!");
+    }
+}
+
+void TasmanianTridiagonalSolver::decompose1(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z){
     const double tol = Maths::num_tol;
     if (n == 1){ z[0] = z[0]*z[0]; return; }
 
