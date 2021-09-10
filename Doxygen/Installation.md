@@ -40,19 +40,19 @@ Optional features:
 
 | Feature | Tested versions     | Recommended      |
 |----|----|----|
-| gcc     | 5 - 10              | any              |
-| clang   | 4 - 10              | any              |
+| gcc     | 6 - 10              | any              |
+| clang   | 5 - 10              | any              |
 | icc     | 18.0                | 18.0             |
 | xl      | 16.1                | 16.1             |
 | pgi     | 19.10 - 20.4        | 20.4             |
 | cmake   | 3.10 - 3.17         | 3.10             |
-| python  | 2.7, 3.5, 3.6       | 3.5 or 3.6       |
+| python  | 3.5 - 3.8           | any              |
 | anaconda| 5.3                 | 5.3              |
 | OpenBlas| 0.2.18 - 3.08       | any              |
 | ATLAS   | 3.10                | 3.10             |
 | ESSL    | 6.2                 | 6.2              |
 | CUDA    | 8.0 - 11            | 10.2             |
-| ROCm    | 3.8                 | 3.8              |
+| ROCm    | 4.0 - 4.3           | 4.3              |
 | libiomp | 5.0                 | 5.0              |
 | MAGMA   | 2.5.1 - 2.5.3       | 2.5.3            |
 | Doxygen | 1.8.13              | 1.8.13           |
