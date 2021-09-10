@@ -205,7 +205,7 @@ namespace OneDimensionalMeta{
 namespace OneDimensionalNodes{
     // non-nested rules
     //! \brief Generate Gauss-Legendre weights \b w and points \b x for (input) number of points \b m.
-    void getGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x, int version=1);
+    void getGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x, int version=2);
     //! \brief Generate Chebyshev weights \b w and points \b x for (input) number of points \b m.
     void getChebyshev(int m, std::vector<double> &w, std::vector<double> &x);
     //! \brief Generate Gauss-Chebyshev type 1 weights \b w and points \b x for (input) number of points \b m.
@@ -213,11 +213,11 @@ namespace OneDimensionalNodes{
     //! \brief Generate Gauss-Chebyshev type 2 weights \b w and points \b x for (input) number of points \b m.
     void getGaussChebyshev2(int m, std::vector<double> &w, std::vector<double> &x);
     //! \brief Generate Gauss-Jacobi weights \b w and points \b x for (input) number of points \b m, using parameters \b alpha and \b beta.
-    void getGaussJacobi(int m, std::vector<double> &w, std::vector<double> &x, double alpha, double beta, int version=1);
+    void getGaussJacobi(int m, std::vector<double> &w, std::vector<double> &x, double alpha, double beta, int version=2);
     //! \brief Generate Gauss-Hermite weights \b w and points \b x for (input) number of points \b m, using parameters \b alpha
-    void getGaussHermite(int m, std::vector<double> &w, std::vector<double> &x, double alpha, int version=1);
+    void getGaussHermite(int m, std::vector<double> &w, std::vector<double> &x, double alpha, int version=2);
     //! \brief Generate Gauss-Laguerre weights \b w and points \b x for (input) number of points \b m, using parameters \b alpha
-    void getGaussLaguerre(int m, std::vector<double> &w, std::vector<double> &x, double alpha, int version=1);
+    void getGaussLaguerre(int m, std::vector<double> &w, std::vector<double> &x, double alpha, int version=2);
 
     // nested rules
     //! \brief Generate Clenshaw-Curtis \b nodes for the \b level.
