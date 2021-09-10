@@ -476,60 +476,84 @@ void OneDimensionalNodes::getGaussJacobi(int m, std::vector<double> &w, std::vec
     // TasmanianTridiagonalSolver::decompose(m, x, s, w);
 
     // NEW VERSION.
-    double mu0 = pow(2.0, 1.0 + alpha + beta) * tgamma(alpha + 1.0) * tgamma(beta + 1.0) / tgamma(1.0 + alpha + beta);
+    double ab = alpha + beta;
+    double mu0 = pow(2.0, 1.0 + ab) * tgamma(alpha + 1.0) * tgamma(beta + 1.0) / tgamma(2.0 + ab);
     std::vector<double> diag(m), off_diag(m-1);
-    double abi = alpha + beta + 2.0;
-    diag[0] = (beta - alpha) / abi;
-    off_diag[0] = std::sqrt(4.0 * (1.0 + alpha) * (1.0 + beta) / ((abi + 1) * abi * abi));
-    double a2b2 = beta * beta - alpha * alpha; 
-    for(int i=1; i<m-1; i++){
-        double di = (double) (i+1);
-        abi = alpha + beta + 2.0 * i;
-        diag[i] =  a2b2 / (abi * (abi - 1));
-        off_diag[i] = std::sqrt(4.0 * di * (di + alpha) * (di + beta) * (di + alpha + beta) / (abi * abi * (abi * abi - 1)));
+    diag[0] = (beta - alpha) / (2.0 + ab);
+    if (m > 1) {
+        off_diag[0] =  std::sqrt(4.0 * (1.0 + alpha) * (1.0 + beta) / ((3.0 + ab) * (2.0 + ab) * (2.0 + ab)));
+        for(int i=1; i<m-1; i++){
+            double di = (double) (i+1);
+            diag[i] =  (beta * beta - alpha * alpha) / ((2.0 * di + ab -2.0) * (2.0 * di + ab));
+            off_diag[i] = std::sqrt(4.0 * di * (di + alpha) * (di + beta) * (di + ab) /
+                                    (((2.0 * di + ab) * (2.0 * di + ab) - 1.0) * (2.0 * di + ab) * (2.0 * di + ab)));
+        }
+        double dm = (double) m;
+        diag[m-1] = (beta * beta - alpha * alpha) / ((2.0 * dm + ab - 2.0) * (2.0 * dm + ab));;
     }
-    abi = alpha + beta + 2.0 * m;
-    diag[m-1] = a2b2 / (abi * (abi - 2));
     TasmanianTridiagonalSolver::decompose2(diag, off_diag, mu0, x, w);
 }
 // get Gauss-Hermite quadrature points
 void OneDimensionalNodes::getGaussHermite(int m, std::vector<double> &w, std::vector<double> &x, double alpha){
-    w.resize(m);
-    x.resize(m);
+    // // OLD VERSION.
+    // w.resize(m);
+    // x.resize(m);
 
-    std::vector<double> s(m);
+    // std::vector<double> s(m);
 
-    for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
+    // for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
 
-    w[0] = std::sqrt(tgamma(0.5 * (alpha + 1.0)));
+    // w[0] = std::sqrt(tgamma(0.5 * (alpha + 1.0)));
 
-    for(int i=0; i<m; i++){
+    // for(int i=0; i<m; i++){
+    //     double di = (double) (i+1);
+    //     s[i] = std::sqrt(0.5 * (di + alpha * ((double) ((i+1)%2))));
+    // }
+    // s[m-1] = 0.0;
+
+    // TasmanianTridiagonalSolver::decompose(m, x, s, w);
+
+    // NEW VERSION.
+    double mu0 = tgamma(0.5 * (alpha + 1.0));
+    std::vector<double> diag(m, 0.0), off_diag(m-1);
+    for(int i=0; i<m-1; i++){
         double di = (double) (i+1);
-        s[i] = std::sqrt(0.5 * (di + alpha * ((double) ((i+1)%2))));
+        off_diag[i] = std::sqrt(0.5 * (di + alpha * ((double) ((i + 1) % 2))));
     }
-    s[m-1] = 0.0;
-
-    TasmanianTridiagonalSolver::decompose(m, x, s, w);
+    TasmanianTridiagonalSolver::decompose2(diag, off_diag, mu0, x, w);
 }
 // get Gauss-Laguerre quadrature points
 void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::vector<double> &x, double alpha){
-    w.resize(m);
-    x.resize(m);
+    // // OLD VERSION.
+    // w.resize(m);
+    // x.resize(m);
 
-    std::vector<double> s(m);
+    // std::vector<double> s(m);
 
-    for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
+    // for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
 
-    w[0] = std::sqrt(tgamma(alpha + 1.0));
+    // w[0] = std::sqrt(tgamma(alpha + 1.0));
 
-    for(int i=0; i<m; i++){
+    // for(int i=0; i<m; i++){
+    //     double di = (double) (i+1);
+    //     x[i] = 2.0 * di - 1.0 + alpha;
+    //     s[i] = std::sqrt(di * (di + alpha));
+    // }
+    // s[m-1] = 0.0;
+
+    // TasmanianTridiagonalSolver::decompose(m, x, s, w);
+
+    // NEW VERSION.
+    double mu0 = tgamma(alpha + 1.0);
+    std::vector<double> diag(m), off_diag(m-1);
+    for(int i=0; i<m-1; i++){
         double di = (double) (i+1);
-        x[i] = 2.0 * di - 1.0 + alpha;
-        s[i] = std::sqrt(di * (di + alpha));
+        diag[i] = 2.0 * di - 1.0 + alpha;
+        off_diag[i] = std::sqrt(di * (di + alpha));
     }
-    s[m-1] = 0.0;
-
-    TasmanianTridiagonalSolver::decompose(m, x, s, w);
+    double dm = (double) m;
+    diag[m-1] = 2.0 * dm - 1.0 + alpha;
+    TasmanianTridiagonalSolver::decompose2(diag, off_diag, mu0, x, w);
 }
 
 // Clenshaw-Curtis
