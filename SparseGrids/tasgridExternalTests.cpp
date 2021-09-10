@@ -2198,41 +2198,27 @@ void ExternalTester::debugTest(){
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
 
-    // Gauss-Legendre.
-    int n_max = 4;
-    for (int n=1; n<=n_max; n++) {
-
-        // OLD.
-        int m = n;
-        std::vector<double> w, x;
-        w.resize(m);
-        x.resize(m);
-        std::vector<double> s(m);
-        for(int i=0; i<m; i++){ x[i] = w[i] = s[i] = 0.0; }
-
-        for(int i=0; i<m; i++){
-            s[i] = std::sqrt((double) ((i+1)*(i+1)) / ((double) (4*(i+1)*(i+1) - 1)));
+    int nobs = 25;
+    double alpha = 0.0;
+    double beta = 0.0;
+    std::vector<int> nvec(nobs);
+    for (int i=0; i<nobs; i++) {
+        nvec[i] = 200 * (i+1);
+    }
+    std::vector<TasGrid::TypeOneDRule> qtype_vec ={
+        TasGrid::rule_gausslegendre,
+        TasGrid::rule_gaussjacobi,
+        TasGrid::rule_gausshermite,
+        TasGrid::rule_gausslaguerre
+    };
+    std::cout << "n\t T1\t T2\t alpha \t beta \t Rule" << std::endl;
+    for (auto qtype : qtype_vec) {
+        auto times = TasGrid::TasmanianTridiagonalSolver::getDecomposeTimes(nvec, qtype, alpha, beta);
+        const char *qname = OneDimensionalMeta::getHumanString(qtype);
+        for (size_t i=0; i<nvec.size(); i++) {
+            std::cout << nvec[i] << "\t " << times[0][i] << "\t " << times[1][i] << "\t " << alpha << "\t " << beta
+                      << "\t " << qname << std::endl;
         }
-        w[0] = std::sqrt(2.0);
-        TasmanianTridiagonalSolver::decompose(m, x, s, w);
-        cout << "nodes / weights" << endl;
-        for (int i=0; i<m; i++) {
-            cout << x[i] << " / " << w[i] << endl;
-        }
-        cout << endl;
-
-        // NEW.
-        double mu0 = 2.0;
-        std::vector<double> diag(n, 0.0), off_diag(n-1), nodes, weights;
-        for(int i=0; i<n-1; i++){
-            off_diag[i] = (i+1) / std::sqrt(4*(i+1)*(i+1) - 1);
-        }
-        TasGrid::TasmanianTridiagonalSolver::decompose2(diag, off_diag, mu0, nodes, weights);
-        cout << "nodes / weights" << endl;
-        for (int i=0; i<n; i++) {
-            cout << nodes[i] << " / " << weights[i] << endl;
-        }
-        cout << endl;
     }
 }
 void ExternalTester::debugTestII(){

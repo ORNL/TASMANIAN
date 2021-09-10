@@ -105,7 +105,7 @@ namespace TasmanianTridiagonalSolver{
     //! \brief Method for computing the eigenvalues of a symmetric matrix in place, using an LAPACK  wrapper.
     std::vector<double> getSymmetricEigenvalues(int n, std::vector<double> const &diag, std::vector<double> const &offdiag);
 
-    //! \brief Legacy method for tridiagonal eigenvalue decomposition, used to compute nodes and weights for Gaussian rules.
+    //! \brief Method for tridiagonal eigenvalue decomposition, used to compute nodes and weights for Gaussian rules.
     void decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z);
 
     //! \brief A version of decompose() based on the ALGOL code for Golub's 1967 report "Calculation of Gauss Quadrature Rules".
@@ -114,6 +114,14 @@ namespace TasmanianTridiagonalSolver{
     //! parameter sort_outputs sorts the outputs in place based on the ordering \b nodes if it is set to true.
     void decompose2(std::vector<double> &diag, std::vector<double> &off_diag, const double mu0, std::vector<double> &nodes,
                     std::vector<double> &weights);
+
+    //! \internal
+    //! \brief Runs decompose() and decompose2() over a vector of lengths \b nvec and a given quadrature type \b qtype and returns their
+    //! runtimes as output. The first output vector contains the decompose() times while the second one contains the decompose2() times.
+    //! \endinternal
+    std::vector<std::vector<double>> getDecomposeTimes(std::vector<int> &nvec, TasGrid::TypeOneDRule qtype, double alpha=0.0,
+                                                       double beta=0.0);
+
 }
 
 //! \internal
