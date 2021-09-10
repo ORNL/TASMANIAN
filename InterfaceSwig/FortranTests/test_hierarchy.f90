@@ -64,7 +64,7 @@ subroutine test_set_get_ccoeff()
     implicit none
     type(TasmanianSparseGrid) :: gridA, gridB
     real(C_DOUBLE), dimension(:,:), pointer :: points, vals
-    complex(C_DOUBLE), dimension(:,:), pointer :: coeffs
+    complex(C_DOUBLE_COMPLEX), dimension(:,:), pointer :: coeffs
     integer :: i, j, nump
 
     gridA = TasmanianFourierGrid(2, 2, 1, tsg_type_level)

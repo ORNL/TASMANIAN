@@ -289,7 +289,7 @@ function tsgGetComplexHierarchicalCoefficients(grid) result(fresult)
     allocate(fresult(numo, numl))
     do i = 1, numl
         do j = 1, numo
-            fresult(j,i) = cmplx(real_coeff(j,i), real_coeff(j,i + numl), 16)
+            fresult(j,i) = cmplx(real_coeff(j,i), real_coeff(j,i + numl), 8)
         enddo
     enddo
 
@@ -332,6 +332,10 @@ namespace TasGrid {
     %template(evaluateFastDbl) TasmanianSparseGrid::evaluateFast<double>;
     %rename(evaluateFast) TasmanianSparseGrid::evaluateFast<float>;
     %template(evaluateFastFlt) TasmanianSparseGrid::evaluateFast<float>;
+    %rename(evaluateBatchGPU) TasmanianSparseGrid::evaluateBatchGPU<double>;
+    %template(evaluateBatchGPUDbl) TasmanianSparseGrid::evaluateBatchGPU<double>;
+    %rename(evaluateBatchGPU) TasmanianSparseGrid::evaluateBatchGPU<float>;
+    %template(evaluateBatchGPUFlt) TasmanianSparseGrid::evaluateBatchGPU<float>;
 }
 
 %extend TasGrid::TasmanianSparseGrid{

@@ -274,6 +274,8 @@ module tasmanian_swig
   procedure :: evaluateSparseHierarchicalFunctionsStatic => swigf_TasmanianSparseGrid_evaluateSparseHierarchicalFunct1HRJEE
   procedure, private :: swigf_TasmanianSparseGrid_evaluateFast__SWIG_2
   procedure, private :: swigf_TasmanianSparseGrid_evaluateFast__SWIG_4
+  procedure, private :: swigf_TasmanianSparseGrid_evaluateBatchGPU__SWIG_1
+  procedure, private :: swigf_TasmanianSparseGrid_evaluateBatchGPU__SWIG_2
   procedure, private :: swigf_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1
   procedure, private :: swigf_TasmanianSparseGrid_op_assign__
   generic :: write => swigf_TasmanianSparseGrid_write__SWIG_0, swigf_TasmanianSparseGrid_write__SWIG_1
@@ -288,6 +290,8 @@ module tasmanian_swig
   generic :: setDomainTransform => swigf_TasmanianSparseGrid_setDomainTransform__SWIG_1
   generic :: makeWaveletGrid => swigf_TasmanianSparseGrid_makeWaveletGrid__SWIG_1, &
     swigf_TasmanianSparseGrid_makeWaveletGrid__SWIG_2, swigf_TasmanianSparseGrid_makeWaveletGrid__SWIG_3
+  generic :: evaluateBatchGPU => swigf_TasmanianSparseGrid_evaluateBatchGPU__SWIG_1, &
+    swigf_TasmanianSparseGrid_evaluateBatchGPU__SWIG_2
   generic :: printStats => swigf_TasmanianSparseGrid_printStats__SWIG_1
   generic :: copyGrid => swigf_TasmanianSparseGrid_copyGrid__SWIG_0, swigf_TasmanianSparseGrid_copyGrid__SWIG_1, &
     swigf_TasmanianSparseGrid_copyGrid__SWIG_2
@@ -1415,6 +1419,26 @@ type(C_PTR), value :: farg2
 type(C_PTR), value :: farg3
 end subroutine
 
+subroutine swigc_TasmanianSparseGrid_evaluateBatchGPU__SWIG_1(farg1, farg2, farg3, farg4) &
+bind(C, name="_wrap_TasmanianSparseGrid_evaluateBatchGPU__SWIG_1")
+use, intrinsic :: ISO_C_BINDING
+import :: swigclasswrapper
+type(SwigClassWrapper), intent(in) :: farg1
+type(C_PTR), value :: farg2
+integer(C_INT), intent(in) :: farg3
+type(C_PTR), value :: farg4
+end subroutine
+
+subroutine swigc_TasmanianSparseGrid_evaluateBatchGPU__SWIG_2(farg1, farg2, farg3, farg4) &
+bind(C, name="_wrap_TasmanianSparseGrid_evaluateBatchGPU__SWIG_2")
+use, intrinsic :: ISO_C_BINDING
+import :: swigclasswrapper
+type(SwigClassWrapper), intent(in) :: farg1
+type(C_PTR), value :: farg2
+integer(C_INT), intent(in) :: farg3
+type(C_PTR), value :: farg4
+end subroutine
+
 subroutine swigc_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1(farg1, farg2) &
 bind(C, name="_wrap_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1")
 use, intrinsic :: ISO_C_BINDING
@@ -1711,7 +1735,7 @@ function tsgGetComplexHierarchicalCoefficients(grid) result(fresult)
     allocate(fresult(numo, numl))
     do i = 1, numl
         do j = 1, numo
-            fresult(j,i) = cmplx(real_coeff(j,i), real_coeff(j,i + numl), 16)
+            fresult(j,i) = cmplx(real_coeff(j,i), real_coeff(j,i + numl), 8)
         enddo
     enddo
 
@@ -3572,6 +3596,42 @@ farg1 = self%swigdata
 farg2 = c_loc(x)
 farg3 = c_loc(y)
 call swigc_TasmanianSparseGrid_evaluateFast__SWIG_4(farg1, farg2, farg3)
+end subroutine
+
+subroutine swigf_TasmanianSparseGrid_evaluateBatchGPU__SWIG_1(self, gpu_x, cpu_num_x, gpu_y)
+use, intrinsic :: ISO_C_BINDING
+class(TasmanianSparseGrid), intent(in) :: self
+real(C_DOUBLE), dimension(*), target :: gpu_x
+integer(C_INT), intent(in) :: cpu_num_x
+real(C_DOUBLE), dimension(*), target :: gpu_y
+type(SwigClassWrapper) :: farg1 
+type(C_PTR) :: farg2 
+integer(C_INT) :: farg3 
+type(C_PTR) :: farg4 
+
+farg1 = self%swigdata
+farg2 = c_loc(gpu_x)
+farg3 = cpu_num_x
+farg4 = c_loc(gpu_y)
+call swigc_TasmanianSparseGrid_evaluateBatchGPU__SWIG_1(farg1, farg2, farg3, farg4)
+end subroutine
+
+subroutine swigf_TasmanianSparseGrid_evaluateBatchGPU__SWIG_2(self, gpu_x, cpu_num_x, gpu_y)
+use, intrinsic :: ISO_C_BINDING
+class(TasmanianSparseGrid), intent(in) :: self
+real(C_FLOAT), dimension(*), target :: gpu_x
+integer(C_INT), intent(in) :: cpu_num_x
+real(C_FLOAT), dimension(*), target :: gpu_y
+type(SwigClassWrapper) :: farg1 
+type(C_PTR) :: farg2 
+integer(C_INT) :: farg3 
+type(C_PTR) :: farg4 
+
+farg1 = self%swigdata
+farg2 = c_loc(gpu_x)
+farg3 = cpu_num_x
+farg4 = c_loc(gpu_y)
+call swigc_TasmanianSparseGrid_evaluateBatchGPU__SWIG_2(farg1, farg2, farg3, farg4)
 end subroutine
 
 subroutine swigf_TasmanianSparseGrid_setConformalTransformASIN__SWIG_1(self, truncation)
