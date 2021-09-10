@@ -32,7 +32,7 @@ Optional features:
 * GPU accelerated linear algebra using [UTK MAGMA library](http://icl.cs.utk.edu/magma/)
 * Basic [Python matplotlib](https://matplotlib.org/) support
 * Fully featured [MATLAB/Octave](https://www.gnu.org/software/octave/) interface via wrappers around the command-line tool
-* Fortran 90/95 interface using [gfortran](https://gcc.gnu.org/wiki/GFortran) or [ifort](https://software.intel.com/en-us/intel-compilers) or [pgf90](https://www.pgroup.com/index.htm)
+* Fortran 2003 interface using [gfortran](https://gcc.gnu.org/wiki/GFortran) or [ifort](https://software.intel.com/en-us/intel-compilers) or [pgfortran](https://www.pgroup.com/index.htm) or [xlf2003](https://www.ibm.com/products/xl-fortran-linux-compiler-power)
 * Addon templates for the [Message Passing Interface (MPI)](https://en.wikipedia.org/wiki/Message_Passing_Interface)
 * [Doxygen](http://www.doxygen.org/) documentation
 
@@ -40,19 +40,19 @@ Optional features:
 
 | Feature | Tested versions     | Recommended      |
 |----|----|----|
-| gcc     | 5 - 10              | any              |
-| clang   | 4 - 10              | any              |
+| gcc     | 6 - 10              | any              |
+| clang   | 5 - 10              | any              |
 | icc     | 18.0                | 18.0             |
 | xl      | 16.1                | 16.1             |
-| pgi     | 19.10               | 19.10            |
+| pgi     | 19.10 - 20.4        | 20.4             |
 | cmake   | 3.10 - 3.17         | 3.10             |
-| python  | 2.7, 3.5, 3.6       | 3.5 or 3.6       |
+| python  | 3.5 - 3.8           | any              |
 | anaconda| 5.3                 | 5.3              |
 | OpenBlas| 0.2.18 - 3.08       | any              |
 | ATLAS   | 3.10                | 3.10             |
 | ESSL    | 6.2                 | 6.2              |
 | CUDA    | 8.0 - 11            | 10.2             |
-| ROCm    | 3.8                 | 3.8              |
+| ROCm    | 4.0 - 4.3           | 4.3              |
 | libiomp | 5.0                 | 5.0              |
 | MAGMA   | 2.5.1 - 2.5.3       | 2.5.3            |
 | Doxygen | 1.8.13              | 1.8.13           |
@@ -98,7 +98,7 @@ will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` follo
   -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""       (stable)
   -D Tasmanian_ENABLE_DOXYGEN:BOOL=<ON/OFF>     (stable)
   -D Tasmanian_ENABLE_FORTRAN:BOOL=<ON/OFF>     (mostly stable)
-  -D Tasmanian_ENABLE_MPI:BOOL=<ON/OFF>         (mostly stable)
+  -D Tasmanian_ENABLE_MPI:BOOL=<ON/OFF>         (stable)
 ```
 
 * Acceleration options:
@@ -182,7 +182,7 @@ Acceleration options other than OpenMP are not supported in the basic mode.
   make test     (will fail if /usr/bin/env python is missing the numpy or ctypes modules)
   make matlab   (optional: sets matlab work folder to ./tsgMatlabWorkFolder/)
   make python3  (optional: sets #!/usr/bin/env python3 in place of /usr/bin/env python)
-  make fortran  (optional: compile Fortran libraries)
+  make fortran  (deprecated: compile Fortran libraries)
   make examples
   make clean
 ```
@@ -379,7 +379,12 @@ Several known issues and work-around fixes:
     * use shared libraries only, i.e., `-D BUILD_SHARED_LIBS=ON` in CMake
 * The older versions of the PGI compiler fails when using optimization `-O2`
     * use the `-O1` instead, or the newest version of the compiler
-* XL with OpenMP segfaults if the OMP_NUM_THREADS is not set correctly
+* XL compiler with OpenMP segfaults if the OMP_NUM_THREADS is not set correctly
+* XL and PGI Fortran compiler do not work with the deprecated Fortran 90 interface
+    * disable the deprecated interface with `-DTasmanian_DISABLE_F90=ON`
+* XL Fortran needs to use the default halt level which is unnecessarily modified by CMake
+    * overwrite the CMake flags using `-DCMAKE_Fortran_FLAGS=-qthreaded`
+    * see [the github discussion for details](https://github.com/xsdk-project/xsdk-issues/issues/94#issuecomment-916890894)
 * in version 7.3 documentation has to be build with `make Tasmanian_doxygen` as it is not added to target `all`
 * Older versions of CUDA do not work with newer versions of some compilers, e.g., `gcc`
     * consult the CUDA manual for a list of acceptable compilers
