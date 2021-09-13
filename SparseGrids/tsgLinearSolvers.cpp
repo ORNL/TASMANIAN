@@ -31,9 +31,6 @@
 #ifndef __TASMANIAN_LINEAR_SOLVERS_CPP
 #define __TASMANIAN_LINEAR_SOLVERS_CPP
 
-#include <chrono>
-#include "tsgCoreOneDimensional.hpp"
-
 #include "tsgLinearSolvers.hpp"
 #include "tsgTPLWrappers.hpp"
 
