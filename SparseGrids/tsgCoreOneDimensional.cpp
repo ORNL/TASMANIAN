@@ -366,13 +366,13 @@ const char* OneDimensionalMeta::getHumanString(TypeOneDRule rule){
 }
 
 // Gauss-Legendre
-void OneDimensionalNodes::getGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x, int version){
+void OneDimensionalNodes::getGaussLegendre(int m, std::vector<double> &w, std::vector<double> &x){
     double mu0 = 2.0;
     std::vector<double> diag(m, 0.0), off_diag(m-1);
     for(int i=0; i<m-1; i++){
         off_diag[i] = std::sqrt((double) ((i+1)*(i+1)) / ((double) (4*(i+1)*(i+1) - 1)));
     }
-    TasmanianTridiagonalSolver::decompose(diag, off_diag, mu0, x, w, version);
+    TasmanianTridiagonalSolver::decompose(diag, off_diag, mu0, x, w);
 }
 
 // Chebyshev
@@ -436,7 +436,7 @@ void OneDimensionalNodes::getGaussChebyshev2(int m, std::vector<double> &w, std:
     }
 }
 // get Gauss-Jacobi quadrature points
-void OneDimensionalNodes::getGaussJacobi(int m, std::vector<double> &w, std::vector<double> &x, double alpha, double beta, int version){
+void OneDimensionalNodes::getGaussJacobi(int m, std::vector<double> &w, std::vector<double> &x, double alpha, double beta){
     double ab = alpha + beta;
     double mu0 = pow(2.0, 1.0 + ab) * tgamma(alpha + 1.0) * tgamma(beta + 1.0) / tgamma(2.0 + ab);
     std::vector<double> diag(m), off_diag(m-1);
@@ -452,20 +452,20 @@ void OneDimensionalNodes::getGaussJacobi(int m, std::vector<double> &w, std::vec
         double dm = (double) m;
         diag[m-1] = (beta * beta - alpha * alpha) / ((2.0 * dm + ab - 2.0) * (2.0 * dm + ab));;
     }
-    TasmanianTridiagonalSolver::decompose(diag, off_diag, mu0, x, w, version);
+    TasmanianTridiagonalSolver::decompose(diag, off_diag, mu0, x, w);
 }
 // get Gauss-Hermite quadrature points
-void OneDimensionalNodes::getGaussHermite(int m, std::vector<double> &w, std::vector<double> &x, double alpha, int version){
+void OneDimensionalNodes::getGaussHermite(int m, std::vector<double> &w, std::vector<double> &x, double alpha){
     double mu0 = tgamma(0.5 * (alpha + 1.0));
     std::vector<double> diag(m, 0.0), off_diag(m-1);
     for(int i=0; i<m-1; i++){
         double di = (double) (i+1);
         off_diag[i] = std::sqrt(0.5 * (di + alpha * ((double) ((i + 1) % 2))));
     }
-    TasmanianTridiagonalSolver::decompose(diag, off_diag, mu0, x, w, version);
+    TasmanianTridiagonalSolver::decompose(diag, off_diag, mu0, x, w);
 }
 // get Gauss-Laguerre quadrature points
-void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::vector<double> &x, double alpha, int version){
+void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::vector<double> &x, double alpha){
     double mu0 = tgamma(alpha + 1.0);
     std::vector<double> diag(m), off_diag(m-1);
     for(int i=0; i<m-1; i++){
@@ -475,7 +475,7 @@ void OneDimensionalNodes::getGaussLaguerre(int m, std::vector<double> &w, std::v
     }
     double dm = (double) m;
     diag[m-1] = 2.0 * dm - 1.0 + alpha;
-    TasmanianTridiagonalSolver::decompose(diag, off_diag, mu0, x, w, version);
+    TasmanianTridiagonalSolver::decompose(diag, off_diag, mu0, x, w);
 }
 
 // Clenshaw-Curtis

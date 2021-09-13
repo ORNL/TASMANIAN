@@ -168,8 +168,8 @@ std::vector<double> TasmanianTridiagonalSolver::getSymmetricEigenvalues(int n, s
 }
 
 void TasmanianTridiagonalSolver::decompose(std::vector<double> &diag, std::vector<double> &off_diag, const double mu0,
-                                           std::vector<double> &nodes, std::vector<double> &weights, int version) {
-    switch(version) {
+                                           std::vector<double> &nodes, std::vector<double> &weights) {
+    switch(TasmanianTridiagonalSolver::decompose_version) {
         case 1 :
             weights.resize(diag.size());
             nodes.resize(diag.size());
@@ -182,7 +182,7 @@ void TasmanianTridiagonalSolver::decompose(std::vector<double> &diag, std::vecto
             decompose2(diag, off_diag, mu0, nodes, weights);
             break;
         default :
-            throw std::invalid_argument("ERROR: invalid version number!");
+            throw std::invalid_argument("ERROR: decompose_version must be a valid number!");
     }
 }
 
@@ -361,37 +361,6 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
         }
     }
 }
-
-std::vector<std::vector<double>> TasmanianTridiagonalSolver::getDecomposeTimes(std::vector<int> &nvec, TasGrid::TypeOneDRule qtype,
-                                                                               double alpha, double beta) {
-    // Set up a generic caller based on qtype.
-    std::vector<double> w, x;
-    std::function<void(int, int)> caller;
-    if (qtype == TasGrid::rule_gausslegendre) {
-        caller = [&w, &x](int n, int version) {OneDimensionalNodes::getGaussLegendre(n, w, x, version);};
-    } else if (qtype == TasGrid::rule_gaussjacobi) {
-        caller = [&w, &x, alpha, beta](int n, int version) {OneDimensionalNodes::getGaussJacobi(n, w, x, alpha, beta, version);};
-    } else if (qtype == TasGrid::rule_gausshermite) {
-        caller = [&w, &x, alpha](int n, int version) {OneDimensionalNodes::getGaussHermite(n, w, x, alpha, version);};
-    } else if (qtype == TasGrid::rule_gausslaguerre) {
-        caller = [&w, &x, alpha](int n, int version) {OneDimensionalNodes::getGaussLaguerre(n, w, x, alpha, version);};
-    } else {
-        throw std::invalid_argument("ERROR: qtype must be a rule that invokes both of the decompose variants!");
-    }
-    // Generate the runtimes.
-    using namespace std::chrono;
-    std::vector<std::vector<double>> times(2);
-    for (auto n : nvec) {
-        for (int i=0; i<2; i++) {
-            auto t0 = high_resolution_clock::now();
-            caller(n, i+1);
-            auto t1 = high_resolution_clock::now();
-            times[i].push_back(duration_cast<milliseconds>(t1 - t0).count());
-        }
-    }
-    return times;
-}
-
 
 void TasmanianFourierTransform::fast_fourier_transform(std::vector<std::vector<std::complex<double>>> &data, std::vector<int> &num_points){
     int num_dimensions = (int) num_points.size();
