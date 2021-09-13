@@ -2407,10 +2407,8 @@ def makeGlobalGridCustom(iDimension, iOutputs, iDepth, sType, iCustomTabulated, 
     Factory method equivalent to TasmanianSparseGrid.makeGlobalGridCustom().
     '''
     grid = TasmanianSparseGrid()
-
     grid.makeGlobalGridCustom(iDimension, iOutputs, iDepth, sType, iCustomTabulated, liAnisotropicWeights, liLevelLimits)
     return grid
-
 
 def copyGrid(source, iOutputsBegin = 0, iOutputsEnd = -1):
     '''
