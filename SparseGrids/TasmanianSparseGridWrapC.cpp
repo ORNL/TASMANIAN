@@ -114,9 +114,8 @@ void tsgMakeGridFromCustomTabulated(void *grid, int dimension, int outputs, int 
     #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
     #endif // NDEBUG
-    ((TasmanianSparseGrid*) grid)->makeGlobalGrid(dimension, outputs, depth, depth_type,
-                                                  std::move(*reinterpret_cast<TasGrid::CustomTabulated*>(custom_tabulated)),
-                                                  anisotropic_weights, limit_levels);
+    TasGrid::CustomTabulated ct_copy = *reinterpret_cast<TasGrid::CustomTabulated*>(custom_tabulated);
+    ((TasmanianSparseGrid*) grid)->makeGlobalGrid(dimension, outputs, depth, depth_type, std::move(ct_copy), anisotropic_weights, limit_levels);
 }
 
 void tsgUpdateGlobalGrid(void *grid, int depth, const char * sType, const int *anisotropic_weights, const int *limit_levels){
