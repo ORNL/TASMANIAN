@@ -2198,6 +2198,20 @@ void ExternalTester::debugTest(){
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
 
+    // Check accuracy of Chebyshev Type I points.
+    int n = 1000;
+    std::vector<double> w1, w2, x1, x2;
+    OneDimensionalNodes::getGaussChebyshev1(n, w1, x1);
+    OneDimensionalNodes::getGaussJacobi(n, w2, x2, -0.5, -0.5, 2);
+    double node_err = 0.0;
+    double weight_err = 0.0;
+    for (int i=0; i<n; i++) {
+        node_err = std::max(node_err, std::fabs(x1[i] - x2[i]));
+        weight_err = std::max(weight_err, std::fabs(w1[i] - w2[i]));
+    }
+    std::cout << "max node error: " << node_err << std::endl;
+    std::cout << "max weight error: " << weight_err << std::endl;
+
     // // Check accuracy of Gauss-Laguerre points.
     // int n = 1000;
     // double alpha = 0.0;
