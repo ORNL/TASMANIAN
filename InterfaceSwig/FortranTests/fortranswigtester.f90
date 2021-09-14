@@ -47,6 +47,16 @@ write(*,'(a,l)') '    blas   enabled: ', grid%isAccelerationAvailable(tsg_accel_
 write(*,'(a,l)') '    magma  enabled: ', grid%isAccelerationAvailable(tsg_accel_gpu_magma)
 write(*,'(a,l)') '    gpu    enabled: ', grid%isAccelerationAvailable(tsg_accel_gpu_cuda)
 
+if (grid%isCudaEnabled()) then
+    write(*,'(a,l)') '    gpu    backend: CUDA'
+endif
+if (grid%isHipEnabled()) then
+    write(*,'(a,l)') '    gpu    backend: ROCm/HIP'
+endif
+if (grid%isDpcppEnabled()) then
+    write(*,'(a,l)') '    gpu    backend: OneAPI/DPC++'
+endif
+
 if (grid%isAccelerationAvailable(tsg_accel_gpu_cuda)) then
     do i = 1, grid%getNumGPUs()
         write(*,"(a,i1,a,a20,a,i6,a)") "      device ", i-1, ": ", &
