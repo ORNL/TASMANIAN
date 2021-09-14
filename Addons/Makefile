@@ -6,7 +6,7 @@ LIBS = ./libtasmaniansparsegrid.so ./libtasmaniandream.so $(CommonLIBS)
 
 LHEADERS = $(wildcard ./*.hpp)
 
-LIBOBJ = tsgCLoadNeededValues.o tsgCConstructSurrogate.o tsgCLoadUnstructuredPoints.o
+LIBOBJ = tsgCLoadNeededValues.o tsgCConstructSurrogate.o tsgCLoadUnstructuredPoints.o tsgCExoticQuadrature.o
 
 MODULENAME = libtasmaniancaddons.so
 

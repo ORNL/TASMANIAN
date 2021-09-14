@@ -83,6 +83,21 @@ subroutine test_anisotropic_refinement()
         error stop
     endif
 
+    call grid%setAnisotropicRefinement(tsg_type_iptotal, 1, 0, level_limits=(/2,2,1/))
+
+    deallocate(points)
+    points => grid%returnNeededPoints()
+
+    call approx2d(3, grid%getNumNeeded(), points, &
+             reshape( (/ 1.d0, -1.d0, 1.d0, &
+                        -1.d0,  1.d0, 1.d0, &
+                        -1.d0, -1.d0, 0.d0 /), &
+                      (/3, grid%getNumNeeded()/) ))
+
+    call grid%mergeRefinement()
+    call tassert(grid%getNumLoaded() == 18)
+    call tassert(grid%getNumNeeded() ==  0)
+
     call grid%release()
     deallocate(points, values)
 end subroutine
@@ -136,6 +151,39 @@ subroutine test_surplus_refinement()
                          1.d0,  0.d0,  1.d0, &
                          1.d0, -1.d0,  0.d0, &
                          1.d0,  1.d0,  0.d0 /), &
+                      (/3, grid%getNumNeeded()/) ))
+
+    call grid%clearLevelLimits()
+    call grid%setSurplusRefinement(1.D-3, tsg_refine_classic, 0)
+
+    call tassert(grid%getNumNeeded() == 16)
+
+    call grid%setSurplusRefinement(1.D-3, tsg_refine_classic, -1, level_limits=(/3,2,0/))
+
+    deallocate(points)
+    points => grid%returnNeededPoints()
+
+    call approx2d(3, grid%getNumNeeded(), points, &
+             reshape( (/ 0.d0, -5.d-1, 0.d0, &
+                         0.d0,  5.d-1, 0.d0, &
+                        -1.d0, -1.d0,  0.d0, &
+                        -1.d0,  1.d0,  0.d0, &
+                         1.d0, -1.d0,  0.d0, &
+                         1.d0,  1.d0,  0.d0, &
+                        -5.d-1, 0.d0,  0.d0, &
+                         5.d-1, 0.d0,  0.d0 /), &
+                      (/3, grid%getNumNeeded()/) ))
+
+    call grid%setSurplusRefinement(1.D-3, tsg_refine_classic, -1, level_limits=(/3,2,0/), &
+                                   scale_correction=(/0.d0, 0.d0, 0.d0, 1.d0, 0.d0, 0.d0, 0.d0/))
+
+    deallocate(points)
+    points => grid%returnNeededPoints()
+
+    call approx2d(3, grid%getNumNeeded(), points, &
+             reshape( (/ 0.d0, -5.d-1, 0.d0, &
+                        -1.d0, -1.d0,  0.d0, &
+                         1.d0, -1.d0,  0.d0 /), &
                       (/3, grid%getNumNeeded()/) ))
 
     call grid%release()
