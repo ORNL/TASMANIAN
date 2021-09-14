@@ -152,8 +152,6 @@ class TestTasCommon(unittest.TestCase):
         # Test metadata.
         self.assertEqual(ctA.getDescription(), ctB.getDescription(), "error in getDescription()")
         self.assertEqual(ctA.getNumLevels(), ctB.getNumLevels(), "error in getNumLevels()")
-        if (ctA.getNumLevels() == 0): # Empty CustomTabulated instance. Nothing else to check.
-            return
         for level in range(ctA.getNumLevels()):
             self.assertEqual(ctA.getNumPoints(level), ctB.getNumPoints(level), "error in getNumPoints() at level " + str(level))
             self.assertEqual(ctA.getIExact(level), ctB.getIExact(level), "error in getIExact() at level " + str(level))

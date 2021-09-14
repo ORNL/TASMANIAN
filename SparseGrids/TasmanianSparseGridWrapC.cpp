@@ -508,6 +508,9 @@ int tsgReadCustomTabulated(void *ct, const char* filename){
     }catch(std::runtime_error &e){
         cerr << e.what() << endl;
         return 0;
+    }catch(std::invalid_argument &e){
+        cerr << e.what() << endl;
+        return 0;
     }
 }
 

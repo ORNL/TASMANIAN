@@ -2558,7 +2558,7 @@ def makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights
     ct = CustomTabulated()
     effective_description = bytes(description, encoding='utf8') if sys.version_info.major == 3 else description
     effective_nodes = np.concatenate(nodes) if len(nodes) > 0 else np.array([])
-    effective_weights = np.concatenate(weights) if len(nodes) > 0 else np.array([])
+    effective_weights = np.concatenate(weights) if len(weights) > 0 else np.array([])
     ct.pCustomTabulated = pLibTSG.tsgMakeCustomTabulatedFromData(c_int(num_levels), np_arr_to_ctype(num_nodes), np_arr_to_ctype(precision),
                                                                  np_arr_to_ctype(effective_nodes, np.float64),
                                                                  np_arr_to_ctype(effective_weights, np.float64),

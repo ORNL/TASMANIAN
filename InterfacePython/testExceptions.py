@@ -288,7 +288,6 @@ class TestTasClass(unittest.TestCase):
 
     def testListedExceptions(self, llTests):
         grid = Tasmanian.SparseGrid()
-        ct = Tasmanian.CustomTabulated()
         state = DREAM.State(10, 2)
         state.setState(DREAM.genGaussianSamples([-1.0, -1.0], [1.0, 1.0], 10, DREAM.RandomGenerator("minstd_rand", 42)))
 
