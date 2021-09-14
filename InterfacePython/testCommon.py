@@ -39,13 +39,7 @@ class TestTasCommon(unittest.TestCase):
             return
 
         # load test points (canonical domain only), make sure to avoid grid points, e.g., 1/2, 1/4, etc.
-        if (gridA.getNumDimensions() == 1):
-            mX1 = np.array([1.0/3.0])
-            mX2 = np.array([-1.0/3.0])
-            mX3 = np.array([-1.0/5.0])
-            mX4 = np.array([1.0/7.0])
-            mX5 = np.array([-1.0/7.0])
-        elif (gridA.getNumDimensions() == 2):
+        if (gridA.getNumDimensions() == 2):
             mX1 = np.array([1.0/3.0, 1.0/6.0])
             mX2 = np.array([-1.0/3.0, 1.0/6.0])
             mX3 = np.array([-1.0/5.0, -1.0/7.0])
@@ -57,8 +51,6 @@ class TestTasCommon(unittest.TestCase):
             mX3 = np.array([-1.0/5.0, -1.0/7.0, 1.0/3.0])
             mX4 = np.array([1.0/7.0, 1.0/5.0, 2.0/3.0])
             mX5 = np.array([-1.0/7.0, -1.0/13.0, -2.0/3.0])
-
-        aBatchPoints = np.row_stack([mX1, mX2, mX3, mX4, mX5])
 
         pA = gridA.getPoints()
         pB = gridB.getPoints()
@@ -92,20 +84,22 @@ class TestTasCommon(unittest.TestCase):
         pB = gridB.getQuadratureWeights()
         np.testing.assert_equal(pA, pB, "Quadrature not equal", True)
 
-        pA = gridA.getInterpolationWeights(mX1)
-        pB = gridB.getInterpolationWeights(mX1)
-        np.testing.assert_equal(pA, pB, "Interpolation test 1 not equal", True)
-
-        pA = gridA.getInterpolationWeights(mX2)
-        pB = gridB.getInterpolationWeights(mX2)
-        np.testing.assert_equal(pA, pB, "Interpolation test 2 not equal", True)
-
-        pA = gridA.getInterpolationWeights(mX3)
-        pB = gridB.getInterpolationWeights(mX3)
-        np.testing.assert_equal(pA, pB, "Interpolation test 3 not equal", True)
-
         # evaluate (values have been loaded)
         if (gridA.getNumLoaded() > 0):
+            aBatchPoints = np.row_stack([mX1, mX2, mX3, mX4, mX5])
+
+            pA = gridA.getInterpolationWeights(mX1)
+            pB = gridB.getInterpolationWeights(mX1)
+            np.testing.assert_equal(pA, pB, "Interpolation test 1 not equal", True)
+
+            pA = gridA.getInterpolationWeights(mX2)
+            pB = gridB.getInterpolationWeights(mX2)
+            np.testing.assert_equal(pA, pB, "Interpolation test 2 not equal", True)
+        
+            pA = gridA.getInterpolationWeights(mX3)
+            pB = gridB.getInterpolationWeights(mX3)
+            np.testing.assert_equal(pA, pB, "Interpolation test 3 not equal", True)
+
             pA = gridA.evaluate(mX4)
             pB = gridB.evaluate(mX4)
             np.testing.assert_almost_equal(pA, pB, 12, "Interpolation test 4 not equal", True)
