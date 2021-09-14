@@ -210,6 +210,14 @@ class TestTasClass(unittest.TestCase):
                    ["grid.makeLocalPolynomialGrid(1, 1, 1, 1, 'localp'); Tasmanian.loadNeededPoints(lambda x, tid : np.ones((2,)) * x, grid, 1);", "loadNeededValues"],
                    ]
 
+    def getCustomTabulatedTests(self):
+        # same format as in getSparseGridTests().
+        return    [["Tasmanian.makeCustomTabulatedFromData(1, np.array([2]), np.array([1]), np.array([[0.0]]), np.array([[2.0]]), 'testCT')", "nodes[0]"], 
+                   ["Tasmanian.makeCustomTabulatedFromData(1, np.array([2]), np.array([1]), np.array([[0.0, 1.0]]), np.array([[2.0]]), 'testCT')", "weights[0]"], 
+                   ["Tasmanian.makeCustomTabulatedFromData(1, np.array([2, 3]), np.array([1]), np.array([[0.0, 1.0]]), np.array([[1.0, 1.0]]), 'testCT')", "num_nodes"], 
+                   ["Tasmanian.makeCustomTabulatedFromData(1, np.array([2]), np.array([1, 2]), np.array([[0.0, 1.0]]), np.array([[1.0, 1.0]]), 'testCT')", "precision"], 
+                  ]
+
     def getDreamTests(self):
         # see getSparseGridTests() for comments about the format
         return [["DREAM.Domain('incorrect')", "Domain"],
@@ -280,6 +288,7 @@ class TestTasClass(unittest.TestCase):
 
     def testListedExceptions(self, llTests):
         grid = Tasmanian.SparseGrid()
+        ct = Tasmanian.CustomTabulated()
         state = DREAM.State(10, 2)
         state.setState(DREAM.genGaussianSamples([-1.0, -1.0], [1.0, 1.0], 10, DREAM.RandomGenerator("minstd_rand", 42)))
 
@@ -292,4 +301,5 @@ class TestTasClass(unittest.TestCase):
 
     def performExceptionsTest(self):
         self.testListedExceptions(self.getSparseGridTests())
+        self.testListedExceptions(self.getCustomTabulatedTests())
         self.testListedExceptions(self.getDreamTests())

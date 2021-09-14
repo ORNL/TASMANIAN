@@ -442,6 +442,12 @@ class TestTasClass(unittest.TestCase):
         ctA.write("testSave")
         ctB.read("testSave")
         ttc.compareCustomTabulated(ctA, ctB)
+        # Test an error message from wrong read.
+        try:
+            ctB.read("Test_If_Bogus_Filename_Produces_an_Error")
+        except TasmanianSG.TasmanianInputError as TSGError:
+            TSGError.bShowOnExit = False
+            self.assertEqual(TSGError.sVariable, "sFilename", "Reading a bogus file properly failed, but the error information is wrong.")
 
     def performIOTest(self):
         self.checkMetaIO()

@@ -67,13 +67,13 @@ template<bool iomode> void CustomTabulated::read(std::istream &is){
         std::string T;
         char dummy;
         is >> T;
-        if (!(T.compare("description:") == 0)){ throw std::invalid_argument("ERROR: wrong file format of custom tables on line 1"); }
+        if (!(T.compare("description:") == 0)){ throw std::runtime_error("ERROR: wrong file format of custom tables on line 1"); }
         is.get(dummy);
         description = std::string();
         getline(is, description);
 
         is >> T;
-        if (!(T.compare("levels:") == 0)){ throw std::invalid_argument("ERROR: wrong file format of custom tables on line 2"); }
+        if (!(T.compare("levels:") == 0)){ throw std::runtime_error("ERROR: wrong file format of custom tables on line 2"); }
         is >> num_levels;
 
         num_nodes.resize(num_levels);
@@ -124,7 +124,7 @@ void CustomTabulated::read(const char* filename){
     if (!ifs){
         std::string message = "Could not open the custom rule file: ";
         message += filename;
-        throw std::invalid_argument(message);
+        throw std::runtime_error(message);
     }
     read<mode_ascii>(ifs);
     ifs.close();
