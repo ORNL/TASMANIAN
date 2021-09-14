@@ -45,7 +45,7 @@ class TestTasCommon(unittest.TestCase):
             mX3 = np.array([-1.0/5.0])
             mX4 = np.array([1.0/7.0])
             mX5 = np.array([-1.0/7.0])
-        if (gridA.getNumDimensions() == 2):
+        elif (gridA.getNumDimensions() == 2):
             mX1 = np.array([1.0/3.0, 1.0/6.0])
             mX2 = np.array([-1.0/3.0, 1.0/6.0])
             mX3 = np.array([-1.0/5.0, -1.0/7.0])

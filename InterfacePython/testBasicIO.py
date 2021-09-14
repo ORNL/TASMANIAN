@@ -431,17 +431,25 @@ class TestTasClass(unittest.TestCase):
             precision = np.array([2*(j+1)-1 for j in range(i)])
             nodes = [create_nodes(j, rng) for j in num_nodes]
             weights = [create_weights(j, rng) for j in num_nodes]
-            ctA = TasmanianSG.makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights, description)
+            ctA = TasmanianSG.makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights, description)            # .
             ctB = TasmanianSG.CustomTabulated()
             ctA.write("testSave")
             ctB.read("testSave")
-            ttc.compareCustomTabulated(ctA, ctB)
+            for i in range(num_levels):
+                read_weights, read_nodes = ctB.getWeightsNodes(i)
+                np.testing.assert_almost_equal(read_weights, weights[i])
+                np.testing.assert_almost_equal(read_nodes, nodes[i])
         # Read and write from a file.
         ctA = TasmanianSG.makeCustomTabulatedFromFile(tdata.sGaussPattersonTableFile)
         ctB = TasmanianSG.CustomTabulated()
         ctA.write("testSave")
         ctB.read("testSave")
         ttc.compareCustomTabulated(ctA, ctB)
+        for i in range(ctB.getNumLevels()):
+            read_weights, read_nodes = ctB.getWeightsNodes(i)
+            grid = TasmanianSG.makeGlobalGrid(1, 0, i, "level", "gauss-patterson")
+            np.testing.assert_almost_equal(read_weights, grid.getQuadratureWeights())
+            np.testing.assert_almost_equal(read_nodes, grid.getPoints().flatten())
         # Test an error message from wrong read.
         try:
             ctB.read("Test_If_Bogus_Filename_Produces_an_Error")
@@ -453,15 +461,13 @@ class TestTasClass(unittest.TestCase):
         '''
         Test makeGlobalGridCustom(), which creates a grid from a CustomTabulated instance.
         '''
+        gridA = TasmanianSG.makeGlobalGrid(1, 1, 3, "level", "custom-tabulated", [], 0.0, 0.0, tdata.sGaussPattersonTableFile)
         ct = TasmanianSG.makeCustomTabulatedFromFile(tdata.sGaussPattersonTableFile)
-        gridA1 = TasmanianSG.TasmanianSparseGrid()
-        gridA1.makeGlobalGrid(1, 1, 3, "level", "custom-tabulated", [], 0.0, 0.0, tdata.sGaussPattersonTableFile)
-        gridB1 = TasmanianSG.makeGlobalGridCustom(1, 1, 3, "level", ct)
-        ttc.compareGrids(gridA1, gridB1)
-        gridA1 = TasmanianSG.TasmanianSparseGrid()
-        gridA1.makeGlobalGrid(2, 1, 3, "level", "custom-tabulated", [], 0.0, 0.0, tdata.sGaussPattersonTableFile)
-        gridB1 = TasmanianSG.makeGlobalGridCustom(2, 1, 3, "level", ct)
-        ttc.compareGrids(gridA1, gridB1)
+        gridB = TasmanianSG.makeGlobalGridCustom(1, 1, 3, "level", ct)
+        ttc.compareGrids(gridA, gridB)
+        gridA = TasmanianSG.makeGlobalGrid(2, 1, 3, "level", "custom-tabulated", [], 0.0, 0.0, tdata.sGaussPattersonTableFile)
+        gridB = TasmanianSG.makeGlobalGridCustom(2, 1, 3, "level", ct)
+        ttc.compareGrids(gridA, gridB)
 
     def performIOTest(self):
         self.checkMetaIO()
