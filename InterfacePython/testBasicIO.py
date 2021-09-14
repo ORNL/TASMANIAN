@@ -449,6 +449,20 @@ class TestTasClass(unittest.TestCase):
             TSGError.bShowOnExit = False
             self.assertEqual(TSGError.sVariable, "sFilename", "Reading a bogus file properly failed, but the error information is wrong.")
 
+    def checkGlobalGridCustom(self):
+        '''
+        Test makeGlobalGridCustom(), which creates a grid from a CustomTabulated instance.
+        '''
+        ct = TasmanianSG.makeCustomTabulatedFromFile(tdata.sGaussPattersonTableFile)
+        gridA1 = TasmanianSG.TasmanianSparseGrid()
+        gridA1.makeGlobalGrid(1, 1, 3, "level", "custom-tabulated", [], 0.0, 0.0, tdata.sGaussPattersonTableFile)
+        gridB1 = TasmanianSG.makeGlobalGridCustom(1, 1, 3, "level", ct)
+        ttc.compareGrids(gridA1, gridB1)
+        gridA1 = TasmanianSG.TasmanianSparseGrid()
+        gridA1.makeGlobalGrid(2, 1, 3, "level", "custom-tabulated", [], 0.0, 0.0, tdata.sGaussPattersonTableFile)
+        gridB1 = TasmanianSG.makeGlobalGridCustom(2, 1, 3, "level", ct)
+        ttc.compareGrids(gridA1, gridB1)
+
     def performIOTest(self):
         self.checkMetaIO()
 
@@ -462,3 +476,4 @@ class TestTasClass(unittest.TestCase):
         self.checkReadWriteMisc()
 
         self.checkReadWriteCustomTabulated()
+        self.checkGlobalGridCustom()
