@@ -182,7 +182,7 @@ pLibTSG.tsgMakeCustomTabulatedFromData.restype = c_void_p;
 # Argument types for CustomTabulated C class methods.
 pLibTSG.tsgDestructCustomTabulated.argtypes = [c_void_p];
 pLibTSG.tsgReadCustomTabulated.argtypes = [c_void_p, c_char_p]
-pLibTSG.tsgWriteCustomTabulated.argtypes = [c_void_p, c_char_p, c_int]
+pLibTSG.tsgWriteCustomTabulated.argtypes = [c_void_p, c_char_p]
 pLibTSG.tsgGetNumLevelsCustomTabulated.argtypes = [c_void_p];
 pLibTSG.tsgGetNumPointsCustomTabulated.argtypes = [c_void_p, c_int];
 pLibTSG.tsgGetIExactCustomTabulated.argtypes = [c_void_p, c_int];
@@ -2557,8 +2557,10 @@ def makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights
         check_np_arr("weights["+str(i)+"]", weights[i], num_nodes[i], 1);
     ct = CustomTabulated()
     effective_description = bytes(description, encoding='utf8') if sys.version_info.major == 3 else description
+    effective_nodes = np.concatenate(nodes) if len(nodes) > 0 else np.array([])
+    effective_weights = np.concatenate(weights) if len(nodes) > 0 else np.array([])
     ct.pCustomTabulated = pLibTSG.tsgMakeCustomTabulatedFromData(c_int(num_levels), np_arr_to_ctype(num_nodes), np_arr_to_ctype(precision),
-                                                                 np_arr_to_ctype(np.concatenate(nodes), np.float64),
-                                                                 np_arr_to_ctype(np.concatenate(weights), np.float64),
+                                                                 np_arr_to_ctype(effective_nodes, np.float64),
+                                                                 np_arr_to_ctype(effective_weights, np.float64),
                                                                  c_char_p(effective_description))
     return ct

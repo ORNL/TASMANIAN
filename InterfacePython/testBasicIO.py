@@ -410,6 +410,39 @@ class TestTasClass(unittest.TestCase):
                 gridB.read("testSave")
                 ttc.compareGrids(gridA, gridB)
 
+    def checkReadWriteCustomTabulated(self):
+        '''
+        Test reading and writing of the CustomTabulated class.
+        '''
+        rng = np.random.default_rng(777);
+        description = "testCT"
+        def create_nodes(j, in_rng):
+            nodes = in_rng.random(j) * 2.0 - 1.0
+            nodes.sort()
+            return nodes
+        def create_weights(j, in_rng):
+            weights = in_rng.random(j)
+            weights = 2.0 * weights / weights.sum()
+            return weights
+        # Read and write from explicitly given data.
+        for i in range(4):
+            num_levels = i
+            num_nodes = np.array([3*(j+1) for j in range(i)])
+            precision = np.array([2*(j+1)-1 for j in range(i)])
+            nodes = [create_nodes(j, rng) for j in num_nodes]
+            weights = [create_weights(j, rng) for j in num_nodes]
+            ctA = TasmanianSG.makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights, description)
+            ctB = TasmanianSG.CustomTabulated()
+            ctA.write("testSave")
+            ctB.read("testSave")
+            ttc.compareCustomTabulated(ctA, ctB)
+        # Read and write from a file.
+        ctA = TasmanianSG.makeCustomTabulatedFromFile(tdata.sGaussPattersonTableFile)
+        ctB = TasmanianSG.CustomTabulated()
+        ctA.write("testSave")
+        ctB.read("testSave")
+        ttc.compareCustomTabulated(ctA, ctB)
+
     def performIOTest(self):
         self.checkMetaIO()
 
@@ -421,3 +454,5 @@ class TestTasClass(unittest.TestCase):
 
         self.checkCopySubgrid()
         self.checkReadWriteMisc()
+
+        self.checkReadWriteCustomTabulated()

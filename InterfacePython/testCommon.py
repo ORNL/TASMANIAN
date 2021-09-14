@@ -137,6 +137,26 @@ class TestTasCommon(unittest.TestCase):
         pB = gridB.getConformalTransformASIN()
         np.testing.assert_equal(pA, pB, "Conformal transform ASIN not equal", True)
 
+    def compareCustomTabulated(self, ctA, ctB):
+        '''
+        Compaes two CustomTabulated instances by checking nodes, weights, and other metadata.
+
+        The test passes if the two instances are mathematically identical.
+        '''
+        # Test metadata.
+        self.assertEqual(ctA.getDescription(), ctB.getDescription(), "error in getDescription()")
+        self.assertEqual(ctA.getNumLevels(), ctB.getNumLevels(), "error in getNumLevels()")
+        if (ctA.getNumLevels() == 0): # Empty CustomTabulated instance. Nothing else to check.
+            return
+        for level in range(ctA.getNumLevels()):
+            self.assertEqual(ctA.getNumPoints(level), ctB.getNumPoints(level), "error in getNumPoints() at level " + str(level))
+            self.assertEqual(ctA.getIExact(level), ctB.getIExact(level), "error in getIExact() at level " + str(level))
+            self.assertEqual(ctA.getQExact(level), ctB.getQExact(level), "error in getQExact() at level " + str(level))
+            wA, nA = ctA.getWeightsNodes(level)
+            wB, nB = ctB.getWeightsNodes(level)
+            np.testing.assert_equal(wA, wB, "Weights from getWeightsNodes() are not equal at level " + str(level), True)
+            np.testing.assert_equal(nA, nB, "Nodes from getWeightsNodes() are not equal at level " + str(level), True)
+
     def loadExpN2(self, grid):
         '''
         If there are needed points, load the points with exp(-sum(x)**2) where

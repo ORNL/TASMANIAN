@@ -499,7 +499,7 @@ void tsgDestructCustomTabulated(void* ct){ delete ((CustomTabulated*) ct); }
 void tsgWriteCustomTabulated(void *ct, const char* filename){
     std::ofstream ofs(filename, std::ios::out);
     if (!ofs.good()) std::cerr << "ERROR: must provide valid filename!" << std::endl;
-    ((CustomTabulated*) ct)->write<true>(ofs);
+    ((CustomTabulated*) ct)->write<false>(ofs); // false == mode_ascii
 }
 int tsgReadCustomTabulated(void *ct, const char* filename){
     try{
