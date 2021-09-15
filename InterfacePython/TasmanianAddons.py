@@ -60,7 +60,7 @@ pLibCTSG.tsgConstructSurrogateWiIGAnisoFixed.argtypes = [type_icsmodel, c_int, c
 pLibCTSG.tsgLoadUnstructuredDataL2.argtypes = [POINTER(c_double), c_int, POINTER(c_double), c_double, c_void_p]
 
 pLibCTSG.tsgCreateExoticQuadratureFromGrid.argtypes = [c_void_p, c_int, c_double, c_void_p, c_char_p, c_int]
-pLibCTSG.tsgCreateExoticQuadratureFromGrid.argtypes = [c_void_p, c_int, c_double, type_1Dfunc, c_int, c_char_p, c_int]
+pLibCTSG.tsgCreateExoticQuadratureFromFunction.argtypes = [c_void_p, c_int, c_double, type_1Dfunc, c_int, c_char_p, c_int]
 
 def tsgLnpModelWrapper(oUserModel, iSizeX, pX, iSizeY, pY, iThreadID, pErrInfo):
     '''

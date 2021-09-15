@@ -2491,7 +2491,7 @@ class CustomTabulated:
         return pLibTSG.tsgGetQExactCustomTabulated(self.pCustomTabulated, c_int(level))
 
     def getDescription(self):
-        return pLibTSG.tsgGetDescriptionCustomTabulated(self.pCustomTabulated)
+        return str(pLibTSG.tsgGetDescriptionCustomTabulated(self.pCustomTabulated), 'UTF-8')
 
     def getWeightsNodes(self, level):
         '''
