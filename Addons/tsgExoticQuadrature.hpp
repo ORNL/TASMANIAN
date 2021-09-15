@@ -61,6 +61,17 @@ template <bool is_symmetric>
 inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<double> &ref_weights,
                                                  const std::vector<double> &ref_points) {
 
+/*!
+ * \internal
+ * \ingroup TasmanianAddonsExoticQuad
+ * \brief Generate the nodes and weights of a Gaussian quadrature (up to degree n) whose weight function is evaluated on \b
+ * ref_nodes and its corresponding values are stored in \b ref_weights. Specializes depending on if the underlying weight
+ * function is symmetric or not.
+ * \endinternal
+ */
+template <bool is_symmetric>
+inline void getGaussNodesAndWeights(const int n, const std::vector<double> &ref_nodes, const std::vector<double> &ref_weights,
+                                    std::vector<std::vector<double>> &nodes_cache, std::vector<std::vector<double>> &weights_cache) {
     // Compute the roots incrementally.
     assert(ref_points.size() == ref_weights.size());
     assert(ref_points.size() > 0);

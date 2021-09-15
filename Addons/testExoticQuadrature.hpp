@@ -36,19 +36,23 @@
 #include "tasgridCLICommon.hpp"
 #include <cstring>
 
-// Test the output of getRoots().
-inline bool testRootSizes() {
+// Test the output of getGaussNodesAndWeights().
+inline bool testNodeAndWeightSizes() {
     bool passed = true;
-    std::vector<std::vector<double>> roots;
+    std::vector<std::vector<double>> nodes_cache, weights_cache;
     int nref = 5;
     std::vector<double> ref_weights(nref), ref_points(nref);
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
-    // n = 0, 1, 5
+    // n = 1, 2, 5
     std::vector<int> n_vec = {1, 2, 5};
     for (auto n : n_vec) {
-        roots = TasGrid::getRoots<true>(0, ref_weights, ref_points);
-        if (roots.size() != 0) {
-            std::cout << "ERROR: Test failed in testRootSizes() for n = " << n << std::endl;
+        TasGrid::getGaussNodesAndWeights<true>(n, ref_points, ref_weights, nodes_cache, weights_cache);
+        if (nodes_cache.size() != n) {
+            std::cout << "ERROR: Test failed in testNodeAndWeightSizes() for n = " << n << std::endl;
+            passed = false;
+        }
+        if (weights_cache.size() != n) {
+            std::cout << "ERROR: Test failed in testNodeAndWeightSizes() for n = " << n << std::endl;
             passed = false;
         }
     }
@@ -96,7 +100,7 @@ inline bool wrapSincTest(std::function<double(const double*)> f, const int dimen
     // Initialize.
     bool passed = true;
     auto sinc = [freq, phase_shift](double x)->double {return (fabs(freq * (x - phase_shift)) <= 1e-20) ?
-                                                              0.0 :
+                                                              1.0 :
                                                               sin(freq * (x - phase_shift)) / (freq * (x - phase_shift));};
     int level = depth % 2 == 1 ? (depth + 1) / 2 : depth / 2 + 1;
     TasGrid::CustomTabulated ct;
@@ -181,7 +185,7 @@ inline bool testAccuracy() {
 // Main wrapper
 inline bool testExoticQuadrature() {
     bool passed = true;
-    passed = passed && testRootSizes();
+    passed = passed && testNodeAndWeightSizes();
     passed = passed && testBasicAttributes();
     passed = passed && testAccuracy();
     return passed;
