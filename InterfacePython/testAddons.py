@@ -145,21 +145,19 @@ class TestTasClass(unittest.TestCase):
         nref = 101
         def create_surrogate(lambda_fn):
             grid = Tasmanian.makeGlobalGrid(1, 1, nref, "level", "gauss-legendre")
-            neededValues = np.array([lambda_fn(x) for x in grid.getNeededPoints()])
-            grid.loadNeededValues(neededValues)
+            grid.loadNeededValues(np.array([lambda_fn(x) for x in grid.getNeededPoints()]))
             return grid
         def compute_integral(grid, integrand):
-            fnValues = [integrand(x) for x in grid.getPoints()]
-            return np.sum(fnValues * grid.getQuadratureWeights())
+            return np.sum([integrand(x) for x in grid.getPoints()] * grid.getQuadratureWeights())
         # Each pair below consists of a 1D integral value (first) and a CustomTabulated object (second) used to approximate this integral.
         testPairs = [
-            [1.4321357541271255, Tasmanian.createExoticQuadratureFromFunction(max_level, 0.0, sinc1s0, nref, "Sinc1-shift0-Symm-byFn", True)],
-            [1.4321357541271255, Tasmanian.createExoticQuadratureFromFunction(max_level, 0.0, sinc1s0, nref, "Sinc1-shift0-nonSymm-byFn", False)],
-            [1.4321357541271255, Tasmanian.createExoticQuadratureFromFunction(max_level, 1.0, sinc1s0, nref, "Sinc1-shift1-Symm-byFn", True)],
+            [1.4321357541271255, Tasmanian.createExoticQuadratureFromFunction(max_level, 0.0, sinc1s0, nref, "Sinc1s0-shift0-Symm-byFn", True)],
+            [1.4321357541271255, Tasmanian.createExoticQuadratureFromFunction(max_level, 0.0, sinc1s0, nref, "Sinc1s0-shift0-nonSymm-byFn", False)],
+            [1.4321357541271255, Tasmanian.createExoticQuadratureFromFunction(max_level, 1.0, sinc1s0, nref, "Sinc1s0-shift1-Symm-byFn", True)],
             [0.064062055930705356, Tasmanian.createExoticQuadratureFromFunction(max_level, 1.0, sinc10s1, nref, "Sinc10s1-shift1-nonSymm-byFn", False)],
-            [1.4321357541271255, Tasmanian.createExoticQuadratureFromGrid(max_level, 0.0, create_surrogate(sinc1s0), "Sinc1-shift0-Symm-byGrid", True)],
-            [1.4321357541271255, Tasmanian.createExoticQuadratureFromGrid(max_level, 0.0, create_surrogate(sinc1s0), "Sinc1-shift0-nonSymm-byGrid", False)],
-            [1.4321357541271255, Tasmanian.createExoticQuadratureFromGrid(max_level, 1.0, create_surrogate(sinc1s0), "Sinc1-shift1-Symm-byGrid", True)],
+            [1.4321357541271255, Tasmanian.createExoticQuadratureFromGrid(max_level, 0.0, create_surrogate(sinc1s0), "Sinc1s0-shift0-Symm-byGrid", True)],
+            [1.4321357541271255, Tasmanian.createExoticQuadratureFromGrid(max_level, 0.0, create_surrogate(sinc1s0), "Sinc1s0-shift0-nonSymm-byGrid", False)],
+            [1.4321357541271255, Tasmanian.createExoticQuadratureFromGrid(max_level, 1.0, create_surrogate(sinc1s0), "Sinc1s0-shift1-Symm-byGrid", True)],
             [0.064062055930705356, Tasmanian.createExoticQuadratureFromGrid(max_level, 1.0, create_surrogate(sinc10s1), "Sinc10s1-shift1-nonSymm-byGrid", False)],
         ]
         # Test the accuracy of exotic quadrature.
