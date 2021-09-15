@@ -139,8 +139,9 @@ class TestTasClass(unittest.TestCase):
     def checkExoticQuadrature(self):
         # Initialize some useful constants and utility functions.
         integrand = lambda x : np.exp(-np.linalg.norm(x) ** 2)
-        sinc10s1 = lambda x : np.sinc(10 * (x - 1))
-        level = 20
+        sinc1s0 = lambda x : np.sinc(x / np.pi)
+        sinc10s1 = lambda x : np.sinc(10 * (x - 1) / np.pi)
+        max_level = 25
         nref = 101
         def create_surrogate(lambda_fn):
             grid = Tasmanian.makeGlobalGrid(1, 1, nref, "level", "gauss-legendre")
@@ -148,28 +149,32 @@ class TestTasClass(unittest.TestCase):
             grid.loadNeededValues(neededValues)
             return grid
         def compute_integral(grid, integrand):
-            points = grid.getPoints()
-            weights = grid.getQuadratureWeights()
-            fnValues = [integrand(x) for x in points]
-            return np.sum(weights * fnValues)
-        # Each pair below consists of a 1D integral value (first) and the CustomTabulated object used to approximate this integral.
+            fnValues = [integrand(x) for x in grid.getPoints()]
+            return np.sum(fnValues * grid.getQuadratureWeights())
+        # Each pair below consists of a 1D integral value (first) and a CustomTabulated object (second) used to approximate this integral.
         testPairs = [
-            [1.4321357541271255, Tasmanian.createExoticQuadratureFromFunction(level, 0.0, np.sinc, nref, "Sinc1-shift0-nonSymm-byFn", False)],
-            [1.4321357541271255, Tasmanian.createExoticQuadratureFromFunction(level, 1.0, np.sinc, nref, "Sinc1-shift1-Symm-byFn", True)],
-            [0.064062055930705356, Tasmanian.createExoticQuadratureFromFunction(level, 1.0, sinc10s1, nref, "Sinc10s1-shift1-nonSymm-byFn", False)],
-            [1.4321357541271255, Tasmanian.createExoticQuadratureFromGrid(level, 0.0, create_surrogate(np.sinc), "Sinc1-shift0-nonSymm-byGrid", False)],
-            [1.4321357541271255, Tasmanian.createExoticQuadratureFromGrid(level, 1.0, create_surrogate(np.sinc), "Sinc1-shift1-Symm-byGrid", True)],
-            [0.064062055930705356, Tasmanian.createExoticQuadratureFromGrid(level, 1.0, create_surrogate(sinc10s1), "Sinc10s1-shift1-nonSymm-byGrid", False)],
+            [1.4321357541271255, Tasmanian.createExoticQuadratureFromFunction(max_level, 0.0, sinc1s0, nref, "Sinc1-shift0-Symm-byFn", True)],
+            [1.4321357541271255, Tasmanian.createExoticQuadratureFromFunction(max_level, 0.0, sinc1s0, nref, "Sinc1-shift0-nonSymm-byFn", False)],
+            [1.4321357541271255, Tasmanian.createExoticQuadratureFromFunction(max_level, 1.0, sinc1s0, nref, "Sinc1-shift1-Symm-byFn", True)],
+            [0.064062055930705356, Tasmanian.createExoticQuadratureFromFunction(max_level, 1.0, sinc10s1, nref, "Sinc10s1-shift1-nonSymm-byFn", False)],
+            [1.4321357541271255, Tasmanian.createExoticQuadratureFromGrid(max_level, 0.0, create_surrogate(sinc1s0), "Sinc1-shift0-Symm-byGrid", True)],
+            [1.4321357541271255, Tasmanian.createExoticQuadratureFromGrid(max_level, 0.0, create_surrogate(sinc1s0), "Sinc1-shift0-nonSymm-byGrid", False)],
+            [1.4321357541271255, Tasmanian.createExoticQuadratureFromGrid(max_level, 1.0, create_surrogate(sinc1s0), "Sinc1-shift1-Symm-byGrid", True)],
+            [0.064062055930705356, Tasmanian.createExoticQuadratureFromGrid(max_level, 1.0, create_surrogate(sinc10s1), "Sinc10s1-shift1-nonSymm-byGrid", False)],
         ]
         # Test the accuracy of exotic quadrature.
         for integral, ct in testPairs:
-            self.assertEqual(level, ct.getNumLevels(), "Loaded number of levels does not match actual number of levels!")
-            grid = Tasmanian.makeGlobalGridCustom(1, 0, level-1, "level", ct)
+            self.assertEqual(max_level, ct.getNumLevels(), "Loaded number of levels does not match actual number of levels!")
+            grid = Tasmanian.makeGlobalGridCustom(1, 0, max_level-1, "level", ct)
             np.testing.assert_almost_equal(compute_integral(grid, integrand), integral, 12,
                                            "Computed integral does not match exact integral in test instance " + ct.getDescription())
+            grid.makeGlobalGridCustom(2, 0, max_level-1, "level", ct)
+            np.testing.assert_almost_equal(compute_integral(grid, integrand), integral ** 2, 12,
+                                           "Computed integral does not match exact integral in test instance " + ct.getDescription())
+
     def performAddonTests(self):
-        # self.checkLoadNeeded()
-        # self.checkConstruction()
-        # self.checkBatchConstruct()
-        # self.checkUnstructuredL2()
+        self.checkLoadNeeded()
+        self.checkConstruction()
+        self.checkBatchConstruct()
+        self.checkUnstructuredL2()
         self.checkExoticQuadrature()
