@@ -38,7 +38,7 @@
 
 namespace TasGrid {
 
-// Specifies which algorithm is used in computing the Gauss quadrature nodes and weights in getGaussNodesAndWeights() (developer use only).
+// Specifies which algorithm is used in computing the Gauss quadrature points and weights in getGaussNodesAndWeights() (developer use only).
 static constexpr int gauss_quadrature_version = 2;
 
 /*!
