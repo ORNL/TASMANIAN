@@ -154,6 +154,9 @@ subroutine test_hierarchy_functions()
     real(C_DOUBLE), dimension(:), pointer :: integ
     integer :: i, j, n
 
+    integer(C_INT), dimension(:), pointer :: pntr, indx
+    real(C_DOUBLE), dimension(:), pointer :: vals
+
     grid = TasmanianGlobalGrid(2, 1, 1, tsg_type_level, tsg_rule_clenshawcurtis)
     points => grid%returnPoints()
 
@@ -177,7 +180,19 @@ subroutine test_hierarchy_functions()
     call grid%integrateHierarchicalFunctions(integ)
     call approx1d(3, integ, (/2.d0, 0.5d0, 0.5d0/))
 
-    deallocate( integ, ref_lagr, lagr, points )
+    ! doing the sparse test
+    n = grid%evaluateSparseHierarchicalFunctionsGetNZ((/0.5d0/), 1)
+    allocate( pntr(2), indx(n) )
+    allocate( vals(n) )
+    call grid%evaluateSparseHierarchicalFunctionsStatic((/0.5d0/), 1, pntr, indx, vals)
+
+    call tassert(n == 2)
+    call tassert(pntr(1) == 0 .and. pntr(2) == 2)
+    call tassert(indx(1) == 0 .and. indx(2) == 2)
+    call approx1d(2, vals, (/1.d0, 0.5d0/))
+
+    deallocate( pntr, indx )
+    deallocate( vals, integ, ref_lagr, lagr, points )
     call grid%release()
 endsubroutine
 
