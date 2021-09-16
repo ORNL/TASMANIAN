@@ -191,6 +191,9 @@ subroutine test_eval_sequence()
         yf(1, 1) = -333.33
         call grid1%evaluateFast(xf(:,1), yf(:,1))
         call approx2df(1, 1, yf, y_ref1f)
+
+        call tassert(grid1%getGPUID() == 0)
+        call grid1%setGPUID(0) ! just for coverage
     endif
 
     deallocate(points, values)
