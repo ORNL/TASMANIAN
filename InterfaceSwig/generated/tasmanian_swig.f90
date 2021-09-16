@@ -1745,7 +1745,6 @@ function tsgGetHierarchicalCoefficients(grid) result(fresult)
     real(C_DOUBLE), dimension(:, :), pointer :: fresult
 
     if (grid%isFourier()) then
-        write(*,*) "making large coeffs"
         allocate(fresult(grid%getNumOutputs(), 2 * grid%getNumLoaded()))
     else
         allocate(fresult(grid%getNumOutputs(), grid%getNumLoaded()))
