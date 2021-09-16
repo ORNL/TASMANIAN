@@ -1314,33 +1314,42 @@ void GridLocalPolynomial::setSurplusRefinement(double tolerance, TypeRefinement 
 
     needed = getRefinementCanidates(tolerance, criteria, output, level_limits, scale_correction);
 }
+std::vector<double> GridLocalPolynomial::getScaledCoefficients(int output, const double *scale_correction){
+    int num_points = points.getNumIndexes();
+    std::vector<double> norm = getNormalization();
+    int active_outputs = (output == -1) ? num_outputs : 1;
+    Utils::Wrapper2D<double const> scale(active_outputs, scale_correction);
+
+    std::vector<double> rescaled(num_points);
+
+    for(int i=0; i<num_points; i++){
+        const double *s = surpluses.getStrip(i);
+        const double *c = scale.getStrip(i);
+        if (output == -1){
+            rescaled[i] = 0.0;
+            for(int k=0; k<num_outputs; k++) rescaled[i] = std::max(rescaled[i], c[k] * std::abs(s[k]) / norm[k]);
+        }else{
+            rescaled[i] = c[0] * std::abs(s[output]) / norm[output];
+        }
+    }
+    return rescaled;
+}
 int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction){
     clearRefinement();
     int num_points = points.getNumIndexes();
     std::vector<bool> pmap(num_points); // point map, set to true if the point is to be kept, false otherwise
 
-    std::vector<double> norm = getNormalization();
-
     int active_outputs = (output == -1) ? num_outputs : 1;
-    Utils::Wrapper2D<double const> scale(active_outputs, scale_correction);
-    std::vector<double> default_scale;
-    if (scale_correction == nullptr){
-        default_scale = std::vector<double>(Utils::size_mult(active_outputs, num_points), 1.0);
-        scale = Utils::Wrapper2D<double const>(active_outputs, default_scale.data());
-    }
+    std::vector<double> rescaled = getScaledCoefficients(output, (scale_correction == nullptr) ?
+                                        std::vector<double>(num_points * active_outputs, 1.0).data() : scale_correction);
 
-    for(int i=0; i<num_points; i++){
-        bool small = true;
-        const double *s = surpluses.getStrip(i);
-        const double *c = scale.getStrip(i);
-        if (output == -1){
-            for(int k=0; k<num_outputs; k++) small = small && ((c[k] * std::abs(s[k]) / norm[k]) <= tolerance);
-        }else{
-            small = ((c[0] * std::abs(s[output]) / norm[output]) <= tolerance);
-        }
-        pmap[i] = !small;
-    }
+    for(int i=0; i<num_points; i++) pmap[i] = (rescaled[i] > tolerance);
 
+    return removeMappedPoints(pmap);
+}
+
+int GridLocalPolynomial::removeMappedPoints(std::vector<bool> const &pmap){
+    int num_points = points.getNumIndexes();
     int num_kept = 0; for(int i=0; i<num_points; i++) num_kept += (pmap[i]) ? 1 : 0;
 
     if (num_kept == num_points) return num_points; // trivial case, remove nothing
