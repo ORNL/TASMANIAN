@@ -187,6 +187,9 @@ subroutine test_eval_sequence()
         call grid1%evaluateBatch(xf(:,1), 4, yf(:,1))
         call approx2df(1, 4, yf, y_ref1f)
 
+        call grid1%enableAcceleration(tsg_accel_gpu_cuda, 0)
+        call grid%favorSparseAcceleration(.true.) ! has no effect
+
         ! reset yf to call eval fast in single precision
         yf(1, 1) = -333.33
         call grid1%evaluateFast(xf(:,1), yf(:,1))

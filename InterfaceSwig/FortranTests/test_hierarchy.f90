@@ -100,8 +100,6 @@ subroutine test_remove_by_coeff()
     real(C_DOUBLE), dimension(:,:), pointer :: points
     real(C_DOUBLE), dimension(:), pointer :: values
 
-    integer :: i, j
-
     grid = TasmanianLocalPolynomialGrid(2, 1, 1)
     points => grid%returnNeededPoints()
     allocate( values(grid%getNumNeeded()) )
@@ -141,13 +139,6 @@ subroutine test_remove_by_coeff()
     deallocate( points )
     points => reduced%returnLoadedPoints()
     call approx1d(6, points(:,1), (/0.d0, 0.d0, 0.d0, -1.d0, 0.d0, 1.d0/))
-
-
-!     do i = 1, 3
-!         do j = 1, 2
-!             write(*, *) points(j, i)
-!         enddo
-!     enddo
 
 endsubroutine
 
