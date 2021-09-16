@@ -215,6 +215,40 @@ class TestTasClass(unittest.TestCase):
         aPoints = gridA.getCandidateConstructionPoints("ipcurved", [5, 5, 2, 2], [1, 1]) # should generate empty output
         np.testing.assert_almost_equal(aPoints, np.empty([0, 0]), 14, "failed to generate empty list of construction points", True)
 
+    def checkRemovePoints(self):
+        '''
+        tests removePointsByHierarchicalCoefficient()
+        '''
+        grid = TasmanianSG.makeLocalPolynomialGrid(2, 1, 1)
+        aPoints = grid.getNeededPoints()
+        grid.loadNeededValues(np.exp(-aPoints[:,0]**2 -0.5*aPoints[:,1]**2).reshape((grid.getNumNeeded(), 1)))
+
+        reduced = TasmanianSG.TasmanianSparseGrid()
+
+        reduced.copyGrid(grid)
+        reduced.removePointsByHierarchicalCoefficient(0.6)
+        self.assertEqual(reduced.getNumPoints(), 3, "failed to remove points with threshold 0.6")
+        np.testing.assert_almost_equal(reduced.getLoadedPoints(), np.array([[0.0, 0.0], [-1.0, 0.0], [1.0, 0.0]]), 14, "failed reduce 1", True)
+
+        reduced.copyGrid(grid)
+        reduced.removePointsByHierarchicalCoefficient(0.7)
+        self.assertEqual(reduced.getNumPoints(), 1, "failed to remove points with threshold 0.7")
+        np.testing.assert_almost_equal(reduced.getLoadedPoints(), np.array([[0.0, 0.0]]), 14, "failed reduce 2", True)
+
+        reduced.copyGrid(grid)
+        reduced.removePointsByHierarchicalCoefficient(0.0, iNumKeep = 3)
+        self.assertEqual(reduced.getNumPoints(), 3, "failed to remove points down to 3")
+        np.testing.assert_almost_equal(reduced.getLoadedPoints(), np.array([[0.0, 0.0], [-1.0, 0.0], [1.0, 0.0]]), 14, "failed reduce 3", True)
+
+        reduced.copyGrid(grid)
+        reduced.removePointsByHierarchicalCoefficient(0.0, iNumKeep = 1)
+        self.assertEqual(reduced.getNumPoints(), 1, "failed to remove points down to 1")
+        np.testing.assert_almost_equal(reduced.getLoadedPoints(), np.array([[0.0, 0.0]]), 14, "failed reduce 4", True)
+
+        reduced.copyGrid(grid)
+        reduced.removePointsByHierarchicalCoefficient(0.0, aScaleCorrection = np.array([[1.0], [1.0], [1.0], [0.1], [0.1]]), iNumKeep = 3)
+        self.assertEqual(reduced.getNumPoints(), 3, "failed to remove corrected points")
+        np.testing.assert_almost_equal(reduced.getLoadedPoints(), np.array([[0.0, 0.0], [0.0, -1.0], [0.0, 1.0]]), 14, "failed reduce 5", True)
 
     def performRefinementTest(self):
         self.checkSetClear()
@@ -222,3 +256,4 @@ class TestTasClass(unittest.TestCase):
         self.checkLocalpSurplus()
         self.checkFileIO()
         self.checkConstruction()
+        self.checkRemovePoints()

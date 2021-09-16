@@ -2011,6 +2011,45 @@ SWIGEXPORT void _wrap_TasmanianSparseGrid_removePointsByHierarchicalCoefficient_
 }
 
 
+SWIGEXPORT void _wrap_TasmanianSparseGrid_removePointsByHierarchicalCoefficient__SWIG_3(SwigClassWrapper *farg1, int const *farg2, int const *farg3, double *farg4) {
+  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  double *arg4 = (double *) 0 ;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::removePointsByHierarchicalCoefficient(int,int,double const *)", return );
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (int)(*farg2);
+  arg3 = (int)(*farg3);
+  arg4 = (double *)(farg4);
+  (arg1)->removePointsByHierarchicalCoefficient(arg2,arg3,(double const *)arg4);
+}
+
+
+SWIGEXPORT void _wrap_TasmanianSparseGrid_removePointsByHierarchicalCoefficient__SWIG_4(SwigClassWrapper *farg1, int const *farg2, int const *farg3) {
+  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::removePointsByHierarchicalCoefficient(int,int)", return );
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (int)(*farg2);
+  arg3 = (int)(*farg3);
+  (arg1)->removePointsByHierarchicalCoefficient(arg2,arg3);
+}
+
+
+SWIGEXPORT void _wrap_TasmanianSparseGrid_removePointsByHierarchicalCoefficient__SWIG_5(SwigClassWrapper *farg1, int const *farg2) {
+  TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;
+  int arg2 ;
+  
+  SWIG_check_nonnull(farg1->cptr, "TasGrid::TasmanianSparseGrid *", "TasmanianSparseGrid", "TasGrid::TasmanianSparseGrid::removePointsByHierarchicalCoefficient(int)", return );
+  arg1 = (TasGrid::TasmanianSparseGrid *)farg1->cptr;
+  arg2 = (int)(*farg2);
+  (arg1)->removePointsByHierarchicalCoefficient(arg2);
+}
+
+
 SWIGEXPORT int _wrap_TasmanianSparseGrid_evaluateSparseHierarchicalFunctionsGetNZ(SwigClassWrapper *farg1, double *farg2, int const *farg3) {
   int fresult ;
   TasGrid::TasmanianSparseGrid *arg1 = (TasGrid::TasmanianSparseGrid *) 0 ;

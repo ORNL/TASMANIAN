@@ -96,7 +96,21 @@ public:
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction);
     void clearRefinement() override;
     void mergeRefinement() override;
+    /*!
+     * \brief Returns a vector with the normalized and rescaled coefficients.
+     *
+     * \param output indicates which output to use or can be -1 to indicate the use of all outputs (returns the max for each output)
+     * \param scale_correction user provided corrections that rescale the coefficients by spacial or other importance
+     */
+    std::vector<double> getScaledCoefficients(int output, const double *scale_correction);
     int removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction); // returns the number of points kept
+    void removePointsByHierarchicalCoefficient(int new_num_points, int output, const double *scale_correction);
+    /*!
+     * \brief Remove all points marked as \b false in the \b pmap.
+     *
+     * \param pmap is a vector with size equal to the loaded points and flags as \b false each point that should be removed.
+     */
+    int removeMappedPoints(std::vector<bool> const &pmap);
 
     void beginConstruction() override;
     void writeConstructionData(std::ostream &os, bool) const override;
