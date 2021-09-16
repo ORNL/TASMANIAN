@@ -39,15 +39,15 @@
 // Test the output of getGaussNodesAndWeights().
 inline bool testNodeAndWeightSizes() {
     bool passed = true;
-    std::vector<std::vector<double>> nodes_cache, weights_cache;
+    std::vector<std::vector<double>> points_cache, weights_cache;
     int nref = 5;
     std::vector<double> ref_weights(nref), ref_points(nref);
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
     // n = 1, 2, 5
     std::vector<size_t> n_vec = {1, 2, 5};
     for (auto n : n_vec) {
-        TasGrid::getGaussNodesAndWeights<true>(n, ref_points, ref_weights, nodes_cache, weights_cache);
-        if (nodes_cache.size() != n) {
+        TasGrid::getGaussNodesAndWeights<true>(n, ref_points, ref_weights, points_cache, weights_cache);
+        if (points_cache.size() != n) {
             std::cout << "ERROR: Test failed in testNodeAndWeightSizes() for n = " << n << std::endl;
             passed = false;
         }
