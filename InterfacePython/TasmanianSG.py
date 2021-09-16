@@ -189,7 +189,7 @@ pLibTSG.tsgGetIExactCustomTabulated.argtypes = [c_void_p, c_int];
 pLibTSG.tsgGetQExactCustomTabulated.argtypes = [c_void_p, c_int];
 pLibTSG.tsgGetDescriptionCustomTabulated.argtypes = [c_void_p];
 pLibTSG.tsgGetWeightsNodesStaticCustomTabulated.argtypes = [c_void_p, c_int, c_void_p, c_void_p]
-pLibTSG.tsgMakeCustomTabulatedFromData.argtype = [c_int, c_void_p, c_void_p, c_void_p, c_void_p, c_char_p]
+pLibTSG.tsgMakeCustomTabulatedFromData.argtype = [c_int, POINTER(c_int), POINTER(c_int), POINTER(c_double), POINTER(c_double), c_char_p]
 
 # Specifications for other C functions.
 pLibTSG.tsgPythonGetGlobalPolynomialSpace.restype = POINTER(c_int)
@@ -2428,7 +2428,7 @@ def copyGrid(source, iOutputsBegin = 0, iOutputsEnd = -1):
     grid.copyGrid(source, iOutputsBegin, iOutputsEnd)
     return grid
 
-def np_arr_to_ctype(np_data, np_type=np.int32):
+def np_arr_to_ctype(np_data, np_type):
     '''
     Utility function that safely converts a NumPy array to a C pointer.
     '''
@@ -2559,7 +2559,13 @@ def makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights
     effective_description = bytes(description, encoding='utf8') if sys.version_info.major == 3 else description
     effective_nodes = np.concatenate(nodes) if len(nodes) > 0 else np.array([])
     effective_weights = np.concatenate(weights) if len(weights) > 0 else np.array([])
-    ct.pCustomTabulated = pLibTSG.tsgMakeCustomTabulatedFromData(c_int(num_levels), np_arr_to_ctype(num_nodes), np_arr_to_ctype(precision),
+    pNumNodes = None
+    if (num_levels > 0):
+        pNumNodes = (c_int * num_levels)()
+        for iI in range(num_levels):
+            pNumNodes[iI] = num_nodes[iI]
+    ct.pCustomTabulated = pLibTSG.tsgMakeCustomTabulatedFromData(c_int(num_levels), pNumNodes,
+                                                                 np_arr_to_ctype(precision, np.int32),
                                                                  np_arr_to_ctype(effective_nodes, np.float64),
                                                                  np_arr_to_ctype(effective_weights, np.float64),
                                                                  c_char_p(effective_description))
