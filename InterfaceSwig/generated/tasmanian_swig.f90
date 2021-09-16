@@ -270,6 +270,9 @@ module tasmanian_swig
   procedure, private :: swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_0
   procedure, private :: swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_1
   procedure, private :: swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_2
+  procedure, private :: swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_3
+  procedure, private :: swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_4
+  procedure, private :: swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_5
   procedure :: evaluateSparseHierarchicalFunctionsGetNZ => swigf_TasmanianSparseGrid_evaluateSparseHierarchicalFunct1CQM1I
   procedure :: evaluateSparseHierarchicalFunctionsStatic => swigf_TasmanianSparseGrid_evaluateSparseHierarchicalFunct1HRJEE
   procedure, private :: swigf_TasmanianSparseGrid_evaluateFast__SWIG_2
@@ -297,7 +300,10 @@ module tasmanian_swig
     swigf_TasmanianSparseGrid_copyGrid__SWIG_2
   generic :: removePointsByHierarchicalCoefficient => swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_0, &
     swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_1, &
-    swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_2
+    swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_2, &
+    swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_3, &
+    swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_4, &
+    swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_5
   generic :: enableAcceleration => swigf_TasmanianSparseGrid_enableAcceleration__SWIG_0, &
     swigf_TasmanianSparseGrid_enableAcceleration__SWIG_1
   generic :: integrate => swigf_TasmanianSparseGrid_integrate__SWIG_1
@@ -1376,6 +1382,33 @@ use, intrinsic :: ISO_C_BINDING
 import :: swigclasswrapper
 type(SwigClassWrapper), intent(in) :: farg1
 real(C_DOUBLE), intent(in) :: farg2
+end subroutine
+
+subroutine swigc_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_3(farg1, farg2, farg3, farg4) &
+bind(C, name="_wrap_TasmanianSparseGrid_removePointsByHierarchicalCoefficient__SWIG_3")
+use, intrinsic :: ISO_C_BINDING
+import :: swigclasswrapper
+type(SwigClassWrapper), intent(in) :: farg1
+integer(C_INT), intent(in) :: farg2
+integer(C_INT), intent(in) :: farg3
+type(C_PTR), value :: farg4
+end subroutine
+
+subroutine swigc_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_4(farg1, farg2, farg3) &
+bind(C, name="_wrap_TasmanianSparseGrid_removePointsByHierarchicalCoefficient__SWIG_4")
+use, intrinsic :: ISO_C_BINDING
+import :: swigclasswrapper
+type(SwigClassWrapper), intent(in) :: farg1
+integer(C_INT), intent(in) :: farg2
+integer(C_INT), intent(in) :: farg3
+end subroutine
+
+subroutine swigc_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_5(farg1, farg2) &
+bind(C, name="_wrap_TasmanianSparseGrid_removePointsByHierarchicalCoefficient__SWIG_5")
+use, intrinsic :: ISO_C_BINDING
+import :: swigclasswrapper
+type(SwigClassWrapper), intent(in) :: farg1
+integer(C_INT), intent(in) :: farg2
 end subroutine
 
 function swigc_TasmanianSparseGrid_evaluateSparseHierarchicalFunct1CQM1I(farg1, farg2, farg3) &
@@ -3523,6 +3556,51 @@ real(C_DOUBLE) :: farg2
 farg1 = self%swigdata
 farg2 = tolerance
 call swigc_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_2(farg1, farg2)
+end subroutine
+
+subroutine swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_3(self, num_new_points, output, scale_correction)
+use, intrinsic :: ISO_C_BINDING
+class(TasmanianSparseGrid), intent(in) :: self
+integer(C_INT), intent(in) :: num_new_points
+integer(C_INT), intent(in) :: output
+real(C_DOUBLE), dimension(*), target :: scale_correction
+type(SwigClassWrapper) :: farg1 
+integer(C_INT) :: farg2 
+integer(C_INT) :: farg3 
+type(C_PTR) :: farg4 
+
+farg1 = self%swigdata
+farg2 = num_new_points
+farg3 = output
+farg4 = c_loc(scale_correction)
+call swigc_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_3(farg1, farg2, farg3, farg4)
+end subroutine
+
+subroutine swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_4(self, num_new_points, output)
+use, intrinsic :: ISO_C_BINDING
+class(TasmanianSparseGrid), intent(in) :: self
+integer(C_INT), intent(in) :: num_new_points
+integer(C_INT), intent(in) :: output
+type(SwigClassWrapper) :: farg1 
+integer(C_INT) :: farg2 
+integer(C_INT) :: farg3 
+
+farg1 = self%swigdata
+farg2 = num_new_points
+farg3 = output
+call swigc_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_4(farg1, farg2, farg3)
+end subroutine
+
+subroutine swigf_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_5(self, num_new_points)
+use, intrinsic :: ISO_C_BINDING
+class(TasmanianSparseGrid), intent(in) :: self
+integer(C_INT), intent(in) :: num_new_points
+type(SwigClassWrapper) :: farg1 
+integer(C_INT) :: farg2 
+
+farg1 = self%swigdata
+farg2 = num_new_points
+call swigc_TasmanianSparseGrid_removePointsByHierarchi1EK9TY__SWIG_5(farg1, farg2)
 end subroutine
 
 function swigf_TasmanianSparseGrid_evaluateSparseHierarchicalFunct1CQM1I(self, x, num_x) &
