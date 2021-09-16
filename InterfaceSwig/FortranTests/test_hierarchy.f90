@@ -92,8 +92,68 @@ subroutine test_set_get_ccoeff()
     call gridB%release()
 end subroutine
 
+subroutine test_remove_by_coeff()
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid) :: grid, reduced
+    real(C_DOUBLE), dimension(:,:), pointer :: points
+    real(C_DOUBLE), dimension(:), pointer :: values
+
+    integer :: i, j
+
+    grid = TasmanianLocalPolynomialGrid(2, 1, 1)
+    points => grid%returnNeededPoints()
+    allocate( values(grid%getNumNeeded()) )
+    values(:) = exp(-points(1,:)**2  - 0.5 *points(2,:)**2)
+    call grid%loadNeededValues(values)
+
+    reduced = TasmanianSparseGrid()
+
+    call reduced%copyGrid(grid)
+    call reduced%removePointsByHierarchicalCoefficient(0.6d0)
+    deallocate( points )
+    points => reduced%returnLoadedPoints()
+    call approx1d(6, points(:,1), (/0.d0, 0.d0, -1.d0, 0.d0, 1.d0, 0.d0/))
+
+    call reduced%copyGrid(grid)
+    call reduced%removePointsByHierarchicalCoefficient(0.7d0, 0)
+    call tassert( reduced%getNumLoaded() == 1 )
+
+    call reduced%copyGrid(grid)
+    call reduced%removePointsByHierarchicalCoefficient(3)
+    deallocate( points )
+    points => reduced%returnLoadedPoints()
+    call approx1d(6, points(:,1), (/0.d0, 0.d0, -1.d0, 0.d0, 1.d0, 0.d0/))
+
+    call reduced%copyGrid(grid)
+    call reduced%removePointsByHierarchicalCoefficient(1, 0)
+    call tassert( reduced%getNumLoaded() == 1 )
+
+    call reduced%copyGrid(grid)
+    call reduced%removePointsByHierarchicalCoefficient(3, 0, scale_correction=(/1.d0, 1.d0, 1.d0, 0.1d0, 0.1d0 /))
+    deallocate( points )
+    points => reduced%returnLoadedPoints()
+    call approx1d(6, points(:,1), (/0.d0, 0.d0, 0.d0, -1.d0, 0.d0, 1.d0/))
+
+    call reduced%copyGrid(grid)
+    call reduced%removePointsByHierarchicalCoefficient(0.3d0, 0, scale_correction=(/1.d0, 1.d0, 1.d0, 0.1d0, 0.1d0 /))
+    deallocate( points )
+    points => reduced%returnLoadedPoints()
+    call approx1d(6, points(:,1), (/0.d0, 0.d0, 0.d0, -1.d0, 0.d0, 1.d0/))
+
+
+!     do i = 1, 3
+!         do j = 1, 2
+!             write(*, *) points(j, i)
+!         enddo
+!     enddo
+
+endsubroutine
+
 subroutine test_hierarchy_transforms()
     call test_set_get_rcoeff()
     call test_set_get_ccoeff()
+    call test_remove_by_coeff()
     write(*,*) "  Performing tests on hierarchy coefficients:      PASS"
 end subroutine
