@@ -414,14 +414,11 @@ class TestTasClass(unittest.TestCase):
         '''
         Test reading and writing of the CustomTabulated class.
         '''
-        rng = np.random.default_rng(777);
         description = "testCT"
-        def create_nodes(j, in_rng):
-            nodes = in_rng.random(j) * 2.0 - 1.0
-            nodes.sort()
-            return nodes
-        def create_weights(j, in_rng):
-            weights = in_rng.random(j)
+        def create_nodes(j):
+            return np.linspace(-1.0, 1.0, num=j)
+        def create_weights(j):
+            weights = np.linspace(0.0, 1.0, num=j)
             weights = 2.0 * weights / weights.sum()
             return weights
         # Read and write from explicitly given data.
@@ -429,8 +426,8 @@ class TestTasClass(unittest.TestCase):
             num_levels = i
             num_nodes = np.array([3*(j+1) for j in range(i)])
             precision = np.array([2*(j+1)-1 for j in range(i)])
-            nodes = [create_nodes(j, rng) for j in num_nodes]
-            weights = [create_weights(j, rng) for j in num_nodes]
+            nodes = [create_nodes(j) for j in num_nodes]
+            weights = [create_weights(j) for j in num_nodes]
             ctA = TasmanianSG.makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights, description)            # .
             ctB = TasmanianSG.CustomTabulated()
             ctA.write("testSave")
