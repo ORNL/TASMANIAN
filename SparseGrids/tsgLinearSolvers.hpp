@@ -121,14 +121,6 @@ namespace TasmanianTridiagonalSolver{
     //! \brief (decompose_version == 2) Based on the ALGOL code for Golub's 1967 report "Calculation of Gauss Quadrature Rules".
     void decompose2(std::vector<double> &diag, std::vector<double> &off_diag, const double mu0, std::vector<double> &nodes,
                     std::vector<double> &weights);
-
-    //! \internal
-    //! \brief Runs decompose() and decompose2() over a vector of lengths \b nvec and a given quadrature type \b qtype and returns their
-    //! runtimes as output. The first output vector contains the decompose() times while the second one contains the decompose2() times.
-    //! \endinternal
-    std::vector<std::vector<double>> getDecomposeTimes(std::vector<int> &nvec, TasGrid::TypeOneDRule qtype, double alpha=0.0,
-                                                       double beta=0.0);
-
 }
 
 //! \internal
