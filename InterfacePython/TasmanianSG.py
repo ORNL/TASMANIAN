@@ -142,6 +142,7 @@ pLibTSG.tsgSetLocalSurplusRefinement.argtypes = [c_void_p, c_double, c_char_p, c
 pLibTSG.tsgClearRefinement.argtypes = [c_void_p]
 pLibTSG.tsgMergeRefinement.argtypes = [c_void_p]
 pLibTSG.tsgRemovePointsByHierarchicalCoefficient.argtypes = [c_void_p, c_double, c_int, POINTER(c_double)]
+pLibTSG.tsgRemovePointsByHierarchicalCoefficientHardCutoff.argtypes = [c_void_p, c_int, c_int, POINTER(c_double)]
 pLibTSG.tsgEvaluateHierarchicalFunctions.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_double)]
 pLibTSG.tsgGetHierarchicalSupportStatic.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgSetHierarchicalCoefficients.argtypes = [c_void_p, POINTER(c_double)]
@@ -1836,18 +1837,17 @@ class TasmanianSparseGrid:
         '''
         pLibTSG.tsgFinishConstruction(self.pGrid)
 
-    def removePointsByHierarchicalCoefficient(self, fTolerance, iOutput = -1, aScaleCorrection = []):
+    def removePointsByHierarchicalCoefficient(self, fTolerance, iOutput = -1, aScaleCorrection = [], iNumKeep = -1):
         '''
-        EXPERIMENTAL CAPABILITY
-
         removes any points in the grid with relative surplus that
-        exceeds the tolerance
-        applies only to local polynomial grids
+        exceeds the tolerance or keeps the set number of points
+        with largest surplus
 
         fTolerance: float (positive)
                     the relative surplus tolerance, i.e.,
                     we keep only for points associated with surplus
                     that exceeds the tolerance
+                    if iNumKeep is positive, then fTolerance is ignored
 
         iOutput: int (indicates the output to use)
                  selects which output to consider
@@ -1861,10 +1861,14 @@ class TasmanianSparseGrid:
                            if iOutputs > -1, then using 1D array with
                            one weight per point
 
+        iNumKeep: int (positive or equal to -1)
+                  indicates the number of points to keep
+                  if set to -1 then fTolerance is used as a cutoff
+                  if positive then the given number of points will be kept
         '''
         if (not self.isLocalPolynomial()):
             raise TasmanianInputError("removePointsByHierarchicalCoefficient", "ERROR: calling removePointsByHierarchicalCoefficient for a grid that isn't local polynomial")
-        if (fTolerance <= 0.0):
+        if (iNumKeep == -1 and fTolerance <= 0.0):
             raise TasmanianInputError("fTolerance", "ERROR: fTolerance must be a positive integer")
         if (iOutput < -1):
             raise TasmanianInputError("iOutput", "ERROR: iOutput should be -1 or a non-negative integer")
@@ -1872,10 +1876,9 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("iOutput", "ERROR: iOutput cannot exceed the index of the last output {0:1d}".format(self.getNumOutputs() - 1))
         if (self.getNumLoaded() == 0):
             raise TasmanianInputError("removePointsByHierarchicalCoefficient", "ERROR: calling removePointsByHierarchicalCoefficient when no points are loades")
-        if (len(aScaleCorrection) == 0):
-            pNullPointer = None
-            pLibTSG.tsgRemovePointsByHierarchicalCoefficient(self.pGrid, fTolerance, iOutput, pNullPointer)
-        else:
+        if (iNumKeep == 0 or iNumKeep < -1 or iNumKeep > self.getNumLoaded()):
+            raise TasmanianInputError("iNumKeep", "ERROR: iNumKeep should be either -1 or positive without exceeding the number of loaded points.")
+        if (len(aScaleCorrection) > 0):
             lShape = aScaleCorrection.shape
             if ((iOutput == -1) and (self.getNumOutputs() > 1)):
                 if (len(lShape) != 2):
@@ -1889,10 +1892,21 @@ class TasmanianSparseGrid:
                     raise TasmanianInputError("aScaleCorrection", "ERROR: calling aScaleCorrection should be a 1D array")
                 if (lShape[0] != self.getNumLoaded()):
                     raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[0] should match getNumLoaded()")
+
+        if (len(aScaleCorrection) == 0):
+            if (iNumKeep == -1):
+                pLibTSG.tsgRemovePointsByHierarchicalCoefficient(self.pGrid, fTolerance, iOutput, None)
+            else:
+                pLibTSG.tsgRemovePointsByHierarchicalCoefficientHardCutoff(self.pGrid, iNumKeep, iOutput, None)
+        else:
+            lShape = aScaleCorrection.shape
             iNumWeights = lShape[0]
             if (iOutput == -1):
                 iNumWeights *= lShape[1]
-            pLibTSG.tsgRemovePointsByHierarchicalCoefficient(self.pGrid, fTolerance, iOutput, np.ctypeslib.as_ctypes(aScaleCorrection.reshape([iNumWeights,])))
+            if (iNumKeep == -1):
+                pLibTSG.tsgRemovePointsByHierarchicalCoefficient(self.pGrid, fTolerance, iOutput,           np.ctypeslib.as_ctypes(aScaleCorrection.reshape([iNumWeights,])))
+            else:
+                pLibTSG.tsgRemovePointsByHierarchicalCoefficientHardCutoff(self.pGrid, iNumKeep, iOutput,           np.ctypeslib.as_ctypes(aScaleCorrection.reshape([iNumWeights,])))
 
     def getHierarchicalCoefficients(self):
         '''

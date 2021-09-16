@@ -407,6 +407,9 @@ void tsgFinishConstruction(void *grid){
 void tsgRemovePointsByHierarchicalCoefficient(void *grid, double tolerance, int output, const double *scale_correction){
     ((TasmanianSparseGrid*) grid)->removePointsByHierarchicalCoefficient(tolerance, output, scale_correction);
 }
+void tsgRemovePointsByHierarchicalCoefficientHardCutoff(void *grid, int num_new, int output, const double *scale_correction){
+    ((TasmanianSparseGrid*) grid)->removePointsByHierarchicalCoefficient(num_new, output, scale_correction);
+}
 
 void tsgEvaluateHierarchicalFunctions(void *grid, const double *x, int num_x, double *y){
     ((TasmanianSparseGrid*) grid)->evaluateHierarchicalFunctions(x, num_x, y);
