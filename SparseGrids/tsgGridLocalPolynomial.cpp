@@ -1337,15 +1337,36 @@ std::vector<double> GridLocalPolynomial::getScaledCoefficients(int output, const
 int GridLocalPolynomial::removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction){
     clearRefinement();
     int num_points = points.getNumIndexes();
-    std::vector<bool> pmap(num_points); // point map, set to true if the point is to be kept, false otherwise
 
     int active_outputs = (output == -1) ? num_outputs : 1;
     std::vector<double> rescaled = getScaledCoefficients(output, (scale_correction == nullptr) ?
                                         std::vector<double>(num_points * active_outputs, 1.0).data() : scale_correction);
 
+    std::vector<bool> pmap(num_points); // point map, set to true if the point is to be kept, false otherwise
     for(int i=0; i<num_points; i++) pmap[i] = (rescaled[i] > tolerance);
 
     return removeMappedPoints(pmap);
+}
+
+void GridLocalPolynomial::removePointsByHierarchicalCoefficient(int new_num_points, int output, const double *scale_correction){
+    clearRefinement();
+    int num_points = points.getNumIndexes();
+
+    int active_outputs = (output == -1) ? num_outputs : 1;
+    std::vector<double> rescaled = getScaledCoefficients(output, (scale_correction == nullptr) ?
+                                        std::vector<double>(num_points * active_outputs, 1.0).data() : scale_correction);
+
+    std::vector<std::pair<double, int>> ordered(num_points);
+    for(int i=0; i<num_points; i++)
+        ordered[i] = std::make_pair(rescaled[i], i);
+
+    std::sort(ordered.begin(), ordered.end(),
+              [](std::pair<double, int> const& a, std::pair<double, int> const& b) ->bool{ return (a.first > b.first); });
+
+    std::vector<bool> pmap(num_points, false);
+    for(int i=0; i<new_num_points; i++) pmap[ordered[i].second] = true;
+
+    removeMappedPoints(pmap);
 }
 
 int GridLocalPolynomial::removeMappedPoints(std::vector<bool> const &pmap){

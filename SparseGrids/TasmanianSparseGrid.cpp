@@ -1016,6 +1016,14 @@ void TasmanianSparseGrid::removePointsByHierarchicalCoefficient(double tolerance
         }
     }
 }
+void TasmanianSparseGrid::removePointsByHierarchicalCoefficient(int num_new_points, int output, const double *scale_correction){
+    if (!isLocalPolynomial()){
+        throw std::runtime_error("ERROR: removePointsBySurplus() called for a grid that is not Local Polynomial.");
+    }else{
+        if (num_new_points == 0){ clear(); return; }
+        get<GridLocalPolynomial>()->removePointsByHierarchicalCoefficient(num_new_points, output, scale_correction);
+    }
+}
 
 void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     Data2D<double> x_tmp;

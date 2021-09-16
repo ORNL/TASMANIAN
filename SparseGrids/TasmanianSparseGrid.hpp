@@ -1898,6 +1898,19 @@ public:
      * \throws std::runtime_error if the grid is not Local Polynomial.
      */
     void removePointsByHierarchicalCoefficient(double tolerance, int output = -1, const double *scale_correction = nullptr);
+    /*!
+     * \brief Keeps only the given number of points with largest scaled surpluses.
+     *
+     * Similar to removePointsByHierarchicalCoefficient(), but the points are not removed based on a comparison to a tolerance.
+     * Instead, only the given number of points is kept so that the remaining points have the largest scaled surplus coefficients.
+     *
+     * \param num_new_points the number of points to keep in the grid.
+     * \param output is the output to use for the tolerance test, can be set to -1 to use all outputs.
+     * \param scale_correction is the same as in the call to setSurplusRefinement().
+     *
+     * \throws std::runtime_error if the grid is not Local Polynomial.
+     */
+    void removePointsByHierarchicalCoefficient(int num_new_points, int output = -1, const double *scale_correction = nullptr);
 
     #ifndef __TASMANIAN_DOXYGEN_SKIP_INTERNAL
     /*!

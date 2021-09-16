@@ -104,6 +104,7 @@ public:
      */
     std::vector<double> getScaledCoefficients(int output, const double *scale_correction);
     int removePointsByHierarchicalCoefficient(double tolerance, int output, const double *scale_correction); // returns the number of points kept
+    void removePointsByHierarchicalCoefficient(int new_num_points, int output, const double *scale_correction);
     /*!
      * \brief Remove all points marked as \b false in the \b pmap.
      *
