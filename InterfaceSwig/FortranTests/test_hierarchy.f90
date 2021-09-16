@@ -92,8 +92,114 @@ subroutine test_set_get_ccoeff()
     call gridB%release()
 end subroutine
 
+subroutine test_remove_by_coeff()
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid) :: grid, reduced
+    real(C_DOUBLE), dimension(:,:), pointer :: points
+    real(C_DOUBLE), dimension(:), pointer :: values
+
+    grid = TasmanianLocalPolynomialGrid(2, 1, 1)
+    points => grid%returnNeededPoints()
+    allocate( values(grid%getNumNeeded()) )
+    values(:) = exp(-points(1,:)**2  - 0.5 *points(2,:)**2)
+    call grid%loadNeededValues(values)
+
+    reduced = TasmanianSparseGrid()
+
+    call reduced%copyGrid(grid)
+    call reduced%removePointsByHierarchicalCoefficient(0.6d0)
+    deallocate( points )
+    points => reduced%returnLoadedPoints()
+    call approx1d(6, points(:,1), (/0.d0, 0.d0, -1.d0, 0.d0, 1.d0, 0.d0/))
+
+    call reduced%copyGrid(grid)
+    call reduced%removePointsByHierarchicalCoefficient(0.7d0, 0)
+    call tassert( reduced%getNumLoaded() == 1 )
+
+    call reduced%copyGrid(grid)
+    call reduced%removePointsByHierarchicalCoefficient(3)
+    deallocate( points )
+    points => reduced%returnLoadedPoints()
+    call approx1d(6, points(:,1), (/0.d0, 0.d0, -1.d0, 0.d0, 1.d0, 0.d0/))
+
+    call reduced%copyGrid(grid)
+    call reduced%removePointsByHierarchicalCoefficient(1, 0)
+    call tassert( reduced%getNumLoaded() == 1 )
+
+    call reduced%copyGrid(grid)
+    call reduced%removePointsByHierarchicalCoefficient(3, 0, scale_correction=(/1.d0, 1.d0, 1.d0, 0.1d0, 0.1d0 /))
+    deallocate( points )
+    points => reduced%returnLoadedPoints()
+    call approx1d(6, points(:,1), (/0.d0, 0.d0, 0.d0, -1.d0, 0.d0, 1.d0/))
+
+    call reduced%copyGrid(grid)
+    call reduced%removePointsByHierarchicalCoefficient(0.3d0, 0, scale_correction=(/1.d0, 1.d0, 1.d0, 0.1d0, 0.1d0 /))
+    deallocate( points )
+    points => reduced%returnLoadedPoints()
+    call approx1d(6, points(:,1), (/0.d0, 0.d0, 0.d0, -1.d0, 0.d0, 1.d0/))
+
+    deallocate( points, values )
+    call reduced%release()
+    call grid%release()
+endsubroutine
+
+subroutine test_hierarchy_functions()
+    use Tasmanian
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(TasmanianSparseGrid) :: grid
+    real(C_DOUBLE), dimension(:,:), pointer :: points, lagr, ref_lagr
+    real(C_DOUBLE), dimension(:), pointer :: integ
+    integer :: i, j, n
+
+    integer(C_INT), dimension(:), pointer :: pntr, indx
+    real(C_DOUBLE), dimension(:), pointer :: vals
+
+    grid = TasmanianGlobalGrid(2, 1, 1, tsg_type_level, tsg_rule_clenshawcurtis)
+    points => grid%returnPoints()
+
+    n = grid%getNumPoints()
+    allocate( lagr(n, n), ref_lagr(n, n) )
+    do j = 1, n
+        do i = 1, n
+            lagr(i, j) = 5.d0
+            ref_lagr(i, j) = 0.d0
+        enddo
+    enddo
+    do i = 1, n
+        ref_lagr(i, i) = 1.d0
+    enddo
+
+    call grid%evaluateHierarchicalFunctions(points(:,1), n, lagr(:,1))
+    call approx2d(n, n, lagr, ref_lagr)
+
+    call grid%makeLocalPolynomialGrid(1, 1, 1)
+    allocate( integ(3) )
+    call grid%integrateHierarchicalFunctions(integ)
+    call approx1d(3, integ, (/2.d0, 0.5d0, 0.5d0/))
+
+    ! doing the sparse test
+    n = grid%evaluateSparseHierarchicalFunctionsGetNZ((/0.5d0/), 1)
+    allocate( pntr(2), indx(n) )
+    allocate( vals(n) )
+    call grid%evaluateSparseHierarchicalFunctionsStatic((/0.5d0/), 1, pntr, indx, vals)
+
+    call tassert(n == 2)
+    call tassert(pntr(1) == 0 .and. pntr(2) == 2)
+    call tassert(indx(1) == 0 .and. indx(2) == 2)
+    call approx1d(2, vals, (/1.d0, 0.5d0/))
+
+    deallocate( pntr, indx )
+    deallocate( vals, integ, ref_lagr, lagr, points )
+    call grid%release()
+endsubroutine
+
 subroutine test_hierarchy_transforms()
     call test_set_get_rcoeff()
     call test_set_get_ccoeff()
+    call test_remove_by_coeff()
+    call test_hierarchy_functions()
     write(*,*) "  Performing tests on hierarchy coefficients:      PASS"
 end subroutine
