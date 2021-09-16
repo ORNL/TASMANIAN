@@ -161,7 +161,7 @@ class TestTasClass(unittest.TestCase):
                    ["grid.makeLocalPolynomialGrid(2, 3, 2, 1, 'localp'); grid.loadNeededPoints(np.ones([grid.getNumNeeded(), grid.getNumOutputs()])); grid.removePointsByHierarchicalCoefficient(1.E-4, -1, np.ones([13,3]));", "notError"],
                    ["grid.makeLocalPolynomialGrid(2, 3, 2, 1, 'localp'); grid.loadNeededPoints(np.ones([grid.getNumNeeded(), grid.getNumOutputs()])); grid.removePointsByHierarchicalCoefficient(1.E-4, 0,  np.ones([13,3]));", "aScaleCorrection"],
                    ["grid.makeLocalPolynomialGrid(2, 3, 2, 1, 'localp'); grid.loadNeededPoints(np.ones([grid.getNumNeeded(), grid.getNumOutputs()])); grid.removePointsByHierarchicalCoefficient(1.E-4, 0,  np.ones([11,]));", "aScaleCorrection"],
-                   ["grid.makeLocalPolynomialGrid(2, 3, 2, 1, 'localp'); grid.loadNeededPoints(np.ones([grid.getNumNeeded(), grid.getNumOutputs()])); grid.removePointsByHierarchicalCoefficient(1.E-4, 0,  np.ones([13,]));", "notError"],
+                   ["grid.makeLocalPolynomialGrid(2, 3, 2, 1, 'localp'); grid.loadNeededPoints(np.ones([grid.getNumNeeded(), grid.getNumOutputs()])); grid.removePointsByHierarchicalCoefficient(1.E-4, 0,  np.ones([13,1]));", "notError"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); grid.evaluateHierarchicalFunctions(np.array([[1.0, 1.0], [0.5, 0.3]]));", "notError"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); grid.evaluateHierarchicalFunctions(np.array([[1.0,], [0.5,]]));", "llfX"],
                    ["grid.makeGlobalGrid(2, 1, 2, 'level', 'clenshaw-curtis'); grid.evaluateHierarchicalFunctions(np.array([1.0, 1.0]));", "llfX"],

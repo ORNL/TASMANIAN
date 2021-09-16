@@ -1880,18 +1880,14 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("iNumKeep", "ERROR: iNumKeep should be either -1 or positive without exceeding the number of loaded points.")
         if (len(aScaleCorrection) > 0):
             lShape = aScaleCorrection.shape
-            if ((iOutput == -1) and (self.getNumOutputs() > 1)):
-                if (len(lShape) != 2):
-                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection should be a 2D array")
-                if (lShape[0] != self.getNumLoaded()):
-                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[0] should match getNumLoaded()")
-                if (lShape[1] != self.getNumOutputs()):
-                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[1] should match getNumOutputs()")
-            else:
-                if (len(lShape) != 1):
-                    raise TasmanianInputError("aScaleCorrection", "ERROR: calling aScaleCorrection should be a 1D array")
-                if (lShape[0] != self.getNumLoaded()):
-                    raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[0] should match getNumLoaded()")
+            if (len(lShape) != 2):
+                raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection should be a 2D array")
+            if (lShape[0] != self.getNumLoaded()):
+                raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[0] should match getNumLoaded()")
+            if (iOutput == -1 and lShape[1] != self.getNumOutputs()):
+                raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[1] should match getNumOutputs()")
+            if (iOutput != -1 and lShape[1] != 1):
+                raise TasmanianInputError("aScaleCorrection", "ERROR: aScaleCorrection.shape[1] should be 1")
 
         if (len(aScaleCorrection) == 0):
             if (iNumKeep == -1):
