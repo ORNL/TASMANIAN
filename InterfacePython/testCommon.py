@@ -39,7 +39,13 @@ class TestTasCommon(unittest.TestCase):
             return
 
         # load test points (canonical domain only), make sure to avoid grid points, e.g., 1/2, 1/4, etc.
-        if (gridA.getNumDimensions() == 2):
+        if (gridA.getNumDimensions() == 1):
+            mX1 = np.array([1.0/3.0])
+            mX2 = np.array([-1.0/3.0])
+            mX3 = np.array([-1.0/5.0])
+            mX4 = np.array([1.0/7.0])
+            mX5 = np.array([-1.0/7.0])
+        elif (gridA.getNumDimensions() == 2):
             mX1 = np.array([1.0/3.0, 1.0/6.0])
             mX2 = np.array([-1.0/3.0, 1.0/6.0])
             mX3 = np.array([-1.0/5.0, -1.0/7.0])
@@ -136,6 +142,24 @@ class TestTasCommon(unittest.TestCase):
         pA = gridA.getConformalTransformASIN()
         pB = gridB.getConformalTransformASIN()
         np.testing.assert_equal(pA, pB, "Conformal transform ASIN not equal", True)
+
+    def compareCustomTabulated(self, ctA, ctB):
+        '''
+        Compaes two CustomTabulated instances by checking nodes, weights, and other metadata.
+
+        The test passes if the two instances are mathematically identical.
+        '''
+        # Test metadata.
+        self.assertEqual(ctA.getDescription(), ctB.getDescription(), "error in getDescription()")
+        self.assertEqual(ctA.getNumLevels(), ctB.getNumLevels(), "error in getNumLevels()")
+        for level in range(ctA.getNumLevels()):
+            self.assertEqual(ctA.getNumPoints(level), ctB.getNumPoints(level), "error in getNumPoints() at level " + str(level))
+            self.assertEqual(ctA.getIExact(level), ctB.getIExact(level), "error in getIExact() at level " + str(level))
+            self.assertEqual(ctA.getQExact(level), ctB.getQExact(level), "error in getQExact() at level " + str(level))
+            wA, nA = ctA.getWeightsNodes(level)
+            wB, nB = ctB.getWeightsNodes(level)
+            np.testing.assert_equal(wA, wB, "Weights from getWeightsNodes() are not equal at level " + str(level), True)
+            np.testing.assert_equal(nA, nB, "Nodes from getWeightsNodes() are not equal at level " + str(level), True)
 
     def loadExpN2(self, grid):
         '''

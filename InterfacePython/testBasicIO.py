@@ -410,6 +410,62 @@ class TestTasClass(unittest.TestCase):
                 gridB.read("testSave")
                 ttc.compareGrids(gridA, gridB)
 
+    def checkReadWriteCustomTabulated(self):
+        '''
+        Test reading and writing of the CustomTabulated class.
+        '''
+        description = "testCT"
+        def create_nodes(j):
+            return np.linspace(-1.0, 1.0, num=j)
+        def create_weights(j):
+            weights = np.linspace(0.0, 1.0, num=j)
+            weights = 2.0 * weights / weights.sum()
+            return weights
+        # Read and write from explicitly given data.
+        for i in range(4):
+            num_levels = i
+            num_nodes = np.array([3*(j+1) for j in range(i)])
+            precision = np.array([2*(j+1)-1 for j in range(i)])
+            nodes = [create_nodes(j) for j in num_nodes]
+            weights = [create_weights(j) for j in num_nodes]
+            ctA = TasmanianSG.makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights, description)            # .
+            ctB = TasmanianSG.CustomTabulated()
+            ctA.write("testSave")
+            ctB.read("testSave")
+            for i in range(num_levels):
+                read_weights, read_nodes = ctB.getWeightsNodes(i)
+                np.testing.assert_almost_equal(read_weights, weights[i])
+                np.testing.assert_almost_equal(read_nodes, nodes[i])
+        # Read and write from a file.
+        ctA = TasmanianSG.makeCustomTabulatedFromFile(tdata.sGaussPattersonTableFile)
+        ctB = TasmanianSG.CustomTabulated()
+        ctA.write("testSave")
+        ctB.read("testSave")
+        ttc.compareCustomTabulated(ctA, ctB)
+        for i in range(ctB.getNumLevels()):
+            read_weights, read_nodes = ctB.getWeightsNodes(i)
+            grid = TasmanianSG.makeGlobalGrid(1, 0, i, "level", "gauss-patterson")
+            np.testing.assert_almost_equal(read_weights, grid.getQuadratureWeights())
+            np.testing.assert_almost_equal(read_nodes, grid.getPoints().flatten())
+        # Test an error message from wrong read.
+        try:
+            ctB.read("Test_If_Bogus_Filename_Produces_an_Error")
+        except TasmanianSG.TasmanianInputError as TSGError:
+            TSGError.bShowOnExit = False
+            self.assertEqual(TSGError.sVariable, "sFilename", "Reading a bogus file properly failed, but the error information is wrong.")
+
+    def checkGlobalGridCustom(self):
+        '''
+        Test makeGlobalGridCustom(), which creates a grid from a CustomTabulated instance.
+        '''
+        gridA = TasmanianSG.makeGlobalGrid(1, 1, 3, "level", "custom-tabulated", [], 0.0, 0.0, tdata.sGaussPattersonTableFile)
+        ct = TasmanianSG.makeCustomTabulatedFromFile(tdata.sGaussPattersonTableFile)
+        gridB = TasmanianSG.makeGlobalGridCustom(1, 1, 3, "level", ct)
+        ttc.compareGrids(gridA, gridB)
+        gridA = TasmanianSG.makeGlobalGrid(2, 1, 3, "level", "custom-tabulated", [], 0.0, 0.0, tdata.sGaussPattersonTableFile)
+        gridB = TasmanianSG.makeGlobalGridCustom(2, 1, 3, "level", ct)
+        ttc.compareGrids(gridA, gridB)
+
     def performIOTest(self):
         self.checkMetaIO()
 
@@ -421,3 +477,6 @@ class TestTasClass(unittest.TestCase):
 
         self.checkCopySubgrid()
         self.checkReadWriteMisc()
+
+        self.checkReadWriteCustomTabulated()
+        self.checkGlobalGridCustom()
