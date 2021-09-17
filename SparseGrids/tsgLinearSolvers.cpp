@@ -339,22 +339,10 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
     for (size_t i=0; i<n; i++) I[i] = i;
     std::sort(I.begin(), I.end(), [&nodes](size_t i, size_t j){return nodes[i] < nodes[j];});
     for (size_t i=0; i<n; i++) {
-        if (i != I[i]) {
-            double tmp_node, tmp_weight;
-            tmp_node = nodes[i];
-            tmp_weight = weights[i];
-            size_t k = i; // index that needs to be modified.
-            size_t next = I[k]; // next index to modify.
-            while (i != I[k]) {
-                nodes[k] = nodes[I[k]];
-                weights[k] = weights[I[k]];
-                I[k] = k;
-                k = next;
-                next = I[k];
-            }
-            nodes[k] = tmp_node;
-            weights[k] = tmp_weight;
-            I[k] = k;
+        while (I[i] != i) {
+            std::swap(nodes[i], nodes[I[i]]);
+            std::swap(weights[i], weights[I[i]]);
+            std::swap(I[i], I[I[i]]);
         }
     }
 }
