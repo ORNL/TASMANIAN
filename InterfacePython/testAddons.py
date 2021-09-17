@@ -165,10 +165,10 @@ class TestTasClass(unittest.TestCase):
         for integral, ct in testPairs:
             self.assertEqual(max_level, ct.getNumLevels(), "Loaded number of levels does not match actual number of levels!")
             grid = Tasmanian.makeGlobalGridCustom(1, 0, max_level-1, "level", ct)
-            np.testing.assert_almost_equal(compute_integral(grid, integrand), integral, 12,
+            np.testing.assert_almost_equal(compute_integral(grid, integrand), integral, 10,
                                            "Computed integral does not match exact integral in test instance " + ct.getDescription())
             grid.makeGlobalGridCustom(2, 0, max_level-1, "level", ct)
-            np.testing.assert_almost_equal(compute_integral(grid, integrand), integral ** 2, 12,
+            np.testing.assert_almost_equal(compute_integral(grid, integrand), integral ** 2, 10,
                                            "Computed integral does not match exact integral in test instance " + ct.getDescription())
 
     def performAddonTests(self):
