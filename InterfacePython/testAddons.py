@@ -4,6 +4,7 @@ import os
 import numpy as np
 
 import testCommon
+import testConfigureData as tdata # needed to keep track of configured acceleration methods
 
 ttc = testCommon.TestTasCommon()
 
@@ -175,4 +176,6 @@ class TestTasClass(unittest.TestCase):
         self.checkConstruction()
         self.checkBatchConstruct()
         self.checkUnstructuredL2()
-        self.checkExoticQuadrature()
+        # Tests that require LAPACK/BLAS
+        if (tdata.bHasBlas):
+            self.checkExoticQuadrature()
