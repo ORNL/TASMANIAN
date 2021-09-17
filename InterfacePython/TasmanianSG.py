@@ -188,7 +188,7 @@ pLibTSG.tsgGetNumPointsCustomTabulated.argtypes = [c_void_p, c_int];
 pLibTSG.tsgGetIExactCustomTabulated.argtypes = [c_void_p, c_int];
 pLibTSG.tsgGetQExactCustomTabulated.argtypes = [c_void_p, c_int];
 pLibTSG.tsgGetDescriptionCustomTabulated.argtypes = [c_void_p];
-pLibTSG.tsgGetWeightsNodesStaticCustomTabulated.argtypes = [c_void_p, c_int, c_void_p, c_void_p]
+pLibTSG.tsgGetWeightsNodesStaticCustomTabulated.argtypes = [c_void_p, c_int, POINTER(c_double), POINTER(c_double)]
 pLibTSG.tsgMakeCustomTabulatedFromData.argtype = [c_int, POINTER(c_int), POINTER(c_int), POINTER(c_double), POINTER(c_double), c_char_p]
 
 # Specifications for other C functions.
@@ -2428,16 +2428,6 @@ def copyGrid(source, iOutputsBegin = 0, iOutputsEnd = -1):
     grid.copyGrid(source, iOutputsBegin, iOutputsEnd)
     return grid
 
-def np_arr_to_ctype(np_data, np_type):
-    '''
-    Utility function that safely converts a NumPy array to a C pointer.
-    '''
-    if not np_data.flags['C_CONTIGUOUS']:
-        np_data = np.ascontiguousarray(np_data)
-    if not np_data.dtype == np_type:
-        np_data = np_data.astype(np_type)
-    return np.ctypeslib.as_ctypes(np_data)
-
 def check_np_arr(np_data_name, np_data, expected_length, expected_dimension):
     '''
     Utility function that checks if a NumPy array conforms to given input lengths and dimensions.
@@ -2514,11 +2504,9 @@ class CustomTabulated:
         iNumPoints = self.getNumPoints(level)
         if (iNumPoints == 0):
             return np.empty([0], np.float64), np.empty([0], np.float64)
-        weights, nodes = np.zeros([iNumPoints]), np.zeros([iNumPoints])
-        pLibTSG.tsgGetWeightsNodesStaticCustomTabulated(self.pCustomTabulated, c_int(level), np_arr_to_ctype(weights, np.float64),
-                                                        np_arr_to_ctype(nodes, np.float64))
-        return weights, nodes
-
+        pWeights, pNodes = (iNumPoints * c_double)(), (iNumPoints * c_double)()
+        pLibTSG.tsgGetWeightsNodesStaticCustomTabulated(self.pCustomTabulated, c_int(level), pWeights, pNodes)
+        return np.array(pWeights), np.array(pNodes)
 
 def makeCustomTabulatedFromFile(filename):
     '''
@@ -2557,16 +2545,27 @@ def makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights
         check_np_arr("weights["+str(i)+"]", weights[i], num_nodes[i], 1);
     ct = CustomTabulated()
     effective_description = bytes(description, encoding='utf8') if sys.version_info.major == 3 else description
-    effective_nodes = np.concatenate(nodes) if len(nodes) > 0 else np.array([])
-    effective_weights = np.concatenate(weights) if len(weights) > 0 else np.array([])
-    pNumNodes = None
+    # create the C arrays for num_nodes, precision, nodes, and weights by copying.
+    pNumNodes, pPrecision, pNodes, pWeights = None, None, None, None
     if (num_levels > 0):
         pNumNodes = (c_int * num_levels)()
+        pPrecision = (c_int * num_levels)()
         for iI in range(num_levels):
             pNumNodes[iI] = num_nodes[iI]
-    ct.pCustomTabulated = pLibTSG.tsgMakeCustomTabulatedFromData(c_int(num_levels), pNumNodes,
-                                                                 np_arr_to_ctype(precision, np.int32),
-                                                                 np_arr_to_ctype(effective_nodes, np.float64),
-                                                                 np_arr_to_ctype(effective_weights, np.float64),
+            pPrecision[iI] = precision[iI]
+        total_num_nodes = np.sum(num_nodes)
+        pNodes = (c_double * total_num_nodes)()
+        node_idx = 0
+        for lfJ in nodes:
+            for fK in lfJ:
+                pNodes[node_idx] = fK
+                node_idx += 1
+        pWeights = (c_double * total_num_nodes)()
+        weight_idx = 0
+        for lfJ in weights:
+            for fK in lfJ:
+                pWeights[weight_idx] = fK
+                weight_idx += 1
+    ct.pCustomTabulated = pLibTSG.tsgMakeCustomTabulatedFromData(c_int(num_levels), pNumNodes, pPrecision, pNodes, pWeights,
                                                                  c_char_p(effective_description))
     return ct
