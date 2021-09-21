@@ -39,7 +39,7 @@
 namespace TasGrid {
 
 // Specifies which algorithm is used in computing the Gauss quadrature points and weights in getGaussNodesAndWeights() (developer use only).
-static constexpr int gauss_quadrature_version = 2;
+static int gauss_quadrature_version = 2;
 
 /*!
  * \internal
@@ -116,7 +116,7 @@ inline void getGaussNodesAndWeights(const int n, const std::vector<double> &ref_
         if (gauss_quadrature_version == 1) {
             // Use LAPACK to obtain the Gauss points, and use the reference points and weights to obtain the Gauss weights.
             points_cache[i] = TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, diag, off_diag);
-            if (points_cache[i].size() % 2 == 1) {
+            if (points_cache[i].size() % 2 == 1 && is_symmetric) {
                 points_cache[i][(points_cache[i].size() - 1) / 2] = 0.0;
             }
             weights_cache[i] = std::vector<double>(points_cache[i].size(), 0.0);
@@ -155,7 +155,20 @@ inline void getGaussNodesAndWeights(const int n, const std::vector<double> &ref_
 inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const double shift, const std::vector<double> &weight_fn_vals,
                                                            const std::vector<double> &shifted_weights, const std::vector<double> &ref_points,
                                                            const char* description, const bool is_symmetric = false) {
-
+    #ifndef Tasmanian_ENABLE_BLAS
+    if (gauss_quadrature_version == 1) {
+        #ifndef NDEBUG
+        std::cout << "WARNING: BLAS acceleration is not enabled. Switching to an exotic quadrature algorithm that does not"
+                  << "rely on BLAS subroutines..." << std::endl;
+        #endif
+        gauss_quadrature_version = 2;
+        #ifndef
+        std::cout << "Now using exotic quadrature with the following flags:\n" 
+                  << "TasGrid::gauss_quadrature_version = " << TasGrid::gauss_quadrature_version << "\n"
+                  << "TasGrid::decompose_version = " << TasGrid::decompose_version << std::endl;
+        #endif
+    }
+    #endif
     // Create the set of points (roots) and weights for the first term.
     assert(shifted_weights.size() == ref_points.size());
     assert(weight_fn_vals.size() == ref_points.size());
