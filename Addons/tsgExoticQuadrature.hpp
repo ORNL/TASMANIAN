@@ -90,7 +90,7 @@ inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<
             offdiag.push_back(std::sqrt(sqr_offdiag_numr / sqr_offdiag_denm));
         }
         roots[i] = TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, diag, offdiag);
-        if (roots[i].size() % 2 == 1) {
+        if (roots[i].size() % 2 == 1 && is_symmetric) {
             // Zero out the center for stability.
             roots[i][(roots[i].size() - 1) / 2] = 0.0;
         }
