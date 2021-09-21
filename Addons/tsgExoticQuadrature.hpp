@@ -74,8 +74,8 @@ inline double lagrange_eval(size_t idx, const std::vector<double> &roots, double
  * \internal
  * \ingroup TasmanianAddonsExoticQuad
  * \brief Generate the points and weights of a Gaussian quadrature (up to degree n) whose weight function is evaluated on \b
- * ref_points and its corresponding values are stored in \b ref_weights. Specializes depending on if the underlying weight
- * function is symmetric or not.
+ * ref_points and whose corresponding values are stored in \b ref_weights. Specializes depending on if the underlying weight
+ * function is symmetric or not (see \b is_symmetric).
  * \endinternal
  */
 template <bool is_symmetric>
@@ -158,14 +158,15 @@ inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const do
     #ifndef Tasmanian_ENABLE_BLAS
     if (gauss_quadrature_version == 1) {
         #ifndef NDEBUG
-        std::cout << "WARNING: BLAS acceleration is not enabled. Switching to an exotic quadrature algorithm that does not"
+        std::cout << "WARNING: BLAS acceleration is not enabled!\nSwitching to an exotic quadrature algorithm that does not"
                   << "rely on BLAS subroutines..." << std::endl;
         #endif
         gauss_quadrature_version = 2;
-        #ifndef
-        std::cout << "Now using exotic quadrature with the following flags:\n" 
-                  << "TasGrid::gauss_quadrature_version = " << TasGrid::gauss_quadrature_version << "\n"
-                  << "TasGrid::decompose_version = " << TasGrid::decompose_version << std::endl;
+        #ifndef NDEBUG
+        std::cout << "Success! Now using exotic quadrature with the following (algorithm) flags:\n" 
+                  << "  TasGrid::gauss_quadrature_version = " << TasGrid::gauss_quadrature_version << "\n"
+                  << "  TasGrid::TasmanianTridiagonalSolver::decompose_version = "
+                  << TasGrid::TasmanianTridiagonalSolver::decompose_version << std::endl;
         #endif
     }
     #endif
