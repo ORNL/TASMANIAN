@@ -31,6 +31,7 @@
 #ifndef __TASMANIAN_LINEAR_SOLVERS_CPP
 #define __TASMANIAN_LINEAR_SOLVERS_CPP
 
+#include <cassert>
 #include "tsgLinearSolvers.hpp"
 #include "tsgTPLWrappers.hpp"
 
@@ -168,10 +169,9 @@ void TasmanianTridiagonalSolver::decompose(std::vector<double> &diag, std::vecto
                                            std::vector<double> &nodes, std::vector<double> &weights) {
     switch(TasmanianTridiagonalSolver::decompose_version) {
         case 1 :
-            weights.resize(diag.size());
-            nodes.resize(diag.size());
-            nodes = diag;
+            weights = std::vector<double>(diag.size(), 0.0);
             weights[0] = sqrt(mu0);
+            nodes = diag;
             off_diag.push_back(0.0);
             decompose1(diag.size(), nodes, off_diag, weights);
             break;
@@ -262,9 +262,7 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
     // Ensure compatibility with the ALGOL implementation.
     // NOTE: diag and off_diag are 1-indexed, while nodes and weights are 0-indexed after this step.
     size_t n = diag.size();
-    if (off_diag.size() != n-1) {
-        throw std::invalid_argument("ERROR: off_diag.size() must be equal to diag.size()-1");
-    }
+    assert(off_diag.size() == n-1);
     nodes.resize(n);
     weights.resize(n);
     diag.insert(diag.begin(), 0.0);
@@ -292,7 +290,7 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
             nodes[m-1] = diag[m];
             weights[m-1] = mu0 * weights[m-1] * weights[m-1];
             rho = lambda1 < lambda1 ? lambda1 : lambda2;
-            m = m-1;
+            m--;
             continue;
         }
         // ALGOL COMMENT: Small off diagonal element means matrix can be split.
