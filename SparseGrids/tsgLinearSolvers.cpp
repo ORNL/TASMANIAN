@@ -31,7 +31,6 @@
 #ifndef __TASMANIAN_LINEAR_SOLVERS_CPP
 #define __TASMANIAN_LINEAR_SOLVERS_CPP
 
-#include <cassert>
 #include "tsgLinearSolvers.hpp"
 #include "tsgTPLWrappers.hpp"
 
