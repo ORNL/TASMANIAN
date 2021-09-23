@@ -164,7 +164,25 @@ std::vector<double> TasmanianTridiagonalSolver::getSymmetricEigenvalues(int n, s
     return result;
 }
 
-void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z){
+void TasmanianTridiagonalSolver::decompose(std::vector<double> &diag, std::vector<double> &off_diag, const double mu0,
+                                           std::vector<double> &nodes, std::vector<double> &weights) {
+    switch(TasmanianTridiagonalSolver::decompose_version) {
+        case 1 :
+            weights = std::vector<double>(diag.size(), 0.0);
+            weights[0] = sqrt(mu0);
+            nodes = diag;
+            off_diag.push_back(0.0);
+            decompose1(diag.size(), nodes, off_diag, weights);
+            break;
+        case 2 :
+            decompose2(diag, off_diag, mu0, nodes, weights);
+            break;
+        default :
+            throw std::invalid_argument("ERROR: decompose_version must be a valid number!");
+    }
+}
+
+void TasmanianTridiagonalSolver::decompose1(int n, std::vector<double> &d, std::vector<double> &e, std::vector<double> &z){
     const double tol = Maths::num_tol;
     if (n == 1){ z[0] = z[0]*z[0]; return; }
 
@@ -234,6 +252,95 @@ void TasmanianTridiagonalSolver::decompose(int n, std::vector<double> &d, std::v
     }
     for(int i=0; i<n; i++){
            z[i] = z[i]*z[i];
+    }
+}
+
+void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vector<double> &off_diag, const double mu0,
+                                            std::vector<double> &nodes, std::vector<double> &weights) {
+
+    // Ensure compatibility with the ALGOL implementation.
+    // NOTE: diag and off_diag are 1-indexed, while nodes and weights are 0-indexed after this step.
+    size_t n = diag.size();
+    assert(off_diag.size() == n-1);
+    nodes.resize(n);
+    weights.resize(n);
+    diag.insert(diag.begin(), 0.0);
+    off_diag.insert(off_diag.begin(), 0.0);
+
+    // SETUP block from ALGOL code.
+    // ALGOL COMMENT: Find the maximum row sum norm and initialize weights.
+    off_diag[0] = 0.0;
+    double norm = 0.0;
+    for (size_t i=1; i<=n-1; i++) {
+        norm = std::max(norm, std::fabs(off_diag[i-1]) + std::fabs(diag[i]) + std::fabs(off_diag[i-1]));
+        weights[i-1] = 0.0;
+    }
+    norm = std::max(norm, std::fabs(diag[n]) + std::fabs(off_diag[n-1]));
+    weights[n-1] = 0.0;
+    weights[0] = 1.0; // Fix the bug in the ALGOL code.
+    double eps = norm * std::numeric_limits<double>::epsilon();
+    size_t m = n;
+    double lambda{norm}, lambda1{norm}, lambda2{norm}, rho{norm};
+
+    // INSPECT block from ALGOL code.
+    // ALGOL COMMENT: Look for convergence of lower diagonal element.
+    while (m > 0) {
+        if (std::fabs(off_diag[m-1]) <= eps) {
+            nodes[m-1] = diag[m];
+            weights[m-1] = mu0 * weights[m-1] * weights[m-1];
+            rho = lambda1 < lambda1 ? lambda1 : lambda2;
+            m--;
+            continue;
+        }
+        // ALGOL COMMENT: Small off diagonal element means matrix can be split.
+        int k = m-1;
+        while (std::fabs(off_diag[k-1]) > eps) k--;
+        // ALGOL COMMENT: Find eigenvalues of lower 2-by-2 and select accelerating shift.
+        double b2 = off_diag[m-1] * off_diag[m-1];
+        double det = std::sqrt((diag[m-1] - diag[m]) * (diag[m-1] - diag[m]) + 4.0 * b2);
+        double aa = diag[m-1] + diag[m];
+        lambda2 = 0.5 * (aa >= 0 ? aa + det : aa - det);
+        lambda1 = (diag[m-1] * diag[m] - b2) / lambda2;
+        double eigmax = std::max(lambda1, lambda2);
+        if (std::fabs(eigmax - rho) <= 0.125 * std::fabs(eigmax)) {
+            lambda = eigmax;
+        }
+        rho = eigmax;
+        // ALGOL COMMENT: Transform block from k to m.
+        double cj = off_diag[k];
+        off_diag[k-1] = diag[k] - lambda;
+        for (size_t j=k; j<=m-1; j++) {
+            double r = std::sqrt(cj * cj + off_diag[j-1] * off_diag[j-1]);
+            double st = cj / r;            double st2 = st * st;
+            double ct = off_diag[j-1] / r; double ct2 = ct * ct;
+            double sc = st * ct;           double aj = diag[j];
+            double bj = off_diag[j];       double wj = weights[j-1];
+            // Order below is important!
+            diag[j] = aj * ct2 + 2.0 * bj * sc + diag[j+1] * st2;
+            off_diag[j] = (aj - diag[j+1]) * sc + bj * (st2 - ct2);
+            diag[j+1] = aj * st2 - 2.0 * bj * sc + diag[j+1] * ct2;
+            cj = off_diag[j+1] * st;
+            off_diag[j+1] = -off_diag[j+1] * ct;
+            off_diag[j-1] = r;
+            // Account for the offset of the indices.
+            weights[j-1] = wj * ct + weights[j] * st;
+            weights[j] = wj * st - weights[j] * ct;
+        }
+        off_diag[k-1] = 0.0;
+    }
+
+    // SORT block from ALGOL code.
+    // ALGOL COMMENT: Arrange abscissas in ascending order.
+    // NOTE: the original code used an exchange sort, which is O(n^2).
+    std::vector<size_t> I(n);
+    for (size_t i=0; i<n; i++) I[i] = i;
+    std::sort(I.begin(), I.end(), [&nodes](size_t i, size_t j){return nodes[i] < nodes[j];});
+    for (size_t i=0; i<n; i++) {
+        while (I[i] != i) {
+            std::swap(nodes[i], nodes[I[i]]);
+            std::swap(weights[i], weights[I[i]]);
+            std::swap(I[i], I[I[i]]);
+        }
     }
 }
 
