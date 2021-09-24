@@ -129,8 +129,8 @@ inline void getGaussNodesAndWeights(const int n, const std::vector<double> &ref_
         } else if (gauss_quadrature_version == 2) {
             // Use TasmanianTridiagonalSolver::decompose().
             std::vector<double> dummy_diag = diag;
-            std::vector<double> dummy_off_diag = offdiag;
-            TasmanianTridiagonalSolver::decompose(dummy_diag, dummy_off_diag, mu0, points_cache[i], weights_cache[i]);
+            std::vector<double> dummy_offdiag = offdiag;
+            TasmanianTridiagonalSolver::decompose(dummy_diag, dummy_offdiag, mu0, points_cache[i], weights_cache[i]);
         } else {
             throw std::invalid_argument("ERROR: gauss_quadrature_version must be a valid number!");
         }
