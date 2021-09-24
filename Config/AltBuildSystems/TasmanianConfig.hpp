@@ -32,8 +32,8 @@
 #define __TASMANIAN_CONFIG_HPP
 
 #define TASMANIAN_VERSION_MAJOR 7
-#define TASMANIAN_VERSION_MINOR 6
-#define TASMANIAN_VERSION_STRING "7.6"
+#define TASMANIAN_VERSION_MINOR 7
+#define TASMANIAN_VERSION_STRING "7.7"
 #define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclaimer"
 
 #define TASMANIAN_GIT_COMMIT_HASH "Tasmanian git hash is not available here"
