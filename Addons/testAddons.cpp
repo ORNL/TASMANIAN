@@ -33,51 +33,8 @@
 #include "testExoticQuadrature.hpp"
 
 void debugTest() {
-    // cout << "Debug Test (callable from the CMake build folder)" << endl;
-    // cout << "Put testing code here and call with ./Addons/addontester debug" << endl;
-
-    // Set weight function.
-    double freq = 1.0;
-    double phase_shift = 1.0;
-    int dimension = 1;
-    int level = 40;
-    int shift = 1.0;
-    int depth = 20;
-    bool symmetric_weights = false;
-    // Get exotic nodes and weights for the sinc function.
-    auto sinc = [freq, phase_shift](double x)->double {return (fabs(freq * (x - phase_shift)) <= 1e-20) ?
-                1.0 :
-                sin(freq * (x - phase_shift)) / (freq * (x - phase_shift));};
-    TasGrid::CustomTabulated ct1, ct2;
-    TasGrid::gauss_quadrature_version = 1;
-    ct1 = TasGrid::getExoticQuadrature(level, shift, sinc, 50 * depth + 1, "Sinc-Weighted Quadrature 1", symmetric_weights);
-    TasGrid::gauss_quadrature_version = 2;
-    ct2 = TasGrid::getExoticQuadrature(level, shift, sinc, 50 * depth + 1, "Sinc-Weighted Quadrature 2", symmetric_weights);
-    // Form the grid.
-    TasGrid::TasmanianSparseGrid sg1, sg2;
-    sg1.makeGlobalGrid(dimension, 1, depth, TasGrid::type_qptotal, std::move(ct1));
-    std::vector<double> quad_points1 = sg1.getPoints();
-    std::vector<double> quad_weights1 = sg1.getQuadratureWeights();
-    sg2.makeGlobalGrid(dimension, 1, depth, TasGrid::type_qptotal, std::move(ct2));
-    std::vector<double> quad_points2 = sg2.getPoints();
-    std::vector<double> quad_weights2 = sg2.getQuadratureWeights();
-    // Print
-    std::cout << "n1, n2" << std::endl;
-    std::cout << quad_points1.size() << ", " << quad_points2.size() << "\n" << std::endl;
-    if (!(quad_points1.size() == quad_points2.size())) {
-        std::cout << "Node/Weight lengths differ!" << std::endl;
-    }
-    size_t n = std::min(quad_points1.size(), quad_points2.size()); 
-    std::cout << "      p1[],       p2[],        err[]" << std::endl;
-    for (size_t i=0; i<n; i++)
-        std::cout << std::fixed << std::setw(10) << quad_points1[i] << ", " << std::setw(10) << quad_points2[i] << ", "
-                  << std::setw(10) << std::scientific << std::fabs(quad_points1[i] - quad_points2[i]) << std::fixed << std::endl;
-    std::cout << endl;
-    std::cout << "      w1[],       w2[],        err[]" << std::endl;
-    for (size_t i=0; i<n; i++)
-        std::cout << std::fixed << std::setw(10) << quad_weights1[i] << ", " << std::setw(10) << quad_weights2[i] << ", "
-                  << std::setw(10) << std::scientific << std::fabs(quad_weights1[i] - quad_weights2[i]) << std::fixed << std::endl;
-    std::cout << endl;
+    cout << "Debug Test (callable from the CMake build folder)" << endl;
+    cout << "Put testing code here and call with ./Addons/addontester debug" << endl;
 }
 
 int main(int argc, char const **argv){

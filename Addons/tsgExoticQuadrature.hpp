@@ -87,7 +87,7 @@ inline void getGaussNodesAndWeights(const int n, const std::vector<double> &ref_
     double mu0 = 0.0;
     for (auto &w : ref_weights) mu0 += w;
     std::vector<double> poly_m1_vals(ref_points.size(), 0.0), poly_vals(ref_points.size(), 1.0);
-    std::vector<double> diag, off_diag;
+    std::vector<double> diag, offdiag;
     points_cache.resize(n);
     weights_cache.resize(n);
     for (int i=0; i<n; i++) {
@@ -104,18 +104,18 @@ inline void getGaussNodesAndWeights(const int n, const std::vector<double> &ref_
             diag.push_back(diag_numr / diag_denm);
         }
         if (i >= 1) {
-            double sqr_off_diag_numr = 0.0;
-            double sqr_off_diag_denm = 0.0;
+            double sqr_offdiag_numr = 0.0;
+            double sqr_offdiag_denm = 0.0;
             for (size_t j=0; j<ref_points.size(); j++) {
-                sqr_off_diag_numr += (poly_vals[j] * poly_vals[j]) * ref_weights[j];
-                sqr_off_diag_denm += (poly_m1_vals[j] * poly_m1_vals[j])  * ref_weights[j];
+                sqr_offdiag_numr += (poly_vals[j] * poly_vals[j]) * ref_weights[j];
+                sqr_offdiag_denm += (poly_m1_vals[j] * poly_m1_vals[j])  * ref_weights[j];
             }
-            off_diag.push_back(std::sqrt(sqr_off_diag_numr / sqr_off_diag_denm));
+            offdiag.push_back(std::sqrt(sqr_offdiag_numr / sqr_offdiag_denm));
         }
         // Compute the Gauss points and weights.
         if (gauss_quadrature_version == 1) {
             // Use LAPACK to obtain the Gauss points, and use the reference points and weights to obtain the Gauss weights.
-            points_cache[i] = TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, diag, off_diag);
+            points_cache[i] = TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, diag, offdiag);
             if (points_cache[i].size() % 2 == 1 && is_symmetric) {
                 points_cache[i][(points_cache[i].size() - 1) / 2] = 0.0;
             }
@@ -129,7 +129,7 @@ inline void getGaussNodesAndWeights(const int n, const std::vector<double> &ref_
         } else if (gauss_quadrature_version == 2) {
             // Use TasmanianTridiagonalSolver::decompose().
             std::vector<double> dummy_diag = diag;
-            std::vector<double> dummy_off_diag = off_diag;
+            std::vector<double> dummy_off_diag = offdiag;
             TasmanianTridiagonalSolver::decompose(dummy_diag, dummy_off_diag, mu0, points_cache[i], weights_cache[i]);
         } else {
             throw std::invalid_argument("ERROR: gauss_quadrature_version must be a valid number!");
@@ -139,7 +139,6 @@ inline void getGaussNodesAndWeights(const int n, const std::vector<double> &ref_
         std::transform(ref_points.begin(), ref_points.end(), poly_vals.begin(),
                        [&points_cache, i](double x){return poly_eval(points_cache[i], x);});
     }
-    return roots;
 }
 
 /*!
@@ -179,11 +178,6 @@ inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const do
     } else {
         getGaussNodesAndWeights<false>(n, ref_points, shifted_weights, points_cache, weights_cache);
     }
-
-    // Create the set of weights for the first term.
-    std::vector<std::vector<double>> weights_cache(n);
-    for (int i=0; i<n; i++) {
-           }
 
     // Create and append the set of correction points and weights for the second term only if the shift is nonzero.
     if (shift != 0.0) {
@@ -248,11 +242,11 @@ inline void shiftReferenceWeights(std::vector<double> const &vals, double shift,
 
 /*
  * \ingroup TasmanianAddonsExoticQuad
- * \brief Constructs a CustomTabulated object containing the exotic quadrature points and quadrature weights for a given level \b n,
+ * \brief Constructs a CustomTabulated object containing the exotic quadrature nodes and quadrature weights for a given level \b n,
  * scalar \b shift, a reference TasmanianSparseGrid \b grid containing loaded values of the weight function, a string \b description,
  * and an optional bool \b is_symmetric that should be set to true if the weight function is symmetric.
  *
- * It is assumed that grid is a one dimensional interpolant/surrogate to the weight function. Only the points in grid.getLoadedPoints(),
+ * It is assumed that grid is a one dimensional interpolant/surrogate to the weight function. Only the nodes in grid.getLoadedPoints(),
  * the quadrature weights in grid.getQuadratureWeights(), and the loaded weight function values in grid.getLoadedValues() are used
  * in the computation of the exotic quadrature. Specifically, these vectors are used to orthogonalize the polynomial basis needed
  * to compute the optimal exotic quadrature.
@@ -271,18 +265,13 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
     std::vector<double> ref_points = grid.getLoadedPoints();
     std::vector<double> shifted_weights = grid.getQuadratureWeights();
     std::vector<double> weight_fn_vals = std::vector<double>(grid.getLoadedValues(), grid.getLoadedValues() + grid.getNumLoaded());
-    if (not std::all_of(weight_fn_vals.begin(), weight_fn_vals.end(), [shift](double x){return (x+shift)>=0.0;})) {
-        throw std::invalid_argument("ERROR: shift needs to be chosen so that weight_fn(x)+shift is nonnegative!");
-    }
-    for (size_t k=0; k<ref_points.size(); k++) {
-        shifted_weights[k] *= (weight_fn_vals[k] + shift);
-    }
+    shiftReferenceWeights(weight_fn_vals, shift, shifted_weights);
     return getShiftedExoticQuadrature(n, shift, weight_fn_vals, shifted_weights, ref_points, description, is_symmetric);
 }
 
 /*
  * \ingroup TasmanianAddonsExoticQuad
- * \brief Constructs a CustomTabulated object containing the exotic quadrature points and quadrature weights for a given level \b n,
+ * \brief Constructs a CustomTabulated object containing the exotic quadrature nodes and quadrature weights for a given level \b n,
  * scalar \b shift, a 1D function \b weight_fn() that returns the value of the weight function at its input, a positive integer
  * \b nref that specifies how many points are used in orthogonalizing the polynomial basis, a string \b description, and an optional
  * bool \b is_symmetric that should be set to true if the weight function is symmetric.
@@ -295,12 +284,7 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
     std::vector<double> shifted_weights, ref_points, weight_fn_vals(nref);
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, shifted_weights, ref_points);
     std::transform(ref_points.begin(), ref_points.end(), weight_fn_vals.begin(), weight_fn);
-    if (not std::all_of(weight_fn_vals.begin(), weight_fn_vals.end(), [shift](double x){return (x+shift)>=0.0;})) {
-        throw std::invalid_argument("ERROR: shift needs to be chosen so that weight_fn(x)+shift is nonnegative!");
-    }
-    for (int k=0; k<nref; k++) {
-        shifted_weights[k] *= (weight_fn_vals[k] + shift);
-    }
+    shiftReferenceWeights(weight_fn_vals, shift, shifted_weights);
     return getShiftedExoticQuadrature(n, shift, weight_fn_vals, shifted_weights, ref_points, description, is_symmetric);
 }
 
