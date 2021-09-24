@@ -39,7 +39,7 @@
 namespace TasGrid {
 
 // Specifies which algorithm is used in computing the Gauss quadrature points and weights in getGaussNodesAndWeights() (developer use only).
-static int gauss_quadrature_version = 2;
+static int gauss_quadrature_version = 1;
 
 /*!
  * \internal
@@ -81,6 +81,12 @@ inline double lagrange_eval(size_t idx, const std::vector<double> &roots, double
 template <bool is_symmetric>
 inline void getGaussNodesAndWeights(const int n, const std::vector<double> &ref_points, const std::vector<double> &ref_weights,
                                     std::vector<std::vector<double>> &points_cache, std::vector<std::vector<double>> &weights_cache) {
+    #ifndef Tasmanian_ENABLE_BLAS
+    // If BLAS is not enabled, we must use an implementation that does not require it.
+    if (gauss_quadrature_version == 1) {
+        gauss_quadrature_version = 2;
+    }
+    #endif
     // Compute the roots incrementally.
     assert(ref_points.size() == ref_weights.size());
     assert(ref_points.size() > 0);
@@ -151,27 +157,11 @@ inline void getGaussNodesAndWeights(const int n, const std::vector<double> &ref_
  * (weight_fn_vals[i] + shift) for every i.
  * \endinternal
  */
-inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const double shift, const std::vector<double> &weight_fn_vals,
-                                                           const std::vector<double> &shifted_weights, const std::vector<double> &ref_points,
-                                                           const char* description, const bool is_symmetric = false) {
-    #ifndef Tasmanian_ENABLE_BLAS
-    if (gauss_quadrature_version == 1) {
-        #ifndef NDEBUG
-        std::cout << "WARNING: BLAS acceleration is not enabled!\nSwitching to an exotic quadrature algorithm that does not"
-                  << "rely on BLAS subroutines..." << std::endl;
-        #endif
-        gauss_quadrature_version = 2;
-        #ifndef NDEBUG
-        std::cout << "Success! Now using exotic quadrature with the following (algorithm) flags:\n" 
-                  << "  TasGrid::gauss_quadrature_version = " << TasGrid::gauss_quadrature_version << "\n"
-                  << "  TasGrid::TasmanianTridiagonalSolver::decompose_version = "
-                  << TasGrid::TasmanianTridiagonalSolver::decompose_version << std::endl;
-        #endif
-    }
-    #endif
+inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const double shift, const std::vector<double> &shifted_weights,
+                                                           const std::vector<double> &ref_points, const char* description,
+                                                           const bool is_symmetric = false) {
     // Create the set of points (roots) and weights for the first term.
     assert(shifted_weights.size() == ref_points.size());
-    assert(weight_fn_vals.size() == ref_points.size());
     std::vector<std::vector<double>> points_cache, weights_cache;
     if (is_symmetric) {
         getGaussNodesAndWeights<true>(n, ref_points, shifted_weights, points_cache, weights_cache);
@@ -186,7 +176,7 @@ inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const do
             std::vector<double> correction_points, correction_weights;
             TasGrid::OneDimensionalNodes::getGaussLegendre(init_size, correction_weights, correction_points);
             for (auto &w : correction_weights) w *= -shift;
-            if (correction_points.size() % 2 == 1) {
+            if (correction_points.size() % 2 == 1 && is_symmetric) {
                 // Zero out for stability.
                 correction_points[(correction_points.size() - 1) / 2] = 0.0;
             }
@@ -266,7 +256,7 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
     std::vector<double> shifted_weights = grid.getQuadratureWeights();
     std::vector<double> weight_fn_vals = std::vector<double>(grid.getLoadedValues(), grid.getLoadedValues() + grid.getNumLoaded());
     shiftReferenceWeights(weight_fn_vals, shift, shifted_weights);
-    return getShiftedExoticQuadrature(n, shift, weight_fn_vals, shifted_weights, ref_points, description, is_symmetric);
+    return getShiftedExoticQuadrature(n, shift, shifted_weights, ref_points, description, is_symmetric);
 }
 
 /*
@@ -285,7 +275,7 @@ inline TasGrid::CustomTabulated getExoticQuadrature(const int n, const double sh
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, shifted_weights, ref_points);
     std::transform(ref_points.begin(), ref_points.end(), weight_fn_vals.begin(), weight_fn);
     shiftReferenceWeights(weight_fn_vals, shift, shifted_weights);
-    return getShiftedExoticQuadrature(n, shift, weight_fn_vals, shifted_weights, ref_points, description, is_symmetric);
+    return getShiftedExoticQuadrature(n, shift, shifted_weights, ref_points, description, is_symmetric);
 }
 
 } // namespace(TasGrid)

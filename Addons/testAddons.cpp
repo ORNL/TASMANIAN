@@ -81,14 +81,10 @@ int main(int argc, char const **argv){
     #endif
 
     // Tests for Exotic Quadrature.
-    #ifdef Tasmanian_ENABLE_BLAS
     pass = true;
     pass = testExoticQuadrature();
     cout << std::setw(40) << "Exotic quadrature" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
     pass_all = pass_all && pass;
-    #else
-    cout << std::setw(40) << "Exotic quadrature" << std::setw(10) << "skipping" << endl;
-    #endif
 
     cout << "\n";
     if (pass){
