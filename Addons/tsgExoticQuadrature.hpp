@@ -38,6 +38,9 @@
 
 namespace TasGrid {
 
+// Specifies which algorithm is used in computing the Gauss quadrature points and weights in getGaussNodesAndWeights() (developer use only).
+static int gauss_quadrature_version = 1;
+
 /*!
  * \internal
  * \ingroup TasmanianAddonsExoticQuad
@@ -53,20 +56,46 @@ inline double poly_eval(const std::vector<double> &roots, double x) {
 /*!
  * \internal
  * \ingroup TasmanianAddonsExoticQuad
- * \brief Generate the roots of all orthogonal polynomials up to degree n, where orthogonality is with respect to the
- * measure given by ref_weights. Specializes depending on if the underlying weight function is symmetric or not.
+ * \brief Evaluates a Lagrange basis polynomial at a point \b x.
+ * \endinternal
+ */
+inline double lagrange_eval(size_t idx, const std::vector<double> &roots, double x) {
+    double eval_value = 1.0;
+    for (size_t i=0; i<idx; i++) {
+        eval_value *= (x - roots[i]) / (roots[idx] - roots[i]);
+    }
+    for (size_t i=idx+1; i<roots.size(); i++) {
+        eval_value *= (x - roots[i]) / (roots[idx] - roots[i]);
+    }
+    return eval_value;
+}
+
+/*!
+ * \internal
+ * \ingroup TasmanianAddonsExoticQuad
+ * \brief Generate the points and weights of a Gaussian quadrature (up to degree n) whose weight function is evaluated on \b
+ * ref_points and whose corresponding values are stored in \b ref_weights. Specializes depending on if the underlying weight
+ * function is symmetric or not (see \b is_symmetric).
  * \endinternal
  */
 template <bool is_symmetric>
-inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<double> &ref_weights,
-                                                 const std::vector<double> &ref_points) {
-
+inline void getGaussNodesAndWeights(const int n, const std::vector<double> &ref_points, const std::vector<double> &ref_weights,
+                                    std::vector<std::vector<double>> &points_cache, std::vector<std::vector<double>> &weights_cache) {
+    #ifndef Tasmanian_ENABLE_BLAS
+    // If BLAS is not enabled, we must use an implementation that does not require it.
+    if (gauss_quadrature_version == 1) {
+        gauss_quadrature_version = 2;
+    }
+    #endif
     // Compute the roots incrementally.
     assert(ref_points.size() == ref_weights.size());
     assert(ref_points.size() > 0);
+    double mu0 = 0.0;
+    for (auto &w : ref_weights) mu0 += w;
     std::vector<double> poly_m1_vals(ref_points.size(), 0.0), poly_vals(ref_points.size(), 1.0);
     std::vector<double> diag, offdiag;
-    std::vector<std::vector<double>> roots(n);
+    points_cache.resize(n);
+    weights_cache.resize(n);
     for (int i=0; i<n; i++) {
         // Form the diagonal and offdiagonal vectors of the Jacobi matrix.
         if (is_symmetric) {
@@ -89,36 +118,34 @@ inline std::vector<std::vector<double>> getRoots(const int n, const std::vector<
             }
             offdiag.push_back(std::sqrt(sqr_offdiag_numr / sqr_offdiag_denm));
         }
-        roots[i] = TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, diag, offdiag);
-        if (roots[i].size() % 2 == 1 && is_symmetric) {
-            // Zero out the center for stability.
-            roots[i][(roots[i].size() - 1) / 2] = 0.0;
+        // Compute the Gauss points and weights.
+        if (gauss_quadrature_version == 1) {
+            // Use LAPACK to obtain the Gauss points, and use the reference points and weights to obtain the Gauss weights.
+            points_cache[i] = TasmanianTridiagonalSolver::getSymmetricEigenvalues(i+1, diag, offdiag);
+            if (points_cache[i].size() % 2 == 1 && is_symmetric) {
+                points_cache[i][(points_cache[i].size() - 1) / 2] = 0.0;
+            }
+            weights_cache[i] = std::vector<double>(points_cache[i].size(), 0.0);
+            for (size_t j=0; j<points_cache[i].size(); j++) {
+                // Integrate the function l_j(x) according to the measure induced by the function [weight_fn(x) + shift].
+                for (size_t k=0; k<ref_points.size(); k++) {
+                    weights_cache[i][j] += lagrange_eval(j, points_cache[i], ref_points[k]) * ref_weights[k];
+                }
+            }
+        } else if (gauss_quadrature_version == 2) {
+            // Use TasmanianTridiagonalSolver::decompose().
+            std::vector<double> dummy_diag = diag;
+            std::vector<double> dummy_offdiag = offdiag;
+            TasmanianTridiagonalSolver::decompose(dummy_diag, dummy_offdiag, mu0, points_cache[i], weights_cache[i]);
+        } else {
+            throw std::invalid_argument("ERROR: gauss_quadrature_version must be a valid number!");
         }
         // Update the values of the polynomials at ref_points.
         std::swap(poly_m1_vals, poly_vals);
         std::transform(ref_points.begin(), ref_points.end(), poly_vals.begin(),
-                       [&roots, i](double x){return poly_eval(roots[i], x);});
+                       [&points_cache, i](double x){return poly_eval(points_cache[i], x);});
     }
-    return roots;
 }
-
-/*!
- * \internal
- * \ingroup TasmanianAddonsExoticQuad
- * \brief Evaluates a Lagrange basis polynomial at a point \b x.
- * \endinternal
- */
-inline double lagrange_eval(size_t idx, const std::vector<double> &roots, double x) {
-    double eval_value = 1.0;
-    for (size_t i=0; i<idx; i++) {
-        eval_value *= (x - roots[i]) / (roots[idx] - roots[i]);
-    }
-    for (size_t i=idx+1; i<roots.size(); i++) {
-        eval_value *= (x - roots[i]) / (roots[idx] - roots[i]);
-    }
-    return eval_value;
-}
-
 
 /*!
  * \internal
@@ -130,29 +157,16 @@ inline double lagrange_eval(size_t idx, const std::vector<double> &roots, double
  * (weight_fn_vals[i] + shift) for every i.
  * \endinternal
  */
-inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const double shift,
-                                                           const std::vector<double> &shifted_weights, const std::vector<double> &ref_points,
-                                                           const char* description, const bool is_symmetric = false) {
-
-    // Create the set of points (roots) for the first term.
+inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const double shift, const std::vector<double> &shifted_weights,
+                                                           const std::vector<double> &ref_points, const char* description,
+                                                           const bool is_symmetric = false) {
+    // Create the set of points (roots) and weights for the first term.
     assert(shifted_weights.size() == ref_points.size());
-    std::vector<std::vector<double>> points_cache;
+    std::vector<std::vector<double>> points_cache, weights_cache;
     if (is_symmetric) {
-        points_cache = getRoots<true>(n, shifted_weights, ref_points);
+        getGaussNodesAndWeights<true>(n, ref_points, shifted_weights, points_cache, weights_cache);
     } else {
-        points_cache = getRoots<false>(n, shifted_weights, ref_points);
-    }
-
-    // Create the set of weights for the first term.
-    std::vector<std::vector<double>> weights_cache(n);
-    for (int i=0; i<n; i++) {
-        weights_cache[i] = std::vector<double>(points_cache[i].size(), 0.0);
-        for (size_t j=0; j<points_cache[i].size(); j++) {
-            // Integrate the function l_j(x) according to the measure induced by the function [weight_fn(x) + shift].
-            for (size_t k=0; k<ref_points.size(); k++) {
-                weights_cache[i][j] += lagrange_eval(j, points_cache[i], ref_points[k]) * shifted_weights[k];
-            }
-        }
+        getGaussNodesAndWeights<false>(n, ref_points, shifted_weights, points_cache, weights_cache);
     }
 
     // Create and append the set of correction points and weights for the second term only if the shift is nonzero.
@@ -162,7 +176,7 @@ inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const do
             std::vector<double> correction_points, correction_weights;
             TasGrid::OneDimensionalNodes::getGaussLegendre(init_size, correction_weights, correction_points);
             for (auto &w : correction_weights) w *= -shift;
-            if (correction_points.size() % 2 == 1) {
+            if (correction_points.size() % 2 == 1 && is_symmetric) {
                 // Zero out for stability.
                 correction_points[(correction_points.size() - 1) / 2] = 0.0;
             }
