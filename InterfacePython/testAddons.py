@@ -176,6 +176,4 @@ class TestTasClass(unittest.TestCase):
         self.checkConstruction()
         self.checkBatchConstruct()
         self.checkUnstructuredL2()
-        # Tests that require LAPACK/BLAS
-        if (tdata.bHasBlas):
-            self.checkExoticQuadrature()
+        self.checkExoticQuadrature()
