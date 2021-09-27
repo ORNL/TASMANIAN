@@ -4,7 +4,6 @@ import os
 import numpy as np
 
 import testCommon
-import testConfigureData as tdata # needed to keep track of configured acceleration methods
 
 ttc = testCommon.TestTasCommon()
 
