@@ -44,7 +44,7 @@ void printHelp(TypeHelp ht = help_generic, TypeCommand com = command_none);
 
 int main(int argc, const char ** argv){
 
-    // cout << " Phruuuuphrrr " << endl; // this is the sound that the Tasmanian devil makes
+    //cout << " Phruuuuphrrr " << endl; // this is the sound that the Tasmanian devil makes
 
     std::deque<std::string> args = stringArgs(argc, argv);
 
