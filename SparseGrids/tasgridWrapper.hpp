@@ -145,6 +145,7 @@ protected:
 
     void outputPoints(bool useNeeded) const;
     void outputQuadrature() const;
+    void outputExoticQuadrature() const;
     void outputHierarchicalCoefficients() const;
     void outputHierachicalSupport() const;
 
@@ -182,6 +183,7 @@ protected:
 
 private:
     TasmanianSparseGrid grid;
+    CustomTabulated ct;
 
     TypeCommand command;
 

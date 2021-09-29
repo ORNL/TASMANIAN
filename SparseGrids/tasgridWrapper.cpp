@@ -378,19 +378,9 @@ void TasgridWrapper::createQuadrature(){
     }
 }
 void TasgridWrapper::createExoticQuadrature(){
-    auto weights = readAnisotropicFile((OneDimensionalMeta::getControurType(depth_type) == type_curved) ? 2*num_dimensions : num_dimensions);
-    auto llimits = readLevelLimits(num_dimensions);
-    grid.makeGlobalGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights, alpha, beta, customfilename.c_str(), llimits);
-    if (!transformfilename.empty()){
-        auto transforms = readTransform();
-        grid.setDomainTransform(transforms.first, transforms.second);
-    }
-    if ((conformal != conformal_none) && (!conformalfilename.empty())){
-        if (!setConformalTransformation()){
-            cerr << "ERROR: could not set conformal transform" << endl;
-        }
-    }
-
+    TasGrid::TasmanianSparseGrid weight_surrogate;
+    weight_surrogate.read(weightfilename);
+    ct = TasGrid::getExoticQuadrature(depth, shift, weight_surrogate, description, is_symmetric_weight_function);
 }
 bool TasgridWrapper::updateGrid(){
     if (!(grid.isGlobal() || grid.isSequence() || grid.isFourier())){
@@ -449,6 +439,10 @@ void TasgridWrapper::outputQuadrature() const{
     }
     writeMatrix(outfilename, num_p, offset, combined.getStrip(0));
     printMatrix(num_p, offset, combined.getStrip(0));
+}
+void TasgridWrapper::outputExoticQuadrature() const{
+    if (outfilename.empty() && (printCout == false)) return;
+    ct.write(outfilename);
 }
 void TasgridWrapper::outputHierarchicalCoefficients() const{
     const double *coeff = grid.getHierarchicalCoefficients();
@@ -1012,9 +1006,10 @@ bool TasgridWrapper::executeCommand(){
         outputQuadrature();
     }else if (command == command_makeexoquad){
         createExoticQuadrature();
+        outputExoticQuadrature();
     }
     if (isCreateCommand(command)){
-        if (command != command_makequadrature){
+        if (command != command_makequadrature && command != command_makeexoquad){
             outputPoints(false);
             if (!gridfilename.empty()) writeGrid();
         }
