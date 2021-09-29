@@ -37,7 +37,8 @@ TasgridWrapper::TasgridWrapper() : command(command_none), num_dimensions(0), num
     depth_type(type_none), rule(rule_none),
     conformal(conformal_none), alpha(0.0), beta(0.0), set_alpha(false), set_beta(false), tolerance(0.0), set_tolerance(false),
     ref_output(-1), min_growth(-1), tref(refine_fds), set_tref(false),
-    printCout(false), useASCII(false), set_gpuid(-1)
+    printCout(false), useASCII(false), set_gpuid(-1),
+    set_shift(false), set_is_symmetric_weight_function(false)
 {}
 TasgridWrapper::~TasgridWrapper(){}
 
@@ -49,6 +50,7 @@ TypeCommand TasgridWrapper::hasCommand(std::string const &s){
             {"-makewavelet",    command_makewavelet},    {"-mw", command_makewavelet},
             {"-makefourier",    command_makefourier},    {"-mf", command_makefourier},
             {"-makequadrature", command_makequadrature}, {"-mq", command_makequadrature},
+            {"-makeexoquad", command_makeexoquad},       {"-meq", command_makeexoquad},
             {"-makeupdate",      command_update},          {"-mu",   command_update},
             {"-setconformal",    command_setconformal},    {"-sc",   command_setconformal},
             {"-getquadrature",   command_getquadrature},   {"-gq",   command_getquadrature},
@@ -91,7 +93,9 @@ TypeConformalMap TasgridWrapper::getConfromalType(const char* name){
 }
 
 bool TasgridWrapper::isCreateCommand(TypeCommand com){
-    return ( (com == command_makeglobal) || (com == command_makesequence) || (com == command_makelocalp) || (com == command_makewavelet) || (com == command_makefourier) || (com == command_makequadrature) );
+    return ( (com == command_makeglobal) || (com == command_makesequence) || (com == command_makelocalp) ||
+             (com == command_makewavelet) || (com == command_makefourier) || (com == command_makequadrature) ||
+             (com == command_makeexoquad));
 }
 
 bool TasgridWrapper::checkSane() const{
@@ -218,6 +222,17 @@ bool TasgridWrapper::checkSane() const{
             cerr << "WARNING: conformal transform requires both -conformaltype and -conformalfile, ignoring conformal mapping" << endl;
         }
         return pass;
+    }else if (command == command_makeexoquad){
+        if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)" << endl; pass = false; }
+        if (!set_shift){ cerr << "ERROR: must specify shift parameter" << endl; pass = false; }
+        if (weightfilename.empty()){ cerr << "ERROR: must specify filename of weight function surrogate/interpolant" << endl; pass = false; }
+        if (description.empty()){ cerr << "ERROR: must specify description" << endl; pass = false; }
+        if (!set_is_symmetric_weight_function){ cerr << "ERROR: must specify if weight function is symmetric" << endl; pass = false; }
+        if (outfilename.empty() && (printCout == false)){
+            cerr << "ERROR: no means of output are specified, you should specify -outfile or -print" << endl; pass = false;
+        }
+        return pass;
+
     }else if (command == command_update){
         if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
         if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)" << endl; pass = false; }
@@ -361,6 +376,21 @@ void TasgridWrapper::createQuadrature(){
     }else{
         cerr << "ERROR: createQuadrature" << endl;
     }
+}
+void TasgridWrapper::createExoticQuadrature(){
+    auto weights = readAnisotropicFile((OneDimensionalMeta::getControurType(depth_type) == type_curved) ? 2*num_dimensions : num_dimensions);
+    auto llimits = readLevelLimits(num_dimensions);
+    grid.makeGlobalGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights, alpha, beta, customfilename.c_str(), llimits);
+    if (!transformfilename.empty()){
+        auto transforms = readTransform();
+        grid.setDomainTransform(transforms.first, transforms.second);
+    }
+    if ((conformal != conformal_none) && (!conformalfilename.empty())){
+        if (!setConformalTransformation()){
+            cerr << "ERROR: could not set conformal transform" << endl;
+        }
+    }
+
 }
 bool TasgridWrapper::updateGrid(){
     if (!(grid.isGlobal() || grid.isSequence() || grid.isFourier())){
@@ -980,6 +1010,8 @@ bool TasgridWrapper::executeCommand(){
     }else if (command == command_makequadrature){
         createQuadrature();
         outputQuadrature();
+    }else if (command == command_makeexoquad){
+        createExoticQuadrature();
     }
     if (isCreateCommand(command)){
         if (command != command_makequadrature){
