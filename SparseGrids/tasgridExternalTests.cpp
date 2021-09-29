@@ -2197,6 +2197,21 @@ bool ExternalTester::testAllAcceleration() const{
 void ExternalTester::debugTest(){
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
+    // Create the CustomTabulated object using a Gauss-Legendre reference grid.
+    int depth = 250;
+    double freq(1.0), phase_shift(1.0);
+    auto sinc = [freq, phase_shift](double x)->double {
+        return (fabs(freq * (x - phase_shift)) <= 1e-20) ? 1.0 : sin(freq * (x - phase_shift)) / (freq * (x - phase_shift));};
+    TasGrid::TasmanianSparseGrid ref_grid;
+    ref_grid.makeGlobalGrid(1, 1, depth + 1, TasGrid::type_level, TasGrid::rule_gausslegendre);
+    std::vector<double> nodes = ref_grid.getPoints();
+    std::vector<double> fvals(ref_grid.getNumNeeded());
+    std::transform(nodes.begin(), nodes.end(), fvals.begin(), sinc);
+    ref_grid.loadNeededValues(fvals);
+    std::ofstream grid_file;
+    grid_file.open("sinc0.grid", std::ios::out | std::ios::trunc);
+    ref_grid.write(grid_file);
+    grid_file.close();
 }
 
 void ExternalTester::debugTestII(){

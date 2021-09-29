@@ -31,6 +31,8 @@
 #ifndef __TASGRID_WRAPPER_CPP
 #define __TASGRID_WRAPPER_CPP
 
+#include "tsgExoticQuadrature.hpp"
+#include "tsgTPLWrappers.hpp"
 #include "tasgridWrapper.hpp"
 
 TasgridWrapper::TasgridWrapper() : command(command_none), num_dimensions(0), num_outputs(-1), depth(-1), order(1),
@@ -379,8 +381,10 @@ void TasgridWrapper::createQuadrature(){
 }
 void TasgridWrapper::createExoticQuadrature(){
     TasGrid::TasmanianSparseGrid weight_surrogate;
-    weight_surrogate.read(weightfilename);
-    ct = TasGrid::getExoticQuadrature(depth, shift, weight_surrogate, description, is_symmetric_weight_function);
+    weight_surrogate.read(weightfilename.c_str());
+    // Depth = 2 * level - 1.
+    int level = depth % 2 == 1 ? (depth + 1) / 2 : depth / 2 + 1;
+    ct = TasGrid::getExoticQuadrature(level, shift, weight_surrogate, description, is_symmetric_weight_function);
 }
 bool TasgridWrapper::updateGrid(){
     if (!(grid.isGlobal() || grid.isSequence() || grid.isFourier())){
@@ -442,7 +446,7 @@ void TasgridWrapper::outputQuadrature() const{
 }
 void TasgridWrapper::outputExoticQuadrature() const{
     if (outfilename.empty() && (printCout == false)) return;
-    ct.write(outfilename);
+    // ct.write(outfilename);
 }
 void TasgridWrapper::outputHierarchicalCoefficients() const{
     const double *coeff = grid.getHierarchicalCoefficients();

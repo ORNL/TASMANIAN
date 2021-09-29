@@ -69,7 +69,8 @@ add_executable(Tasmanian_tasgrid tasgrid_main.cpp
                                  tasgridTestFunctions.hpp
                                  tasgridTestFunctions.cpp
                                  tasgridWrapper.hpp
-                                 tasgridWrapper.cpp)
+                                 tasgridWrapper.cpp
+                                 tsgExoticQuadrature.hpp)
 add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   TasmanianSparseGrid.hpp
                                   tasgridCLICommon.hpp
