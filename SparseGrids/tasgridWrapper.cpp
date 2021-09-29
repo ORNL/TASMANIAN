@@ -31,8 +31,8 @@
 #ifndef __TASGRID_WRAPPER_CPP
 #define __TASGRID_WRAPPER_CPP
 
-#include "tsgExoticQuadrature.hpp"
 #include "tsgTPLWrappers.hpp"
+#include "tsgExoticQuadrature.hpp"
 #include "tasgridWrapper.hpp"
 
 TasgridWrapper::TasgridWrapper() : command(command_none), num_dimensions(0), num_outputs(-1), depth(-1), order(1),
@@ -384,7 +384,7 @@ void TasgridWrapper::createExoticQuadrature(){
     weight_surrogate.read(weightfilename.c_str());
     // Depth = 2 * level - 1.
     int level = depth % 2 == 1 ? (depth + 1) / 2 : depth / 2 + 1;
-    ct = TasGrid::getExoticQuadrature(level, shift, weight_surrogate, description, is_symmetric_weight_function);
+    ct = TasGrid::getExoticQuadrature(level, shift, weight_surrogate, description.c_str(), is_symmetric_weight_function);
 }
 bool TasgridWrapper::updateGrid(){
     if (!(grid.isGlobal() || grid.isSequence() || grid.isFourier())){
@@ -445,8 +445,15 @@ void TasgridWrapper::outputQuadrature() const{
     printMatrix(num_p, offset, combined.getStrip(0));
 }
 void TasgridWrapper::outputExoticQuadrature() const{
-    if (outfilename.empty() && (printCout == false)) return;
-    // ct.write(outfilename);
+    auto writer = [this](std::ostream &os){useASCII ? ct.write<mode_ascii>(os) : ct.write<mode_binary>(os);};
+    if (!outfilename.empty()) {
+        std::ofstream ofs(outfilename, std::ios::out | std::ios::trunc);
+        writer(ofs);
+    }
+    if (printCout) {
+        writer(cout);
+    }
+    return;
 }
 void TasgridWrapper::outputHierarchicalCoefficients() const{
     const double *coeff = grid.getHierarchicalCoefficients();

@@ -69,8 +69,7 @@ add_executable(Tasmanian_tasgrid tasgrid_main.cpp
                                  tasgridTestFunctions.hpp
                                  tasgridTestFunctions.cpp
                                  tasgridWrapper.hpp
-                                 tasgridWrapper.cpp
-                                 tsgExoticQuadrature.hpp)
+                                 tasgridWrapper.cpp)
 add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   TasmanianSparseGrid.hpp
                                   tasgridCLICommon.hpp
@@ -112,6 +111,9 @@ endif()
 target_link_libraries(Tasmanian_libsparsegrid  Tasmanian_dependencies)
 
 target_include_directories(Tasmanian_libsparsegrid PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
+# the following are needed for Exotic quadrature only
+target_include_directories(Tasmanian_libsparsegrid PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../Addons>)
+target_include_directories(Tasmanian_libsparsegrid PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../DREAM>)
 
 set_target_properties(Tasmanian_libsparsegrid PROPERTIES OUTPUT_NAME "tasmaniansparsegrid"
                                                          SOVERSION ${Tasmanian_VERSION_MAJOR}
