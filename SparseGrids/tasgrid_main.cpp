@@ -218,7 +218,7 @@ int main(int argc, const char ** argv){
                 return 1;
             }
             wrap.setValsFilename(args.front());
-        }else if (args.front() == "-of" || args.front() == "-outputfile"){
+        }else if (args.front() == "-of" || args.front() == "-outputfile" || args.front() == "-outfile"){
             args.pop_front();
             if (args.empty()){
                 cerr << "ERROR: must provide output file name!!!  For help see: ./tasgrid -help" << endl << endl;
