@@ -50,7 +50,7 @@ TypeCommand TasgridWrapper::hasCommand(std::string const &s){
             {"-makewavelet",    command_makewavelet},    {"-mw", command_makewavelet},
             {"-makefourier",    command_makefourier},    {"-mf", command_makefourier},
             {"-makequadrature", command_makequadrature}, {"-mq", command_makequadrature},
-            {"-makeexoquad", command_makeexoquad},       {"-meq", command_makeexoquad},
+            {"-makeexoquad",    command_makeexoquad},    {"-meq", command_makeexoquad},
             {"-makeupdate",      command_update},          {"-mu",   command_update},
             {"-setconformal",    command_setconformal},    {"-sc",   command_setconformal},
             {"-getquadrature",   command_getquadrature},   {"-gq",   command_getquadrature},
@@ -442,11 +442,11 @@ void TasgridWrapper::outputQuadrature() const{
     printMatrix(num_p, offset, combined.getStrip(0));
 }
 void TasgridWrapper::outputExoticQuadrature() const{
-    if (!outfilename.empty()) {
+    if (!outfilename.empty()){
         std::ofstream ofs(outfilename, std::ios::out | std::ios::trunc);
         ct.write<mode_ascii>(ofs);
     }
-    if (printCout) {
+    if (printCout){
         ct.write<mode_ascii>(cout);
     }
     return;

@@ -121,7 +121,7 @@ public:
     void setCustomFilename(std::string const &filename){ customfilename = filename; }
     void setLevelLimitsFilename(std::string const &filename){ levellimitfilename = filename; }
 
-    void setShift(double s){shift = s; set_shift = true;}
+    void setShift(double s){ shift = s; set_shift = true; }
     void setWeightFilename(std::string const &filename){ weightfilename = filename; }
     void setDescription(std::string const &desc){ description = desc; }
     void setIsSymmetric(bool b) { is_symmetric_weight_function = b; }
