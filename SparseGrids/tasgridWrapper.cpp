@@ -31,7 +31,6 @@
 #ifndef __TASGRID_WRAPPER_CPP
 #define __TASGRID_WRAPPER_CPP
 
-#include "tsgTPLWrappers.hpp"
 #include "tsgExoticQuadrature.hpp"
 #include "tasgridWrapper.hpp"
 
@@ -39,8 +38,7 @@ TasgridWrapper::TasgridWrapper() : command(command_none), num_dimensions(0), num
     depth_type(type_none), rule(rule_none),
     conformal(conformal_none), alpha(0.0), beta(0.0), set_alpha(false), set_beta(false), tolerance(0.0), set_tolerance(false),
     ref_output(-1), min_growth(-1), tref(refine_fds), set_tref(false),
-    printCout(false), useASCII(false), set_gpuid(-1),
-    set_shift(false), set_is_symmetric_weight_function(false)
+    printCout(false), useASCII(false), set_gpuid(-1), set_shift(false)
 {}
 TasgridWrapper::~TasgridWrapper(){}
 
@@ -229,7 +227,6 @@ bool TasgridWrapper::checkSane() const{
         if (!set_shift){ cerr << "ERROR: must specify shift parameter" << endl; pass = false; }
         if (weightfilename.empty()){ cerr << "ERROR: must specify filename of weight function surrogate/interpolant" << endl; pass = false; }
         if (description.empty()){ cerr << "ERROR: must specify description" << endl; pass = false; }
-        if (!set_is_symmetric_weight_function){ cerr << "ERROR: must specify if weight function is symmetric" << endl; pass = false; }
         if (outfilename.empty() && (printCout == false)){
             cerr << "ERROR: no means of output are specified, you should specify -outfile or -print" << endl; pass = false;
         }
@@ -445,13 +442,12 @@ void TasgridWrapper::outputQuadrature() const{
     printMatrix(num_p, offset, combined.getStrip(0));
 }
 void TasgridWrapper::outputExoticQuadrature() const{
-    auto writer = [this](std::ostream &os){useASCII ? ct.write<mode_ascii>(os) : ct.write<mode_binary>(os);};
     if (!outfilename.empty()) {
         std::ofstream ofs(outfilename, std::ios::out | std::ios::trunc);
-        writer(ofs);
+        ct.write<mode_ascii>(ofs);
     }
     if (printCout) {
-        writer(cout);
+        ct.write<mode_ascii>(cout);
     }
     return;
 }

@@ -124,7 +124,7 @@ public:
     void setShift(double s){shift = s; set_shift = true;}
     void setWeightFilename(std::string const &filename){ weightfilename = filename; }
     void setDescription(std::string const &desc){ description = desc; }
-    void setIsSymmetric(int sflag) { is_symmetric_weight_function = (bool) sflag; set_is_symmetric_weight_function = true; }
+    void setIsSymmetric(bool b) { is_symmetric_weight_function = b; }
 
     bool executeCommand();
 
@@ -217,7 +217,7 @@ private:
     int set_gpuid;
 
     double shift;
-    bool set_shift, set_is_symmetric_weight_function;
+    bool set_shift;
     std::string weightfilename;
     std::string description;
     bool is_symmetric_weight_function;

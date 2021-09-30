@@ -410,13 +410,8 @@ int main(int argc, const char ** argv){
                 return 1;
             }
             wrap.setDescription(args.front());
-        }else if (args.front() == "-issymm" || args.front() == "-issymmetric"){
-            args.pop_front();
-            if (args.empty() || (std::stoi(args.front()) != 0 && std::stoi(args.front()) != 1)){
-                cerr << "ERROR: must provide valid -issymmetric!!!  For help see: ./tasgrid -help" << endl << endl;
-                return 1;
-            }
-            wrap.setIsSymmetric(std::stoi(args.front()));
+        }else if (args.front() == "-symm" || args.front() == "-symmetric"){
+            wrap.setIsSymmetric(true);
         }else{
             cout << "WARNING: ignoring unknown option: " << args.front() << "\n";
         }
@@ -643,16 +638,16 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << "Note: at least one of -outputfile, or -print must be specified, otherwise the command has no output" << endl << endl;
         }else if (com == command_makeexoquad){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction" << endl;
-            cout << " -makeexoquad"   << "\t-meq"     << "\t\tmake an exotic quadrature" << endl << endl;
+            cout << " -makeexoquad"   << "\t\t-meq"     << "\t\tmake an exotic quadrature" << endl << endl;
             cout << "Accepted options:"  << endl;
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction" << endl;
             cout << " -depth\t\t"    << "\tyes\t"      << "\t<int>"    << "\t\tset the depth of the quadrature" << endl;
             cout << " -shift\t\t"    << "\tyes\t"      << "\t<float>"    << "\t\tset the shift of the weight function" << endl;
             cout << " -weightfile\t"    << "\tyes\t"      << "\t<filename>"    << "\tset the name of the file containing a" << endl;
-            cout << " \t\t\t\t\t"    << "\t\tsurrogate/interpolant of the weight function" << endl;
+            cout << " \t\t\t\t\t"    << "\t\tsurrogate/interpolant of the weight function;" << endl;
+            cout << " \t\t\t\t\t"    << "\t\tmust be a TasmanianSparseGrid in ASCII format" << endl;
             cout << " -description\t"    << "\tyes\t"      << "\t<string>"    << "\tshort description of the quadrature" << endl;
-            cout << " -issymmetric\t"    << "\tyes\t"      << "\t<int>"    << "\t\t0 = nonsymmetric weight function;"  << endl;
-            cout << " \t\t\t\t\t"    << "\t\t1 = symmetric weight function" << endl;
+            cout << " -symmetric\t"    << "\tno\t"      << "\t<none>"    << "\t\tdeclare that the weight function is symmetric"  << endl;
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
             cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl << endl;
             cout << "Note: -outputfile or -print output the points and weights of the grid" << endl;
