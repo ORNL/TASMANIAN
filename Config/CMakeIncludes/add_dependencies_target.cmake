@@ -52,6 +52,11 @@ if (Tasmanian_ENABLE_MAGMA)
     target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${Tasmanian_magma_h}/>)
 endif()
 
+if (Tasmanian_ENABLE_MPI)
+    target_link_libraries(Tasmanian_dependencies INTERFACE MPI::MPI_CXX)
+endif()
+
+
 target_include_directories(Tasmanian_dependencies INTERFACE $<INSTALL_INTERFACE:${Tasmanian_final_install_path}/include>)
 
 target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Config/>)
