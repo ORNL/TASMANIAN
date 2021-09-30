@@ -379,9 +379,7 @@ void TasgridWrapper::createQuadrature(){
 void TasgridWrapper::createExoticQuadrature(){
     TasGrid::TasmanianSparseGrid weight_surrogate;
     weight_surrogate.read(weightfilename.c_str());
-    // Depth = 2 * level - 1.
-    int level = depth % 2 == 1 ? (depth + 1) / 2 : depth / 2 + 1;
-    ct = TasGrid::getExoticQuadrature(level, shift, weight_surrogate, description.c_str(), is_symmetric_weight_function);
+    ct = TasGrid::getExoticQuadrature(depth, shift, weight_surrogate, description.c_str(), is_symmetric_weight_function);
 }
 bool TasgridWrapper::updateGrid(){
     if (!(grid.isGlobal() || grid.isSequence() || grid.isFourier())){

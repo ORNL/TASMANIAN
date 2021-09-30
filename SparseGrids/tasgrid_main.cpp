@@ -641,7 +641,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -makeexoquad"   << "\t\t-meq"     << "\t\tmake an exotic quadrature" << endl << endl;
             cout << "Accepted options:"  << endl;
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction" << endl;
-            cout << " -depth\t\t"    << "\tyes\t"      << "\t<int>"    << "\t\tset the depth of the quadrature" << endl;
+            cout << " -depth\t\t"    << "\tyes\t"      << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)" << endl;
             cout << " -shift\t\t"    << "\tyes\t"      << "\t<float>"    << "\t\tset the shift of the weight function" << endl;
             cout << " -weightfile\t"    << "\tyes\t"      << "\t<filename>"    << "\tset the name of the file containing a" << endl;
             cout << " \t\t\t\t\t"    << "\t\tsurrogate/interpolant of the weight function;" << endl;
