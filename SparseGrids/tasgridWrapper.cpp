@@ -38,7 +38,7 @@ TasgridWrapper::TasgridWrapper() : command(command_none), num_dimensions(0), num
     depth_type(type_none), rule(rule_none),
     conformal(conformal_none), alpha(0.0), beta(0.0), set_alpha(false), set_beta(false), tolerance(0.0), set_tolerance(false),
     ref_output(-1), min_growth(-1), tref(refine_fds), set_tref(false),
-    printCout(false), useASCII(false), set_gpuid(-1), set_shift(false)
+    printCout(false), useASCII(false), set_gpuid(-1), shift(0.0), set_shift(false)
 {}
 TasgridWrapper::~TasgridWrapper(){}
 
