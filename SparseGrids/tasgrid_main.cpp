@@ -218,7 +218,7 @@ int main(int argc, const char ** argv){
                 return 1;
             }
             wrap.setValsFilename(args.front());
-        }else if (args.front() == "-of" || args.front() == "-outputfile"){
+        }else if (args.front() == "-of" || args.front() == "-outputfile" || args.front() == "-outfile"){
             args.pop_front();
             if (args.empty()){
                 cerr << "ERROR: must provide output file name!!!  For help see: ./tasgrid -help" << endl << endl;
@@ -389,6 +389,29 @@ int main(int argc, const char ** argv){
                 return 1;
             }
             wrap.setGPID(std::stoi(args.front()));
+        }else if (args.front() == "-shift"){
+            args.pop_front();
+            if (args.empty()){
+                cerr << "ERROR: must provide valid -shift!!!  For help see: ./tasgrid -help" << endl << endl;
+                return 1;
+            }
+            wrap.setShift(std::stof(args.front()));
+        }else if (args.front() == "-wf" || args.front() == "-weightfile"){
+            args.pop_front();
+            if (args.empty()){
+                cerr << "ERROR: must provide weight file name!!!  For help see: ./tasgrid -help" << endl << endl;
+                return 1;
+            }
+            wrap.setWeightFilename(args.front());
+        }else if (args.front() == "-desc" || args.front() == "-description"){
+            args.pop_front();
+            if (args.empty()){
+                cerr << "ERROR: must provide description!!!  For help see: ./tasgrid -help" << endl << endl;
+                return 1;
+            }
+            wrap.setDescription(args.front());
+        }else if (args.front() == "-symm" || args.front() == "-symmetric"){
+            wrap.setIsSymmetric(true);
         }else{
             cout << "WARNING: ignoring unknown option: " << args.front() << "\n";
         }
@@ -421,6 +444,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << " -makewavelet\t"      << "\t-mw"     << "\t\tmake a grid from a wavelet rule" << endl;
         cout << " -makefourier\t"      << "\t-mf"     << "\t\tmake a grid from a Fourier rule" << endl;
         cout << " -makequadrature"     << "\t-mq"     << "\t\tmake a quadrature" << endl;
+        cout << " -makeexoquad\t"     << "\t-meq"     << "\t\tmake an exotic quadrature" << endl;
         cout << " -makeupdate\t"       << "\t-mu"     << "\t\tupdates an existing global/sequence/fourier grid" << endl;
         cout << " -setconformal\t"     << "\t-sc"     << "\t\tset conformal domain transform" << endl;
         cout << " -getquadrature\t"    << "\t-gq"     << "\t\toutput quadrature weights and points" << endl;
@@ -609,6 +633,22 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -conformaltype\t"  << "\tno\t"      << "\t<type>"       << "\t\tset the type of the map" << endl;
             cout << " -conformalfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain" << endl;
             cout << " \t\t\t\t\t"    << "\t\trequired for custom-tabulated rule" << endl;
+            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl << endl;
+            cout << "Note: -outputfile or -print output the points and weights of the grid" << endl;
+            cout << "Note: at least one of -outputfile, or -print must be specified, otherwise the command has no output" << endl << endl;
+        }else if (com == command_makeexoquad){
+            cout << "Commands\t"     << "\tShorthand"   << "\tAction" << endl;
+            cout << " -makeexoquad"   << "\t\t-meq"     << "\t\tmake an exotic quadrature" << endl << endl;
+            cout << "Accepted options:"  << endl;
+            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction" << endl;
+            cout << " -depth\t\t"    << "\tyes\t"      << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)" << endl;
+            cout << " -shift\t\t"    << "\tyes\t"      << "\t<float>"    << "\t\tset the shift of the weight function" << endl;
+            cout << " -weightfile\t"    << "\tyes\t"      << "\t<filename>"    << "\tset the name of the file containing a" << endl;
+            cout << " \t\t\t\t\t"    << "\t\tsurrogate/interpolant of the weight function;" << endl;
+            cout << " \t\t\t\t\t"    << "\t\tmust be a TasmanianSparseGrid in ASCII format" << endl;
+            cout << " -description\t"    << "\tyes\t"      << "\t<string>"    << "\tshort description of the quadrature" << endl;
+            cout << " -symmetric\t"    << "\tno\t"      << "\t<none>"    << "\t\tdeclare that the weight function is symmetric"  << endl;
+            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file" << endl;
             cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output" << endl << endl;
             cout << "Note: -outputfile or -print output the points and weights of the grid" << endl;
             cout << "Note: at least one of -outputfile, or -print must be specified, otherwise the command has no output" << endl << endl;

@@ -31,13 +31,14 @@
 #ifndef __TASGRID_WRAPPER_CPP
 #define __TASGRID_WRAPPER_CPP
 
+#include "tsgExoticQuadrature.hpp"
 #include "tasgridWrapper.hpp"
 
 TasgridWrapper::TasgridWrapper() : command(command_none), num_dimensions(0), num_outputs(-1), depth(-1), order(1),
     depth_type(type_none), rule(rule_none),
     conformal(conformal_none), alpha(0.0), beta(0.0), set_alpha(false), set_beta(false), tolerance(0.0), set_tolerance(false),
     ref_output(-1), min_growth(-1), tref(refine_fds), set_tref(false),
-    printCout(false), useASCII(false), set_gpuid(-1)
+    printCout(false), useASCII(false), set_gpuid(-1), shift(0.0), set_shift(false)
 {}
 TasgridWrapper::~TasgridWrapper(){}
 
@@ -49,6 +50,7 @@ TypeCommand TasgridWrapper::hasCommand(std::string const &s){
             {"-makewavelet",    command_makewavelet},    {"-mw", command_makewavelet},
             {"-makefourier",    command_makefourier},    {"-mf", command_makefourier},
             {"-makequadrature", command_makequadrature}, {"-mq", command_makequadrature},
+            {"-makeexoquad",    command_makeexoquad},    {"-meq", command_makeexoquad},
             {"-makeupdate",      command_update},          {"-mu",   command_update},
             {"-setconformal",    command_setconformal},    {"-sc",   command_setconformal},
             {"-getquadrature",   command_getquadrature},   {"-gq",   command_getquadrature},
@@ -91,7 +93,9 @@ TypeConformalMap TasgridWrapper::getConfromalType(const char* name){
 }
 
 bool TasgridWrapper::isCreateCommand(TypeCommand com){
-    return ( (com == command_makeglobal) || (com == command_makesequence) || (com == command_makelocalp) || (com == command_makewavelet) || (com == command_makefourier) || (com == command_makequadrature) );
+    return ( (com == command_makeglobal) || (com == command_makesequence) || (com == command_makelocalp) ||
+             (com == command_makewavelet) || (com == command_makefourier) || (com == command_makequadrature) ||
+             (com == command_makeexoquad));
 }
 
 bool TasgridWrapper::checkSane() const{
@@ -218,6 +222,16 @@ bool TasgridWrapper::checkSane() const{
             cerr << "WARNING: conformal transform requires both -conformaltype and -conformalfile, ignoring conformal mapping" << endl;
         }
         return pass;
+    }else if (command == command_makeexoquad){
+        if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)" << endl; pass = false; }
+        if (!set_shift){ cerr << "ERROR: must specify shift parameter" << endl; pass = false; }
+        if (weightfilename.empty()){ cerr << "ERROR: must specify filename of weight function surrogate/interpolant" << endl; pass = false; }
+        if (description.empty()){ cerr << "ERROR: must specify description" << endl; pass = false; }
+        if (outfilename.empty() && (printCout == false)){
+            cerr << "ERROR: no means of output are specified, you should specify -outfile or -print" << endl; pass = false;
+        }
+        return pass;
+
     }else if (command == command_update){
         if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
         if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)" << endl; pass = false; }
@@ -362,6 +376,11 @@ void TasgridWrapper::createQuadrature(){
         cerr << "ERROR: createQuadrature" << endl;
     }
 }
+void TasgridWrapper::createExoticQuadrature(){
+    TasGrid::TasmanianSparseGrid weight_surrogate;
+    weight_surrogate.read(weightfilename.c_str());
+    ct = TasGrid::getExoticQuadrature(depth, shift, weight_surrogate, description.c_str(), is_symmetric_weight_function);
+}
 bool TasgridWrapper::updateGrid(){
     if (!(grid.isGlobal() || grid.isSequence() || grid.isFourier())){
         cerr << "ERROR: -makeupdate can be called only for Global and Sequence grids" << endl;
@@ -419,6 +438,16 @@ void TasgridWrapper::outputQuadrature() const{
     }
     writeMatrix(outfilename, num_p, offset, combined.getStrip(0));
     printMatrix(num_p, offset, combined.getStrip(0));
+}
+void TasgridWrapper::outputExoticQuadrature() const{
+    if (!outfilename.empty()){
+        std::ofstream ofs(outfilename, std::ios::out | std::ios::trunc);
+        ct.write<mode_ascii>(ofs);
+    }
+    if (printCout){
+        ct.write<mode_ascii>(cout);
+    }
+    return;
 }
 void TasgridWrapper::outputHierarchicalCoefficients() const{
     const double *coeff = grid.getHierarchicalCoefficients();
@@ -980,9 +1009,12 @@ bool TasgridWrapper::executeCommand(){
     }else if (command == command_makequadrature){
         createQuadrature();
         outputQuadrature();
+    }else if (command == command_makeexoquad){
+        createExoticQuadrature();
+        outputExoticQuadrature();
     }
     if (isCreateCommand(command)){
-        if (command != command_makequadrature){
+        if (command != command_makequadrature && command != command_makeexoquad){
             outputPoints(false);
             if (!gridfilename.empty()) writeGrid();
         }

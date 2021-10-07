@@ -41,6 +41,7 @@ enum TypeCommand{
     command_makewavelet,
     command_makefourier,
     command_makequadrature,
+    command_makeexoquad,
     command_update,
 
     command_setconformal,
@@ -120,6 +121,11 @@ public:
     void setCustomFilename(std::string const &filename){ customfilename = filename; }
     void setLevelLimitsFilename(std::string const &filename){ levellimitfilename = filename; }
 
+    void setShift(double s){ shift = s; set_shift = true; }
+    void setWeightFilename(std::string const &filename){ weightfilename = filename; }
+    void setDescription(std::string const &desc){ description = desc; }
+    void setIsSymmetric(bool b) { is_symmetric_weight_function = b; }
+
     bool executeCommand();
 
     static bool isCreateCommand(TypeCommand com);
@@ -132,12 +138,14 @@ protected:
     void createLocalPolynomialGird();
     void createWaveletGird();
     void createQuadrature();
+    void createExoticQuadrature();
     bool updateGrid();
     void writeGrid() const;
     bool readGrid();
 
     void outputPoints(bool useNeeded) const;
     void outputQuadrature() const;
+    void outputExoticQuadrature() const;
     void outputHierarchicalCoefficients() const;
     void outputHierachicalSupport() const;
 
@@ -175,6 +183,7 @@ protected:
 
 private:
     TasmanianSparseGrid grid;
+    CustomTabulated ct;
 
     TypeCommand command;
 
@@ -206,6 +215,12 @@ private:
     bool printCout;
     bool useASCII;
     int set_gpuid;
+
+    double shift;
+    bool set_shift;
+    std::string weightfilename;
+    std::string description;
+    bool is_symmetric_weight_function;
 };
 
 #endif

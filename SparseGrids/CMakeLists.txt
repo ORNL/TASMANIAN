@@ -111,6 +111,9 @@ endif()
 target_link_libraries(Tasmanian_libsparsegrid  Tasmanian_dependencies)
 
 target_include_directories(Tasmanian_libsparsegrid PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
+# the following are needed for Exotic quadrature only
+target_include_directories(Tasmanian_libsparsegrid PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../Addons>)
+target_include_directories(Tasmanian_libsparsegrid PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../DREAM>)
 
 set_target_properties(Tasmanian_libsparsegrid PROPERTIES OUTPUT_NAME "tasmaniansparsegrid"
                                                          SOVERSION ${Tasmanian_VERSION_MAJOR}
