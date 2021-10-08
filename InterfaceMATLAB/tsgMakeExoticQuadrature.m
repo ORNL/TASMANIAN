@@ -4,15 +4,18 @@ function lCustomRule = tsgMakeExoticQuadrature(iDepth, fShift, sWeightFile, sDes
 %
 % INPUT:
 %
+% iDepth: (integer non-negative)
+%         controls the density of the grid
+%
 % fShift: (float)
 %         the shift of the weight function
 %
 % sWeightFile: (string)
 %              filename for a file constaining a surrogate/interpolant of the weight function; the format should be a 
-%              TasmanianSparseGrid in ASCII
+%              TasmanianSparseGrid in ASCII format
 %
 % sDescription: (string)
-%               description of the generated custom rule, e.g. "Exotic Quadrature 1" and "Sinc rule"
+%               description of the generated custom rule, e.g. "Exotic Quadrature 1" or "Sinc rule"
 %
 % bSymmetric: (bool)
 %             if true, this declares that the weight function is symmetric
