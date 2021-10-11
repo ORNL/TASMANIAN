@@ -1,4 +1,4 @@
-function lCustomRule = tsgReadCustomTabulated(sFilename)
+function lCustomRule = tsgReadCustomRuleFile(sFilename)
 %
 % reads a custom-tabulated rule from an ASCII file
 %
@@ -33,24 +33,22 @@ sLine = fgetl(fid);
 if (strfind('levels: ', sLine) ~= 1)
   error('Wrong file format of custom tabulated file on line 2!');
 end
-lCustomRule.iMaxLevel = str2num(strrep(sLine, 'levels: ', ''));
+lCustomRule.iMaxLevel = str2double(strrep(sLine, 'levels: ', ''));
 
 lCustomRule.vLevels = NaN(lCustomRule.iMaxLevel, 1);
 lCustomRule.vPrecision = NaN(lCustomRule.iMaxLevel, 1);
 for i=1:lCustomRule.iMaxLevel
-  sLine = fgetl(fid);
-  aData = strsplit(sLine, ' ');
-  lCustomRule.vLevels(i) = str2num(aData{1});
-  lCustomRule.vPrecision(i) = str2num(aData{2});
+  s = fscanf(fid, ' %f ', [1, 2]);
+  lCustomRule.vLevels(i) = s(1);
+  lCustomRule.vPrecision(i) = s(2);
 end
 
 lCustomRule.vNodes = NaN(sum(lCustomRule.vLevels), 1);
 lCustomRule.vWeights = NaN(sum(lCustomRule.vLevels), 1);
 for i=1:sum(lCustomRule.vLevels)
-  sLine = fgetl(fid);
-  aData = strsplit(sLine, ' ');
-  lCustomRule.vNodes(i) = str2double(aData{2});
-  lCustomRule.vWeights(i) = str2double(aData{1});
+  s = fscanf(fid, ' %f ', [1, 2]);
+  lCustomRule.vNodes(i) = s(2);
+  lCustomRule.vWeights(i) = s(1);
 end
 
 fclose(fid);

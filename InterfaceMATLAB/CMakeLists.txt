@@ -34,7 +34,7 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgMakeWavelet.m
                                   tsgMergeRefine.m
                                   tsgPlotPoints2D.m
-                                  tsgReadCustomTabulated.m
+                                  tsgReadCustomRuleFile.m
                                   tsgReadMatrix.m
                                   tsgRefineAnisotropic.m
                                   tsgRefineSurplus.m
