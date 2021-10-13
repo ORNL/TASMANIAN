@@ -15,7 +15,11 @@ if (NOT Tasmanian_dpcpp_compiler AND NOT Tasmanian_sycl_compiler)
     message(FATAL_ERROR "Tasmanian_ENABLE_DPCPP requires that the CMAKE_CXX_COMPILER is set to the Intel dpcpp compiler or a compatible sycl compiler.")
 endif()
 
-set(Tasmanian_MKL_SYCL_ROOT "${MKL_SYCL_ROOT}" CACHE PATH "The root folder for the Intel OneAPI framework installation")
+if (NOT DEFINED Tasmanian_MKL_SYCL_ROOT AND NOT "$ENV{Tasmanian_MKL_SYCL_ROOT}" STREQUAL "")
+    set(Tasmanian_MKL_SYCL_ROOT "$ENV{Tasmanian_MKL_SYCL_ROOT}" CACHE PATH "The root folder for the Intel oneMKL installation")
+else()
+    set(Tasmanian_MKL_SYCL_ROOT "${MKL_SYCL_ROOT}" CACHE PATH "The root folder for the Intel oneMKL installation")
+endif()
 
 Tasmanian_find_libraries(REQUIRED libmkl_sycl.a
                          OPTIONAL libmkl_intel_lp64.a libmkl_intel_thread.a libmkl_core.a
