@@ -308,8 +308,8 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
         oneapi::mkl::sparse::gemv(*q, oneapi::mkl::transpose::nontrans, alpha, mat,
                                   const_cast<scalar_type*>(A.data()), 0.0, C).wait();
     }else{ // using sparse-blas level 3
-        oneapi::mkl::sparse::gemm(*q, oneapi::mkl::transpose::nontrans, alpha, mat,
-                                  const_cast<scalar_type*>(A.data()), M, M, 0.0, C, M).wait();
+        oneapi::mkl::sparse::gemm(*q, oneapi::mkl::layout::row_major, oneapi::mkl::transpose::nontrans, oneapi::mkl::transpose::nontrans,
+                                  alpha, mat, const_cast<scalar_type*>(A.data()), M, M, 0.0, C, M).wait();
     }
 
     oneapi::mkl::sparse::release_matrix_handle(&mat);

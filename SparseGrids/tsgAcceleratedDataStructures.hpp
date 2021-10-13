@@ -680,16 +680,18 @@ struct AccelerationContext{
         if (AccelerationMeta::isAccTypeGPU(effective_acc) and ((new_gpu_id < 0 or new_gpu_id >= AccelerationMeta::getNumGpuDevices())))
             throw std::runtime_error("Invalid GPU device ID, see ./tasgrid -v for list of detected devices.");
 
-        // assign the new values for the mode and device, but remember the current gpu state and check whether something changed
-        mode = effective_acc;
-        device = new_gpu_id;
-
-        if (AccelerationMeta::isAccTypeGPU(mode)){
-            // if the new mode is GPU-based, reset the engine and the handles (if already created)
-            engine = Utils::make_unique<GpuEngine>();
+        if (AccelerationMeta::isAccTypeGPU(effective_acc)){
+            // if the new mode is GPU-based, make an engine or reset the engine if the device has changed
+            // if the engine exists and the device is not changed, then keep the existing engine
+            if (!engine or new_gpu_id != device)
+                engine = Utils::make_unique<GpuEngine>();
         }else{
             engine.reset();
         }
+
+        // assign the new values for the mode and device
+        mode = effective_acc;
+        device = new_gpu_id;
     }
     //! \brief Set default device.
     void setDevice() const{ AccelerationMeta::setDefaultGpuDevice(device); }
