@@ -34,9 +34,6 @@ EXECNAME = tasgrid
 
 TESTNAME = gridtest
 
-%.cu.o: %.cu $(LHEADERS)
-	$(NVCC) $(NVCC_OPT) -c $< -o $@
-
 %.o: %.cpp $(LHEADERS)
 	$(CC) $(OPTC) $(IADD) -c $< -o $@
 

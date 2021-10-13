@@ -188,7 +188,7 @@ Acceleration options other than OpenMP are not supported in the basic mode.
 ```
 In the basic mode, the source folder will become the installation folder, i.e.,
 the libraries, executables and Python modules will be build in the source folder
-and the headers and the Fortran module will be copied to the `include` folder.
+and the headers will be copied to the `include` folder.
 
 ### Install with Python Pip
 
@@ -214,6 +214,11 @@ export Tasmanian_ENABLE_BLAS=<blas-lapack-libs>    -D Tasmanian_ENABLE_BLAS=ON
                                                    -D LAPACK_LIBRARIES=<blas-lapack-libs>
 export Tasmanian_ENABLE_CUDA=<cuda-nvcc>           -D Tasmanian_ENABLE_CUDA=ON
                                                    -D CMAKE_CUDA_COMPILER=<cuda-nvcc>
+export Tasmanian_ENABLE_ROCM=<hipcc>               -D Tasmanian_ENABLE_HIP=ON
+                                                   -D CMAKE_CXX_COMPILER=<hipcc>
+export Tasmanian_ENABLE_DPCPP=<dpcpp>              -D Tasmanian_ENABLE_DPCPP=ON
+                                                   -D CMAKE_CXX_COMPILER=<dpcpp>
+export Tasmanian_MKL_SYCL_ROOT=<path-to-onemkl>    -D Tasmanian_MKL_SYCL_ROOT=<path-to-onemkl>
 export Tasmanian_ENABLE_MAGMA=<magma-root>         -D Tasmanian_ENABLE_MAGMA=ON
                                                    -D Tasmanian_MAGMA_ROOT_DIR=<magma-root>
 export Tasmanian_ENABLE_MPI=<mpicxx>               -D Tasmanian_ENABLE_MPI=ON
@@ -377,7 +382,7 @@ Several known issues and work-around fixes:
     * Rerun the tests and/or installation to see if the problem is persistent
 * Mixing the GCC and Clang compilers and linkers sometimes fails with an error about the architecture
     * use shared libraries only, i.e., `-D BUILD_SHARED_LIBS=ON` in CMake
-* The older versions of the PGI compiler fails when using optimization `-O2`
+* Some older versions of the PGI compiler fails when using optimization `-O2`
     * use the `-O1` instead, or the newest version of the compiler
 * XL compiler with OpenMP segfaults if the OMP_NUM_THREADS is not set correctly
 * XL and PGI Fortran compiler do not work with the deprecated Fortran 90 interface

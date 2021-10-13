@@ -348,10 +348,6 @@ void* tsgGetCandidateConstructionPointsVoidPntr(void *grid, const char *sType, i
     if (anisotropic_weights == nullptr){
         *vecx = ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(depth_type, output, veclimits);
     }else{
-        int num_weights = ((TasmanianSparseGrid*) grid)->getNumDimensions();
-        if ((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)){
-            num_weights *= 2;
-        }
         std::vector<int> vecweights(anisotropic_weights, anisotropic_weights +
                                     (((depth_type == type_curved) || (depth_type == type_ipcurved) || (depth_type == type_qpcurved)) ? 2*dims : dims));
         *vecx = ((TasmanianSparseGrid*) grid)->getCandidateConstructionPoints(depth_type, vecweights, veclimits);

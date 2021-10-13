@@ -1,6 +1,23 @@
 Changelog for version 7.7
 --------------
 
+* added new method for constructing quadrature rules with negative weight functions
+    * the weight function needs to be bounded from below
+    * the methods are added to the Addons module under the Exotic Quadrature name
+    * credit goes to William Kong
+* stabilized the DPC++ backend and improved the oneMKL compatibility
+    * cleaned the build system and improved the way the dependencies are handled
+* stabilized the Fortrain 2003 interface to cover all Sparse Grid functionality
+    * GPU and MPI methods are now fully supported through Fortran 2003
+    * added Fortran 2003 methods for complex numbers for Fourier grids
+    * the old Fortran 90/95 interface is now deprecated
+* improved the grid compression methods
+    * now can remove points by keeping a specific number of points/basis-functions
+* moved the post-install testing to CMake
+    * simplifies the spack testing for the E4S compatibility
+* improved the libEnsemble-Tasmanian integration, see the documentation
+* improved the logic for accepting external handles and queues for all GPUs
+* deprecated the simple install script, use CMake directly
 
 Changelog for version 7.5
 --------------
