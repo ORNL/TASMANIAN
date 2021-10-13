@@ -126,6 +126,38 @@ if ((norm(w - tw) > 1.E-11) || (norm(p - tp) > 1.E-11))
     error('Mismatch in points and weights of simple quadrature: level limit, points and weights');
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                 tsgMakeExoticQuadrature()                        %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Create a sinc function surrogate.
+[lWeightGrid, points] = tsgMakeGlobal('Sinc_Surrogate', 1, 1, 'gauss-legendre', 'qptotal', 200);
+vals = zeros(length(points), 1);
+for i=1:length(points)
+    if abs(points(i)) <= 1e-16
+        vals(i) = 1.0;
+    else
+        vals(i) = sin(points(i)) / points(i);
+    end
+end
+tsgLoadValues(lWeightGrid, vals);
+
+% Create the exotic quadrature rule and test it on 1D and 2D instances.
+iDepth = 40;
+lCustomRule = tsgMakeExoticQuadrature(iDepth, 1.0, lWeightGrid, 'Sinc_Exoquad', true);
+[w1, p1] = tsgMakeQuadrature(1, 'custom-tabulated', 'qptotal', iDepth, 0, [], [], [], lCustomRule);
+I1 = sum(w1 .* exp(-p1 .* p1));
+if (abs(I1 - 1.4321357541271255) > 1E-11)
+    error('Mismatch in generated sinc-weighted integral of tsgMakeExoticQuadrature() for dimension 1');
+end
+[w2, p2] = tsgMakeQuadrature(2, 'custom-tabulated', 'qptotal', iDepth, 0, [], [], [], lCustomRule);
+I2 = sum(w2 .* exp(-p2(:, 1) .* p2(:, 1) - p2(:, 2) .* p2(:, 2)));
+if (abs(I2 - 1.4321357541271255 ^ 2) > 1E-11)
+    error('Mismatch in generated sinc-weighted integral of tsgMakeExoticQuadrature() for dimension 2');
+end
+
+% Clean up
+tsgDeleteGrid(lWeightGrid)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgMakeGlobal()                              %%%

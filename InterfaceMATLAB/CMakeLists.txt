@@ -24,6 +24,7 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgListGridsByName.m
                                   tsgLoadHCoefficients.m
                                   tsgLoadValues.m
+                                  tsgMakeExoticQuadrature.m
                                   tsgMakeFilenames.m
                                   tsgMakeFourier.m
                                   tsgMakeGlobal.m
@@ -33,6 +34,7 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgMakeWavelet.m
                                   tsgMergeRefine.m
                                   tsgPlotPoints2D.m
+                                  tsgReadCustomRuleFile.m
                                   tsgReadMatrix.m
                                   tsgRefineAnisotropic.m
                                   tsgRefineSurplus.m
