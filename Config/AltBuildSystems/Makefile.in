@@ -6,11 +6,6 @@ else
 COMPILE_OPTIONS = -Wno-unknown-pragmas
 endif
 
-# use only for CUDA support (see example below)
-TASMANIAN_CUDA_KERNELS =
-NVCC =
-NVCC_OPT =
-
 # Default C++ compiler
 CC = g++
 OPTC = -O3 -std=c++11 $(COMPILE_OPTIONS) -fPIC -Wstrict-aliasing
@@ -22,6 +17,6 @@ OPTF = -O3 -fno-f2c -mtune=native $(COMPILE_OPTIONS) -fPIC
 OPTLFF = $(OPTF)
 
 # Default common libraries
-CommonIADD = -I../InterfaceTPL/ -I./
+CommonIADD = -I../InterfaceTPL/ -I../DREAM/ -I../Addons/ -I./
 CommonLADD =
 CommonLIBS = -lm
