@@ -17,6 +17,7 @@ Changelog for version 7.7
     * simplifies the spack testing for the E4S compatibility
 * improved the libEnsemble-Tasmanian integration, see the documentation
 * improved the logic for accepting external handles and queues for all GPUs
+* deprecated the simple install script, use CMake directly
 
 Changelog for version 7.5
 --------------
