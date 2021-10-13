@@ -47,7 +47,9 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/Config/Tasmanian.h"
 # TasmanianMake.in for GNU Make include/link
 get_target_property(Tasmanian_list Tasmanian_dependencies INTERFACE_LINK_LIBRARIES)
 foreach(Tasmanian_lib_ ${Tasmanian_list})
-    set(Tasmanian_libs "${Tasmanian_libs} ${Tasmanian_lib_}")
+    if (NOT TARGET ${Tasmanian_lib_})
+        set(Tasmanian_libs "${Tasmanian_libs} ${Tasmanian_lib_}")
+    endif()
 endforeach()
 unset(Tasmanian_lib_)
 unset(Tasmanian_list)
