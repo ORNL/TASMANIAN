@@ -25,30 +25,30 @@ fid = fopen(sFilename);
 
 sLine = fgetl(fid);
 if (strfind('description: ', sLine) ~= 1)
-  error('Wrong file format of custom tabulated file on line 1!');
+    error('Wrong file format of custom tabulated file on line 1!');
 end
 lCustomRule.sDescription = strrep(sLine, 'description: ', '');
 
 sLine = fgetl(fid);
 if (strfind('levels: ', sLine) ~= 1)
-  error('Wrong file format of custom tabulated file on line 2!');
+    error('Wrong file format of custom tabulated file on line 2!');
 end
 lCustomRule.iMaxLevel = str2double(strrep(sLine, 'levels: ', ''));
 
-lCustomRule.vLevels = NaN(lCustomRule.iMaxLevel, 1);
-lCustomRule.vPrecision = NaN(lCustomRule.iMaxLevel, 1);
+lCustomRule.vLevels = zeros(lCustomRule.iMaxLevel, 1);
+lCustomRule.vPrecision = zeros(lCustomRule.iMaxLevel, 1);
 for i=1:lCustomRule.iMaxLevel
-  s = fscanf(fid, ' %f ', [1, 2]);
-  lCustomRule.vLevels(i) = s(1);
-  lCustomRule.vPrecision(i) = s(2);
+    s = fscanf(fid, ' %f ', [1, 2]);
+    lCustomRule.vLevels(i) = s(1);
+    lCustomRule.vPrecision(i) = s(2);
 end
 
-lCustomRule.vNodes = NaN(sum(lCustomRule.vLevels), 1);
-lCustomRule.vWeights = NaN(sum(lCustomRule.vLevels), 1);
+lCustomRule.vNodes = zeros(sum(lCustomRule.vLevels), 1);
+lCustomRule.vWeights = zeros(sum(lCustomRule.vLevels), 1);
 for i=1:sum(lCustomRule.vLevels)
-  s = fscanf(fid, ' %f ', [1, 2]);
-  lCustomRule.vNodes(i) = s(2);
-  lCustomRule.vWeights(i) = s(1);
+    s = fscanf(fid, ' %f ', [1, 2]);
+    lCustomRule.vNodes(i) = s(2);
+    lCustomRule.vWeights(i) = s(1);
 end
 
 fclose(fid);

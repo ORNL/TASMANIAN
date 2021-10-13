@@ -48,7 +48,7 @@ sCommand = [sCommand, ' -shift ',       num2str(fShift)];
 sCommand = [sCommand, ' -weightfile ', '"', sWeightFileG, '"'];
 sCommand = [sCommand, ' -description ', '"', sDescription, '"'];
 if (bSymmetric)
-  sCommand = [sCommand, ' -symmetric '];
+    sCommand = [sCommand, ' -symmetric '];
 end
 sCommand = [sCommand, ' -outputfile ', '"', sFileC, '"'];
 
