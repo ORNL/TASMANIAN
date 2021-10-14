@@ -172,7 +172,7 @@ void TasmanianTridiagonalSolver::decompose(std::vector<double> &diag, std::vecto
             weights[0] = sqrt(mu0);
             nodes = diag;
             off_diag.push_back(0.0);
-            decompose1(diag.size(), nodes, off_diag, weights);
+            decompose1(static_cast<int>(diag.size()), nodes, off_diag, weights);
             break;
         case 2 :
             decompose2(diag, off_diag, mu0, nodes, weights);
@@ -293,7 +293,7 @@ void TasmanianTridiagonalSolver::decompose2(std::vector<double> &diag, std::vect
             continue;
         }
         // ALGOL COMMENT: Small off diagonal element means matrix can be split.
-        int k = m-1;
+        size_t k = m-1;
         while (std::fabs(off_diag[k-1]) > eps) k--;
         // ALGOL COMMENT: Find eigenvalues of lower 2-by-2 and select accelerating shift.
         double b2 = off_diag[m-1] * off_diag[m-1];

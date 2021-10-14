@@ -172,9 +172,9 @@ inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const do
     // Create and append the set of correction points and weights for the second term only if the shift is nonzero.
     if (shift != 0.0) {
         for (int i=0; i<n; i++) {
-            const int init_size = points_cache[i].size();
+            const size_t init_size = points_cache[i].size();
             std::vector<double> correction_points, correction_weights;
-            TasGrid::OneDimensionalNodes::getGaussLegendre(init_size, correction_weights, correction_points);
+            TasGrid::OneDimensionalNodes::getGaussLegendre(static_cast<int>(init_size), correction_weights, correction_points);
             for (auto &w : correction_weights) w *= -shift;
             if (correction_points.size() % 2 == 1 && is_symmetric) {
                 // Zero out for stability.
@@ -182,10 +182,10 @@ inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const do
             }
             // Account for duplicates up to a certain tolerance.
             for (size_t j=0; j<correction_points.size(); j++) {
-                int nonunique_idx = -1;
-                for (int k=0; k<init_size; k++) {
+                long long nonunique_idx = -1;
+                for (size_t k=0; k<init_size; k++) {
                     if (std::abs(correction_points[j] - points_cache[i][k]) <= Maths::num_tol) {
-                        nonunique_idx = k;
+                        nonunique_idx = static_cast<long long>(k);
                         break;
                     }
                 }
@@ -202,7 +202,7 @@ inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const do
     // Output to a CustomTabulated instance.
     std::vector<int> num_nodes(n), precision(n);
     for (int i=0; i<n; i++) {
-        num_nodes[i] = points_cache[i].size();
+        num_nodes[i] = static_cast<int>(points_cache[i].size());
         precision[i] = 2 * (i + 1) - 1;
     }
     return TasGrid::CustomTabulated(n, std::move(num_nodes), std::move(precision), std::move(points_cache),

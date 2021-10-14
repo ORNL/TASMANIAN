@@ -44,14 +44,14 @@ inline bool testNodeAndWeightSizes() {
     std::vector<double> ref_weights(nref), ref_points(nref);
     TasGrid::OneDimensionalNodes::getGaussLegendre(nref, ref_weights, ref_points);
     // n = 1, 2, 5
-    std::vector<size_t> n_vec = {1, 2, 5};
+    std::vector<int> n_vec = {1, 2, 5};
     for (auto n : n_vec) {
         TasGrid::getGaussNodesAndWeights<true>(n, ref_points, ref_weights, points_cache, weights_cache);
-        if (points_cache.size() != n) {
+        if (static_cast<int>(points_cache.size()) != n) {
             std::cout << "ERROR: Test failed in testNodeAndWeightSizes() for n = " << n << std::endl;
             passed = false;
         }
-        if (weights_cache.size() != n) {
+        if (static_cast<int>(weights_cache.size()) != n) {
             std::cout << "ERROR: Test failed in testNodeAndWeightSizes() for n = " << n << std::endl;
             passed = false;
         }
