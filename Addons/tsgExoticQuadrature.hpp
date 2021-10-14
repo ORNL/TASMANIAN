@@ -182,14 +182,14 @@ inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const do
             }
             // Account for duplicates up to a certain tolerance.
             for (size_t j=0; j<correction_points.size(); j++) {
-                size_t nonunique_idx = -1;
+                long long nonunique_idx = -1;
                 for (size_t k=0; k<init_size; k++) {
                     if (std::abs(correction_points[j] - points_cache[i][k]) <= Maths::num_tol) {
-                        nonunique_idx = k;
+                        nonunique_idx = static_cast<long long>(k);
                         break;
                     }
                 }
-                if (nonunique_idx == static_cast<size_t>(-1)) {
+                if (nonunique_idx == -1) {
                     points_cache[i].push_back(correction_points[j]);
                     weights_cache[i].push_back(correction_weights[j]);
                 } else {
