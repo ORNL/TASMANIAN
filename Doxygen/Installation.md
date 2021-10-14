@@ -135,7 +135,7 @@ will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` follo
   -D CMAKE_CUDA_COMPILER:PATH          (specify the CUDA nvcc compiler)
   -D CMAKE_Fortran_COMPILER:PATH       (specify the Fortran compiler)
   -D Tasmanian_ROCM_ROOT:PATH          (specify the path to the ROCm installation)
-  -D Tasmanian_MKL_SYCL_ROOT:PATH      (specify the path to the oneMKL installation)
+  -D MKLROOT:PATH                      (specify the path to the oneMKL installation)
   -D Tasmanian_MAGMA_ROOT:PATH         (specify the path to the MAGMA installation)
   -D MPI_CXX_COMPILER:PATH=<path>      (specify the MPI compiler wrapper)
   -D MPI_Fortran_COMPILER:PATH=<path>  (needed for MPI with Fortran)
@@ -149,7 +149,7 @@ will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` follo
 * The **OneAPI** capabilities require:
     * the CMake CXX compiler is set to *dpcpp*
     * `Tasmanian_ENABLE_BLAS` is set to **ON**
-    * BLAS is set to the CPU version of MKL, e.g., using `BLAS_LIBRARIES`
+    * BLAS is set to the CPU version of MKL, e.g., using `BLAS_LIBRARIES` or `BLA_VENDOR`
 
 * Alternatives allowing to directly specify libraries and bypass `find_package()` altogether:
 ```
@@ -159,7 +159,7 @@ will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` follo
 
 * Extra options are available in case CMake fails to find a required dependency, e.g., `find_package()` sometimes fails to acknowledge that the ACML implementation of BLAS depends on both `libgfortran` and `libgomp`; the manual options below should not be necessary in the majority of cases:
 ```
-  -D Tasmanian_EXTRA_LIBRARIES:LIST   (add more libraries as dependencies)
+  -D Tasmanian_EXTRA_LIBRARIES:LIST     (add more libraries as dependencies)
   -D Tasmanian_EXTRA_INCLUDE_DIRS:PATH  (add more include paths to search for headers)
   -D Tasmanian_EXTRA_LINK_DIRS:PATH     (appends more link paths to search for libraries)
 ```
@@ -218,14 +218,19 @@ export Tasmanian_ENABLE_ROCM=<hipcc>               -D Tasmanian_ENABLE_HIP=ON
                                                    -D CMAKE_CXX_COMPILER=<hipcc>
 export Tasmanian_ENABLE_DPCPP=<dpcpp>              -D Tasmanian_ENABLE_DPCPP=ON
                                                    -D CMAKE_CXX_COMPILER=<dpcpp>
-export Tasmanian_MKL_SYCL_ROOT=<path-to-onemkl>    -D Tasmanian_MKL_SYCL_ROOT=<path-to-onemkl>
 export Tasmanian_ENABLE_MAGMA=<magma-root>         -D Tasmanian_ENABLE_MAGMA=ON
                                                    -D Tasmanian_MAGMA_ROOT_DIR=<magma-root>
 export Tasmanian_ENABLE_MPI=<mpicxx>               -D Tasmanian_ENABLE_MPI=ON
                                                    -D MPI_CXX_COMPILER=<mpicxx>
 export Tasmanian_MATLAB_WORK_FOLDER=<path>         -D Tasmanian_MATLAB_WORK_FOLDER=<path>
 ```
-* note that the environment variables work only with Python Pip
+* CMake also accepts several standard environment variables:
+```
+Environment Option          Example values
+export BLA_VENDOR           OpenBLAS or MKL
+export MKLROOT              /opt/intel/oneapi/mkl/latest
+```
+* note that the Tasmanian specific environment variables work only with Python Pip
 * Example virtual install looks like this:
 ```
 python3 -m venv tasmanian_virtual_env                   # create a virtual environment
