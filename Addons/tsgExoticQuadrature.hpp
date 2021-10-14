@@ -189,7 +189,7 @@ inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const do
                         break;
                     }
                 }
-                if (nonunique_idx == -1) {
+                if (nonunique_idx == static_cast<size_t>(-1)) {
                     points_cache[i].push_back(correction_points[j]);
                     weights_cache[i].push_back(correction_weights[j]);
                 } else {
