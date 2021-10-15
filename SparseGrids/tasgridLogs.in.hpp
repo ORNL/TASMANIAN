@@ -31,8 +31,8 @@
 #include <iostream>
 #include <fstream>
 
-#define TasmanianGPTableBuild @CMAKE_CURRENT_BINARY_DIR@/SparseGrids/GaussPattersonRule.table
-#define TasmanianGPTableInstall @Tasmanian_final_install_path@/share/Tasmanian/GaussPattersonRule.table
+#define TasmanianGPTableBuild "@CMAKE_CURRENT_BINARY_DIR@/SparseGrids/GaussPattersonRule.table"
+#define TasmanianGPTableInstall "@Tasmanian_final_install_path@/share/Tasmanian/GaussPattersonRule.table"
 
 inline void show_log(){
     std::ifstream logfile("@Tasmanian_final_install_path@/share/Tasmanian/Tasmanian.log");

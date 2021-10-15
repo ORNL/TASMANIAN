@@ -201,6 +201,9 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.h"
         DESTINATION include
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/../configured/tasgridLogs.hpp"
+        DESTINATION include
+        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Examples/"
         DESTINATION "share/Tasmanian/examples/"
         FILES_MATCHING PATTERN "*.cpp"
