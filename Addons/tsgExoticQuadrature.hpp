@@ -139,8 +139,8 @@ inline double lagrange_eval(size_t idx, const std::vector<double> &roots, double
  *         the algorithm makes slight modifications  that improve stability in the symmetric case
  *
  * \param n is the number of quadrature rules to construct
- * \param ref_points is the points of the reference quadrature
- * \param ref_weights is the weights of the reference quadrature multiplied by the shifted weight function
+ * \param ref_points are the points of the reference quadrature
+ * \param ref_weights are the weights of the reference quadrature multiplied by the shifted weight function
  * \param points_cache on exit will be loaded so that points_cache[i] will be roots of the i+1-st orthogonal polynomial
  * \param weights_cache on exit will be loaded with the quadrature weights corresponding to the points_cache
  * \endinternal
@@ -224,8 +224,8 @@ inline void getGaussNodesAndWeights(const int n, const std::vector<double> &ref_
  *
  * \param n is the number of levels to compute
  * \param shift is the correction term applied to the weight function to enforce positivity
- * \param shifted_weights is the reference quadrature points multiplied by the values of the shifted weight function at the reference points
- * \param ref_points is the reference quadrature points
+ * \param shifted_weights are the reference quadrature points multiplied by the values of the shifted weight function at the reference points
+ * \param ref_points are the reference quadrature points
  * \param description is the human readable string to identify the quadrature rule
  * \param is_symmetric indicates whether we can use algorithm modifications that can improve stability
  * \endinternal
@@ -289,7 +289,7 @@ inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const do
  *
  * \param vals are the values of the exotic weight function at the reference quadrature points
  * \param shift is a real-valued scalar that ensures all \b vals[i] + \b shift are positive
- * \param ref_weights is the reference quadrature weights, will be overwritten with the result ref_weights[i] * (vals[i] + shift)
+ * \param ref_weights are the reference quadrature weights, will be overwritten with the result ref_weights[i] * (vals[i] + shift)
  *
  * \throws std::invalid_argument if \b vals[i] + \b shift is negative for some index i
  *
@@ -315,7 +315,7 @@ inline void shiftReferenceWeights(std::vector<double> const &vals, double shift,
  *        (up to some point where numerical stability is lost)
  * \param description is a human readable string that can be used to identify the quadrature rule (could be empty)
  * \param is_symmetric indicates whether to assume that the weight is symmetric, which allows for some stability improvements;
- *        symmetry is defined as being an "even" function on [-1, 1], which means that all odd power polynomials integrate to zero;
+ *        symmetric means "even" on [-1, 1], which leads to all odd power polynomials integrating to zero;
  *        the same holds for shifted domains so long as the weight is "even" with respect to the mid-point of the domain.
  *
  * \returns TasGrid::CustomTabulated object holding the points and weights for the different levels of the quadrature
@@ -329,8 +329,8 @@ inline void shiftReferenceWeights(std::vector<double> const &vals, double shift,
  * Note that the values of the weight function will not be interpolated between the reference points.
  *
  * Examples of symmetric weight functions are \f$ \sin(x) \f$, \f$ \sin(x) / x \f$, constant weight, and
- * the Gauss-Chebyshev weights. On the other hand, \f$ \cos(x) \f$ is not symmetric with respect
- * to this algorithm due to the shift that must be applied.
+ * the Gauss-Chebyshev weights. On the other hand, \f$ \cos(x) \f$ is not symmetric in the context of
+ * this algorithm due to the shift that must be applied.
  */
 inline TasGrid::CustomTabulated getExoticQuadrature(const int num_levels, const double shift, const TasGrid::TasmanianSparseGrid &grid,
                                                     const char* description, const bool is_symmetric = false) {
