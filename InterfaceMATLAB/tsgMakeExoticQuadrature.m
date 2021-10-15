@@ -45,12 +45,12 @@ end
 sCommand = [sTasGrid,' -makeexoquad'];
 sCommand = [sCommand, ' -depth ',       num2str(iDepth)];
 sCommand = [sCommand, ' -shift ',       num2str(fShift)];
-sCommand = [sCommand, ' -weightfile ', '"', sWeightFileG, '"'];
+sCommand = [sCommand, ' -weightfile ',  sWeightFileG];
 sCommand = [sCommand, ' -description ', '"', sDescription, '"'];
 if (bSymmetric)
     sCommand = [sCommand, ' -symmetric '];
 end
-sCommand = [sCommand, ' -outputfile ', '"', sFileC, '"'];
+sCommand = [sCommand, ' -outputfile ', sFileC];
 
 [~, cmdout] = system(sCommand);
 
