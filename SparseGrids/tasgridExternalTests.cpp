@@ -113,15 +113,11 @@ void ExternalTester::setGPUID(int gpu_id){ gpuid = gpu_id; }
 
 
 const char* ExternalTester::findGaussPattersonTable(){
-    // two Tasmanian_to_string methods are needed here, one to add the "" and one to expands the variable x
     // TasmanianGPTableBuild and TasmanianGPTableInstall are defined in tasgridLogs.hpp (configured from CMake)
-    #define Tasmanian_to_string2(x) #x
-    #define Tasmanian_to_string(x) Tasmanian_to_string2(x)
-
-    if (std::ifstream(Tasmanian_to_string(TasmanianGPTableBuild)).good())
-        return Tasmanian_to_string(TasmanianGPTableBuild);
-    if (std::ifstream(Tasmanian_to_string(TasmanianGPTableInstall)).good())
-        return Tasmanian_to_string(TasmanianGPTableInstall);
+    if (std::ifstream(TasmanianGPTableBuild).good())
+        return TasmanianGPTableBuild;
+    if (std::ifstream(TasmanianGPTableInstall).good())
+        return TasmanianGPTableInstall;
 
     throw std::runtime_error("Cannot open custom file GaussPattersonRule.table in any of the expected locations in the build or install folders!");
     return nullptr;
