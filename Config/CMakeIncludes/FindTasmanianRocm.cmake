@@ -23,19 +23,23 @@ if (Tasmanian_ENABLE_OPENMP)
     set(Tasmanian_HIP_IOMP5_PATH "${Tasmanian_hipccroot}/llvm" CACHE PATH "The search path for libiomp5")
 endif()
 
-foreach(_tsg_roclib hip rocblas rocsparse rocsolver)
+if (Tasmanian_ENABLE_MAGMA)
+    set(Tasmanian_extra_magma_libs hipblas hipsparse)
+endif()
+
+foreach(_tsg_roclib hip rocblas rocsparse rocsolver ${Tasmanian_extra_magma_libs})
     find_package(${_tsg_roclib} REQUIRED)
 endforeach()
 
-get_filename_component(Tasmanian_hiproot ${HIP_HIPCC_EXECUTABLE} DIRECTORY) # convert <path>/bin/hipcc to <path>/bin
-get_filename_component(Tasmanian_hiproot ${Tasmanian_hiproot} DIRECTORY)   # convert <path>/bin to <path>
-
-foreach(_tsg_roclib rocblas rocsparse rocsolver)
+foreach(_tsg_roclib rocblas rocsparse rocsolver ${Tasmanian_extra_magma_libs})
     get_filename_component(Tasmanian_roclib_root ${${_tsg_roclib}_INCLUDE_DIR} DIRECTORY)
     list(APPEND Tasmanian_hiplibs roc::${_tsg_roclib})
     list(APPEND Tasmanian_hip_rpath "${Tasmanian_roclib_root}/lib")
 endforeach()
 unset(_tsg_roclib)
+
+get_filename_component(Tasmanian_hiproot ${HIP_HIPCC_EXECUTABLE} DIRECTORY) # convert <path>/bin/hipcc to <path>/bin
+get_filename_component(Tasmanian_hiproot ${Tasmanian_hiproot} DIRECTORY)   # convert <path>/bin to <path>
 
 find_package_handle_standard_args(TasmanianRocm DEFAULT_MSG Tasmanian_hiplibs)
 
