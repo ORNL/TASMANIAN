@@ -1,8 +1,8 @@
-![build](https://github.com/ORNL/TASMANIAN/workflows/build-ubuntu/badge.svg?branch=master)
-![build](https://github.com/ORNL/TASMANIAN/workflows/build-macos/badge.svg?branch=master)
-![build](https://github.com/ORNL/TASMANIAN/workflows/build-windows/badge.svg?branch=master)
-
 # Tasmanian
+
+![Ubuntu-tested](https://github.com/ORNL/TASMANIAN/workflows/build-ubuntu/badge.svg?branch=master)
+![MacOSX-tested](https://github.com/ORNL/TASMANIAN/workflows/build-macos/badge.svg?branch=master)
+![Windows-tested](https://github.com/ORNL/TASMANIAN/workflows/build-windows/badge.svg?branch=master)
 
 The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN is a collection of robust libraries for high dimensional integration and interpolation as well as parameter calibration. This documentation focuses on the libraries and the software API, refer to the PDF document on the project web-page for specifics about the mathematics of the implemented methods.
 
@@ -13,8 +13,7 @@ Visit us at: [https://tasmanian.ornl.gov/](https://tasmanian.ornl.gov/) and
 
 [Documentation: development (rolling)](https://ornl.github.io/TASMANIAN/)
 
-Sparse Grids
---------------
+### Sparse Grids
 
 Sparse Grids is a family of algorithms for constructing multidimensional quadrature and interpolation rules
 using multiple tensor products of one dimensional rules with varying degree of precision.
@@ -33,8 +32,7 @@ The Tasmanian Sparse Grids Module implements a variety of grids that fall into f
     Fourier Transforms. Such grids are suitable for approximating periodic functions,
     since periodicity if preserved in the approximation.
 
-DREAM
---------------
+### DREAM
 
 The DiffeRential Evolution Adaptive Metropolis is a method to draw samples from an arbitrary probability
 distribution defined by an arbitrary non-negative function (not necessarily normalized to integrate to 1).
@@ -54,8 +52,7 @@ If you use Tasmanian for your research, please cite the Manual and our work on g
 
 [http://tasmanian.ornl.gov/documents/Tasmanian.bib](http://tasmanian.ornl.gov/documents/Tasmanian.bib)
 
-Quick Install
---------------
+### Quick Install
 
 See also the detailed [Installation](Doxygen/Installation.md) instructions.
 
@@ -69,8 +66,7 @@ See also the detailed [Installation](Doxygen/Installation.md) instructions.
 ```
 * Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 
-Basic Usage of Tasmanian
---------------
+### Basic Usage of Tasmanian
 
 * See the Examples in the install prefix:
 ```
