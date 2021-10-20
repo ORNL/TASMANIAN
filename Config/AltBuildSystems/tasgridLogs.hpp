@@ -31,8 +31,8 @@
 #include <iostream>
 #include <fstream>
 
-#define TasmanianGPTableBuild ./SparseGrids/GaussPattersonRule.table
-#define TasmanianGPTableInstall ./SparseGrids/GaussPattersonRule.table
+#define TasmanianGPTableBuild "./GaussPattersonRule.table"
+#define TasmanianGPTableInstall "./SparseGrids/GaussPattersonRule.table"
 
 inline void show_log(){
     std::cout << "Logs are not availeble with GNU Make" << std::endl;
