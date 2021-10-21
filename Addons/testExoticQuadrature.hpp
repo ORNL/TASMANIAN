@@ -33,7 +33,7 @@
 
 
 #include "TasmanianAddons.hpp"
-#include "tasgridCLICommon.hpp"
+#include "gridtestCLICommon.hpp"
 #include <cstring>
 
 // Test the output of getGaussNodesAndWeights().

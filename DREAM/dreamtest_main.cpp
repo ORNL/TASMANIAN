@@ -28,7 +28,7 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#include "tasgridCLICommon.hpp"
+#include "gridtestCLICommon.hpp"
 
 #include "tasdreamExternalTests.hpp"
 

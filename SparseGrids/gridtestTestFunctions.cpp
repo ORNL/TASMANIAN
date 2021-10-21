@@ -31,7 +31,7 @@
 #ifndef __TASMANIAN_TASGRID_FUNCTIONS_CPP
 #define __TASMANIAN_TASGRID_FUNCTIONS_CPP
 
-#include "tasgridTestFunctions.hpp"
+#include "gridtestTestFunctions.hpp"
 
 #include "TasmanianSparseGrid.hpp"
 

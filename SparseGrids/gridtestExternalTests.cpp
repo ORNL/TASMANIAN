@@ -32,8 +32,8 @@
 #ifndef __TASGRID_TESTER_CPP
 #define __TASGRID_TESTER_CPP
 
-#include "tasgridExternalTests.hpp"
-#include "tasgridTestHelpers.hpp"
+#include "gridtestExternalTests.hpp"
+#include "gridtestTestHelpers.hpp"
 
 std::minstd_rand park_miller(10);
 std::vector<double> genRandom(int num_samples, std::vector<double> const &lower, std::vector<double> const &upper){

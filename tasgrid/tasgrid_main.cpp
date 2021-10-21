@@ -28,7 +28,7 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#include "tasgridExternalTests.hpp"
+#include "gridtestExternalTests.hpp"
 #include "tasgridWrapper.hpp"
 
 using namespace std;

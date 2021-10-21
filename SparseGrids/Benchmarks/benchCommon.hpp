@@ -3,7 +3,7 @@
 
 #include <chrono>
 
-#include "tasgridCLICommon.hpp"
+#include "gridtestCLICommon.hpp"
 
 enum BenchFuction{
     bench_none,

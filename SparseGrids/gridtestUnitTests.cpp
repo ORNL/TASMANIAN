@@ -31,9 +31,9 @@
 #ifndef __TASGRID_UNIT_TESTS_CPP
 #define __TASGRID_UNIT_TESTS_CPP
 
-#include "tasgridUnitTests.hpp"
-#include "tasgridExternalTests.hpp"
-#include "tasgridTestHelpers.hpp"
+#include "gridtestUnitTests.hpp"
+#include "gridtestExternalTests.hpp"
+#include "gridtestTestHelpers.hpp"
 #include "tsgTPLWrappers.hpp"
 
 #ifdef Tasmanian_ENABLE_HIP

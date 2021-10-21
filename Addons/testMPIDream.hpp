@@ -29,7 +29,7 @@
  */
 
 #include "TasmanianAddons.hpp"
-#include "tasgridCLICommon.hpp"
+#include "gridtestCLICommon.hpp"
 
 inline bool testLikelySendRecv(){
     int me = TasGrid::getMPIRank(MPI_COMM_WORLD);

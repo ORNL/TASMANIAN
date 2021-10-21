@@ -33,7 +33,7 @@
 
 /*!
  * \internal
- * \file tasgridCLICommon.hpp
+ * \file gridtestCLICommon.hpp
  * \brief Common executable includes and templates.
  * \author Miroslav Stoyanov
  * \ingroup TasmanianCLI

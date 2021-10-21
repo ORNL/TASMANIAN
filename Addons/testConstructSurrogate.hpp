@@ -29,7 +29,7 @@
  */
 
 #include "TasmanianAddons.hpp"
-#include "tasgridCLICommon.hpp"
+#include "gridtestCLICommon.hpp"
 #include <limits>
 
 using std::cout;
