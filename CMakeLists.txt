@@ -121,7 +121,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/TasmanianConfig.hpp"
         DESTINATION include
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 # configure the headers for the logs
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/SparseGrids/tasgridLogs.in.hpp" "${CMAKE_CURRENT_BINARY_DIR}/configured/tasgridLogs.hpp")
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tasgrid/tasgridLogs.in.hpp" "${CMAKE_CURRENT_BINARY_DIR}/configured/tasgridLogs.hpp")
 
 
 ########################################################################
@@ -136,6 +136,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/SparseGrids/tasgridLogs.in.hpp" "${C
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/SparseGrids" "${CMAKE_CURRENT_BINARY_DIR}/SparseGrids")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DREAM"       "${CMAKE_CURRENT_BINARY_DIR}/DREAM")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Addons"      "${CMAKE_CURRENT_BINARY_DIR}/Addons")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/tasgrid"      "${CMAKE_CURRENT_BINARY_DIR}/tasgrid")
 
 if (Tasmanian_ENABLE_FORTRAN)
     if (NOT Tasmanian_DISABLE_F90)

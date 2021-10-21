@@ -1,5 +1,5 @@
 ########################################################################
-# Sparse Grid librareis and command line tool
+# Sparse Grid libraries and gridtest command line tool
 ########################################################################
 
 ########################################################################
@@ -58,31 +58,22 @@ set(Tasmanian_source_libsparsegrid_cuda
 
 
 ########################################################################
-# add the tasgrid and examples executables
+# add the gridtest and examples executables
 ########################################################################
-add_executable(Tasmanian_tasgrid tasgrid_main.cpp
-                                 TasmanianSparseGrid.hpp
-                                 tasgridCLICommon.hpp
-                                 tasgridExternalTests.hpp
-                                 tasgridExternalTests.cpp
-                                 tasgridTestHelpers.hpp
-                                 tasgridTestFunctions.hpp
-                                 tasgridTestFunctions.cpp
-                                 tasgridWrapper.hpp
-                                 tasgridWrapper.cpp)
 add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   TasmanianSparseGrid.hpp
-                                  tasgridCLICommon.hpp
-                                  tasgridExternalTests.hpp
-                                  tasgridExternalTests.cpp
-                                  tasgridTestHelpers.hpp
-                                  tasgridTestFunctions.hpp
-                                  tasgridTestFunctions.cpp
-                                  tasgridUnitTests.hpp
-                                  tasgridUnitTests.cpp
-                                  tasgridTestInterfaceC.cpp)
+                                  gridtestCLICommon.hpp
+                                  gridtestExternalTests.hpp
+                                  gridtestExternalTests.cpp
+                                  gridtestTestHelpers.hpp
+                                  gridtestTestFunctions.hpp
+                                  gridtestTestFunctions.cpp
+                                  gridtestUnitTests.hpp
+                                  gridtestUnitTests.cpp
+                                  gridtestTestInterfaceC.cpp)
+                                  
 add_executable(Tasmanian_benchmarksgrid  Benchmarks/benchCommon.hpp
-                                         tasgridCLICommon.hpp
+                                         gridtestCLICommon.hpp
                                          Benchmarks/benchMakeGrid.hpp
                                          Benchmarks/benchLoadNeeded.hpp
                                          Benchmarks/benchEvaluate.hpp
@@ -111,9 +102,6 @@ endif()
 target_link_libraries(Tasmanian_libsparsegrid  Tasmanian_dependencies)
 
 target_include_directories(Tasmanian_libsparsegrid PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
-# the following are needed for Exotic quadrature only
-target_include_directories(Tasmanian_libsparsegrid PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../Addons>)
-target_include_directories(Tasmanian_libsparsegrid PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../DREAM>)
 
 set_target_properties(Tasmanian_libsparsegrid PROPERTIES OUTPUT_NAME "tasmaniansparsegrid"
                                                          SOVERSION ${Tasmanian_VERSION_MAJOR}
@@ -131,8 +119,7 @@ install(TARGETS Tasmanian_libsparsegrid
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")
 
-
-foreach(_tsgtarget tasgrid gridtest benchmarksgrid)
+foreach(_tsgtarget gridtest benchmarksgrid)
     target_link_libraries(Tasmanian_${_tsgtarget} Tasmanian_libsparsegrid)
     set_target_properties(Tasmanian_${_tsgtarget} PROPERTIES OUTPUT_NAME "${_tsgtarget}" CXX_EXTENSIONS OFF)
     Tasmanian_rpath_target(TARGET Tasmanian_${_tsgtarget} USE_CURRENT)
@@ -142,7 +129,6 @@ foreach(_tsgtarget tasgrid gridtest benchmarksgrid)
     endif()
 endforeach()
 unset(_tsgtarget)
-#set_target_properties(Tasmanian_tasgrid PROPERTIES INSTALL_RPATH "${Tasmanian_rpath}")
 
 # data file, needed for testing and reference about custom rule definitions
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"  "${CMAKE_CURRENT_BINARY_DIR}/GaussPattersonRule.table" COPYONLY)
@@ -153,7 +139,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"  "${CMAKE_
 ########################################################################
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
-    foreach(_tsg_target libsparsegrid tasgrid gridtest)
+    foreach(_tsg_target libsparsegrid gridtest)
         # suppresses warnings regarding pointers to the middle of an array
         target_compile_definitions(Tasmanian_${_tsg_target} PRIVATE -D_SCL_SECURE_NO_WARNINGS)
         # needed to prevent crash on using STL vector iterators
@@ -201,9 +187,6 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.h"
         DESTINATION include
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/../configured/tasgridLogs.hpp"
-        DESTINATION include
-        PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Examples/"
         DESTINATION "share/Tasmanian/examples/"
         FILES_MATCHING PATTERN "*.cpp"
@@ -212,9 +195,3 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Examples/"
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/GaussPattersonRule.table"
         DESTINATION "share/Tasmanian/"
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
-
-install(TARGETS Tasmanian_tasgrid
-        EXPORT "${Tasmanian_export_name}"
-        RUNTIME DESTINATION "bin"
-        LIBRARY DESTINATION "lib"
-        ARCHIVE DESTINATION "lib")
