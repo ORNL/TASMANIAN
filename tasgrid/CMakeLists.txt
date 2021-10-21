@@ -18,7 +18,7 @@ add_executable(Tasmanian_tasgrid tasgrid_main.cpp
 target_link_libraries(Tasmanian_tasgrid Tasmanian_addons)
                                         
 set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid" CXX_EXTENSIONS OFF)
-Tasmanian_rpath_target(TARGET Tasmanian_tasgrid COMPONENTS SparseGrids DREAM Addons)
+Tasmanian_rpath_target(TARGET Tasmanian_tasgrid COMPONENTS SparseGrids)
 if (Tasmanian_ENABLE_OPENMP)
     # the OpenMP libraries are carried transitively from sparse grids library
     target_compile_options(Tasmanian_tasgrid PRIVATE ${OpenMP_CXX_FLAGS})
