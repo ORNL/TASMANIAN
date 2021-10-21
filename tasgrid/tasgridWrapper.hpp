@@ -31,7 +31,7 @@
 #ifndef __TASGRID_WRAPPER_HPP
 #define __TASGRID_WRAPPER_HPP
 
-#include "tasgridCLICommon.hpp"
+#include "gridtestCLICommon.hpp"
 
 enum TypeCommand{
     command_none,

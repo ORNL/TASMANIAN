@@ -28,8 +28,8 @@
  * IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#include "tasgridExternalTests.hpp"
-#include "tasgridUnitTests.hpp"
+#include "gridtestExternalTests.hpp"
+#include "gridtestUnitTests.hpp"
 
 int main(int argc, const char ** argv){
 

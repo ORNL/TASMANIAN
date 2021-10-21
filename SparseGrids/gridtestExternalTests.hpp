@@ -32,8 +32,8 @@
 #define __TASGRID_TESTER_HPP
 
 #include "tasgridLogs.hpp"
-#include "tasgridCLICommon.hpp"
-#include "tasgridTestFunctions.hpp"
+#include "gridtestCLICommon.hpp"
+#include "gridtestTestFunctions.hpp"
 
 struct TestResults{
     double error;

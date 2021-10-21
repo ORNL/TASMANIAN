@@ -29,7 +29,7 @@
  */
 
 #include "TasmanianAddons.hpp"
-#include "tasgridCLICommon.hpp"
+#include "gridtestCLICommon.hpp"
 
 /*!
  * \brief Check if the points in the two grids match bit-wise.

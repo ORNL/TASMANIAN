@@ -29,7 +29,7 @@
  */
 
 #include "TasmanianAddons.hpp"
-#include "tasgridCLICommon.hpp"
+#include "gridtestCLICommon.hpp"
 
 /*!
  * \brief Returns the model values at the grid points.
