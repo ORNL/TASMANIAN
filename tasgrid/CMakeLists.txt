@@ -6,7 +6,6 @@
 # add the tasgrid executable
 ########################################################################
 add_executable(Tasmanian_tasgrid tasgrid_main.cpp
-                                 ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/TasmanianSparseGrid.hpp
                                  ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/gridtestCLICommon.hpp
                                  ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/gridtestExternalTests.hpp
                                  ${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/gridtestExternalTests.cpp
@@ -16,12 +15,10 @@ add_executable(Tasmanian_tasgrid tasgrid_main.cpp
                                  tasgridWrapper.hpp
                                  tasgridWrapper.cpp)
 
-target_link_libraries(Tasmanian_tasgrid Tasmanian_libsparsegrid
-                                        Tasmanian_libdream
-                                        Tasmanian_addons)
+target_link_libraries(Tasmanian_tasgrid Tasmanian_addons)
                                         
 set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid" CXX_EXTENSIONS OFF)
-Tasmanian_rpath_target(TARGET Tasmanian_tasgrid USE_CURRENT)
+Tasmanian_rpath_target(TARGET Tasmanian_tasgrid COMPONENTS SparseGrids DREAM Addons)
 if (Tasmanian_ENABLE_OPENMP)
     # the OpenMP libraries are carried transitively from sparse grids library
     target_compile_options(Tasmanian_tasgrid PRIVATE ${OpenMP_CXX_FLAGS})
