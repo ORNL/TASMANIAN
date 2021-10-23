@@ -19,8 +19,10 @@ LADD = -L./
 COMPILE = $(CC) $(CXXFLAGS) $(IADD) $(LADD)
 ECOMPILE = $(CC) $(CXXFLAGS) -I./include
 
-# check if Python exists
+# check if Python exists, disable python with TSG_SKIP_PYTHON=1
+ifeq ($(TSG_SKIP_PYTHON),)
 HAS_PYTHON := $(shell python3 --version 2>/dev/null)
+endif
 
 # object files for each target
 SparseGridsObj = \
