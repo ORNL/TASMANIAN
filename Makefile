@@ -1,122 +1,96 @@
-include Config/AltBuildSystems/Makefile.in
+#include Config/AltBuildSystems/Makefile.in
 
-IADD = -I./include $(CommonIADD)
-LADD = -L./ $(CommonLADD)
-LIBS = ./libtasmaniandream.a ./libtasmaniansparsegrid.a $(CommonLIBS)
-FFLIBS90 = ./libtasmanianfortran90.a ./libtasmaniansparsegrid.a ./libtasmaniandream.a $(CommonLIBS)
+# disable openmp on non-Linux platforms
+UNAME = $(shell uname)
+ifeq ($(UNAME), Linux)
+COMPILE_OPTIONS = -fopenmp
+else
+COMPILE_OPTIONS = -Wno-unknown-pragmas
+endif
 
-TSG_SOURCE = $(wildcard ./SparseGrids/*.cpp) $(wildcard ./SparseGrids/*.hpp) $(wildcard ./SparseGrids/*.h)
-TDR_SOURCE = $(wildcard ./DREAM/*.cpp) $(wildcard ./DREAM/*.hpp)
+# Default C++ compiler
+CC = g++
+CXXFLAGS = -O3 -std=c++11 $(COMPILE_OPTIONS) -fPIC
 
-# headers to be ignored in this build .in., .windows., executables, config files, etc.
-CMAKE_IN_HEADERS = $(wildcard ./DREAM/*.in.hpp) \
-                   $(wildcard ./DREAM/tasdream*.hpp) \
-                   $(wildcard ./SparseGrids/*.*.hpp) \
-                   $(wildcard ./SparseGrids/*.*.h) \
-                   $(wildcard ./SparseGrids/tasgrid*.hpp) \
-                   $(wildcard ./Addons/test*.hpp) \
+IADD = -I./include -I./SparseGrids/ -I./InterfaceTPL/ -I./DREAM/ -I./Addons/ -I./
+LADD = -L./
 
-# header names with ./include as opposed to ./SparseGrids
-HEADERS = $(patsubst ./DREAM/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./DREAM/*.hpp))) \
-          $(patsubst ./SparseGrids/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./SparseGrids/*.hpp))) \
-          $(patsubst ./SparseGrids/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./SparseGrids/*.h))) \
-          $(patsubst ./Addons/%,./include/%,$(filter-out $(CMAKE_IN_HEADERS),$(wildcard ./Addons/*.hpp))) \
-          ./include/TasmanianConfig.hpp ./include/Tasmanian.hpp
+# set the compile command
+COMPILE = $(CC) $(CXXFLAGS) $(IADD) $(LADD)
+ECOMPILE = $(CC) $(CXXFLAGS) -I./include
 
-ALL_TARGETS = GaussPattersonRule.table \
-              Tasmanian.py TasmanianConfig.py \
-              example_sparse_grids.py InterfacePython/testConfigureData.py testTSG.py sandbox.py \
-              $(wildcard ./DREAM/Examples/example_dream*.cpp) \
-              $(wildcard ./SparseGrids/Examples/example_sparse_grids*.cpp) \
-              libtasmaniansparsegrid.so libtasmaniandream.so \
-              libtasmaniancaddons.so $(HEADERS)
+# check if Python exists
+HAS_PYTHON := $(shell python3 --version 2>/dev/null)
 
-DREAM_EXAMPLES_OBJ = $(patsubst ./DREAM/Examples/%,%,$(patsubst %.cpp,%.o,$(wildcard ./DREAM/Examples/example_dream*.cpp)))
-SG_EXAMPLES_OBJ = $(patsubst ./SparseGrids/Examples/%,%,$(patsubst %.cpp,%.o,$(wildcard ./SparseGrids/Examples/example_sparse_grids*.cpp)))
+# object files for each target
+SparseGridsObj = \
+          ./SparseGrids/tsgIndexSets.o ./SparseGrids/tsgCoreOneDimensional.o ./SparseGrids/tsgIndexManipulator.o ./SparseGrids/tsgGridGlobal.o \
+          ./SparseGrids/tsgSequenceOptimizer.o ./SparseGrids/tsgLinearSolvers.o ./SparseGrids/tsgGridSequence.o ./SparseGrids/tsgHardCodedTabulatedRules.o \
+          ./SparseGrids/tsgHierarchyManipulator.o ./SparseGrids/tsgGridLocalPolynomial.o ./SparseGrids/tsgRuleWavelet.o ./SparseGrids/tsgGridWavelet.o \
+          ./SparseGrids/tsgGridFourier.o ./SparseGrids/tsgDConstructGridGlobal.o ./SparseGrids/tsgAcceleratedDataStructures.o \
+          ./SparseGrids/TasmanianSparseGridWrapC.o ./SparseGrids/TasmanianSparseGrid.o ./InterfaceTPL/tsgGpuNull.o
 
-CONFIGURED_HEADERS = ./SparseGrids/TasmanianConfig.hpp ./SparseGrids/tasgridLogs.hpp
+DREAMObj = \
+          ./DREAM/tsgDreamState.o ./DREAM/tsgDreamLikelyGaussian.o ./DREAM/tsgDreamSampleWrapC.o
+
+AddonsObj = \
+          ./Addons/tsgCLoadNeededValues.o ./Addons/tsgCConstructSurrogate.o ./Addons/tsgCLoadUnstructuredPoints.o ./Addons/tsgCExoticQuadrature.o
+
+TasgridObj = \
+          ./Tasgrid/tasgrid_main.o ./SparseGrids/gridtestTestFunctions.o ./SparseGrids/gridtestExternalTests.o ./Tasgrid/tasgridWrapper.o
+
+# test objects
+GidtestObj = \
+          ./SparseGrids/gridtest_main.o ./SparseGrids/gridtestTestFunctions.o ./SparseGrids/gridtestExternalTests.o \
+          ./SparseGrids/gridtestUnitTests.o ./SparseGrids/gridtestTestInterfaceC.o
+
+DREAMTestObj = \
+          ./DREAM/dreamtest_main.o ./DREAM/tasdreamExternalTests.o
+
+AddonTestObj = \
+          ./Addons/testAddons.o
+
+# example objects
+SGExampleObj = \
+          ./SparseGrids/Examples/example_sparse_grids.o     ./SparseGrids/Examples/example_sparse_grids_01.o \
+          ./SparseGrids/Examples/example_sparse_grids_02.o  ./SparseGrids/Examples/example_sparse_grids_03.o \
+          ./SparseGrids/Examples/example_sparse_grids_04.o  ./SparseGrids/Examples/example_sparse_grids_05.o \
+          ./SparseGrids/Examples/example_sparse_grids_06.o  ./SparseGrids/Examples/example_sparse_grids_07.o \
+          ./SparseGrids/Examples/example_sparse_grids_08.o  ./SparseGrids/Examples/example_sparse_grids_09.o \
+          ./SparseGrids/Examples/example_sparse_grids_10.o
+
+DREAMExampleObj = \
+          ./DREAM/Examples/example_dream.o     ./DREAM/Examples/example_dream_01.o \
+          ./DREAM/Examples/example_dream_02.o  ./DREAM/Examples/example_dream_03.o \
+          ./DREAM/Examples/example_dream_04.o  ./DREAM/Examples/example_dream_05.o
 
 # all target
 .PHONY: all
-all: $(ALL_TARGETS)
+all: tasgrid
 	@echo ""
 	@echo "TASMANIAN Simple GNU Make engine:"
 	@echo "Complete build for C/C++, CLI and Python interfaces"
-	@echo "MATLAB interface: use 'make matlab'"
-	@echo ""
-	@echo "      or alternatively manually edit ./InterfaceMATLAB/tsgGetPaths.m"
-	@echo "      and use MATLAB command addpath('$(shell pwd)/InterfaceMATLAB/')"
-	@echo ""
+	@echo "MATLAB interface uses 'make matlab'"
 
-# There are seemingly superfluous dependencies, but those allow for the use of make -j command without conflict
-# most of the work is done by the make in the subfolders and
-# the extra dependencies ensure only one subfoler make is called at a time
 
-# Common headers
-SparseGrids/TasmanianConfig.hpp: ./Config/AltBuildSystems/TasmanianConfig.hpp
-	cp ./Config/AltBuildSystems/TasmanianConfig.hpp ./SparseGrids/TasmanianConfig.hpp
+# help
+.PHONY: help
+help:
+	@echo "TASMANIAN Simple GNU Make tool"
+	@echo " make"
+	@echo " make test"
+	@echo " make examples"
+	@echo " make test_examples"
+	@echo " make matlab"
 
-include/TasmanianConfig.hpp: ./SparseGrids/TasmanianConfig.hpp
-	mkdir -p ./include
-	cp ./SparseGrids/TasmanianConfig.hpp ./include/
 
-./SparseGrids/tasgridLogs.hpp: ./Config/AltBuildSystems/tasgridLogs.hpp
-	cp ./Config/AltBuildSystems/tasgridLogs.hpp ./SparseGrids/tasgridLogs.hpp
+# linear dependence pattern: sparse-grid -> dream -> addons -> python -> tasgrid
+tasgrid: Tasmanian.py $(TasgridObj)
+	@echo " -- building the tasgrid executable"
+	$(COMPILE) $(TasgridObj) $(SparseGridsObj) -o tasgrid
 
-include/Tasmanian.hpp: ./Config/Tasmanian.hpp
-	mkdir -p ./include
-	cp ./Config/Tasmanian.hpp ./include/
-
-# Sparse Grids
-libtasmaniansparsegrid.so: $(TSG_SOURCE) $(CONFIGURED_HEADERS)
-	cd SparseGrids; make
-
-# DREAM
-libtasmaniandream.so: libtasmaniansparsegrid.so $(TDR_SOURCE) $(CONFIGURED_HEADERS)
-	cd DREAM; make
-
-# Addons
-libtasmaniancaddons.so: libtasmaniandream.so libtasmaniansparsegrid.so
-	cd Addons; make
-
-# Headers
-# many calls to mkdir, consider reducing
-include/TasmanianDREAM.hpp: ./DREAM/TasmanianDREAM.hpp
-	mkdir -p ./include
-	cp ./DREAM/TasmanianDREAM.hpp ./include/
-
-include/tsg%.hpp: ./DREAM/tsg%.hpp
-	mkdir -p ./include
-	cp ./$< ./$@
-
-include/TasmanianSparseGrid.h: ./SparseGrids/TasmanianSparseGrid.h
-	mkdir -p ./include
-	cp ./SparseGrids/TasmanianSparseGrid.h ./include/
-
-include/TasmanianSparseGrid.hpp: ./SparseGrids/TasmanianSparseGrid.hpp
-	mkdir -p ./include
-	cp ./SparseGrids/TasmanianSparseGrid.hpp ./include/
-
-include/tsg%.hpp: ./SparseGrids/tsg%.hpp
-	mkdir -p ./include
-	cp ./$< ./$@
-
-include/TasmanianAddons.hpp: ./Addons/TasmanianAddons.hpp
-	mkdir -p ./include
-	cp ./Addons/TasmanianAddons.hpp ./include/
-
-include/tsg%.hpp: ./Addons/tsg%.hpp
-	mkdir -p ./include
-	cp ./$< ./$@
-
-# Python, tables, etc.
-GaussPattersonRule.table: ./SparseGrids/GaussPattersonRule.table
-	cp ./SparseGrids/GaussPattersonRule.table .
-
-Tasmanian.py: ./InterfacePython/Tasmanian.py
-	cp ./InterfacePython/Tasmanian* .
-
-TasmanianConfig.py: ./InterfacePython/TasmanianConfig.in.py
+Tasmanian.py: libtasmaniancaddons.so
+	@echo " -- building the Python module"
 	cp ./InterfacePython/TasmanianConfig.in.py TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_VERSION_MAJOR@|'7'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_VERSION_MINOR@|'8'|g' ./TasmanianConfig.py
@@ -125,31 +99,98 @@ TasmanianConfig.py: ./InterfacePython/TasmanianConfig.in.py
 	sed -i -e 's|@Tasmanian_libsparsegrid_path@|'`pwd`/libtasmaniansparsegrid.so'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_libdream_path@|'`pwd`/libtasmaniandream.so'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_libcaddons_path@|'`pwd`/libtasmaniancaddons.so'|g' ./TasmanianConfig.py
+	cp ./InterfacePython/Tasmanian* .
 
-example_sparse_grids.py: ./InterfacePython/example_sparse_grids.in.py
-	cp ./InterfacePython/example_sparse_grids.in.py example_sparse_grids.py
-	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python3'|g' ./example_sparse_grids.py
-	sed -i -e 's|@Tasmanian_python_example_import@|'sys.path.append\(\"`pwd`\"\)'|g' ./example_sparse_grids.py
-	cp ./InterfacePython/example_dream.in.py example_dream.py
-	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python3'|g' ./example_dream.py
-	sed -i -e 's|@Tasmanian_python_example_import@|'sys.path.append\(\"`pwd`\"\)'|g' ./example_dream.py
-	cp ./InterfacePython/example_sparse_grids_* .
-	cp ./InterfacePython/example_dream_* .
+libtasmaniancaddons.so: libtasmaniandream.so $(AddonsObj)
+	@echo " -- building the Addons module"
+	cp ./Addons/*.hpp ./include/
+	$(COMPILE) -shared $(AddonsObj) -o libtasmaniancaddons.so ./libtasmaniandream.so ./libtasmaniansparsegrid.so
 
-InterfacePython/testConfigureData.py: ./Config/AltBuildSystems/testConfigureData.py
+libtasmaniandream.so: libtasmaniansparsegrid.so $(DREAMObj)
+	@echo " -- building the DREAM module"
+	cp ./DREAM/*.hpp ./include/
+	ar rcs libtasmaniandream.a $(DREAMObj)
+	$(COMPILE) -shared $(DREAMObj) -o libtasmaniandream.so ./libtasmaniansparsegrid.so
+
+libtasmaniansparsegrid.so: $(SparseGridsObj)
+	@echo " -- building the Sparse Grid module"
+	cp ./SparseGrids/*.h ./include/
+	cp ./SparseGrids/*.hpp ./include/
+	ar rcs libtasmaniansparsegrid.a $(SparseGridsObj)
+	$(COMPILE) -shared $(SparseGridsObj) -o libtasmaniansparsegrid.so
+
+%.o: %.cpp ./include
+	$(COMPILE) -c $< -o $@
+
+include:
+	mkdir -p ./include
+	cp ./Config/AltBuildSystems/TasmanianConfig.hpp ./include/TasmanianConfig.hpp
+	cp ./Config/AltBuildSystems/tasgridLogs.hpp ./include/tasgridLogs.hpp
+	cp ./Config/Tasmanian.hpp ./include/
+
+
+# test target, also compiles the tests
+.PHONY: test
+test: gridtest dreamtest addontester
+	./gridtest
+	./dreamtest
+	./addontester
+ifdef HAS_PYTHON
+	cp ./SparseGrids/GaussPattersonRule.table .
 	cp ./Config/AltBuildSystems/testConfigureData.py InterfacePython/
+	PYTHONPATH=$(PYTHONPATH):./InterfacePython python3 ./InterfacePython/testTSG.py && { echo "SUCCESS: Test completed successfully"; }
+else
+	@echo "WARNING: Cannot find python3 in the system path, skipping the Python tests."
+endif
 
-testTSG.py: ./InterfacePython/testTSG.py
-	cp ./InterfacePython/testTSG.py .
+addontester: $(AddonTestObj)
+	$(COMPILE) $(AddonTestObj) -o addontester libtasmaniansparsegrid.a libtasmaniandream.a
 
-sandbox.py: ./InterfacePython/sandbox.py
-	cp ./InterfacePython/sandbox.py .
+dreamtest: $(DREAMTestObj)
+	$(COMPILE) $(DREAMTestObj) -o dreamtest libtasmaniansparsegrid.a libtasmaniandream.a
 
-example_spa%.cpp: ./SparseGrids/Examples/example_spa%.cpp
-	cp ./$< ./$@
+gridtest: $(GidtestObj)
+	$(COMPILE) $(GidtestObj) -o gridtest libtasmaniansparsegrid.a libtasmaniandream.a
 
-example_dre%.cpp: ./DREAM/Examples/example_dre%.cpp
-	cp ./$< ./$@
+
+# examples
+.PHONY: examples
+examples: example_sparse_grids example_dream
+	cp ./InterfacePython/example_sparse_grids.in.py ./InterfacePython/example_sparse_grids.py
+	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python3'|g' ./InterfacePython/example_sparse_grids.py
+	sed -i -e 's|@Tasmanian_python_example_import@|'sys.path.append\(\"`pwd`\"\)'|g' ./InterfacePython/example_sparse_grids.py
+	cp ./InterfacePython/example_dream.in.py ./InterfacePython/example_dream.py
+	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python3'|g' ./InterfacePython/example_dream.py
+	sed -i -e 's|@Tasmanian_python_example_import@|'sys.path.append\(\"`pwd`\"\)'|g' ./InterfacePython/example_dream.py
+	@echo "Compiled the examples, run with the commands"
+	@echo "./example_sparse_grids"
+	@echo "./example_dream"
+	@echo "python3 ./InterfacePython/example_sparse_grids.py"
+	@echo "python3 ./InterfacePython/example_dream.py"
+
+example_sparse_grids: $(SGExampleObj)
+	$(ECOMPILE) $(SGExampleObj) -o example_sparse_grids ./libtasmaniansparsegrid.a
+
+example_dream: $(DREAMExampleObj)
+	$(ECOMPILE) $(DREAMExampleObj) -o example_dream ./libtasmaniansparsegrid.a ./libtasmaniandream.a
+
+SparseGrids/Examples/example_sparse_grids%.o: SparseGrids/Examples/example_sparse_grids%.cpp
+	$(ECOMPILE) -c $< -o $@
+
+DREAM/Examples/example_dream%.o: DREAM/Examples/example_dream%.cpp
+	$(ECOMPILE) -c $< -o $@
+
+
+# examples testing
+.PHONY: test_examples
+test_examples: examples
+	./example_sparse_grids
+	./example_dream
+ifdef HAS_PYTHON
+	python3 ./InterfacePython/example_sparse_grids.py
+	python3 ./InterfacePython/example_dream.py
+endif
+
 
 # Matlab
 .PHONY: matlab
@@ -163,27 +204,6 @@ matlab:
 	@echo "use MATLAB command: addpath('"`pwd`"/InterfaceMATLAB/');"
 	@echo ""
 
-# Testing and examples
-.PHONY: test
-test: $(ALL_TARGETS)
-	./gridtest
-	./dreamtest
-	./addontester
-	PYTHONPATH=$(PYTHONPATH):./InterfacePython ./testTSG.py && { echo "SUCCESS: Test completed successfully"; }
-	./example_sparse_grids.py
-
-.PHONY: examples
-examples: $(ALL_TARGETS) example_dream example_sparse_grids
-	echo "Done examples"
-
-example_dream: $(ALL_TARGETS) $(DREAM_EXAMPLES_OBJ)
-	$(CC) $(OPTL) $(LADD) $(DREAM_EXAMPLES_OBJ) -o example_dream $(LIBS)
-
-example_sparse_grids: $(ALL_TARGETS) $(SG_EXAMPLES_OBJ)
-	$(CC) $(OPTL) $(LADD) $(SG_EXAMPLES_OBJ) -o example_sparse_grids $(LIBS)
-
-%.o: %.cpp
-	$(CC) $(OPTC) $(IADD) -c $<
 
 # Clean
 .PHONY: clean
@@ -193,38 +213,30 @@ clean:
 	rm -fr libtasmaniandream.so
 	rm -fr libtasmaniandream.a
 	rm -fr libtasmaniancaddons.so
-	rm -fr libtasmanianfortran90.so
-	rm -fr libtasmanianfortran90.a
-	rm -fr InterfaceFortran/*.o
-	rm -fr fortester90
-	rm -fr f03_test_file
 	rm -fr tasgrid
 	rm -fr gridtest
 	rm -fr dreamtest
 	rm -fr addontester
-	rm -fr TasmanianSG.py
-	rm -fr TasmanianAddons.py
-	rm -fr example_sparse_grids.py
-	rm -fr GaussPattersonRule.table
+	rm -fr Tasmanian*.py
 	rm -fr *.pyc
-	rm -fr ./InterfacePython/*.pyc
+	rm -fr GaussPattersonRule.table
 	rm -fr __pycache__
 	rm -fr ./InterfacePython/__pycache__
-	rm -fr example_sparse_grids*
-	rm -fr example_dream*
-	rm -fr example_sparse_grids_fortran
-	rm -fr refTestFlename.grid
-	rm -fr fortranio.test
-	rm -fr testSave
-	rm -fr testTSG.py
-	rm -fr sandbox.py
-	rm -fr *.py
-	rm -fr include
-	rm -fr tasmanianFortranTestCustomRule.table
-	rm -fr ./SparseGrids/TasmanianConfig.hpp
-	rm -fr ./SparseGrids/tasgridLogs.hpp
+	rm -fr ./InterfacePython/*.pyc
+	rm -fr ./InterfacePython/example_sparse_grids.py
+	rm -fr ./InterfacePython/example_dream.py
 	rm -fr ./InterfacePython/testConfigureData.py
-	cd SparseGrids; make clean
-	cd DREAM; make clean
-	cd Addons; make clean
-	cd InterfaceFortran; make clean
+	rm -fr InterfaceMATLAB/tsgGetPaths.m
+	rm -fr example_sparse_grids
+	rm -fr example_dream
+	rm -fr include
+	rm -fr ./SparseGrids/*.o
+	rm -fr ./DREAM/*.o
+	rm -fr ./Addons/*.o
+	rm -fr ./Tasgrid/*.o
+	rm -fr ./InterfaceTPL/*.o
+	rm -fr ./SparseGrids/Examples/*.o
+	rm -fr ./DREAM/Examples/*.o
+	rm -fr ./tsgMatlabWorkFolder
+	rm -fr ./testSave
+	rm -fr ./refTestFlename.grid
