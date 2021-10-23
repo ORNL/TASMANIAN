@@ -58,7 +58,7 @@ add_custom_target(Tasmanian_matlab_interface ALL DEPENDS "${Tasmanian_matlab_pre
 
 # set MATLAB (tasgrid and temp folder) for the build folder (stage 1)
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/tempMATLAB/") # place for temp files if running matlab from the build location
-set(Tasmanian_matlab_tasgrid "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/tasgrid")
+set(Tasmanian_matlab_tasgrid "${CMAKE_CURRENT_BINARY_DIR}/../Tasgrid/tasgrid")
 string(REPLACE " " "\\ " Tasmanian_matlab_tasgrid "${Tasmanian_matlab_tasgrid}")
 set(Tasmanian_matlab_workdir "${CMAKE_CURRENT_BINARY_DIR}/tempMATLAB/")
 string(REPLACE " " "\\ " Tasmanian_matlab_workdir "${Tasmanian_matlab_workdir}")

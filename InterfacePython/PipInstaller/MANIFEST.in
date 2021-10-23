@@ -12,4 +12,5 @@ recursive-include InterfaceMATLAB *
 recursive-include InterfacePython *
 recursive-include InterfaceTPL *
 recursive-include SparseGrids *
+recursive-include Tasgrid *
 recursive-include Testing *
