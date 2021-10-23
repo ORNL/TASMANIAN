@@ -3,14 +3,14 @@
 # disable openmp on non-Linux platforms
 UNAME = $(shell uname)
 ifeq ($(UNAME), Linux)
-COMPILE_OPTIONS = -fopenmp
+OPENMPFLAGS = -fopenmp
 else
-COMPILE_OPTIONS = -Wno-unknown-pragmas
+OPENMPFLAGS = -Wno-unknown-pragmas
 endif
 
 # Default C++ compiler
 CC = g++
-CXXFLAGS = -O3 -std=c++11 $(COMPILE_OPTIONS) -fPIC
+CXXFLAGS = -O3 -std=c++11 $(OPENMPFLAGS) -fPIC
 
 IADD = -I./include -I./SparseGrids/ -I./InterfaceTPL/ -I./DREAM/ -I./Addons/ -I./
 LADD = -L./
