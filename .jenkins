@@ -135,7 +135,7 @@ cmake \
   -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
 .. &&
                               make -j4 &&
-                              ./tasgrid/tasgrid -v &&
+                              ./Tasgrid/tasgrid -v &&
                               ctest -j4 -V --no-compress-output -T Test &&
                               make install &&
                               make test_install
