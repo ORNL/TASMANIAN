@@ -20,8 +20,8 @@ COMPILE = $(CC) $(CXXFLAGS) $(IADD) $(LADD)
 ECOMPILE = $(CC) $(CXXFLAGS) -I./include
 
 # check if Python exists, disable python with TSG_SKIP_PYTHON=1
-ifeq ($(TSG_SKIP_PYTHON),)
-HAS_PYTHON := $(shell python3 --version 2>/dev/null)
+ifneq ($(shell echo "import numpy; print(numpy.__version__ )" | python3 2>/dev/null),)
+HAS_PYTHON := "Yes"
 endif
 
 # object files for each target
@@ -142,7 +142,7 @@ ifdef HAS_PYTHON
 	cp ./Config/AltBuildSystems/testConfigureData.py InterfacePython/
 	PYTHONPATH=$(PYTHONPATH):./InterfacePython python3 ./InterfacePython/testTSG.py && { echo "SUCCESS: Test completed successfully"; }
 else
-	@echo "WARNING: Cannot find python3 in the system path, skipping the Python tests."
+	@echo "WARNING: Cannot find python3 with numpy in the system path, skipping the Python tests."
 endif
 
 addontester: $(AddonTestObj)
