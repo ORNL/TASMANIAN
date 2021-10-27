@@ -58,6 +58,7 @@ pLibTSG.tsgGetAlpha.restype = c_double
 pLibTSG.tsgGetBeta.restype = c_double
 pLibTSG.tsgGetOrder.restype = c_int
 pLibTSG.tsgGetCustomRuleDescription.restype = c_char_p
+pLibTSG.tsgGetSubrules.restype = c_void_p
 pLibTSG.tsgGetLoadedPoints.restype = POINTER(c_double)
 pLibTSG.tsgGetNeededPoints.restype = POINTER(c_double)
 pLibTSG.tsgGetPoints.restype = POINTER(c_double)
@@ -99,6 +100,7 @@ pLibTSG.tsgGetNumDimensions.argtypes = [c_void_p]
 pLibTSG.tsgGetNumOutputs.argtypes = [c_void_p]
 pLibTSG.tsgCopyRuleChars.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int)] # char is not really const
 pLibTSG.tsgGetCustomRuleDescription.argtypes = [c_void_p]
+pLibTSG.tsgGetSubrules.argtypes = [c_void_p, c_int, c_int, c_char_p]
 pLibTSG.tsgGetNumLoaded.argtypes = [c_void_p]
 pLibTSG.tsgGetNumNeeded.argtypes = [c_void_p]
 pLibTSG.tsgGetNumPoints.argtypes = [c_void_p]
@@ -2569,3 +2571,28 @@ def makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights
     ct.pCustomTabulated = pLibTSG.tsgMakeCustomTabulatedFromData(c_int(num_levels), pNumNodes, pPrecision, pNodes, pWeights,
                                                                  c_char_p(effective_description))
     return ct
+
+def makeCustomTabulatedSubset(pCustomTabulated, iStartIndex, iStride, sDescription):
+    '''
+    Wrapper that creates a subset of an input CustomTabulated object. Specifically, it chooses the levels that start at
+    iStartIndex with displacement given by iStride.
+
+    pCustomTabulated: CustomTabulated instance to take the subset of.
+    iStartIndex: starting index of the subset.
+    iStride: distance between the levels of the subset.
+    description: string that briefly describes the subset.
+
+    output: CustomTabulated
+    '''
+    if not hasattr(pCustomTabulated, "CustomTabulatedObject"):
+        raise TasmanianInputError("pCustomTabulated", "ERROR: pCustomTabulated must be an instance of CustomTabulated")
+    if (iStartIndex < 0 | iStartIndex >= pCustomTabulated.getNumLevels()):
+        raise TasmanianInputError("iStartIndex", "ERROR: iStartIndex must be between 0 and " + str(pCustomTabulated.getNumLevels()))
+    if (iStride < 0):
+        raise TasmanianInputError("iStride", "ERROR: iStride must be nonnegative")
+    ct = CustomTabulated()
+    effective_description = bytes(sDescription, encoding='utf8') if sys.version_info.major == 3 else sDescription
+    ct.pCustomTabulated = pLibTSG.tsgGetSubrules(c_void_p(pCustomTabulated.pCustomTabulated), c_int(iStartIndex), c_int(iStride),
+                                                 c_char_p(effective_description))
+    return(ct)
+

@@ -21,3 +21,18 @@ import math
 ###############################################################################
 
 print("Add code to this file to test, debug, or develop features")
+
+import testConfigureData as tdata # needed for Gauss-Patterson table file
+
+ct = TasmanianSG.makeCustomTabulatedFromFile(tdata.sGaussPattersonTableFile)
+print(ct.getDescription())
+for i in range(ct.getNumLevels()):
+    print(ct.getNumPoints(i))
+    print()
+
+sub_ct = TasmanianSG.makeCustomTabulatedSubset(ct, 0, 2, "Test")
+print(sub_ct.getDescription())
+for i in range(sub_ct.getNumLevels()):
+    print(sub_ct.getNumPoints(i))
+    print()
+
