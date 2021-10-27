@@ -35,38 +35,6 @@
 void debugTest() {
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./Addons/addontester debug" << endl;
-
-    double freq = 2.0;
-    double phase_shift = 0.0;
-    int depth = 11;
-    double shift = 1.0;
-    bool symmetric_weights = false;
-    auto my_sine = [freq, phase_shift](double x)->double {return sin(freq * (x - phase_shift));};
-    TasGrid::CustomTabulated ct = TasGrid::getExoticQuadrature(depth, shift, my_sine, 50 * depth + 1, "Sine Quadrature",
-                                                               symmetric_weights);
-    cout << "EXOQUAD, " << ct.getNumLevels() << " LEVELS" << endl << endl;
-    for (int i=0; i<ct.getNumLevels(); i++) {
-        std::vector<double> w, p;
-        cout << ct.getNumPoints(i) << endl;
-        cout << ct.getQExact(i) << endl;
-        ct.getWeightsNodes(i, w, p);
-        for (auto x : w) cout << x << " "; cout << endl;
-        for (auto x : p) cout << x << " "; cout << endl;
-        cout << endl;
-    }
-
-    TasGrid::CustomTabulated sub_ct = TasGrid::getSubrules(ct, 0, 2, "Subset");
-    cout << "SUB_EXOQUAD, " << sub_ct.getNumLevels() << " LEVELS" << endl << endl;
-    for (int i=0; i<sub_ct.getNumLevels(); i++) {
-        std::vector<double> w, p;
-        cout << sub_ct.getNumPoints(i) << endl;
-        cout << sub_ct.getQExact(i) << endl;
-        sub_ct.getWeightsNodes(i, w, p);
-        for (auto x : w) cout << x << " "; cout << endl;
-        for (auto x : p) cout << x << " "; cout << endl;
-        cout << endl;
-    }
-
 }
 
 int main(int argc, char const **argv){
