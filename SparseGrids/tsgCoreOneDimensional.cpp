@@ -142,7 +142,7 @@ void CustomTabulated::getWeightsNodes(int level, double w[], double x[]) const{
 const char* CustomTabulated::getDescription() const{ return description.c_str(); }
 
 CustomTabulated getSubrules(CustomTabulated &ct, int start_index, int stride, std::string description) {
-    int sub_nlevels = ct.getNumLevels() / stride + 1;
+    int sub_nlevels = (ct.getNumLevels() + stride - 1) / stride; // round up integer division
     std::vector<int> sub_num_nodes(sub_nlevels), sub_precision(sub_nlevels);
     std::vector<std::vector<double>> sub_weights(sub_nlevels), sub_nodes(sub_nlevels);
     for (int i=0; i<sub_nlevels; i++) {

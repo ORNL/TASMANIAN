@@ -125,7 +125,7 @@ private:
 //! \internal
 //! \brief Generates a subset of rules as a CustomTabulated object.
 //! \ingroup TasmanianCoreOneDimensional
-CustomTabulated getSubrules(CustomTabulated &ct, int start_index, int stride);
+CustomTabulated getSubrules(CustomTabulated &ct, int start_index, int stride, std::string description);
 
 //! \internal
 //! \brief Metadata for one dimensional rules, number of points, exactness, I/O, etc.
