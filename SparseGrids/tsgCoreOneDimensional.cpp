@@ -141,6 +141,21 @@ void CustomTabulated::getWeightsNodes(int level, double w[], double x[]) const{
 
 const char* CustomTabulated::getDescription() const{ return description.c_str(); }
 
+CustomTabulated getSubrules(CustomTabulated &ct, int start_index, int stride, std::string description) {
+    std::vector<int> sub_num_nodes, sub_precision;
+    std::vector<std::vector<double>> sub_weights, sub_nodes;
+    for (int level=start_index; level<ct.getNumLevels(); level+=stride) {
+        std::vector<double> w, x;
+        sub_num_nodes.push_back(ct.getNumPoints(level));
+        sub_precision.push_back(ct.getQExact(level));
+        sub_weights.emplace_back(std::vector<double>());
+        sub_nodes.emplace_back(std::vector<double>());
+        ct.getWeightsNodes(level, sub_weights.back(), sub_nodes.back());
+    }
+    return CustomTabulated(sub_num_nodes.size(), std::move(sub_num_nodes), std::move(sub_precision), std::move(sub_nodes),
+                           std::move(sub_weights), std::move(description));
+}
+
 int OneDimensionalMeta::getNumPoints(int level, TypeOneDRule rule){
     int lcc;
     switch (rule){

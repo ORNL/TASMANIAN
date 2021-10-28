@@ -534,6 +534,12 @@ void* tsgMakeCustomTabulatedFromData(const int cnum_levels, const int* cnum_node
                                         std::move(vec_cweights), cdescription);
 }
 
+void* tsgGetSubrules(void* ct, const int start_index, const int stride, char* description) {
+    CustomTabulated *sub_ct = new CustomTabulated;
+    *sub_ct = getSubrules(*reinterpret_cast<TasGrid::CustomTabulated*>(ct), start_index, stride, description);
+    return (void*) sub_ct;
+}
+
 }
 }
 
