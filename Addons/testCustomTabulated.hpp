@@ -84,6 +84,9 @@ inline bool testGetSubrules() {
                     }
                     sub_level++;
                 }
+                if (sub_ct.getNumLevels() != sub_level) {
+                    passed = false;
+                }
             }
         }
     }

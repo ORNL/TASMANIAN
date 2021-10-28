@@ -148,11 +148,11 @@ CustomTabulated getSubrules(CustomTabulated &ct, int start_index, int stride, st
         std::vector<double> w, x;
         sub_num_nodes.push_back(ct.getNumPoints(level));
         sub_precision.push_back(ct.getQExact(level));
-        ct.getWeightsNodes(level, w, x);
-        sub_weights.push_back(w);
-        sub_nodes.push_back(x);
+        sub_weights.emplace_back(std::vector<double>());
+        sub_nodes.emplace_back(std::vector<double>());
+        ct.getWeightsNodes(level, sub_weights.back(), sub_nodes.back());
     }
-    return CustomTabulated(ct.getNumLevels(), std::move(sub_num_nodes), std::move(sub_precision), std::move(sub_nodes),
+    return CustomTabulated(sub_num_nodes.size(), std::move(sub_num_nodes), std::move(sub_precision), std::move(sub_nodes),
                            std::move(sub_weights), std::move(description));
 }
 
