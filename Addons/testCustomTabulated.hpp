@@ -56,7 +56,7 @@ inline bool testGetSubrules() {
             precision[i] = i;
             OneDimensionalNodes::getGaussLegendre(num_nodes[i], weights[i], nodes[i]);
         }
-        TasGrid::CustomTabulated ct = TasGrid::CustomTabulated(n, std::move(num_nodes), std::move(precision), std::move(nodes),
+        TasGrid::CustomTabulated ct = TasGrid::CustomTabulated(std::move(num_nodes), std::move(precision), std::move(nodes),
                                                                std::move(weights), "Gauss-Legendre rules");
         // Create the subset and test different start_index and stride combinations.
         for (auto start_index : start_index_vec) {
