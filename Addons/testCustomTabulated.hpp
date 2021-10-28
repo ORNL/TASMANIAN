@@ -34,7 +34,7 @@
 
 #include "TasmanianAddons.hpp"
 
-// Test TasGrid::getSubrules().
+// Test getSubrules().
 inline bool testGetSubrules() {
     bool passed = true;
     // Level == 0
@@ -48,7 +48,7 @@ inline bool testGetSubrules() {
     std::vector<int> start_index_vec = {0, 1, 4};
     std::vector<int> stride_vec = {1, 2, 3};
     for (auto n : n_vec) {
-        // Create the full CustomTabulated instance.
+        // Create the full CustomTabulated instance with n levels.
         std::vector<int> num_nodes(n), precision(n);
         std::vector<std::vector<double>> nodes(n), weights(n);
         for (int i=0; i<n; i++) {
@@ -58,7 +58,7 @@ inline bool testGetSubrules() {
         }
         TasGrid::CustomTabulated ct = TasGrid::CustomTabulated(n, std::move(num_nodes), std::move(precision), std::move(nodes),
                                                                std::move(weights), "Gauss-Legendre rules");
-        // Create the subset and test difference start_index and stride combinations.
+        // Create the subset and test different start_index and stride combinations.
         for (auto start_index : start_index_vec) {
             for (auto stride : stride_vec) {
                 std::string descr = "subset_" + std::to_string(start_index) + "_" + std::to_string(stride); 
