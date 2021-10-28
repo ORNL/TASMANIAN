@@ -142,16 +142,17 @@ void CustomTabulated::getWeightsNodes(int level, double w[], double x[]) const{
 const char* CustomTabulated::getDescription() const{ return description.c_str(); }
 
 CustomTabulated getSubrules(CustomTabulated &ct, int start_index, int stride, std::string description) {
-    int sub_nlevels = (ct.getNumLevels() + stride - 1) / stride; // round up integer division
-    std::vector<int> sub_num_nodes(sub_nlevels), sub_precision(sub_nlevels);
-    std::vector<std::vector<double>> sub_weights(sub_nlevels), sub_nodes(sub_nlevels);
-    for (int i=0; i<sub_nlevels; i++) {
-        int level = i * stride + start_index;
-        sub_num_nodes[i] = ct.getNumPoints(level);
-        sub_precision[i] = ct.getQExact(level);
-        ct.getWeightsNodes(level, sub_weights[i], sub_nodes[i]);
+    std::vector<int> sub_num_nodes, sub_precision;
+    std::vector<std::vector<double>> sub_weights, sub_nodes;
+    for (int level=start_index; level<ct.getNumLevels(); level+=stride) {
+        std::vector<double> w, x;
+        sub_num_nodes.push_back(ct.getNumPoints(level));
+        sub_precision.push_back(ct.getQExact(level));
+        ct.getWeightsNodes(level, w, x);
+        sub_weights.push_back(w);
+        sub_nodes.push_back(x);
     }
-    return CustomTabulated(sub_nlevels, std::move(sub_num_nodes), std::move(sub_precision), std::move(sub_nodes),
+    return CustomTabulated(ct.getNumLevels(), std::move(sub_num_nodes), std::move(sub_precision), std::move(sub_nodes),
                            std::move(sub_weights), std::move(description));
 }
 

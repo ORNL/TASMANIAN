@@ -2588,8 +2588,8 @@ def makeCustomTabulatedSubset(pCustomTabulated, iStartIndex, iStride, sDescripti
         raise TasmanianInputError("pCustomTabulated", "ERROR: pCustomTabulated must be an instance of CustomTabulated")
     if (iStartIndex < 0 | iStartIndex >= pCustomTabulated.getNumLevels()):
         raise TasmanianInputError("iStartIndex", "ERROR: iStartIndex must be between 0 and " + str(pCustomTabulated.getNumLevels()))
-    if (iStride < 0):
-        raise TasmanianInputError("iStride", "ERROR: iStride must be nonnegative")
+    if (iStride <= 0):
+        raise TasmanianInputError("iStride", "ERROR: iStride must be positive")
     ct = CustomTabulated()
     effective_description = bytes(sDescription, encoding='utf8') if sys.version_info.major == 3 else sDescription
     ct.pCustomTabulated = pLibTSG.tsgGetSubrules(c_void_p(pCustomTabulated.pCustomTabulated), c_int(iStartIndex), c_int(iStride),

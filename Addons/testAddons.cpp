@@ -31,6 +31,7 @@
 #include "testConstructSurrogate.hpp"
 #include "testLoadUnstructured.hpp"
 #include "testExoticQuadrature.hpp"
+#include "testCustomTabulated.hpp"
 
 void debugTest() {
     cout << "Debug Test (callable from the CMake build folder)" << endl;
@@ -84,6 +85,12 @@ int main(int argc, char const **argv){
     pass = true;
     pass = testExoticQuadrature();
     cout << std::setw(40) << "Exotic quadrature" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
+    pass_all = pass_all && pass;
+
+    // Tests for manipulating CustomTabulated objects.
+    pass = true;
+    pass = testCustomTabulated();
+    cout << std::setw(40) << "CustomTabulated manipulation" << std::setw(10) << ((pass) ? "Pass" : "FAIL") << endl;
     pass_all = pass_all && pass;
 
     cout << "\n";
