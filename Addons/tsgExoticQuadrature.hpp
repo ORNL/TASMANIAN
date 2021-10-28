@@ -278,8 +278,8 @@ inline TasGrid::CustomTabulated getShiftedExoticQuadrature(const int n, const do
         num_nodes[i] = static_cast<int>(points_cache[i].size());
         precision[i] = 2 * (i + 1) - 1;
     }
-    return TasGrid::CustomTabulated(n, std::move(num_nodes), std::move(precision), std::move(points_cache),
-                                    std::move(weights_cache), description);
+    return TasGrid::CustomTabulated(std::move(num_nodes), std::move(precision), std::move(points_cache), std::move(weights_cache),
+                                    description);
 }
 
 /*!

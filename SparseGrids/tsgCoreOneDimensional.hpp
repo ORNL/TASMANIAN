@@ -73,10 +73,10 @@ public:
             read<mode_ascii>(is); else read<mode_binary>(is);
     }
     //! \brief Assume ownership of existing data instead of reading from a file.
-    CustomTabulated(int cnum_levels, std::vector<int> &&cnum_nodes, std::vector<int> &&cprecision,
+    CustomTabulated(std::vector<int> &&cnum_nodes, std::vector<int> &&cprecision,
                     std::vector<std::vector<double>> &&cnodes, std::vector<std::vector<double>> &&cweights,
                     std::string &&cdescription) :
-        num_levels(cnum_levels), num_nodes(std::move(cnum_nodes)), precision(std::move(cprecision)),
+        num_levels(cnum_nodes.size()), num_nodes(std::move(cnum_nodes)), precision(std::move(cprecision)),
         nodes(std::move(cnodes)), weights(std::move(cweights)), description(std::move(cdescription))
     {}
 
