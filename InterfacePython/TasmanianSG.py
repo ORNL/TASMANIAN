@@ -1448,12 +1448,12 @@ class TasmanianSparseGrid:
 
         '''
         if (not self.isSetConformalTransformASIN()):
-            return np.empty([0,], np.int)
+            return np.empty([0,], int)
 
         iNumDimensions = self.getNumDimensions()
         pTruncation = (c_int*iNumDimensions)()
         pLibTSG.tsgGetConformalTransformASIN(self.pGrid, pTruncation)
-        liTruncation = np.empty([iNumDimensions,], np.int)
+        liTruncation = np.empty([iNumDimensions,], int)
         for iI in range(iNumDimensions):
             liTruncation[iI] = pTruncation[iI] # convert c_int to python long
         return liTruncation
@@ -1474,7 +1474,7 @@ class TasmanianSparseGrid:
         iNumDimensions = self.getNumDimensions()
         pTruncation = (c_int*iNumDimensions)()
         pLibTSG.tsgGetLevelLimits(self.pGrid, pTruncation)
-        liLimits = np.empty([iNumDimensions,], np.int)
+        liLimits = np.empty([iNumDimensions,], int)
         for iI in range(iNumDimensions):
             liLimits[iI] = pTruncation[iI] # convert c_int to python long
         return liLimits
@@ -2114,7 +2114,7 @@ class TasmanianSparseGrid:
         pNumIndexes = (c_int*1)()
         pIndexes = pLibTSG.tsgPythonGetGlobalPolynomialSpace(self.pGrid, iInterp, pNumIndexes)
         iNumDimensions = self.getNumDimensions()
-        lliPolynomials = np.empty([pNumIndexes[0], iNumDimensions], np.int)
+        lliPolynomials = np.empty([pNumIndexes[0], iNumDimensions], int)
         for iI in range(pNumIndexes[0]):
             for iJ in range(iNumDimensions):
                 lliPolynomials[iI][iJ] = pIndexes[iI*iNumDimensions + iJ]
