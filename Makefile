@@ -126,8 +126,12 @@ libtasmaniansparsegrid.so: $(SparseGridsObj)
 
 include:
 	mkdir -p ./include
+	cp ./Tasgrid/tasgridLogs.in.hpp ./include/tasgridLogs.hpp
+	sed -i '/std/,/endl/d' ./include/tasgridLogs.hpp
+	sed -i -e 's|@CMAKE_CURRENT_BINARY_DIR@|'.'|g' ./include/tasgridLogs.hpp
+	sed -i -e 's|@Tasmanian_final_install_path@/share/Tasmanian|'.'|g' ./include/tasgridLogs.hpp
+	sed -i -e 's|}|'std::cout\<\<\"Unavailable\ without\ CMake\"\<\<std::endl\;\}'|g' ./include/tasgridLogs.hpp
 	cp ./Config/AltBuildSystems/TasmanianConfig.hpp ./include/TasmanianConfig.hpp
-	cp ./Config/AltBuildSystems/tasgridLogs.hpp ./include/tasgridLogs.hpp
 	cp ./Config/Tasmanian.hpp ./include/
 
 
