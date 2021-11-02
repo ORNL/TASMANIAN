@@ -1,8 +1,8 @@
 # Tasmanian
 
-![Ubuntu-tested](https://github.com/ORNL/TASMANIAN/workflows/build-ubuntu/badge.svg?branch=master)
-![MacOSX-tested](https://github.com/ORNL/TASMANIAN/workflows/build-macos/badge.svg?branch=master)
-![Windows-tested](https://github.com/ORNL/TASMANIAN/workflows/build-windows/badge.svg?branch=master)
+[![Ubuntu-tested](https://github.com/ORNL/TASMANIAN/actions/workflows/build-ubuntu.yaml/badge.svg?branch=master)](https://github.com/ORNL/TASMANIAN/actions/workflows/build-ubuntu.yaml)
+[![MacOSX-tested](https://github.com/ORNL/TASMANIAN/actions/workflows/build-macos.yaml/badge.svg?branch=master)](https://github.com/ORNL/TASMANIAN/actions/workflows/build-macos.yaml)
+[![Windows-tested](https://github.com/ORNL/TASMANIAN/actions/workflows/build-windows.yaml/badge.svg?branch=master)](https://github.com/ORNL/TASMANIAN/actions/workflows/build-windows.yaml)
 
 The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN is a collection of robust libraries for high dimensional integration and interpolation as well as parameter calibration. This documentation focuses on the libraries and the software API, refer to the PDF document on the project web-page for specifics about the mathematics of the implemented methods.
 
