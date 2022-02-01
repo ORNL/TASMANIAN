@@ -1529,7 +1529,7 @@ class TasmanianSparseGrid:
         '''
         Calls setAnistropicRefinement() on the inputs and then getNeededPoints().
         '''
-        self.setAnisotropicRefinement(sType, iMinGrowth, iOutput, liLevelLimits = [])
+        self.setAnisotropicRefinement(sType, iMinGrowth, iOutput, liLevelLimits=liLevelLimits)
         return self.getNeededPoints()
 
     def estimateAnisotropicCoefficients(self, sType, iOutput):
@@ -1665,7 +1665,7 @@ class TasmanianSparseGrid:
         '''
         Calls setSurplusRefinement() on the inputs and then getNeededPoints().
         '''
-        self.setSurplusRefinement(fTolerance, iOutput, sCriteria = "", liLevelLimits = [], llfScaleCorrection = [])
+        self.setSurplusRefinement(fTolerance, iOutput, sCriteria=sCriteria, liLevelLimits=liLevelLimits, llfScaleCorrection=llfScaleCorrection)
         return self.getNeededPoints()
 
     def clearRefinement(self):
