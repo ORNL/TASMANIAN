@@ -1148,6 +1148,13 @@ public:
      * empty is equivalent to \b nullptr and the size is not checked.
      */
     void setAnisotropicRefinement(TypeDepth type, int min_growth, int output, const int *level_limits = nullptr);
+    /*!
+     * \brief Call setAnisotropicRefinement() and then getNeededPoints().
+     */
+    std::vector<double> getAnisotropicRefinement(TypeDepth type, int min_growth, int output, const std::vector<int> &level_limits) {
+        setAnisotropicRefinement(type, min_growth, output, level_limits);
+        return getNeededPoints();
+    }
 
     /*!
      * \brief Estimate the anisotropic rates of coefficient decay for different direction.
@@ -1200,6 +1207,13 @@ public:
     void setSurplusRefinement(double tolerance, int output, std::vector<int> const &level_limits);
     //! \brief Overload that uses array for the level limits.
     void setSurplusRefinement(double tolerance, int output, const int *level_limits = nullptr);
+    /*!
+     * \brief Call setSurplusRefinement() for Sequence and Global grids with a sequence rule and then getNeededPoints().
+     */
+    std::vector<double> getSurplusRefinement(double tolerance, int output, std::vector<int> const &level_limits) {
+        setSurplusRefinement(tolerance, output, level_limits);
+        return getNeededPoints();
+    }
 
     /*!
      * \brief Refine the grid based on the surplus coefficients, Local-Polynomial and Wavelet grids.
@@ -1247,6 +1261,14 @@ public:
      * Otherwise the method behaves the same, but does not throw if the arrays have incorrect size (will probably segfault).
      */
     void setSurplusRefinement(double tolerance, TypeRefinement criteria, int output = -1, const int *level_limits = nullptr, const double *scale_correction = nullptr);
+    /*!
+     * \brief Call setSurplusRefinement() for Local-Polynomial and Wavelet grids and then getNeededPoints().
+     */
+    std::vector<double> getSurplusRefinement(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits,
+                                             std::vector<double> const &scale_correction = std::vector<double>()) {
+        setSurplusRefinement(tolerance, criteria, output, level_limits, scale_correction);
+        return getNeededPoints();
+    }
 
     /*!
      * \brief Remove all needed points from the grid.
