@@ -34,7 +34,9 @@
 #ifndef __TASMANIAN_OPTIMIZATION_HPP
 #define __TASMANIAN_OPTIMIZATION_HPP
 
-namespace TasOptimization{
+#include "tsgParticleSwarm.hpp"
+
+namespace TasOptim {
 // TODO
 }
 

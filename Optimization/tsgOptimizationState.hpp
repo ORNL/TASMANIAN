@@ -31,17 +31,35 @@
  * FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_PARTICLE_SWARM_CPP
-#define __TASMANIAN_PARTICLE_SWARM_CPP
+#ifndef __TASMANIAN_OPTIMIZATION_STATE_HPP
+#define __TASMANIAN_OPTIMIZATION_STATE_HPP
 
-#include "tsgParticleSwarm.hpp"
+#include "tsgOptimizationEnumerates.hpp"
 
 namespace TasOptimization {
 
-void optimizeParticleSwarm(OptimizationState &os, StoppingCondition sc, std::vector<double> lower, std::vector<double> upper,
-                           double inertiaWeight, double cognitiveCoeff, double socialCoeff) {
+// A function that evaluates a single point.
+using ObjectiveFunction = std::function<double(const std::vector<double> &x)>;
 
-}
+class OptimizationState {
+  public:
+    OptimizationState();
+    OptimizationState(ObjectiveFunction f);
+    ~OptimizationState();
+
+    double getObjectiveValue() {return f(x);}
+    void updateStatus(OptimizationStatus new_status) {status = new_status;}
+
+  private:
+    ObjectiveFunction f;
+    std::vector<double> x, x0;
+    size_t num_dimensions;
+    int num_iterations;
+    OptimizationStatus status;
+};
+
+// A function that reads in an optimization state and determines if it satisfies some criterion (e.g. max iteration count).
+using StoppingCondition = std::function<bool(const OptimizationState &os)>;
 
 }
 

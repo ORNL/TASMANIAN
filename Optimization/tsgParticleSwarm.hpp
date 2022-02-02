@@ -34,8 +34,13 @@
 #ifndef __TASMANIAN_PARTICLE_SWARM_HPP
 #define __TASMANIAN_PARTICLE_SWARM_HPP
 
+#include "tsgOptimizationState.hpp"
+
 namespace TasOptimization {
-// TODO
+
+void optimizeParticleSwarm(OptimizationState &os, StoppingCondition sc, std::vector<double> &lower, std::vector<double> &upper,
+                           double inertiaWeight, double cognitiveCoeff, double socialCoeff);
+
 }
 
 #endif

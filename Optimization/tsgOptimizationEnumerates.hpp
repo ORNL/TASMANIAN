@@ -31,16 +31,19 @@
  * FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_PARTICLE_SWARM_CPP
-#define __TASMANIAN_PARTICLE_SWARM_CPP
+#ifndef __TASMANIAN_OPTIM_ENUMERATES_HPP
+#define __TASMANIAN_OPTIM_ENUMERATES_HPP
 
-#include "tsgParticleSwarm.hpp"
+#include "TasmanianSparseGrid.hpp"
 
 namespace TasOptimization {
 
-void optimizeParticleSwarm(OptimizationState &os, StoppingCondition sc, std::vector<double> lower, std::vector<double> upper,
-                           double inertiaWeight, double cognitiveCoeff, double socialCoeff) {
-
+enum OptimizationStatus {
+    suboptimal,
+    optimal,
+    infeasible,
+    iteration_limit,
+    time_limit
 }
 
 }
