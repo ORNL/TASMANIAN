@@ -35,6 +35,7 @@
 #define __TASMANIAN_OPTIM_ENUMERATES_HPP
 
 #include "TasmanianSparseGrid.hpp"
+#include <random>
 
 namespace TasOptimization {
 

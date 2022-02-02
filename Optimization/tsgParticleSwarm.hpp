@@ -39,7 +39,7 @@
 namespace TasOptimization {
 
 void optimizeParticleSwarm(OptimizationState &os, StoppingCondition sc, std::vector<double> &lower, std::vector<double> &upper,
-                           double inertiaWeight, double cognitiveCoeff, double socialCoeff);
+                           double inertia_weight, double cognitive_coeff, double social_coeff, int num_particles, int seed=777);
 
 }
 

@@ -39,8 +39,52 @@
 namespace TasOptimization {
 
 void optimizeParticleSwarm(OptimizationState &os, StoppingCondition sc, std::vector<double> lower, std::vector<double> upper,
-                           double inertiaWeight, double cognitiveCoeff, double socialCoeff) {
+                           double inertia_weight, double cognitive_coeff, double social_coeff, int num_particles, int seed) {
 
+    // Initialize the particles, their positions & velocities, and the swarm position.
+    size_t n = os.num_dimensions;
+    std::default_random_engine generator (seed);
+    std::vector<std::vector<double>> particle(num_particles, std::vector<double>(n));
+    std::vector<std::vector<double>> particle_velocity(num_particles);
+    for (size_t j=0; j<n; j++) {
+        std::uniform_real_distribution<double> dist_ul1(lower[j], upper[j]);
+        std::uniform_real_distribution<double> dist_ul2(-std::fabs(upper[j]-lower[j]), std::fabs(upper[j]-lower[j]));
+        for (size_t i=0; i<particle.size(); i++) {
+            particle[i][j] = dist_ul1(generator);
+            particle_velocity[i][j] = dist_ul2(generator);
+        }
+    }
+    std::vector<std::vector<double>> best_particle_position(num_particles);
+    std::vector<double> best_position = os.x;
+    for (size_t i=0; i<particle.size(); i++) {
+        best_particle_position[i] = particle[i];
+        if (os.f(best_particle_position[i]) < os.f(best_position)) {
+            best_position = best_particle_position[i];
+        }
+    }
+
+    // Main optimization loop.
+    std::uniform_real_distribution<double> dist_01(0, 1);
+    while(!sc(os)) {
+        for (size_t i=0; i<particle.size(); i++) {
+            for (size_t j=0; j<n; j++) {
+                double rp = dist_01(generator);
+                double rg = dist_01(generator);
+                particle_velocity[i][j] = inertia_weight * particle_velocity[i][j] +
+                                          cognitive_coeff * rp * (best_particle_position[i][j] - particle[i][j]) +
+                                          social_coeff * rg * (best_position[j] - particle[i][j]);
+            }
+            for (size_t j=0; j<n; j++) {
+                particle[i][j] = particle[i][j] + particle_velocity[i][j];
+            }
+            if (os.f(particle[i]) < os.f(best_particle_position[i])) {
+                best_particle_position[i] = particle[i];
+                if (os.f(particle[i]) < os.f(best_position)) {
+                    best_position = particle[i];
+                }
+            }
+        } 
+    } // End while
 }
 
 }

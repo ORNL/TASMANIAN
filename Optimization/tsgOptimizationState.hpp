@@ -48,9 +48,7 @@ class OptimizationState {
     ~OptimizationState();
 
     double getObjectiveValue() {return f(x);}
-    void updateStatus(OptimizationStatus new_status) {status = new_status;}
 
-  private:
     ObjectiveFunction f;
     std::vector<double> x, x0;
     size_t num_dimensions;
