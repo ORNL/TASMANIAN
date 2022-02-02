@@ -2,23 +2,33 @@
 # Optimization Libraries
 ########################################################################
 
-add_library(Tasmanian_optimization  TasmanianOptimization.hpp
-                                    tsgParticleSwarm.hpp
-                                    tsgParticleSwarm.cpp)
+add_library(Tasmanian_liboptimization  TasmanianOptimization.hpp
+                                       tsgParticleSwarm.hpp
+                                       tsgParticleSwarm.cpp
+                                       tsgOptimizationState.hpp
+                                       tsgOptimizationState.cpp
+                                       tsgOptimizationEnumerates.hpp)
 
-target_include_directories(Tasmanian_optimization PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
-target_link_libraries(Tasmanian_optimization  Tasmanian_libsparsegrid)
+target_include_directories(Tasmanian_liboptimization PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
+target_link_libraries(Tasmanian_liboptimization  Tasmanian_libsparsegrid)
 
-set_target_properties(Tasmanian_optimization PROPERTIES OUTPUT_NAME "tasmanianoptimization"
+set_target_properties(Tasmanian_liboptimization PROPERTIES OUTPUT_NAME "tasmanianoptimization"
                                                     SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                     VERSION   ${PROJECT_VERSION})
-Tasmanian_rpath_target(TARGET Tasmanian_optimization COMPONENTS SparseGrids)
+Tasmanian_rpath_target(TARGET Tasmanian_liboptimization COMPONENTS SparseGrids)
 
-install(TARGETS Tasmanian_optimization
+install(TARGETS Tasmanian_liboptimization
         EXPORT  "${Tasmanian_export_name}"
         RUNTIME DESTINATION "bin"
         LIBRARY DESTINATION "lib"
         ARCHIVE DESTINATION "lib")
+
+# Tester executable
+add_executable(Tasmanian_optimizationtest testOptimization.cpp)
+set_target_properties(Tasmanian_optimizationtest  PROPERTIES OUTPUT_NAME "optimizationtest" CXX_EXTENSIONS OFF)
+Tasmanian_rpath_target(TARGET Tasmanian_optimizationtest USE_CURRENT COMPONENTS SparseGrids)
+target_link_libraries(Tasmanian_optimizationtest  Tasmanian_liboptimization)
+
 
 ########################################################################
 # Install headers and config files

@@ -36,8 +36,4 @@
 
 #include "tsgParticleSwarm.hpp"
 
-namespace TasOptim {
-// TODO
-}
-
 #endif

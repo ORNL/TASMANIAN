@@ -31,22 +31,66 @@
  * FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_OPTIM_ENUMERATES_HPP
-#define __TASMANIAN_OPTIM_ENUMERATES_HPP
 
-#include "TasmanianSparseGrid.hpp"
-#include <random>
+#include "TasmanianOptimization.hpp"
+#include "gridtestCLICommon.hpp"
 
-namespace TasOptimization {
+void debugTest() {
+    cout << "Debug Test (callable from the CMake build folder)" << endl;
+    cout << "Put testing code here and call with ./Optimization/optimizationtester debug" << endl;
 
-enum OptimizationStatus {
-    suboptimal,
-    optimal,
-    infeasible,
-    iteration_limit,
-    time_limit
-};
+    // Objective function and stopping criterion.
+    TasOptimization::ObjectiveFunction shc =
+            [&](const std::vector<double> x) {
+                return (4 - 2.1 * x[0]*x[0] + x[0]*x[0]*x[0]*x[0] / 3) * x[0]*x[0] +
+                        x[0] * x[1] +
+                        (-4 + 4 * x[1]*x[1]) * x[1]*x[1];};
+    TasOptimization::StoppingCondition le_100_iter =
+            [&](TasOptimization::OptimizationState os) {return (os.num_iterations > 100);};
+
+    // State object.
+    std::vector<double> x0 = {0.0, 0.0};
+    TasOptimization::OptimizationState os(shc, x0);
+
+    std::cout << "f(x0) = " << shc(x0) << std::endl;
+
+    // Algorithm parameters.
+    std::vector<double> lower = {-3, -2};
+    std::vector<double> upper = {3, 2};
+    double inertia_weight = 0.5;
+    double cognitive_coeff = 2.0;
+    double social_coeff = 2.0;
+    int num_particles = 100;
+
+    // Main run.
+    TasOptimization::optimizeParticleSwarm(os, le_100_iter, lower, upper, inertia_weight, cognitive_coeff, social_coeff, num_particles);
+
+    std::cout << "f(x) = " << shc(os.x) << std::endl;
 
 }
 
-#endif
+int main(int argc, char const **argv){
+
+    std::deque<std::string> args = stringArgs(argc, argv);
+
+    bool debug = false;
+    bool verbose = false;
+    int gpuid = -1;
+
+    while(not args.empty()){
+        if (args.front() == "debug") debug = true;
+        if (hasInfo(args.front())) verbose = true;
+        if (hasGpuID(args.front())){
+            args.pop_front();
+            gpuid = getGpuID(args);
+        }
+        args.pop_front();
+    }
+
+    if (debug){
+        debugTest();
+        return 0;
+    }
+
+}
+

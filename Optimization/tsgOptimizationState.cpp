@@ -31,21 +31,19 @@
  * FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_OPTIM_ENUMERATES_HPP
-#define __TASMANIAN_OPTIM_ENUMERATES_HPP
+#ifndef __TASMANIAN_OPTIMIZATION_STATE_CPP
+#define __TASMANIAN_OPTIMIZATION_STATE_CPP
 
-#include "TasmanianSparseGrid.hpp"
-#include <random>
+#include "tsgOptimizationState.hpp"
 
 namespace TasOptimization {
 
-enum OptimizationStatus {
-    suboptimal,
-    optimal,
-    infeasible,
-    iteration_limit,
-    time_limit
-};
+OptimizationState::OptimizationState() : num_dimensions(0), num_iterations(0), status(suboptimal) {}
+
+OptimizationState::OptimizationState(ObjectiveFunction input_f, std::vector<double> &input_x) :
+        f(input_f), x(input_x), num_dimensions(input_x.size()), num_iterations(0), status(suboptimal) {}
+
+OptimizationState::~OptimizationState(){}
 
 }
 

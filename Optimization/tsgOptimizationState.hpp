@@ -44,13 +44,13 @@ using ObjectiveFunction = std::function<double(const std::vector<double> &x)>;
 class OptimizationState {
   public:
     OptimizationState();
-    OptimizationState(ObjectiveFunction f);
+    OptimizationState(ObjectiveFunction input_fn, std::vector<double> &input_x);
     ~OptimizationState();
 
     double getObjectiveValue() {return f(x);}
 
     ObjectiveFunction f;
-    std::vector<double> x, x0;
+    std::vector<double> x;
     size_t num_dimensions;
     int num_iterations;
     OptimizationStatus status;
