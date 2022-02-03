@@ -197,6 +197,7 @@ namespace TasGrid{
  * See also the papers referenced in TasGrid::TypeDepth and TasGrid::TypeRefinement.
  * - updateGlobalGrid(), updateSequenceGrid(), updateFourierGrid()
  * - setAnisotropicRefinement(), setSurplusRefinement()
+ * - getAnisotropicRefinement(), getSurplusRefinement()
  * - clearRefinement()
  * - getLevelLimits(), clearLevelLimits()
  * - removePointsByHierarchicalCoefficient()
