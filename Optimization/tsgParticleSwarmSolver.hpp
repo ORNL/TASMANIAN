@@ -31,33 +31,29 @@
  * FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_OPTIMIZATION_STATE_HPP
-#define __TASMANIAN_OPTIMIZATION_STATE_HPP
+#ifndef __TASMANIAN_PARTICLE_SWARM_SOLVER_HPP
+#define __TASMANIAN_PARTICLE_SWARM_SOLVER_HPP
 
-#include "tsgOptimizationEnumerates.hpp"
+#include "tsgSolver.hpp"
 
 namespace TasOptimization {
 
-// A function that evaluates a single point.
-using ObjectiveFunction = std::function<double(const std::vector<double> &x)>;
+class ParticleSwarmSolver : public Solver {
 
-class OptimizationState {
   public:
-    OptimizationState();
-    OptimizationState(ObjectiveFunction input_fn, std::vector<double> &input_x);
-    ~OptimizationState();
+    ParticleSwarmSolver(std::vector<double> &lower, std::vector<double> &upper, int num_particles, int seed=777);
 
-    double getObjectiveValue() {return f(x);}
+    ParticleSwarmSolver(std::vector<double> &lower, std::vector<double> &upper, double inertia_weight, double cognitive_coeff,
+                        double social_coeff, int num_particles, int seed=777);
 
-    ObjectiveFunction f;
-    std::vector<double> x;
-    size_t num_dimensions;
-    int num_iterations;
-    OptimizationStatus status;
+    std::vector<double> lower, upper;
+    double inertia_weight, cognitive_coeff, social_coeff;
+    int num_particles, seed;
+
+    bool is_feasible() {return true;}
+    bool is_optimal() {return false;}
+    void optimize();
 };
-
-// A function that reads in an optimization state and determines if it satisfies some criterion (e.g. max iteration count).
-using StoppingCondition = std::function<bool(const OptimizationState &os)>;
 
 }
 

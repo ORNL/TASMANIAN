@@ -31,15 +31,30 @@
  * FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_PARTICLE_SWARM_HPP
-#define __TASMANIAN_PARTICLE_SWARM_HPP
+#ifndef __TASMANIAN_SOLVER_CPP
+#define __TASMANIAN_SOLVER_CPP
 
-#include "tsgOptimizationState.hpp"
+#include "tsgSolver.hpp"
 
 namespace TasOptimization {
 
-void optimizeParticleSwarm(OptimizationState &os, StoppingCondition sc, std::vector<double> &lower, std::vector<double> &upper,
-                           double inertia_weight, double cognitive_coeff, double social_coeff, int num_particles, int seed=777);
+Solver::Solver() :
+        num_dimensions(0), num_iterations(0), max_num_iterations(std::numeric_limits<int>::max()), runtime(0),
+        max_runtime(std::numeric_limits<double>::infinity()), status(suboptimal) {}
+
+Solver::Solver(ObjectiveFunction input_f, std::vector<double> &input_x) :
+        f(input_f), x(input_x), num_dimensions(input_x.size()), num_iterations(0), max_num_iterations(std::numeric_limits<int>::max()),
+        runtime(0), max_runtime(std::numeric_limits<double>::infinity()),status(suboptimal) {}
+
+Solver::~Solver(){}
+
+void Solver::updateStatus() {
+    if (num_iterations >= max_num_iterations) {status = iteration_limit; return;}
+    if (runtime >= max_runtime) {status = time_limit; return;}
+    if (!is_feasible()) {status = infeasible; return;};
+    if (is_optimal()) {status = optimal; return;};
+    status = suboptimal;
+}
 
 }
 

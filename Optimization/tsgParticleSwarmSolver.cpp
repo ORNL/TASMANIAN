@@ -31,20 +31,36 @@
  * FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_PARTICLE_SWARM_CPP
-#define __TASMANIAN_PARTICLE_SWARM_CPP
+#ifndef __TASMANIAN_PARTICLE_SWARM_SOLVER_CPP
+#define __TASMANIAN_PARTICLE_SWARM_SOLVER_CPP
 
-#include "tsgParticleSwarm.hpp"
+#include "tsgParticleSwarmSolver.hpp"
 
 namespace TasOptimization {
 
-void optimizeParticleSwarm(OptimizationState &os, StoppingCondition sc, std::vector<double> &lower, std::vector<double> &upper,
-                           double inertia_weight, double cognitive_coeff, double social_coeff, int num_particles, int seed) {
+std::vector<double> getX0(std::vector<double> &lower, std::vector<double> &upper) {
+    // TODO: check that the dimensions and ordering align.
+    std::vector<double> x0(lower.size());
+    for (size_t i=0; i<x0.size(); i++) {x0[i] = (lower[i] + upper[i]) / 2;}
+    return x0;
+}
+
+ParticleSwarmSolver::ParticleSwarmSolver(std::vector<double> &lower, std::vector<double> &upper, int num_particles, int seed) :
+        lower(lower), upper(upper), inertia_weight(0.5), cognitive_coeff(2), social_coeff(2), num_particles(num_particles),
+        seed(seed) {std::vector<double> x0 = getX0(lower, upper); setX(x0);}
+
+ParticleSwarmSolver::ParticleSwarmSolver(std::vector<double> &lower, std::vector<double> &upper, double inertia_weight,
+                                         double cognitive_coeff, double social_coeff, int num_particles, int seed) :
+        lower(lower), upper(upper), inertia_weight(inertia_weight), cognitive_coeff(cognitive_coeff), social_coeff(social_coeff),
+        num_particles(num_particles), seed(seed) {std::vector<double> x0 = getX0(lower, upper); setX(x0);};
+
+void ParticleSwarmSolver::optimize() {
 
     // TODO: Add input checks.
 
     // Initialize the particles, their positions & velocities, and the swarm position.
-    size_t num_dimensions = os.num_dimensions;
+    size_t num_dimensions = getNumDimensions();
+    ObjectiveFunction f = getObjectiveFunction();
     std::default_random_engine generator(seed);
     std::vector<std::vector<double>> particle(num_particles, std::vector<double>(num_dimensions));
     std::vector<std::vector<double>> particle_velocity(num_particles, std::vector<double>(num_dimensions));
@@ -57,17 +73,17 @@ void optimizeParticleSwarm(OptimizationState &os, StoppingCondition sc, std::vec
         }
     }
     std::vector<std::vector<double>> best_particle_position(num_particles);
-    std::vector<double> best_position = os.x;
+    std::vector<double> best_position = getX();
     for (int i=0; i<num_particles; i++) {
         best_particle_position[i] = particle[i];
-        if (os.f(best_particle_position[i]) < os.f(best_position)) {
+        if (f(best_particle_position[i]) < f(best_position)) {
             best_position = best_particle_position[i];
         }
     }
 
     // Main optimization loop.
     std::uniform_real_distribution<double> dist_01(0, 1);
-    while(!sc(os)) {
+    while(getStatus() != iteration_limit && getStatus() != time_limit) {
         for (int i=0; i<num_particles; i++) {
             for (size_t j=0; j<num_dimensions; j++) {
                 double rp = dist_01(generator);
@@ -79,15 +95,15 @@ void optimizeParticleSwarm(OptimizationState &os, StoppingCondition sc, std::vec
             for (size_t j=0; j<num_dimensions; j++) {
                 particle[i][j] = particle[i][j] + particle_velocity[i][j];
             }
-            if (os.f(particle[i]) < os.f(best_particle_position[i])) {
+            if (f(particle[i]) < f(best_particle_position[i])) {
                 best_particle_position[i] = particle[i];
-                if (os.f(particle[i]) < os.f(best_position)) {
+                if (f(particle[i]) < f(best_position)) {
                     best_position = particle[i];
-                    os.x = best_position;
+                    setX(best_position);
                 }
             }
         }
-        os.num_iterations++;
+        addIterations(1);
     } // End while
 }
 

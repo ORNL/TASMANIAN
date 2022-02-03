@@ -3,10 +3,10 @@
 ########################################################################
 
 add_library(Tasmanian_liboptimization  TasmanianOptimization.hpp
-                                       tsgParticleSwarm.hpp
-                                       tsgParticleSwarm.cpp
-                                       tsgOptimizationState.hpp
-                                       tsgOptimizationState.cpp
+                                       tsgParticleSwarmSolver.hpp
+                                       tsgParticleSwarmSolver.cpp
+                                       tsgSolver.hpp
+                                       tsgSolver.cpp
                                        tsgOptimizationEnumerates.hpp)
 
 target_include_directories(Tasmanian_liboptimization PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)

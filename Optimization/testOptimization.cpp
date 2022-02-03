@@ -39,33 +39,26 @@ void debugTest() {
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./Optimization/optimizationtester debug" << endl;
 
-    // Objective function and stopping criterion.
+    // Parameter setup.
     TasOptimization::ObjectiveFunction shc =
             [&](const std::vector<double> x) {
                 return (4 - 2.1 * x[0]*x[0] + x[0]*x[0]*x[0]*x[0] / 3) * x[0]*x[0] +
                         x[0] * x[1] +
                         (-4 + 4 * x[1]*x[1]) * x[1]*x[1];};
-    TasOptimization::StoppingCondition le_100_iter =
-            [&](TasOptimization::OptimizationState os) {return (os.num_iterations > 100);};
-
-    // State object.
-    std::vector<double> x0 = {0.0, 0.0};
-    TasOptimization::OptimizationState os(shc, x0);
-
-    std::cout << "f(x0) = " << shc(x0) << std::endl;
-
-    // Algorithm parameters.
     std::vector<double> lower = {-3, -2};
     std::vector<double> upper = {3, 2};
-    double inertia_weight = 0.5;
-    double cognitive_coeff = 2.0;
-    double social_coeff = 2.0;
     int num_particles = 100;
+    int max_iterations = 100;
+
+    // Solver setup.
+    TasOptimization::ParticleSwarmSolver pss(lower, upper, num_particles);
+    pss.setMaxIterationCount(max_iterations);
+    pss.setObjectiveFunction(shc);
 
     // Main run.
-    TasOptimization::optimizeParticleSwarm(os, le_100_iter, lower, upper, inertia_weight, cognitive_coeff, social_coeff, num_particles);
-
-    std::cout << "f(x) = " << shc(os.x) << std::endl;
+    std::cout << "f(x0) = " << pss.getObjectiveValue() << ", iter = " << pss.getIterationCount() << std::endl;
+    pss.optimize();
+    std::cout << "f(xk) = " << pss.getObjectiveValue() << ", iter = " << pss.getIterationCount() << std::endl;
 
 }
 

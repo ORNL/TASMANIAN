@@ -34,6 +34,6 @@
 #ifndef __TASMANIAN_OPTIMIZATION_HPP
 #define __TASMANIAN_OPTIMIZATION_HPP
 
-#include "tsgParticleSwarm.hpp"
+#include "tsgParticleSwarmSolver.hpp"
 
 #endif

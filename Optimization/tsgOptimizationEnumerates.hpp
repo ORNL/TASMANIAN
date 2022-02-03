@@ -39,7 +39,7 @@
 
 namespace TasOptimization {
 
-enum OptimizationStatus {
+enum SolverStatus {
     suboptimal,
     optimal,
     infeasible,

@@ -31,19 +31,52 @@
  * FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_OPTIMIZATION_STATE_CPP
-#define __TASMANIAN_OPTIMIZATION_STATE_CPP
+#ifndef __TASMANIAN_SOLVER_HPP
+#define __TASMANIAN_SOLVER_HPP
 
-#include "tsgOptimizationState.hpp"
+#include "tsgOptimizationEnumerates.hpp"
 
 namespace TasOptimization {
 
-OptimizationState::OptimizationState() : num_dimensions(0), num_iterations(0), status(suboptimal) {}
+// A function that evaluates a single point.
+using ObjectiveFunction = std::function<double(const std::vector<double> &x)>;
 
-OptimizationState::OptimizationState(ObjectiveFunction input_f, std::vector<double> &input_x) :
-        f(input_f), x(input_x), num_dimensions(input_x.size()), num_iterations(0), status(suboptimal) {}
+class Solver {
+  public:
+    Solver();
+    Solver(ObjectiveFunction input_fn, std::vector<double> &input_x);
+    ~Solver();
 
-OptimizationState::~OptimizationState(){}
+    std::vector<double> getX() {return x;}
+    ObjectiveFunction getObjectiveFunction() {return f;}
+    SolverStatus getStatus() {return status;}
+    size_t getNumDimensions() {return num_dimensions;}
+    int getIterationCount() {return num_iterations;}
+    int getRuntime() {return runtime;}
+    double getObjectiveValue() {return f(x);}
+
+    void updateStatus();
+    void setX(std::vector<double> &input_x) {x = input_x; num_dimensions = x.size(); updateStatus();}
+    void setObjectiveFunction(ObjectiveFunction &input_f) {f = input_f;}
+    void setMaxIterationCount(int limit) {max_num_iterations = limit;}
+    void setMaxRuntime(double limit) {max_runtime = limit;}
+
+    void addIterations(int k) {num_iterations += k; updateStatus();}
+    void addRuntime(double t) {runtime += t; updateStatus();}
+
+    // Main algorithm that minimizes f using the current candidate point x.
+    virtual bool is_optimal() = 0;
+    virtual bool is_feasible() = 0;
+    virtual void optimize() = 0;
+
+  private:
+    ObjectiveFunction f;
+    std::vector<double> x;
+    size_t num_dimensions;
+    int num_iterations, max_num_iterations;
+    double runtime, max_runtime;
+    SolverStatus status;
+};
 
 }
 
