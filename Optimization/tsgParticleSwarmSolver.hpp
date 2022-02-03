@@ -41,12 +41,10 @@ namespace TasOptimization {
 class ParticleSwarmSolver : public Solver {
 
   public:
-    ParticleSwarmSolver(std::vector<double> &lower, std::vector<double> &upper, int num_particles, int seed=777);
+    ParticleSwarmSolver(int num_particles, int seed=777);
 
-    ParticleSwarmSolver(std::vector<double> &lower, std::vector<double> &upper, double inertia_weight, double cognitive_coeff,
-                        double social_coeff, int num_particles, int seed=777);
+    ParticleSwarmSolver(double inertia_weight, double cognitive_coeff, double social_coeff, int num_particles, int seed=777);
 
-    std::vector<double> lower, upper;
     double inertia_weight, cognitive_coeff, social_coeff;
     int num_particles, seed;
 

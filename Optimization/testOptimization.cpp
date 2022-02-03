@@ -40,7 +40,7 @@ void debugTest() {
     cout << "Put testing code here and call with ./Optimization/optimizationtester debug" << endl;
 
     // Parameter setup.
-    TasOptimization::ObjectiveFunction shc =
+    TasOptimization::ObjectiveFunction shc = // six-hump camel function
             [&](const std::vector<double> x) {
                 return (4 - 2.1 * x[0]*x[0] + x[0]*x[0]*x[0]*x[0] / 3) * x[0]*x[0] +
                         x[0] * x[1] +
@@ -51,12 +51,13 @@ void debugTest() {
     int max_iterations = 100;
 
     // Solver setup.
-    TasOptimization::ParticleSwarmSolver pss(lower, upper, num_particles);
+    TasOptimization::ParticleSwarmSolver pss(num_particles);
     pss.setMaxIterationCount(max_iterations);
+    pss.setLowerBounds(lower);
+    pss.setUpperBounds(upper);
     pss.setObjectiveFunction(shc);
 
     // Main run.
-    std::cout << "f(x0) = " << pss.getObjectiveValue() << ", iter = " << pss.getIterationCount() << std::endl;
     pss.optimize();
     std::cout << "f(xk) = " << pss.getObjectiveValue() << ", iter = " << pss.getIterationCount() << std::endl;
 

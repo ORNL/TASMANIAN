@@ -42,19 +42,34 @@ Solver::Solver() :
         num_dimensions(0), num_iterations(0), max_num_iterations(std::numeric_limits<int>::max()), runtime(0),
         max_runtime(std::numeric_limits<double>::infinity()), status(suboptimal) {}
 
-Solver::Solver(ObjectiveFunction input_f, std::vector<double> &input_x) :
-        f(input_f), x(input_x), num_dimensions(input_x.size()), num_iterations(0), max_num_iterations(std::numeric_limits<int>::max()),
-        runtime(0), max_runtime(std::numeric_limits<double>::infinity()),status(suboptimal) {}
-
 Solver::~Solver(){}
 
-void Solver::updateStatus() {
-    if (num_iterations >= max_num_iterations) {status = iteration_limit; return;}
-    if (runtime >= max_runtime) {status = time_limit; return;}
-    if (!is_feasible()) {status = infeasible; return;};
-    if (is_optimal()) {status = optimal; return;};
-    status = suboptimal;
+void Solver::setX(std::vector<double> &input_x) {
+    if (num_dimensions > 0 && input_x.size() != num_dimensions) {
+        throw std::invalid_argument("size of input x is inconsistent with the loaded number of dimensions");
+    }
+    x = input_x;
+    num_dimensions = x.size();
+    checkInfeasibility();
+    checkOptimality();
 }
+
+void Solver::setLowerBounds(std::vector<double> &input_lower) {
+    if (num_dimensions > 0 && input_lower.size() != num_dimensions) {
+        throw std::invalid_argument("size of input lower bounds is inconsistent with the loaded number of dimensions");
+    }
+    lower = input_lower;
+    num_dimensions = input_lower.size();
+}
+
+void Solver::setUpperBounds(std::vector<double> &input_upper) {
+    if (num_dimensions > 0 && input_upper.size() != num_dimensions) {
+        throw std::invalid_argument("size of input upper bounds is inconsistent with the loaded number of dimensions");
+    }
+    upper = input_upper;
+    num_dimensions = input_upper.size();
+}
+
 
 }
 

@@ -38,27 +38,20 @@
 
 namespace TasOptimization {
 
-std::vector<double> getX0(std::vector<double> &lower, std::vector<double> &upper) {
-    // TODO: check that the dimensions and ordering align.
-    std::vector<double> x0(lower.size());
-    for (size_t i=0; i<x0.size(); i++) {x0[i] = (lower[i] + upper[i]) / 2;}
-    return x0;
-}
+ParticleSwarmSolver::ParticleSwarmSolver(int num_particles, int seed) :
+        inertia_weight(0.5), cognitive_coeff(2), social_coeff(2), num_particles(num_particles), seed(seed) {}
 
-ParticleSwarmSolver::ParticleSwarmSolver(std::vector<double> &lower, std::vector<double> &upper, int num_particles, int seed) :
-        lower(lower), upper(upper), inertia_weight(0.5), cognitive_coeff(2), social_coeff(2), num_particles(num_particles),
-        seed(seed) {std::vector<double> x0 = getX0(lower, upper); setX(x0);}
-
-ParticleSwarmSolver::ParticleSwarmSolver(std::vector<double> &lower, std::vector<double> &upper, double inertia_weight,
-                                         double cognitive_coeff, double social_coeff, int num_particles, int seed) :
-        lower(lower), upper(upper), inertia_weight(inertia_weight), cognitive_coeff(cognitive_coeff), social_coeff(social_coeff),
-        num_particles(num_particles), seed(seed) {std::vector<double> x0 = getX0(lower, upper); setX(x0);};
+ParticleSwarmSolver::ParticleSwarmSolver(double inertia_weight, double cognitive_coeff, double social_coeff, int num_particles, int seed) :
+        inertia_weight(inertia_weight), cognitive_coeff(cognitive_coeff), social_coeff(social_coeff), num_particles(num_particles), seed(seed) {}
 
 void ParticleSwarmSolver::optimize() {
 
-    // TODO: Add input checks.
+    // TODO: Add input checks (e.g., lower, upper).
+    // TODO: Add runtime updates.
 
     // Initialize the particles, their positions & velocities, and the swarm position.
+    std::vector<double> lower = getLowerBounds();
+    std::vector<double> upper = getUpperBounds();
     size_t num_dimensions = getNumDimensions();
     ObjectiveFunction f = getObjectiveFunction();
     std::default_random_engine generator(seed);
@@ -73,13 +66,14 @@ void ParticleSwarmSolver::optimize() {
         }
     }
     std::vector<std::vector<double>> best_particle_position(num_particles);
-    std::vector<double> best_position = getX();
+    std::vector<double> best_position(num_dimensions);
     for (int i=0; i<num_particles; i++) {
         best_particle_position[i] = particle[i];
         if (f(best_particle_position[i]) < f(best_position)) {
             best_position = best_particle_position[i];
         }
     }
+    setX(best_position);
 
     // Main optimization loop.
     std::uniform_real_distribution<double> dist_01(0, 1);

@@ -48,6 +48,8 @@ class Solver {
     ~Solver();
 
     std::vector<double> getX() {return x;}
+    std::vector<double> getLowerBounds() {return lower;}
+    std::vector<double> getUpperBounds() {return upper;}
     ObjectiveFunction getObjectiveFunction() {return f;}
     SolverStatus getStatus() {return status;}
     size_t getNumDimensions() {return num_dimensions;}
@@ -55,14 +57,21 @@ class Solver {
     int getRuntime() {return runtime;}
     double getObjectiveValue() {return f(x);}
 
-    void updateStatus();
-    void setX(std::vector<double> &input_x) {x = input_x; num_dimensions = x.size(); updateStatus();}
-    void setObjectiveFunction(ObjectiveFunction &input_f) {f = input_f;}
+    void checkIterationCount() {if (num_iterations >= max_num_iterations) {status = iteration_limit; return;}}
+    void checkRuntime() {if (runtime >= max_runtime) {status = time_limit; return;}}
+    void checkInfeasibility() {if (!is_feasible()) {status = infeasible; return;};}
+    void checkOptimality() {if (is_optimal()) {status = optimal; return;};}
+    void checkAll() {checkIterationCount(); checkRuntime(); checkInfeasibility(); checkOptimality();}
+
+    void setX(std::vector<double> &input_x);
+    void setLowerBounds(std::vector<double> &input_lower);
+    void setUpperBounds(std::vector<double> &input_upper);
+    void setObjectiveFunction(ObjectiveFunction input_f) {f = input_f;}
     void setMaxIterationCount(int limit) {max_num_iterations = limit;}
     void setMaxRuntime(double limit) {max_runtime = limit;}
 
-    void addIterations(int k) {num_iterations += k; updateStatus();}
-    void addRuntime(double t) {runtime += t; updateStatus();}
+    void addIterations(int k) {num_iterations += k; checkIterationCount();}
+    void addRuntime(double t) {runtime += t; checkRuntime();}
 
     // Main algorithm that minimizes f using the current candidate point x.
     virtual bool is_optimal() = 0;
@@ -71,7 +80,7 @@ class Solver {
 
   private:
     ObjectiveFunction f;
-    std::vector<double> x;
+    std::vector<double> x, lower, upper;
     size_t num_dimensions;
     int num_iterations, max_num_iterations;
     double runtime, max_runtime;
