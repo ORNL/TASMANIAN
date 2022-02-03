@@ -1525,6 +1525,13 @@ class TasmanianSparseGrid:
             sType = bytes(sType, encoding='utf8')
         pLibTSG.tsgSetAnisotropicRefinement(self.pGrid, c_char_p(sType), iMinGrowth, iOutput, pLevelLimits)
 
+    def getAnisotropicRefinement(self, sType, iMinGrowth, iOutput, liLevelLimits = []):
+        '''
+        Calls setAnistropicRefinement() on the inputs and then getNeededPoints().
+        '''
+        self.setAnisotropicRefinement(sType, iMinGrowth, iOutput, liLevelLimits=liLevelLimits)
+        return self.getNeededPoints()
+
     def estimateAnisotropicCoefficients(self, sType, iOutput):
         '''
         returns the estimate of the anisotropic coefficients from the
@@ -1653,6 +1660,13 @@ class TasmanianSparseGrid:
             if (sys.version_info.major == 3):
                 sCriteria = bytes(sCriteria, encoding='utf8')
             pLibTSG.tsgSetLocalSurplusRefinement(self.pGrid, c_double(fTolerance), c_char_p(sCriteria), iOutput, pLevelLimits, pScaleCorrection)
+
+    def getSurplusRefinement(self, fTolerance, iOutput, sCriteria = "", liLevelLimits = [], llfScaleCorrection = []):
+        '''
+        Calls setSurplusRefinement() on the inputs and then getNeededPoints().
+        '''
+        self.setSurplusRefinement(fTolerance, iOutput, sCriteria=sCriteria, liLevelLimits=liLevelLimits, llfScaleCorrection=llfScaleCorrection)
+        return self.getNeededPoints()
 
     def clearRefinement(self):
         '''
