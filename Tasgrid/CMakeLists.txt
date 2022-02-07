@@ -16,7 +16,7 @@ add_executable(Tasmanian_tasgrid tasgrid_main.cpp
                                  tasgridWrapper.cpp)
 
 target_link_libraries(Tasmanian_tasgrid Tasmanian_addons)
-                                        
+
 set_target_properties(Tasmanian_tasgrid PROPERTIES OUTPUT_NAME "tasgrid" CXX_EXTENSIONS OFF)
 Tasmanian_rpath_target(TARGET Tasmanian_tasgrid COMPONENTS SparseGrids DREAM)
 if (Tasmanian_ENABLE_OPENMP)

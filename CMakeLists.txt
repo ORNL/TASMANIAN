@@ -58,7 +58,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    - add Tasmanian_dependencies target with all TPLs
 # 3. Enable testing and set the master config file
 # 4. Add all subdirectories in the correct order
-#    - SparseGirds, DREAM, Optimization, Addons
+#    - SparseGirds, DREAM, Addons
 #    - Interfaces: Python, Fortran, MATLAB
 #    - master target and examples
 # 5. Install top level files
@@ -135,7 +135,6 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Tasgrid/tasgridLogs.in.hpp" "${CMAKE
 ########################################################################
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/SparseGrids"  "${CMAKE_CURRENT_BINARY_DIR}/SparseGrids")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DREAM"        "${CMAKE_CURRENT_BINARY_DIR}/DREAM")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Optimization" "${CMAKE_CURRENT_BINARY_DIR}/Optimization")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Addons"       "${CMAKE_CURRENT_BINARY_DIR}/Addons")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Tasgrid/"     "${CMAKE_CURRENT_BINARY_DIR}/Tasgrid")
 

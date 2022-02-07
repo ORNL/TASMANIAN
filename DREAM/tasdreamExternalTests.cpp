@@ -565,6 +565,28 @@ bool DreamExternalTester::performTests(TypeDREAMTest test){
 void testDebug(){
     cout << "Debug Test" << endl;
     cout << "Put here testing code and call this with ./dreamtest debug" << endl;
+
+    // Parameter setup.
+    TasOptimization::ObjectiveFunction shc = // six-hump camel function
+            [](const std::vector<double> x, double &fval) {
+                fval = (4 - 2.1 * x[0]*x[0] + x[0]*x[0]*x[0]*x[0] / 3) * x[0]*x[0] +
+                        x[0] * x[1] +
+                        (-4 + 4 * x[1]*x[1]) * x[1]*x[1];};
+    TasOptimization::BatchedObjectiveFunction batched_shc = TasOptimization::makeBatchedFunction(2, shc);
+    TasOptimization::ParticleSwarmState state;
+    std::vector<double> lower = {-3, -2};
+    std::vector<double> upper = {3, 2};
+    state.addParticlesInsideBox(100, lower, upper);
+
+    // Main solver call.
+    TasOptimization::ParticleSwarm(batched_shc, 1000, TasDREAM::hypercube(lower, upper), state);
+    double fval;
+    shc(state.getBestPosition(), fval);
+    cout << "f(xk) = " << fval << endl;
+    cout << "iter = " << state.getNumIterations() << endl;
+    cout << "dim = " << state.getNumDimensions() << endl;
+    cout << "n = " << state.getNumParticles() << endl;
+
 }
 
 #endif

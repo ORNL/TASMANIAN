@@ -31,43 +31,30 @@
  * FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_SOLVER_CPP
-#define __TASMANIAN_SOLVER_CPP
+#ifndef __TASMANIAN_OPTIM_ENUMERATES_HPP
+#define __TASMANIAN_OPTIM_ENUMERATES_HPP
 
-#include "tsgSolver.hpp"
+#include "TasmanianDREAM.hpp"
+#include <random>
 
 namespace TasOptimization {
 
-Solver::Solver() :
-        num_dimensions(0), num_iterations(0), max_num_iterations(std::numeric_limits<int>::max()), runtime(0),
-        max_runtime(std::numeric_limits<double>::infinity()), status(suboptimal) {}
+using ObjectiveFunction = std::function<void(const std::vector<double> &x, double &fval)>;
+using BatchedObjectiveFunction = std::function<void(const std::vector<double> &x_batch, std::vector<double> &fval_batch)>;
 
-Solver::~Solver(){}
-
-void Solver::setX(std::vector<double> &input_x) {
-    if (num_dimensions > 0 && input_x.size() != num_dimensions) {
-        throw std::invalid_argument("size of input x is inconsistent with the loaded number of dimensions");
-    }
-    x = input_x;
-    num_dimensions = x.size();
-    checkInfeasibility();
-    checkOptimality();
-}
-
-void Solver::setLowerBounds(std::vector<double> &input_lower) {
-    if (num_dimensions > 0 && input_lower.size() != num_dimensions) {
-        throw std::invalid_argument("size of input lower bounds is inconsistent with the loaded number of dimensions");
-    }
-    lower = input_lower;
-    num_dimensions = input_lower.size();
-}
-
-void Solver::setUpperBounds(std::vector<double> &input_upper) {
-    if (num_dimensions > 0 && input_upper.size() != num_dimensions) {
-        throw std::invalid_argument("size of input upper bounds is inconsistent with the loaded number of dimensions");
-    }
-    upper = input_upper;
-    num_dimensions = input_upper.size();
+inline BatchedObjectiveFunction makeBatchedFunction(int num_dimensions, ObjectiveFunction f) {
+    return [=](const std::vector<double> &x_values, std::vector<double> &fval_values)->void {
+        if (x_values.size() % num_dimensions != 0) {
+            throw std::runtime_error("Size of best particle positions (" + std::to_string(x_values.size()) + ") is not a multiple "
+                                     "of the number of dimensions (" + std::to_string(num_dimensions) + ")");
+        }
+        int num_points = x_values.size() / num_dimensions;
+        std::vector<double> x(num_dimensions);
+        for (int i=0; i<num_points; i++) {
+            std::copy(x_values.begin() + i * num_dimensions, x_values.begin() + (i + 1) * num_dimensions, x.begin());
+            f(x, fval_values[i]);
+        }
+    };
 }
 
 

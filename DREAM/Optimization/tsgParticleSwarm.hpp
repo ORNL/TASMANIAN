@@ -31,62 +31,46 @@
  * FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
  */
 
-#ifndef __TASMANIAN_SOLVER_HPP
-#define __TASMANIAN_SOLVER_HPP
+#ifndef __TASMANIAN_PARTICLE_SWARM_SOLVER_HPP
+#define __TASMANIAN_PARTICLE_SWARM_SOLVER_HPP
 
-#include "tsgOptimizationEnumerates.hpp"
+#include "tsgOptimizationUtils.hpp"
 
 namespace TasOptimization {
 
-// A function that evaluates a single point.
-using ObjectiveFunction = std::function<double(const std::vector<double> &x)>;
-
-class Solver {
+class ParticleSwarmState {
   public:
-    Solver();
-    Solver(ObjectiveFunction input_fn, std::vector<double> &input_x);
-    ~Solver();
+    ParticleSwarmState();
+    ~ParticleSwarmState() = default;
 
-    std::vector<double> getX() {return x;}
-    std::vector<double> getLowerBounds() {return lower;}
-    std::vector<double> getUpperBounds() {return upper;}
-    ObjectiveFunction getObjectiveFunction() {return f;}
-    SolverStatus getStatus() {return status;}
-    size_t getNumDimensions() {return num_dimensions;}
-    int getIterationCount() {return num_iterations;}
-    int getRuntime() {return runtime;}
-    double getObjectiveValue() {return f(x);}
+    inline std::vector<double> getParticlePositions() const {return particle_positions;}
+    inline std::vector<double> getParticleVelocities() const {return particle_velocities;}
+    inline std::vector<double> getBestParticlePositions() const {return best_particle_positions;}
+    inline std::vector<double> getBestPosition() const {return best_position;}
+    inline int getNumIterations() {return num_iterations;}
+    inline int getNumDimensions() {return num_dimensions;}
+    inline int getNumParticles() {return num_particles;}
 
-    void checkIterationCount() {if (num_iterations >= max_num_iterations) {status = iteration_limit; return;}}
-    void checkRuntime() {if (runtime >= max_runtime) {status = time_limit; return;}}
-    void checkInfeasibility() {if (!is_feasible()) {status = infeasible; return;};}
-    void checkOptimality() {if (is_optimal()) {status = optimal; return;};}
-    void checkAll() {checkIterationCount(); checkRuntime(); checkInfeasibility(); checkOptimality();}
+    void setParticlePositions(std::vector<double> &pp);
+    void setParticleVelocities(std::vector<double> &pv);
+    void setBestParticlePositions(std::vector<double> &bpp);
+    void setBestPosition(std::vector<double> &bp);
+    void setNumIterations(int it) {num_iterations = it;}
+    void setNumDimensions(int nd) {num_dimensions = nd;};
+    void setNumParticles(int np) {num_particles = np;};
 
-    void setX(std::vector<double> &input_x);
-    void setLowerBounds(std::vector<double> &input_lower);
-    void setUpperBounds(std::vector<double> &input_upper);
-    void setObjectiveFunction(ObjectiveFunction input_f) {f = input_f;}
-    void setMaxIterationCount(int limit) {max_num_iterations = limit;}
-    void setMaxRuntime(double limit) {max_runtime = limit;}
-
-    void addIterations(int k) {num_iterations += k; checkIterationCount();}
-    void addRuntime(double t) {runtime += t; checkRuntime();}
-
-    // Main algorithm that minimizes f using the current candidate point x.
-    virtual bool is_optimal() = 0;
-    virtual bool is_feasible() = 0;
-    virtual void optimize() = 0;
+    inline void addIterations(int k) {num_iterations += k;}
+    void addParticlesInsideBox(int num_particles, std::vector<double> &lower, std::vector<double> &upper,
+                               std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
 
   private:
-    ObjectiveFunction f;
-    std::vector<double> x, lower, upper;
-    size_t num_dimensions;
-    int num_iterations, max_num_iterations;
-    double runtime, max_runtime;
-    SolverStatus status;
+    std::vector<double> particle_positions, particle_velocities, best_particle_positions, best_position;
+    int num_iterations, num_dimensions, num_particles;
 };
 
-}
+void ParticleSwarm(BatchedObjectiveFunction f, int max_iterations, TasDREAM::DreamDomain inside, ParticleSwarmState &state,
+                   double inertia_weight = 0.5, double cognitive_coeff = 2, double social_coeff = 0.5,
+                   std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
 
+}
 #endif
