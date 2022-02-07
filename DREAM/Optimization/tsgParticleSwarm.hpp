@@ -40,36 +40,52 @@ namespace TasOptimization {
 
 class ParticleSwarmState {
   public:
-    ParticleSwarmState();
-    ~ParticleSwarmState() = default;
+    ParticleSwarmState() = delete;
+    ParticleSwarmState(int nd) : num_dimensions(nd), num_particles(0) {};
 
     inline std::vector<double> getParticlePositions() const {return particle_positions;}
     inline std::vector<double> getParticleVelocities() const {return particle_velocities;}
     inline std::vector<double> getBestParticlePositions() const {return best_particle_positions;}
     inline std::vector<double> getBestPosition() const {return best_position;}
-    inline int getNumIterations() {return num_iterations;}
-    inline int getNumDimensions() {return num_dimensions;}
-    inline int getNumParticles() {return num_particles;}
+    inline int getNumIterations() const {return num_iterations;}
+    inline int getNumDimensions() const {return num_dimensions;}
+    inline int getNumParticles() const {return num_particles;}
 
-    void setParticlePositions(std::vector<double> &pp);
-    void setParticleVelocities(std::vector<double> &pv);
-    void setBestParticlePositions(std::vector<double> &bpp);
-    void setBestPosition(std::vector<double> &bp);
-    void setNumIterations(int it) {num_iterations = it;}
-    void setNumDimensions(int nd) {num_dimensions = nd;};
-    void setNumParticles(int np) {num_particles = np;};
+    void setParticlePositions(const std::vector<double> &pp);
+    void setParticlePositions(const std::vector<double> &&pp) {setParticlePositions(pp);};
+    void setParticleVelocities(const std::vector<double> &pv);
+    void setParticleVelocities(const std::vector<double> &&pv) {setParticleVelocities(pv);};
+    void setBestParticlePositions(const std::vector<double> &bpp);
+    void setBestParticlePositions(const std::vector<double> &&bpp) {setBestParticlePositions(bpp);}
+    void setBestPosition(const std::vector<double> &bp);
+    void setBestPosition(const std::vector<double> &&bp) {setBestPosition(bp);}
 
-    inline void addIterations(int k) {num_iterations += k;}
-    void addParticlesInsideBox(int num_particles, std::vector<double> &lower, std::vector<double> &upper,
-                               std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
+    void setNumIterations(const int it) {num_iterations = it;}
+    void setNumDimensions(const int nd) {num_dimensions = nd;};
+    void setNumParticles(const int np) {num_particles = np;};
+
+    inline void addIterations(const int k) {num_iterations += k;}
+    void addParticlesInsideBox(const int box_num_particles, const std::vector<double> &box_lower, const std::vector<double> &box_upper,
+                               const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
+
+    friend void ParticleSwarm(ObjectiveFunction f, int max_iterations, TasDREAM::DreamDomain inside, ParticleSwarmState &state,
+                              double inertia_weight, double cognitive_coeff, double social_coeff, std::function<double(void)> get_random01);
+
+
+  protected:
+    inline std::vector<double>& getParticlePositionsRef() {return particle_positions;}
+    inline std::vector<double>& getParticleVelocitiesRef() {return particle_velocities;}
+    inline std::vector<double>& getBestParticlePositionsRef() {return best_particle_positions;}
+    inline std::vector<double>& getBestPositionRef() {return best_position;}
 
   private:
     std::vector<double> particle_positions, particle_velocities, best_particle_positions, best_position;
     int num_iterations, num_dimensions, num_particles;
 };
 
-void ParticleSwarm(BatchedObjectiveFunction f, int max_iterations, TasDREAM::DreamDomain inside, ParticleSwarmState &state,
-                   double inertia_weight = 0.5, double cognitive_coeff = 2, double social_coeff = 0.5,
+// Forward declarations.
+void ParticleSwarm(ObjectiveFunction f, int max_iterations, TasDREAM::DreamDomain inside, ParticleSwarmState &state,
+                   double inertia_weight, double cognitive_coeff, double social_coeff,
                    std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
 
 }

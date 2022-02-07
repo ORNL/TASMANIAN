@@ -567,25 +567,27 @@ void testDebug(){
     cout << "Put here testing code and call this with ./dreamtest debug" << endl;
 
     // Parameter setup.
-    TasOptimization::ObjectiveFunction shc = // six-hump camel function
-            [](const std::vector<double> x, double &fval) {
-                fval = (4 - 2.1 * x[0]*x[0] + x[0]*x[0]*x[0]*x[0] / 3) * x[0]*x[0] +
-                        x[0] * x[1] +
-                        (-4 + 4 * x[1]*x[1]) * x[1]*x[1];};
-    TasOptimization::BatchedObjectiveFunction batched_shc = TasOptimization::makeBatchedFunction(2, shc);
-    TasOptimization::ParticleSwarmState state;
+    int num_dimensions = 2;
     std::vector<double> lower = {-3, -2};
     std::vector<double> upper = {3, 2};
-    state.addParticlesInsideBox(100, lower, upper);
+    TasOptimization::ObjectiveFunctionSingle shc_single = // six-hump camel function
+            [](const std::vector<double> x)->double {
+                return (4 - 2.1 * x[0]*x[0] + x[0]*x[0]*x[0]*x[0] / 3) * x[0]*x[0] +
+                        x[0] * x[1] +
+                        (-4 + 4 * x[1]*x[1]) * x[1]*x[1];};
+    TasOptimization::ObjectiveFunction shc = TasOptimization::makeObjectiveFunction(num_dimensions, shc_single);
+    TasOptimization::ParticleSwarmState state(num_dimensions);
+    state.addParticlesInsideBox(1000, lower, upper);
 
     // Main solver call.
-    TasOptimization::ParticleSwarm(batched_shc, 1000, TasDREAM::hypercube(lower, upper), state);
-    double fval;
-    shc(state.getBestPosition(), fval);
+    TasOptimization::ParticleSwarm(shc, 1000, TasDREAM::hypercube(lower, upper), state, 2, 0.5, 0.5);
+    std::vector<double> xk = state.getBestPosition();
+    double fval = shc_single(xk);
+    cout << "xk = (" << xk[0] << ", " << xk[1] << ")" << std::endl;
     cout << "f(xk) = " << fval << endl;
-    cout << "iter = " << state.getNumIterations() << endl;
-    cout << "dim = " << state.getNumDimensions() << endl;
-    cout << "n = " << state.getNumParticles() << endl;
+    cout << "n_iter = " << state.getNumIterations() << endl;
+    cout << "n_dim = " << state.getNumDimensions() << endl;
+    cout << "n_particles = " << state.getNumParticles() << endl;
 
 }
 

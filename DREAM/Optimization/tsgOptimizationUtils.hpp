@@ -35,24 +35,24 @@
 #define __TASMANIAN_OPTIM_ENUMERATES_HPP
 
 #include "TasmanianDREAM.hpp"
-#include <random>
 
 namespace TasOptimization {
 
-using ObjectiveFunction = std::function<void(const std::vector<double> &x, double &fval)>;
-using BatchedObjectiveFunction = std::function<void(const std::vector<double> &x_batch, std::vector<double> &fval_batch)>;
+using ObjectiveFunctionSingle = std::function<double(const std::vector<double> &x)>;
+using ObjectiveFunction = std::function<void(const std::vector<double> &x_batch, std::vector<double> &fval_batch)>;
 
-inline BatchedObjectiveFunction makeBatchedFunction(int num_dimensions, ObjectiveFunction f) {
+inline ObjectiveFunction makeObjectiveFunction(int num_dimensions, ObjectiveFunctionSingle f_single) {
     return [=](const std::vector<double> &x_values, std::vector<double> &fval_values)->void {
-        if (x_values.size() % num_dimensions != 0) {
-            throw std::runtime_error("Size of best particle positions (" + std::to_string(x_values.size()) + ") is not a multiple "
-                                     "of the number of dimensions (" + std::to_string(num_dimensions) + ")");
+        if (x_values.size() != (size_t) fval_values.size() * num_dimensions) {
+            throw std::runtime_error("Size of best particle positions (" + std::to_string(x_values.size()) + ") is not equal to the " +
+                                     "number of dimensions (" + std::to_string(num_dimensions) + ") times the number of " +
+                                     "particles (" + std::to_string(fval_values.size()) + ")");
         }
         int num_points = x_values.size() / num_dimensions;
         std::vector<double> x(num_dimensions);
         for (int i=0; i<num_points; i++) {
             std::copy(x_values.begin() + i * num_dimensions, x_values.begin() + (i + 1) * num_dimensions, x.begin());
-            f(x, fval_values[i]);
+            fval_values[i] = f_single(x);
         }
     };
 }

@@ -133,10 +133,10 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Tasgrid/tasgridLogs.in.hpp" "${CMAKE
 # After CXX, the interfaces Fortran, Python, MATLAB can come in any order
 # Finally, add the master target to link to all of the above
 ########################################################################
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/SparseGrids"  "${CMAKE_CURRENT_BINARY_DIR}/SparseGrids")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DREAM"        "${CMAKE_CURRENT_BINARY_DIR}/DREAM")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Addons"       "${CMAKE_CURRENT_BINARY_DIR}/Addons")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Tasgrid/"     "${CMAKE_CURRENT_BINARY_DIR}/Tasgrid")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/SparseGrids" "${CMAKE_CURRENT_BINARY_DIR}/SparseGrids")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/DREAM"       "${CMAKE_CURRENT_BINARY_DIR}/DREAM")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Addons"      "${CMAKE_CURRENT_BINARY_DIR}/Addons")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Tasgrid/"    "${CMAKE_CURRENT_BINARY_DIR}/Tasgrid")
 
 if (Tasmanian_ENABLE_FORTRAN)
     if (NOT Tasmanian_DISABLE_F90)
