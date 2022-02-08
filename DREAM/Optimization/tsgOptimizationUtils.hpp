@@ -35,29 +35,53 @@
 #define __TASMANIAN_OPTIM_ENUMERATES_HPP
 
 #include "TasmanianDREAM.hpp"
+#include <assert.h>
 
 namespace TasOptimization {
 
+inline void checkVarSize(std::string var_name, int var_size, int exp_size) {
+    if (var_size != exp_size) {
+        throw std::runtime_error("Size of " + var_name + " (" + std::to_string(var_size) + ") is not equal to its expected value (" +
+                                 std::to_string(exp_size) + ")");
+    }
+}
+
 using ObjectiveFunctionSingle = std::function<double(const std::vector<double> &x)>;
+
 using ObjectiveFunction = std::function<void(const std::vector<double> &x_batch, std::vector<double> &fval_batch)>;
 
-inline ObjectiveFunction makeObjectiveFunction(int num_dimensions, ObjectiveFunctionSingle f_single) {
+inline ObjectiveFunction makeObjectiveFunction(int ndim, ObjectiveFunctionSingle f_single) {
     return [=](const std::vector<double> &x_values, std::vector<double> &fval_values)->void {
-        if (x_values.size() != (size_t) fval_values.size() * num_dimensions) {
-            throw std::runtime_error("Size of best particle positions (" + std::to_string(x_values.size()) + ") is not equal to the " +
-                                     "number of dimensions (" + std::to_string(num_dimensions) + ") times the number of " +
-                                     "particles (" + std::to_string(fval_values.size()) + ")");
-        }
-        int num_points = x_values.size() / num_dimensions;
-        std::vector<double> x(num_dimensions);
+        int num_points = x_values.size() / ndim;
+        std::vector<double> x(ndim);
         for (int i=0; i<num_points; i++) {
-            std::copy(x_values.begin() + i * num_dimensions, x_values.begin() + (i + 1) * num_dimensions, x.begin());
+            std::copy(x_values.begin() + i * ndim, x_values.begin() + (i + 1) * ndim, x.begin());
             fval_values[i] = f_single(x);
         }
     };
 }
 
+// If inside_batch[i] is true, then fval_batch[i] is the function value of a point in the domain; otherwise, if inside_batch[i]
+// is false, then fval_batch[i] is std::numeric_limits<double>::max().
+using ObjectiveFunctionConstrained = std::function<void(const std::vector<double> &x_batch, std::vector<double> &fval_batch,
+                                                        std::vector<bool> &inside_batch)>;
 
+inline ObjectiveFunctionConstrained makeObjectiveFunctionConstrained(int ndim, ObjectiveFunction f, TasDREAM::DreamDomain inside) {
+    return [=](const std::vector<double> &x_batch, std::vector<double> &fval_batch, std::vector<bool> &inside_batch)->void {
+        std::vector<double> candidate(ndim);
+        std::vector<double> single_val(1);
+        for (size_t i=0; i<fval_batch.size(); i++) {
+            std::copy(x_batch.begin() + i * ndim, x_batch.begin() + (i + 1) * ndim, candidate.begin());
+            inside_batch[i] = inside(candidate);
+            fval_batch[i] = std::numeric_limits<double>::max();
+            if (inside_batch[i]) {
+                f(candidate, single_val);
+                fval_batch[i] = single_val[0];
+            }
+        }
+    };
 }
+
+} // End namespace
 
 #endif

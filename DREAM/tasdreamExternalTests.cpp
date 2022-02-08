@@ -568,6 +568,8 @@ void testDebug(){
 
     // Parameter setup.
     int num_dimensions = 2;
+    int num_particles = 100;
+    int max_iterations = 50;
     std::vector<double> lower = {-3, -2};
     std::vector<double> upper = {3, 2};
     TasOptimization::ObjectiveFunctionSingle shc_single = // six-hump camel function
@@ -576,11 +578,11 @@ void testDebug(){
                         x[0] * x[1] +
                         (-4 + 4 * x[1]*x[1]) * x[1]*x[1];};
     TasOptimization::ObjectiveFunction shc = TasOptimization::makeObjectiveFunction(num_dimensions, shc_single);
-    TasOptimization::ParticleSwarmState state(num_dimensions);
-    state.addParticlesInsideBox(1000, lower, upper);
+    TasOptimization::ParticleSwarmState state(num_dimensions, num_particles);
+    state.addParticlesInsideBox(lower, upper);
 
     // Main solver call.
-    TasOptimization::ParticleSwarm(shc, 1000, TasDREAM::hypercube(lower, upper), state, 2, 0.5, 0.5);
+    TasOptimization::ParticleSwarm(shc, max_iterations, TasDREAM::hypercube(lower, upper), state, 0.5, 2, 2);
     std::vector<double> xk = state.getBestPosition();
     double fval = shc_single(xk);
     cout << "xk = (" << xk[0] << ", " << xk[1] << ")" << std::endl;
