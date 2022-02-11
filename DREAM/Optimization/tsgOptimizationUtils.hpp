@@ -39,10 +39,10 @@
 
 namespace TasOptimization {
 
-inline void checkVarSize(std::string var_name, int var_size, int exp_size) {
+inline void checkVarSize(std::string method_name, std::string var_name, int var_size, int exp_size) {
     if (var_size != exp_size) {
-        throw std::runtime_error("Size of " + var_name + " (" + std::to_string(var_size) + ") is not equal to its expected value (" +
-                                 std::to_string(exp_size) + ")");
+        throw std::runtime_error("Size of " + var_name + " (" + std::to_string(var_size) + ") in the function " + method_name +
+                                 "() is not equal to its expected value of (" + std::to_string(exp_size) + ")");
     }
 }
 
@@ -66,18 +66,28 @@ inline ObjectiveFunction makeObjectiveFunction(int ndim, ObjectiveFunctionSingle
 using ObjectiveFunctionConstrained = std::function<void(const std::vector<double> &x_batch, std::vector<double> &fval_batch,
                                                         std::vector<bool> &inside_batch)>;
 
-inline ObjectiveFunctionConstrained makeObjectiveFunctionConstrained(int ndim, ObjectiveFunction f, TasDREAM::DreamDomain inside) {
+inline ObjectiveFunctionConstrained makeObjectiveFunctionConstrained(int num_dimensions, ObjectiveFunction f,
+                                                                     TasDREAM::DreamDomain inside) {
     return [=](const std::vector<double> &x_batch, std::vector<double> &fval_batch, std::vector<bool> &inside_batch)->void {
-        std::vector<double> candidate(ndim);
-        std::vector<double> single_val(1);
-        for (size_t i=0; i<fval_batch.size(); i++) {
-            std::copy(x_batch.begin() + i * ndim, x_batch.begin() + (i + 1) * ndim, candidate.begin());
-            inside_batch[i] = inside(candidate);
+        // Collect and apply the domain information given by inside() and x_batch.
+        size_t num_particles(fval_batch.size()), num_inside(0);
+        std::vector<double> candidate(num_dimensions), is_inside(num_particles), inside_points;
+        for (size_t i=0; i<num_particles; i++) {
             fval_batch[i] = std::numeric_limits<double>::max();
+            std::copy_n(x_batch.begin() + i * num_dimensions, num_dimensions, candidate.begin());
+            inside_batch[i] = inside(candidate);
             if (inside_batch[i]) {
-                f(candidate, single_val);
-                fval_batch[i] = single_val[0];
+                std::copy_n(candidate.begin(), num_dimensions, std::back_inserter(inside_points));
+                num_inside++;
             }
+        }
+        // Evaluate f on the inside points and copy the resulting values to fval_batch.
+        std::vector<double> inside_vals(num_inside);
+        f(inside_points, inside_vals);
+        int j = 0;
+        for (size_t i=0; i<num_particles; i++) {
+            if (inside_batch[i])
+                fval_batch[i] = inside_vals[j++];
         }
     };
 }

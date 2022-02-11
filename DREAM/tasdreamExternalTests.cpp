@@ -568,18 +568,18 @@ void testDebug(){
 
     // Parameter setup.
     int num_dimensions = 2;
-    int num_particles = 100;
+    int num_particles = 50;
     int max_iterations = 50;
     std::vector<double> lower = {-3, -2};
     std::vector<double> upper = {3, 2};
     TasOptimization::ObjectiveFunctionSingle shc_single = // six-hump camel function
-            [](const std::vector<double> x)->double {
+            [](const std::vector<double> &x)->double {
                 return (4 - 2.1 * x[0]*x[0] + x[0]*x[0]*x[0]*x[0] / 3) * x[0]*x[0] +
                         x[0] * x[1] +
                         (-4 + 4 * x[1]*x[1]) * x[1]*x[1];};
     TasOptimization::ObjectiveFunction shc = TasOptimization::makeObjectiveFunction(num_dimensions, shc_single);
     TasOptimization::ParticleSwarmState state(num_dimensions, num_particles);
-    state.addParticlesInsideBox(lower, upper);
+    state.setParticlesInsideBox(lower, upper);
 
     // Main solver call.
     TasOptimization::ParticleSwarm(shc, max_iterations, TasDREAM::hypercube(lower, upper), state, 0.5, 2, 2);
@@ -587,9 +587,9 @@ void testDebug(){
     double fval = shc_single(xk);
     cout << "xk = (" << xk[0] << ", " << xk[1] << ")" << std::endl;
     cout << "f(xk) = " << fval << endl;
-    cout << "n_iter = " << state.getNumIterations() << endl;
     cout << "n_dim = " << state.getNumDimensions() << endl;
     cout << "n_particles = " << state.getNumParticles() << endl;
+    cout << "n_iterations = " << max_iterations << endl;
 
 }
 
