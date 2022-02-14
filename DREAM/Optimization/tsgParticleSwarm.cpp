@@ -40,46 +40,54 @@ namespace TasOptimization {
 
 
 ParticleSwarmState::ParticleSwarmState(int num_dimensions, int num_particles):
-        initialized(false), num_dimensions(num_dimensions), num_particles(num_particles),
+        positions_initialized(false), velocities_initialized(false), best_positions_initialized(false), cache_initialized(false),
+        num_dimensions(num_dimensions), num_particles(num_particles),
         particle_positions(std::vector<double>(num_particles * num_dimensions)),
         particle_velocities(std::vector<double>(num_particles * num_dimensions)),
-        best_particle_positions(std::vector<double>(num_particles * num_dimensions)),
-        best_position(std::vector<double>(num_dimensions)) {};
+        best_particle_positions(std::vector<double>((num_particles + 1) * num_dimensions)),
+        cache_particle_fvals(std::vector<double>(num_particles, std::numeric_limits<double>::max())),
+        cache_best_particle_fvals(std::vector<double>(num_particles + 1, std::numeric_limits<double>::max())),
+        cache_particle_inside(std::vector<bool>(num_particles, false)),
+        cache_best_particle_inside(std::vector<bool>(num_particles + 1, false)) {};
 
 
 ParticleSwarmState::ParticleSwarmState(int num_dimensions, std::vector<double> &&pp, std::vector<double> &&pv):
-        initialized(true), num_dimensions(num_dimensions), num_particles(pp.size() / num_dimensions),
+        positions_initialized(true), velocities_initialized(true), best_positions_initialized(false), cache_initialized(false),
+        num_dimensions(num_dimensions), num_particles(pp.size() / num_dimensions),
         particle_positions(std::move(pp)), particle_velocities(std::move(pv)),
-        best_particle_positions(std::vector<double>(num_particles * num_dimensions)),
-        best_position(std::vector<double>(num_dimensions)) {
+        best_particle_positions(std::vector<double>((num_particles + 1) * num_dimensions)),
+        cache_particle_fvals(std::vector<double>(num_particles, std::numeric_limits<double>::max())),
+        cache_best_particle_fvals(std::vector<double>(num_particles + 1, std::numeric_limits<double>::max())),
+        cache_particle_inside(std::vector<bool>(num_particles, false)),
+        cache_best_particle_inside(std::vector<bool>(num_particles + 1, false)) {
     assert(pp.size() % num_dimensions == 0);
     checkVarSize("ParticleSwarmState::ParticleSwarmState", "particle positions", pp.size(), num_dimensions);
     checkVarSize("ParticleSwarmState::ParticleSwarmState", "particle velocities", pv.size(), num_dimensions);
 };
 
 
-void ParticleSwarmState::setParticlesInsideBox(const std::vector<double> &box_lower, const std::vector<double> &box_upper,
-                                               const std::function<double(void)> get_random01) {
+void ParticleSwarmState::initializeParticlesInsideBox(const std::vector<double> &box_lower, const std::vector<double> &box_upper,
+                                                      const std::function<double(void)> get_random01) {
     checkVarSize("ParticleSwarmState::setParticlesInsideBox", "box lower bounds", box_lower.size(), num_dimensions);
     checkVarSize("ParticleSwarmState::setParticlesInsideBox", "box upper bounds", box_upper.size(), num_dimensions);
-    for (int i=0; i<num_particles; i++) {
-        for (int j=0; j<num_dimensions; j++) {
-            double range = std::fabs(box_upper[j] - box_lower[j]);
-            int idx = i * num_dimensions + j;
-            particle_positions[idx] = range * get_random01() + box_lower[j];
-            particle_velocities[idx] = 2 * range * get_random01() - range;
-        }
+    for (int i=0; i<num_particles * num_dimensions; i++) {
+        double range = std::fabs(box_upper[i % num_dimensions] - box_lower[i % num_dimensions]);
+        particle_positions[i] = range * get_random01() + box_lower[i % num_dimensions];
+        particle_velocities[i] = 2 * range * get_random01() - range;
     }
-    initialized = true;
+    positions_initialized = true;
+    velocities_initialized = true;
 }
-
 
 void ParticleSwarm(ObjectiveFunction f, int max_iterations, TasDREAM::DreamDomain inside, ParticleSwarmState &state,
                    double inertia_weight, double cognitive_coeff, double social_coeff, std::function<double(void)> get_random01) {
 
     // Only run the algorithm on properly initialized states.
-    if (!state.initialized) {
-        throw std::runtime_error("Particles have not been initialized in the input state object");
+    if (!state.positions_initialized) {
+        throw std::runtime_error("Particle positions have not been initialized in the input state object");
+    }
+    if (!state.velocities_initialized) {
+        throw std::runtime_error("Particle velocities have not been initialized in the input state object");
     }
 
     // Initialize helper variables and functions.
@@ -88,44 +96,79 @@ void ParticleSwarm(ObjectiveFunction f, int max_iterations, TasDREAM::DreamDomai
     std::vector<double> &particle_positions = state.getParticlePositionsRef();
     std::vector<double> &particle_velocities = state.getParticleVelocitiesRef();
     std::vector<double> &best_particle_positions = state.getBestParticlePositionsRef();
-    std::vector<double> &best_position = state.getBestPositionRef();
-    std::vector<double> cur_vals(num_particles), best_vals(num_particles);
-    std::vector<bool> cur_is_inside(num_particles), best_is_inside(num_particles);
-    double best_fval = std::numeric_limits<double>::max();
-    ObjectiveFunctionConstrained f_constrained = makeObjectiveFunctionConstrained(num_dimensions, f, inside);
+    std::vector<double> &cache_particle_fvals = state.getCacheParticleFValsRef();
+    std::vector<double> &cache_best_particle_fvals = state.getCacheBestParticleFValsRef();
+    std::vector<bool> &cache_particle_inside = state.getCacheParticleInsideRef();
+    std::vector<bool> &cache_best_particle_inside = state.getCacheBestParticleInsideRef();
 
-    // Create a lambda that updates the best particle and swarm positions based on function values and domain information.
-    auto update_best_positions = [&]()->void {
+    // Create a lambda that converts f to a constrained version that only evaluates points inside the domain. This lambda also
+    // writes to a bool vector whose i-th entry is true if particle i is in the domain.
+    auto f_constrained = [&](const std::vector<double> &x_batch, std::vector<double> &fval_batch, std::vector<bool> &inside_batch)->void {
+        // Collect and apply the domain information given by inside() and x_batch.
+        size_t num_particles(fval_batch.size()), num_inside(0);
+        std::vector<double> candidate(num_dimensions), is_inside(num_particles), inside_points;
         for (size_t i=0; i<num_particles; i++) {
-            bool is_smaller = (cur_vals[i] < best_vals[i]) or !best_is_inside[i];
-            if (cur_is_inside[i] and is_smaller) {
+            fval_batch[i] = std::numeric_limits<double>::max();
+            std::copy_n(x_batch.begin() + i * num_dimensions, num_dimensions, candidate.begin());
+            inside_batch[i] = inside(candidate);
+            if (inside_batch[i]) {
+                std::copy_n(candidate.begin(), num_dimensions, std::back_inserter(inside_points));
+                num_inside++;
+            }
+        }
+        // Evaluate f on the inside points and copy the resulting values to fval_batch.
+        std::vector<double> inside_vals(num_inside);
+        f(inside_points, inside_vals);
+        int j = 0;
+        for (size_t i=0; i<num_particles; i++) {
+            if (inside_batch[i])
+                fval_batch[i] = inside_vals[j++];
+        }
+    };
+
+    // Create a lambda that updates the best particle positions and fvals (in the cache).
+    auto update = [&]()->void {
+        for (size_t i=0; i<num_particles; i++) {
+            bool is_smaller = (cache_particle_fvals[i] < cache_best_particle_fvals[i]) or !cache_best_particle_inside[i];
+            if (cache_particle_fvals[i] and is_smaller) {
                 std::copy_n(particle_positions.begin() + i * num_dimensions, num_dimensions, best_particle_positions.begin() + i * num_dimensions);
-                best_vals[i] = cur_vals[i];
-                if (best_vals[i] < best_fval) {
-                    std::copy_n(particle_positions.begin() + i * num_dimensions, num_dimensions, best_position.begin());
-                    best_fval = best_vals[i];
+                cache_best_particle_fvals[i] = cache_particle_fvals[i];
+                if (cache_best_particle_fvals[i] < cache_best_particle_fvals[num_particles]) {
+                    std::copy_n(particle_positions.begin() + i * num_dimensions, num_dimensions,
+                                best_particle_positions.begin() + num_particles * num_dimensions);
+                    cache_best_particle_fvals[num_particles] = cache_best_particle_fvals[i];
+                    cache_best_particle_inside[num_particles] = true;
                 }
             }
         }
     };
 
-    // Initialize the best particle and swarm function values, while updating the input state.
-    f_constrained(best_particle_positions, best_vals, best_is_inside);
-    f_constrained(particle_positions, cur_vals, cur_is_inside);
-    update_best_positions();
+    // Set up the cache and best particle positions.
+    if (!state.cache_initialized) {
+        f_constrained(particle_positions, cache_particle_fvals, cache_particle_inside);
+        if (state.best_positions_initialized) {
+            f_constrained(best_particle_positions, cache_best_particle_fvals, cache_best_particle_inside);
+        }
+        state.cache_initialized = true;
+    }
+    update();
+    state.best_positions_initialized = true;
 
     // Main algorithm starts here.
     for(int iter=0; iter<max_iterations; iter++) {
         for (size_t i=0; i<num_particles * num_dimensions; i++) {
             particle_velocities[i] = inertia_weight * particle_velocities[i] +
                                      cognitive_coeff * get_random01() * (best_particle_positions[i] - particle_positions[i]) +
-                                     social_coeff * get_random01() * (best_position[i % num_dimensions] - particle_positions[i]);
+                                     social_coeff * get_random01() * (
+                                         // Best overall position.
+                                         best_particle_positions[num_particles * num_dimensions + i % num_dimensions] -
+                                         particle_positions[i]);
         }
         for (size_t i=0; i< num_particles * num_dimensions; i++) {
             particle_positions[i] += particle_velocities[i];
         }
-        f_constrained(particle_positions, cur_vals, cur_is_inside);
-        update_best_positions();
+        f_constrained(particle_positions, cache_particle_fvals, cache_particle_inside);
+        update();
     }
 }
 

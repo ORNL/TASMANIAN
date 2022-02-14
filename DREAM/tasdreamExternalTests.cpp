@@ -563,13 +563,13 @@ bool DreamExternalTester::performTests(TypeDREAMTest test){
 }
 
 void testDebug(){
-    cout << "Debug Test" << endl;
-    cout << "Put here testing code and call this with ./dreamtest debug" << endl;
+    // cout << "Debug Test" << endl;
+    // cout << "Put here testing code and call this with ./dreamtest debug" << endl;
 
     // Parameter setup.
     int num_dimensions = 2;
     int num_particles = 50;
-    int max_iterations = 50;
+    int max_iterations = 21;
     std::vector<double> lower = {-3, -2};
     std::vector<double> upper = {3, 2};
     TasOptimization::ObjectiveFunctionSingle shc_single = // six-hump camel function
@@ -579,17 +579,23 @@ void testDebug(){
                         (-4 + 4 * x[1]*x[1]) * x[1]*x[1];};
     TasOptimization::ObjectiveFunction shc = TasOptimization::makeObjectiveFunction(num_dimensions, shc_single);
     TasOptimization::ParticleSwarmState state(num_dimensions, num_particles);
-    state.setParticlesInsideBox(lower, upper);
+    state.initializeParticlesInsideBox(lower, upper);
 
     // Main solver call.
-    TasOptimization::ParticleSwarm(shc, max_iterations, TasDREAM::hypercube(lower, upper), state, 0.5, 2, 2);
-    std::vector<double> xk = state.getBestPosition();
-    double fval = shc_single(xk);
-    cout << "xk = (" << xk[0] << ", " << xk[1] << ")" << std::endl;
-    cout << "f(xk) = " << fval << endl;
-    cout << "n_dim = " << state.getNumDimensions() << endl;
-    cout << "n_particles = " << state.getNumParticles() << endl;
-    cout << "n_iterations = " << max_iterations << endl;
+    cout << "n_dim = " << state.getNumDimensions() << "\n";
+    cout << "n_particles = " << state.getNumParticles() << "\n";
+    cout << endl;
+    for (int i=1, d=4; i<=max_iterations; i+=d) {
+        std::vector<bool> state_vec = state.getStateVector();
+        cout << "iteration = " << i << "\n";
+        cout << "init_state = " << state_vec[0] << " " << state_vec[1] << " " << state_vec[2] << " " << state_vec[3] << "\n";
+        TasOptimization::ParticleSwarm(shc, d, TasDREAM::hypercube(lower, upper), state, 0.5, 2, 2);
+        std::vector<double> xMin = state.getBestPosition();
+        double fval = shc_single(xMin);
+        cout << "xMin = (" << xMin[0] << ", " << xMin[1] << ")\n";
+        cout << "f(xMin) = " << fval << "\n";
+        cout << endl;
+    }
 
 }
 

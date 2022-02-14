@@ -41,58 +41,71 @@ namespace TasOptimization {
 class ParticleSwarmState {
   public:
     ParticleSwarmState() = delete;
-    ParticleSwarmState(int ndim, int npart);
+    ParticleSwarmState(int num_dimensions, int num_particles);
     // pp = particle positions, pv = particle velocities
-    ParticleSwarmState(int ndim, std::vector<double> &&pp, std::vector<double> &&pv);
+    ParticleSwarmState(int num_dimensions, std::vector<double> &&pp, std::vector<double> &&pv);
 
+    inline int getNumDimensions() const {return num_dimensions;}
+    inline int getNumParticles() const {return num_particles;}
     inline std::vector<double> getParticlePositions() const {return particle_positions;}
     inline std::vector<double> getParticleVelocities() const {return particle_velocities;}
     inline std::vector<double> getBestParticlePositions() const {return best_particle_positions;}
-    inline std::vector<double> getBestPosition() const {return best_position;}
-    inline int getNumDimensions() const {return num_dimensions;}
-    inline int getNumParticles() const {return num_particles;}
-
-    void setParticlePositions(const std::vector<double> &pp) {
-        checkVarSize("ParticleSwarmState::setParticlePositions", "particle position", pp.size(), num_dimensions * num_particles);
-        particle_positions = pp;
+    inline std::vector<double> getBestPosition() const {
+        std::vector<double> best_position(num_dimensions);
+        std::copy_n(best_particle_positions.begin() + num_particles * num_dimensions, num_dimensions, best_position.begin());
+        return best_position;
     }
-    void setParticlePositions(std::vector<double> &&pp) {
-        checkVarSize("ParticleSwarmState::setParticlePositions", "particle positions", pp.size(), num_dimensions * num_particles);
-        particle_positions = std::move(pp);
-    }
-
-    void setParticleVelocities(const std::vector<double> &pv) {
-        checkVarSize("ParticleSwarmState::setParticleVelocities", "particle velocities", pv.size(), num_dimensions * num_particles);
-        particle_velocities = pv;
-    }
-    void setParticleVelocities(std::vector<double> &&pv) {
-        checkVarSize("ParticleSwarmState::setParticleVelocities", "particle velocities", pv.size(), num_dimensions * num_particles);
-        particle_velocities = std::move(pv);
-    }
-
-    void setBestParticlePositions(const std::vector<double> &bpp) {
-        checkVarSize("ParticleSwarmState::setBestParticlePositions", "best particle positions", bpp.size(), num_dimensions * num_particles);
-        best_particle_positions = bpp;
-    }
-    void setBestParticlePositions(std::vector<double> &&bpp) {
-        checkVarSize("ParticleSwarmState::setBestParticlePositions", "best particle positions", bpp.size(), num_dimensions * num_particles);
-        best_particle_positions = std::move(bpp);
-    }
-
-    void setBestPosition(const std::vector<double> &bp) {
-        checkVarSize("ParticleSwarmState::setBestPosition", "best position", bp.size(), num_dimensions);
-        best_position = bp;
-    }
-    void setBestPosition(std::vector<double> &&bp) {
-        checkVarSize("ParticleSwarmState::setBestPosition", "best position", bp.size(), num_dimensions);
-        best_position = std::move(bp);
+    inline std::vector<bool> getStateVector() const {
+        return {positions_initialized, velocities_initialized, best_positions_initialized, cache_initialized};
     }
 
     void setNumDimensions(const int nd) {num_dimensions = nd;};
     void setNumParticles(const int np) {num_particles = np;};
+    void setParticlePositions(const std::vector<double> &pp) {
+        checkVarSize("ParticleSwarmState::setParticlePositions", "particle position", pp.size(), num_dimensions * num_particles);
+        particle_positions = pp;
+        positions_initialized = true;
+    }
+    void setParticlePositions(std::vector<double> &&pp) {
+        checkVarSize("ParticleSwarmState::setParticlePositions", "particle positions", pp.size(), num_dimensions * num_particles);
+        particle_positions = std::move(pp);
+        positions_initialized = true;
+    }
+    void setParticleVelocities(const std::vector<double> &pv) {
+        checkVarSize("ParticleSwarmState::setParticleVelocities", "particle velocities", pv.size(), num_dimensions * num_particles);
+        particle_velocities = pv;
+        velocities_initialized = true;
+    }
+    void setParticleVelocities(std::vector<double> &&pv) {
+        checkVarSize("ParticleSwarmState::setParticleVelocities", "particle velocities", pv.size(), num_dimensions * num_particles);
+        particle_velocities = std::move(pv);
+        velocities_initialized = true;
+    }
+    void setBestParticlePositions(const std::vector<double> &bpp) {
+        checkVarSize("ParticleSwarmState::setBestParticlePositions", "best particle positions", bpp.size(), num_dimensions * (num_particles + 1));
+        best_particle_positions = bpp;
+        best_positions_initialized = true;
+    }
+    void setBestParticlePositions(std::vector<double> &&bpp) {
+        checkVarSize("ParticleSwarmState::setBestParticlePositions", "best particle positions", bpp.size(), num_dimensions * (num_particles + 1));
+        best_particle_positions = std::move(bpp);
+        best_positions_initialized = true;
+    }
 
-    void setParticlesInsideBox(const std::vector<double> &box_lower, const std::vector<double> &box_upper,
-                               const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
+    void clearBestParticles() {
+        best_positions_initialized = false;
+        best_particle_positions = std::vector<double>((num_particles + 1) * num_dimensions);
+    }
+    void clearCache() {
+        cache_initialized = false;
+        cache_particle_fvals = std::vector<double>(num_particles);
+        cache_particle_inside = std::vector<bool>(num_particles);
+        cache_best_particle_fvals = std::vector<double>(num_particles + 1);
+        cache_best_particle_inside = std::vector<bool>(num_particles + 1);
+    }
+
+    void initializeParticlesInsideBox(const std::vector<double> &box_lower, const std::vector<double> &box_upper,
+                                      const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
 
     friend void ParticleSwarm(ObjectiveFunction f, int max_iterations, TasDREAM::DreamDomain inside, ParticleSwarmState &state,
                               double inertia_weight, double cognitive_coeff, double social_coeff, std::function<double(void)> get_random01);
@@ -101,12 +114,15 @@ class ParticleSwarmState {
     inline std::vector<double> &getParticlePositionsRef() {return particle_positions;}
     inline std::vector<double> &getParticleVelocitiesRef() {return particle_velocities;}
     inline std::vector<double> &getBestParticlePositionsRef() {return best_particle_positions;}
-    inline std::vector<double> &getBestPositionRef() {return best_position;}
+    inline std::vector<double> &getCacheParticleFValsRef() {return cache_particle_fvals;}
+    inline std::vector<double> &getCacheBestParticleFValsRef() {return cache_best_particle_fvals;}
+    inline std::vector<bool> &getCacheParticleInsideRef() {return cache_particle_inside;}
+    inline std::vector<bool> &getCacheBestParticleInsideRef() {return cache_best_particle_inside;}
 
-  private:
-    bool initialized;
+    bool positions_initialized, velocities_initialized, best_positions_initialized, cache_initialized;
     int num_dimensions, num_particles;
-    std::vector<double> particle_positions, particle_velocities, best_particle_positions, best_position;
+    std::vector<double> particle_positions, particle_velocities, best_particle_positions, cache_particle_fvals, cache_best_particle_fvals;
+    std::vector<bool> cache_particle_inside, cache_best_particle_inside;
 };
 
 // Forward declarations.

@@ -61,37 +61,6 @@ inline ObjectiveFunction makeObjectiveFunction(int ndim, ObjectiveFunctionSingle
     };
 }
 
-// If inside_batch[i] is true, then fval_batch[i] is the function value of a point in the domain; otherwise, if inside_batch[i]
-// is false, then fval_batch[i] is std::numeric_limits<double>::max().
-using ObjectiveFunctionConstrained = std::function<void(const std::vector<double> &x_batch, std::vector<double> &fval_batch,
-                                                        std::vector<bool> &inside_batch)>;
-
-inline ObjectiveFunctionConstrained makeObjectiveFunctionConstrained(int num_dimensions, ObjectiveFunction f,
-                                                                     TasDREAM::DreamDomain inside) {
-    return [=](const std::vector<double> &x_batch, std::vector<double> &fval_batch, std::vector<bool> &inside_batch)->void {
-        // Collect and apply the domain information given by inside() and x_batch.
-        size_t num_particles(fval_batch.size()), num_inside(0);
-        std::vector<double> candidate(num_dimensions), is_inside(num_particles), inside_points;
-        for (size_t i=0; i<num_particles; i++) {
-            fval_batch[i] = std::numeric_limits<double>::max();
-            std::copy_n(x_batch.begin() + i * num_dimensions, num_dimensions, candidate.begin());
-            inside_batch[i] = inside(candidate);
-            if (inside_batch[i]) {
-                std::copy_n(candidate.begin(), num_dimensions, std::back_inserter(inside_points));
-                num_inside++;
-            }
-        }
-        // Evaluate f on the inside points and copy the resulting values to fval_batch.
-        std::vector<double> inside_vals(num_inside);
-        f(inside_points, inside_vals);
-        int j = 0;
-        for (size_t i=0; i<num_particles; i++) {
-            if (inside_batch[i])
-                fval_batch[i] = inside_vals[j++];
-        }
-    };
-}
-
 } // End namespace
 
 #endif
