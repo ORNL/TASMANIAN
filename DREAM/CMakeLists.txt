@@ -12,7 +12,11 @@ add_library(Tasmanian_libdream  TasmanianDREAM.hpp
                                 tsgDreamLikelyGaussian.cpp
                                 tsgDreamCoreRandom.hpp
                                 tsgDreamCorePDF.hpp
-                                tsgDreamEnumerates.hpp)
+                                tsgDreamEnumerates.hpp
+                                ${CMAKE_CURRENT_SOURCE_DIR}/Optimization/TasmanianOptimization.hpp
+                                ${CMAKE_CURRENT_SOURCE_DIR}/Optimization/tsgParticleSwarm.hpp
+                                ${CMAKE_CURRENT_SOURCE_DIR}/Optimization/tsgParticleSwarm.cpp
+                                ${CMAKE_CURRENT_SOURCE_DIR}/Optimization/tsgOptimizationUtils.hpp)
 
 target_include_directories(Tasmanian_libdream PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
 target_link_libraries(Tasmanian_libdream  Tasmanian_libsparsegrid)

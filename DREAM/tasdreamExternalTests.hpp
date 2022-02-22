@@ -32,6 +32,7 @@
 #define __TASMANIAN_TASDREAM_EXTERNAL_TESTS_HPP
 
 #include "TasmanianDREAM.hpp"
+#include "Optimization/TasmanianOptimization.hpp"
 
 using std::cout;
 using std::cerr;
