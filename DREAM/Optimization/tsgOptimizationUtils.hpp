@@ -37,6 +37,25 @@
 #include "TasmanianDREAM.hpp"
 #include <assert.h>
 
+/*!
+ * \internal
+ * \file tsgOptimizationUtils.hpp
+ * \brief Utility functions and aliases in the Optimization module.
+ * \author Weiwei Kong & Miroslav Stoyanov
+ * \ingroup TasmanianOptimization
+ *
+ * Defines functions and type aliases that are used in the Tasmanian Optimization module.
+ * The file is included in every other TasOptimization header.
+ * \endinternal
+ */
+
+/*!
+ * \ingroup TasmanianOptimization
+ * \addtogroup OptimizationUtils Miscellaneous utility functions and aliases
+ *
+ * Several type aliases and utility functions based on similar ones in the DREAM module.
+ */
+
 namespace TasOptimization {
 
 inline void checkVarSize(std::string method_name, std::string var_name, int var_size, int exp_size) {

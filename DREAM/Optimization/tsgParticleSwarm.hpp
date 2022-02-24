@@ -36,7 +36,40 @@
 
 #include "tsgOptimizationUtils.hpp"
 
+/*!
+ * \internal
+ * \file tsgParticleSwarm.hpp
+ * \brief Particle swarm state class and algorithm.
+ * \author Weiwei Kong & Miroslav Stoyanov
+ * \ingroup TasmanianOptimization
+ *
+ * Definition of the particle swarm state class and the particle swarm algorithm.
+ * \endinternal
+ */
+
 namespace TasOptimization {
+
+/*!
+ * \brief Keeps the history of a particle swarm run.
+ * \ingroup TasmanianOptimization
+ * \addtogroup OptimizationState Particle swarm state
+ *
+ * \par Particle Swarm State
+ * The particle swarm state consists of \b num_particles vectors of size \b num_dimensions, where both of these scalars are either
+ * specified or inferred from input data. Each vector is associated with a particular particle's position (particle_position),
+ * velocity (particle_velocity), and best known position (best_particle_position) from a previous invocation of the particle swarm
+ * algorithm ParticleSwarm().
+ *
+ * \par Particle Swarm Cache
+ * When the particle swarm state is modified by invoking the particle swarm algorithm ParticleSwarm() with a particular objective
+ * function and domain, the results of invocation are stored in several cache variables prefixed by \b cache_. This is done
+ * to speed up subsequent calls of ParticleSwarm() on this modified swarm state, under the assumption that the objective function
+ * and domain from the previous call remains unchanged.
+ *
+ * To apply the ParticleSwarm() algorithm on a swarm state with an objective function or domain that is different from its
+ * last invocation of ParticleSwarm(), the cache must be cleared using the class method clearCache(). The behavior of the
+ * particle swarm algorithm without doing this step is otherwise \a undefined.
+ */
 
 class ParticleSwarmState {
   public:

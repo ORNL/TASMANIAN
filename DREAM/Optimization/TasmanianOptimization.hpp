@@ -34,6 +34,39 @@
 #ifndef __TASMANIAN_OPTIMIZATION_HPP
 #define __TASMANIAN_OPTIMIZATION_HPP
 
+#include "tsgOptimizationUtils.hpp"
 #include "tsgParticleSwarm.hpp"
+
+/*!
+ * \internal
+ * \file TasmanianOptimization.hpp
+ * \brief Optimization methods.
+ * \author Weiwei Kong & Miroslav Stoyanov
+ * \ingroup TasmanianOptimization
+ *
+ * The main header required to gain access to the Optimization capabilities of Tasmanian.
+ * The header will include all files needed by the Optimization module including the TasmanianSparseGrid.hpp and
+ * TasmanianDREAM headers.
+ * \endinternal
+ */
+
+/*!
+ * \defgroup TasmanianOptimization Methods for minimizing extended real-valued functions
+ *
+ * \par Optimization
+ * The Tasmanian Optimization module contains algorithms for minimizing extended real-valued functions over a user-specified
+ * domain (i.e., where the function is assumed to be finite). 
+ *
+ * \par Examples
+ * See the included examples.
+ */
+
+/*!
+ * \ingroup TasmanianOptimization
+ * \brief Encapsulates the Tasmanian Optimization module.
+ *
+ * Optimization related classes and methods sit under the TasOptimization namespace.
+ */
+namespace TasOptimization {}
 
 #endif
