@@ -79,8 +79,9 @@ void ParticleSwarmState::initializeParticlesInsideBox(const std::vector<double> 
     velocities_initialized = true;
 }
 
-void ParticleSwarm(ObjectiveFunction f, int max_iterations, TasDREAM::DreamDomain inside, ParticleSwarmState &state,
-                   double inertia_weight, double cognitive_coeff, double social_coeff, std::function<double(void)> get_random01) {
+void ParticleSwarm(const ObjectiveFunction f, const int max_iterations, const TasDREAM::DreamDomain inside, ParticleSwarmState &state,
+                   const double inertia_weight, const double cognitive_coeff, const double social_coeff,
+                   const std::function<double(void)> get_random01) {
 
     // Only run the algorithm on properly initialized states.
     if (!state.positions_initialized) {

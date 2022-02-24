@@ -39,7 +39,7 @@
 /*!
  * \internal
  * \file tsgParticleSwarm.hpp
- * \brief Particle swarm state class and algorithm.
+ * \brief Particle swarm state and algorithm.
  * \author Weiwei Kong & Miroslav Stoyanov
  * \ingroup TasmanianOptimization
  *
@@ -51,14 +51,14 @@ namespace TasOptimization {
 
 /*!
  * \brief Keeps the history of a particle swarm run.
- * \ingroup TasmanianOptimization
- * \addtogroup OptimizationState Particle swarm state
+ * \ingroup OptimizationState
  *
  * \par Particle Swarm State
  * The particle swarm state consists of \b num_particles vectors of size \b num_dimensions, where both of these scalars are either
- * specified or inferred from input data. Each vector is associated with a particular particle's position (particle_position),
- * velocity (particle_velocity), and best known position (best_particle_position) from a previous invocation of the particle swarm
- * algorithm ParticleSwarm().
+ * specified or inferred from input data. Each vector is associated with a particular particle's position \b particle_position,
+ * velocity \b particle_velocity, and best known position \b best_particle_position from a previous invocation of the particle swarm
+ * algorithm ParticleSwarm(). The last \b num_dimensions entries of \b best_particle position contain the position of the
+ * overall best position in the swarm.
  *
  * \par Particle Swarm Cache
  * When the particle swarm state is modified by invoking the particle swarm algorithm ParticleSwarm() with a particular objective
@@ -66,69 +66,89 @@ namespace TasOptimization {
  * to speed up subsequent calls of ParticleSwarm() on this modified swarm state, under the assumption that the objective function
  * and domain from the previous call remains unchanged.
  *
+ * \par
  * To apply the ParticleSwarm() algorithm on a swarm state with an objective function or domain that is different from its
  * last invocation of ParticleSwarm(), the cache must be cleared using the class method clearCache(). The behavior of the
  * particle swarm algorithm without doing this step is otherwise \a undefined.
  */
-
 class ParticleSwarmState {
   public:
+    //! \brief The particle swarm state must be initialized with data that defines number of particles and dimensions.
     ParticleSwarmState() = delete;
-    ParticleSwarmState(int num_dimensions, int num_particles);
-    // pp = particle positions, pv = particle velocities
-    ParticleSwarmState(int num_dimensions, std::vector<double> &&pp, std::vector<double> &&pv);
+    //! \brief Constructor for a particle swarm state with the number of particles and dimensions.
+    ParticleSwarmState(const int num_dimensions, const int num_particles);
+    //! \brief Constructor for a particle swarm state with the number of dimensions and the number of particles inferred from
+    //! a set of input particle positions \b pp and a set of input particle velocities \b pv.
+    ParticleSwarmState(const int num_dimensions, std::vector<double> &&pp, std::vector<double> &&pv);
 
+    //! \brief Return the number of dimensions.
     inline int getNumDimensions() const {return num_dimensions;}
+    //! \brief Return the number of particles.
     inline int getNumParticles() const {return num_particles;}
+    //! \brief Return the particle positions.
     inline std::vector<double> getParticlePositions() const {return particle_positions;}
+    //! \brief Return the particle velocities.
     inline std::vector<double> getParticleVelocities() const {return particle_velocities;}
+    //! \brief Return the previously best known particle positions.
     inline std::vector<double> getBestParticlePositions() const {return best_particle_positions;}
+    //! \brief Return the previously best known position in the swarm.
     inline std::vector<double> getBestPosition() const {
         std::vector<double> best_position(num_dimensions);
         std::copy_n(best_particle_positions.begin() + num_particles * num_dimensions, num_dimensions, best_position.begin());
         return best_position;
     }
+    //! \brief Return the state vector.
     inline std::vector<bool> getStateVector() const {
         return {positions_initialized, velocities_initialized, best_positions_initialized, cache_initialized};
     }
 
+    //! \brief Set the number of dimensions.
     void setNumDimensions(const int nd) {num_dimensions = nd;};
+    //! \brief Set the number of particles.
     void setNumParticles(const int np) {num_particles = np;};
+    //! \brief Set the particle positions.
     void setParticlePositions(const std::vector<double> &pp) {
         checkVarSize("ParticleSwarmState::setParticlePositions", "particle position", pp.size(), num_dimensions * num_particles);
         particle_positions = pp;
         positions_initialized = true;
     }
+    //! \brief Set the particle positions.
     void setParticlePositions(std::vector<double> &&pp) {
         checkVarSize("ParticleSwarmState::setParticlePositions", "particle positions", pp.size(), num_dimensions * num_particles);
         particle_positions = std::move(pp);
         positions_initialized = true;
     }
+    //! \brief Set the particle velocities.
     void setParticleVelocities(const std::vector<double> &pv) {
         checkVarSize("ParticleSwarmState::setParticleVelocities", "particle velocities", pv.size(), num_dimensions * num_particles);
         particle_velocities = pv;
         velocities_initialized = true;
     }
+    //! \brief Set the particle velocities.
     void setParticleVelocities(std::vector<double> &&pv) {
         checkVarSize("ParticleSwarmState::setParticleVelocities", "particle velocities", pv.size(), num_dimensions * num_particles);
         particle_velocities = std::move(pv);
         velocities_initialized = true;
     }
+    //! \brief Set the previously best known particle velocities.
     void setBestParticlePositions(const std::vector<double> &bpp) {
         checkVarSize("ParticleSwarmState::setBestParticlePositions", "best particle positions", bpp.size(), num_dimensions * (num_particles + 1));
         best_particle_positions = bpp;
         best_positions_initialized = true;
     }
+    //! \brief Set the previously best known particle velocities.
     void setBestParticlePositions(std::vector<double> &&bpp) {
         checkVarSize("ParticleSwarmState::setBestParticlePositions", "best particle positions", bpp.size(), num_dimensions * (num_particles + 1));
         best_particle_positions = std::move(bpp);
         best_positions_initialized = true;
     }
 
+    //! \brief Clear the previously best known particle velocities.
     void clearBestParticles() {
         best_positions_initialized = false;
         best_particle_positions = std::vector<double>((num_particles + 1) * num_dimensions);
     }
+    //! \brief Clear the particle swarm cache.
     void clearCache() {
         cache_initialized = false;
         cache_particle_fvals = std::vector<double>(num_particles);
@@ -137,19 +157,42 @@ class ParticleSwarmState {
         cache_best_particle_inside = std::vector<bool>(num_particles + 1);
     }
 
+    /*! \brief Randomly initializes all of the particle positions and velocities.
+     *
+     * The i-th component of each particle's position is uniformly sampled from the interval [\b box_lower[i], \b box_upper[i]].
+     * The i-th velocity of each particle's velocity is uniformly sampled from the interval [-R, R] where R =
+     * abs(\b box_upper[i] - \b box_lower[i]). The uniform [0,1] random number generator used in the sampling is specified
+     * by \b get_random01.
+     */
     void initializeParticlesInsideBox(const std::vector<double> &box_lower, const std::vector<double> &box_upper,
                                       const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
 
-    friend void ParticleSwarm(ObjectiveFunction f, int max_iterations, TasDREAM::DreamDomain inside, ParticleSwarmState &state,
-                              double inertia_weight, double cognitive_coeff, double social_coeff, std::function<double(void)> get_random01);
+
+    /*! \brief Applies the particle swarm algorithm to a particle swarm state.
+     * \ingroup OptimizationAlgorithm Particle Swarm Algorithm
+     *
+     * Runs \b max_iterations of the particle swarm algorithm to a particle swarm \b state to minimize the function \b f over the
+     * domain \b inside. The parameters of the algorithm are \b inertia_weight , \b cognitive_coeff , and \b social_coeff. The
+     * uniform [0,1] random number generator used by the algorithm is \b get_random01.
+     */
+    friend void ParticleSwarm(const ObjectiveFunction f, const int max_iterations, const TasDREAM::DreamDomain inside,
+                              ParticleSwarmState &state, const double inertia_weight, const double cognitive_coeff,
+                              const double social_coeff, const std::function<double(void)> get_random01);
 
   protected:
+    //! \brief Returns a reference to the particle positions.
     inline std::vector<double> &getParticlePositionsRef() {return particle_positions;}
+    //! \brief Returns a reference to the particle velocities.
     inline std::vector<double> &getParticleVelocitiesRef() {return particle_velocities;}
+    //! \brief Returns a reference to the previously best known particle positions.
     inline std::vector<double> &getBestParticlePositionsRef() {return best_particle_positions;}
+    //! \brief Returns a reference to the cached function values.
     inline std::vector<double> &getCacheParticleFValsRef() {return cache_particle_fvals;}
+    //! \brief Returns a reference to the previously best known function values.
     inline std::vector<double> &getCacheBestParticleFValsRef() {return cache_best_particle_fvals;}
+    //! \brief Returns a reference to a boolean hash map of the domain of the loaded particles.
     inline std::vector<bool> &getCacheParticleInsideRef() {return cache_particle_inside;}
+    //! \brief Returns a reference to a boolean hash map of the domain of the previously best known loaded particles.
     inline std::vector<bool> &getCacheBestParticleInsideRef() {return cache_best_particle_inside;}
 
     bool positions_initialized, velocities_initialized, best_positions_initialized, cache_initialized;
@@ -159,9 +202,9 @@ class ParticleSwarmState {
 };
 
 // Forward declarations.
-void ParticleSwarm(ObjectiveFunction f, int max_iterations, TasDREAM::DreamDomain inside, ParticleSwarmState &state,
-                   double inertia_weight, double cognitive_coeff, double social_coeff,
-                   std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
+void ParticleSwarm(const ObjectiveFunction f, const int max_iterations, const TasDREAM::DreamDomain inside, ParticleSwarmState &state,
+                   const double inertia_weight, const double cognitive_coeff, const double social_coeff,
+                   const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
 
 }
 #endif

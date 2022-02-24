@@ -40,36 +40,60 @@
 /*!
  * \internal
  * \file tsgOptimizationUtils.hpp
- * \brief Utility functions and aliases in the Optimization module.
+ * \brief Utility functions and aliases in the optimization module.
  * \author Weiwei Kong & Miroslav Stoyanov
  * \ingroup TasmanianOptimization
  *
- * Defines functions and type aliases that are used in the Tasmanian Optimization module.
- * The file is included in every other TasOptimization header.
+ * Defines functions and type aliases that are used in the Tasmanian Optimization module. The file is included in every other
+ * TasOptimization header.
  * \endinternal
  */
 
 /*!
  * \ingroup TasmanianOptimization
- * \addtogroup OptimizationUtils Miscellaneous utility functions and aliases
+ * \addtogroup OptimizationUtil Miscellaneous utility functions and aliases
  *
  * Several type aliases and utility functions based on similar ones in the DREAM module.
  */
 
 namespace TasOptimization {
 
-inline void checkVarSize(std::string method_name, std::string var_name, int var_size, int exp_size) {
+/*! \internal
+ * \ingroup OptimizationUtil
+ *
+ * Checks if a variable size \b var_name associated with \b var_name inside \b method_name matches an expected size \b exp_size.
+ * If it does not match, a runtime error is thrown.
+ * \endinternal
+ */
+inline void checkVarSize(const std::string method_name, const std::string var_name, const int var_size, const int exp_size) {
     if (var_size != exp_size) {
         throw std::runtime_error("Size of " + var_name + " (" + std::to_string(var_size) + ") in the function " + method_name +
                                  "() is not equal to its expected value of (" + std::to_string(exp_size) + ")");
     }
 }
 
+/*! \ingroup OptimizationUtil
+ * \brief Generic non-batched objective function signature.
+ *
+ * Accepts a single input \b x and returns the evaluation of the function on the point \b x.
+ */
 using ObjectiveFunctionSingle = std::function<double(const std::vector<double> &x)>;
 
+/*! \ingroup OptimizationUtil
+ * \brief Generic batched objective function signature.
+ *
+ * Batched version of ObjectiveFunctionSingle. Accepts multiple points \b x_batch and writes their corresponding values into
+ * \b fval_batch. It is expected that the size of \b x_batch is a multiple of the size of \b fval_batch.
+ */
 using ObjectiveFunction = std::function<void(const std::vector<double> &x_batch, std::vector<double> &fval_batch)>;
 
-inline ObjectiveFunction makeObjectiveFunction(int ndim, ObjectiveFunctionSingle f_single) {
+/*! \ingroup OptimizationUtil
+ * \brief Creates an ObjectiveFunction object from an ObjectiveFunctionSingle object.
+ *
+ * Given an ObjectiveFunctionSingle \b f_single and the size of its input \b ndim, returns an ObjectiveFunction that evaluates
+ * a batch of points \f$x_1,\ldots,x_k\f$ to \f${\rm f\_single}(x_1),\ldots, {\rm f\_single}(x_k)\f$.
+ */
+inline ObjectiveFunction makeObjectiveFunction(const int ndim, const ObjectiveFunctionSingle f_single) {
     return [=](const std::vector<double> &x_values, std::vector<double> &fval_values)->void {
         int num_points = x_values.size() / ndim;
         std::vector<double> x(ndim);

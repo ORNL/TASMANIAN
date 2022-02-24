@@ -40,7 +40,7 @@
 /*!
  * \internal
  * \file TasmanianOptimization.hpp
- * \brief Optimization methods.
+ * \brief Optimization states and methods.
  * \author Weiwei Kong & Miroslav Stoyanov
  * \ingroup TasmanianOptimization
  *
@@ -51,21 +51,31 @@
  */
 
 /*!
- * \defgroup TasmanianOptimization Methods for minimizing extended real-valued functions
+ * \defgroup TasmanianOptimization Function Optimization
  *
- * \par Optimization
- * The Tasmanian Optimization module contains algorithms for minimizing extended real-valued functions over a user-specified
- * domain (i.e., where the function is assumed to be finite). 
+ * \par Function Optimization
+ * A collection of optimization algorithms for minimizing extended real-valued functions.
+ */
+
+/*!
+ * \ingroup TasmanianOptimization
+ * \addtogroup OptimizationState Optimization States
  *
- * \par Examples
- * See the included examples.
+ * States that are updated during the execution of an optimization algorithm.
+ */
+
+/*!
+ * \ingroup TasmanianOptimization
+ * \addtogroup OptimizationAlgorithm Optimization Algorithms
+ *
+ * Algorithms that are used to minimize an extended real-valued function over a given domain.
  */
 
 /*!
  * \ingroup TasmanianOptimization
  * \brief Encapsulates the Tasmanian Optimization module.
  *
- * Optimization related classes and methods sit under the TasOptimization namespace.
+ * Optimization related classes and methods that sit under the TasOptimization namespace.
  */
 namespace TasOptimization {}
 
