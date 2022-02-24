@@ -59,11 +59,7 @@ ParticleSwarmState::ParticleSwarmState(int num_dimensions, std::vector<double> &
         cache_particle_fvals(std::vector<double>(num_particles, std::numeric_limits<double>::max())),
         cache_best_particle_fvals(std::vector<double>(num_particles + 1, std::numeric_limits<double>::max())),
         cache_particle_inside(std::vector<bool>(num_particles, false)),
-        cache_best_particle_inside(std::vector<bool>(num_particles + 1, false)) {
-    assert(pp.size() % num_dimensions == 0);
-    checkVarSize("ParticleSwarmState::ParticleSwarmState", "particle positions", pp.size(), num_dimensions);
-    checkVarSize("ParticleSwarmState::ParticleSwarmState", "particle velocities", pv.size(), num_dimensions);
-};
+        cache_best_particle_inside(std::vector<bool>(num_particles + 1, false)) {};
 
 
 void ParticleSwarmState::initializeParticlesInsideBox(const std::vector<double> &box_lower, const std::vector<double> &box_upper,

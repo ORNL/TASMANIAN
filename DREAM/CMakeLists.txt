@@ -38,7 +38,8 @@ install(TARGETS Tasmanian_libdream
 ########################################################################
 add_executable(Tasmanian_dreamtest dreamtest_main.cpp
                                    tasdreamExternalTests.hpp
-                                   tasdreamExternalTests.cpp)
+                                   tasdreamExternalTests.cpp
+                                   ${CMAKE_CURRENT_SOURCE_DIR}/Optimization/tasdreamOptimizationTests.cpp)
 
 set_target_properties(Tasmanian_dreamtest  PROPERTIES OUTPUT_NAME "dreamtest"
                                                       CXX_EXTENSIONS OFF)

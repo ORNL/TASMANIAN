@@ -59,7 +59,9 @@ enum TypeDREAMTest{
     //! \brief Tests for sampling from known probability density.
     test_analytic,
     //! \brief Tests for sampling from posterior distributions.
-    test_posterior
+    test_posterior,
+    //! \brief Tests for function optimization states and algorithms.
+    test_optimization
 };
 
 //! \internal
@@ -177,6 +179,9 @@ protected:
 
     //! \brief Generate samples from sparse grid model.
     bool testGridModel();
+
+    //! \brief Perform tests for the optimization submodule.
+    bool testOptimization();
 
     //! \brief Hardcoded table with chi-squared values.
     double getChiValue(size_t num_degrees);
