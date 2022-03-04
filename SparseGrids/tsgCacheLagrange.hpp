@@ -73,20 +73,20 @@ public:
      * - \b holds the coordinates of the canonical point to cache
      */
     CacheLagrange(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper &rule, const double x[]){
-        cache.resize(num_dimensions);
+        cacheValues.resize(num_dimensions);
         offsets = rule.getPointsCount();
 
         for(int dim=0; dim<num_dimensions; dim++){
-            cache[dim].resize(offsets[max_levels[dim] + 1]);
+            cacheValues[dim].resize(offsets[max_levels[dim] + 1]);
             for(int level=0; level <= max_levels[dim]; level++)
-                cacheLevel(level, x[dim], rule, &(cache[dim][offsets[level]]));
+                cacheValueLevel(level, x[dim], rule, &(cacheValues[dim][offsets[level]]));
         }
     }
     //! \brief Destructor, clear all used data.
     ~CacheLagrange() = default;
 
     //! \brief Computes the values of all Lagrange polynomials for the given level at the given x
-    static void cacheLevel(int level, double x, const OneDimensionalWrapper &rule, T *cc){
+    static void cacheValueLevel(int level, double x, const OneDimensionalWrapper &rule, T *cc){
         const double *nodes = rule.getNodes(level);
         const double *coeff = rule.getCoefficients(level);
         int num_points = rule.getNumPoints(level);
@@ -107,14 +107,70 @@ public:
 
     //! \brief Return the Lagrange cache for given \b dimension, \b level and offset local to the level
     T getLagrange(int dimension, int level, int local) const{
-        return cache[dimension][offsets[level] + local];
+        return cacheValues[dimension][offsets[level] + local];
     }
 
-private:
-    std::vector<std::vector<T>> cache;
+protected:
+    std::vector<std::vector<T>> cacheValues;
     std::vector<int> offsets;
 };
 
+
+/*!
+ * \internal
+ * \ingroup TasmanianAcceleration
+ * \brief Cache that holds the derivatives of 1D Lagrange polynomials. Uses the same interface as CacheLagrange.
+ * \endinternal
+ */
+
+template <typename T>
+class CacheLagrangeDerivative : public CacheLagrange<T> {
+protected:
+    using CacheLagrange<T>::offsets;
+    using CacheLagrange<T>::cacheValues;
+
+public:
+    /*!
+     * \brief Constructor that takes into account a single canonical point \b x.
+     *
+     * The cache is constructed for each dimension and each level up to \b max_levels,
+     * the derivatives of the Lagrange polynomials are computed in two passes resulting in O(n) operations.
+     * - \b num_dimensions is the number of dimensions to consider
+     * - \b max_levels indicates how many levels to consider in each direction,
+     *   heavily anisotropic grids require only a few levels for the "less important" directions
+     * - \b rule is the wrapper of the Global grid that contains information about number of points per level
+     *   and the actual nodes with the pre-computed Lagrange coefficients
+     * - \b holds the coordinates of the canonical point to cache
+     */
+
+    CacheLagrangeDerivative(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper &rule, const double x[]) :
+            CacheLagrange<T>(num_dimensions, max_levels, rule, x) {
+        cacheDerivatives.resize(num_dimensions);
+        for(int dim=0; dim<num_dimensions; dim++){
+            cacheDerivatives[dim].resize(offsets[max_levels[dim] + 1]);
+            for(int level=0; level <= max_levels[dim]; level++)
+                cacheValueLevel(level, x[dim], rule, &(cacheDerivatives[dim][offsets[level]]));
+        }
+    }
+    //! \brief Destructor, clear all used data.
+    ~CacheLagrangeDerivative() = default;
+
+    //! \brief Computes the derivatives of all Lagrange polynomials for the given level at the given x
+    static void cacheDerivativeLevel(int level, double x, const OneDimensionalWrapper &rule, T *cc){
+        const double *nodes = rule.getNodes(level);
+        // TODO (William Kong): Implement this.
+
+    }
+
+    //! \brief Return the Lagrange derivative cache for given \b dimension, \b level and offset local to the level
+    T getLagrangeDerivative(int dimension, int level, int local) const{
+        return cacheDerivativeLevel[dimension][offsets[level] + local];
+    }
+
+protected:
+    std::vector<std::vector<T>> cacheDerivatives;
+
+};
 
 }
 

@@ -82,6 +82,7 @@ public:
 
     void evaluate(const double x[], double y[]) const override;
     void integrate(double q[], double *conformal_correction) const override;
+    void differentiate(const double x[], double jacobian[]) const;
 
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 

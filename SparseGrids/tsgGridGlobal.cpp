@@ -647,6 +647,11 @@ void GridGlobal::integrate(double q[], double *conformal_correction) const{
     }
 }
 
+// TODO (William Kong): Implement this.
+void GridGlobal::differentiate(const double x[], double jacobian[]) const {
+    std::fill_n(jacobian, num_outputs * num_dimensions, 0.0);
+}
+
 void GridGlobal::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     int num_points = (points.empty()) ? needed.getNumIndexes() : points.getNumIndexes();
     Utils::Wrapper2D<const double> xwrap(num_dimensions, x);
