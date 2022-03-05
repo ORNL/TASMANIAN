@@ -149,16 +149,58 @@ public:
         for(int dim=0; dim<num_dimensions; dim++){
             cacheDerivatives[dim].resize(offsets[max_levels[dim] + 1]);
             for(int level=0; level <= max_levels[dim]; level++)
-                cacheValueLevel(level, x[dim], rule, &(cacheDerivatives[dim][offsets[level]]));
+                cacheDerivativeLevel(level, x[dim], rule, &(cacheValues[dim][offsets[level]]), &(cacheDerivatives[dim][offsets[level]]));
         }
     }
     //! \brief Destructor, clear all used data.
     ~CacheLagrangeDerivative() = default;
 
     //! \brief Computes the derivatives of all Lagrange polynomials for the given level at the given x
-    static void cacheDerivativeLevel(int level, double x, const OneDimensionalWrapper &rule, T *cc){
+    static void cacheDerivativeLevel(int level, double x, const OneDimensionalWrapper &rule, T *cc_vals, T *cc){
+        // Initialize.
         const double *nodes = rule.getNodes(level);
-        // TODO (William Kong): Implement this.
+        int num_points = rule.getNumPoints(level);
+        int match_idx = -1;
+        // The Clenshaw-Curtis-Zero rule multiplies (x - 1.0)(x + 1.0) to the usual polynomial.
+        double clenshawcurtis0_offset = 1.0;
+
+        // Check to see if x is a root of the Lagrange polynomial.
+        for (int j=0; j<num_points; j++) {
+            int num_tol = std::numeric_limits<T>::epsilon() * std::max(std::abs(x), std::abs(nodes[j]));
+            if (std::fabs(x - nodes[j]) <= num_tol)
+                match_idx = j;
+        }
+        if (rule.getType() == rule_clenshawcurtis0 and std::fabs(x * x - 1.0) <= std::numeric_limits<T>::epsilon()) {
+            match_idx = num_points;
+            clenshawcurtis0_offset = x < 0.0 ? (x - 1) : (x + 1);
+        }
+
+        if (match_idx >= 0) {
+            // Gradient evaluation at one of roots of the Lagrange polynomial. Must be built from scratch.
+            const double *coeff = rule.getCoefficients(level);
+            cc[0] = 1.0;
+            T c = 1.0;
+            for(int j=0; j<num_points-1; j++){
+                if (j != match_idx)
+                    c *= (x - nodes[j]);
+                cc[j+1] = c;
+            }
+            c *= clenshawcurtis0_offset;
+            cc[num_points-1] *= c * coeff[num_points-1];
+            for(int j=num_points-2; j>=0; j--){
+                if (j != match_idx)
+                    c *= (x - nodes[j+1]);
+                cc[j] *= c * coeff[j];
+            }
+        } else {
+            // Gradient evaluation at all other points. Can be built from the cached Lagrange values.
+            double inv_sum = 0.0;
+            for (int j=0; j<num_points; j++)
+                inv_sum += 1.0 / (x - nodes[j]);
+            for (int j=0; j<num_points; j++) {
+                cc[j] = cc_vals[j] * (inv_sum - 1.0 / (x - nodes[j]));
+            }
+        }
 
     }
 

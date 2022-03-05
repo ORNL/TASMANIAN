@@ -77,6 +77,7 @@ public:
 
     void getQuadratureWeights(double weights[]) const override;
     void getInterpolationWeights(const double x[], double weights[]) const override;
+    void getDerivativeWeights(const double x[], double weights[]) const;
 
     void loadNeededValues(const double *vals) override;
 
