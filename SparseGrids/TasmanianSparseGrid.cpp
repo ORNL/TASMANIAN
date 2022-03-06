@@ -456,7 +456,7 @@ void TasmanianSparseGrid::integrate(double q[]) const{
 
 void TasmanianSparseGrid::differentiate(const double x[], double jacobian[]) const {
     if (isGlobal()) {
-        base->differentiate(x, jacobian);
+        reinterpret_cast<GridGlobal*>(base.get())->differentiate(x, jacobian);
     } else {
         throw std::runtime_error("ERROR: in differentiate(), jacobians/gradients are not available for this type of grid");
     }
@@ -472,7 +472,7 @@ void TasmanianSparseGrid::integrate(std::vector<double> &q) const{
     q.resize(num_outputs);
     integrate(q.data());
 }
-void TasmanianSparseGrid::differentiate(std::vector<double> const &x, std::vector<double> jacobian) const {
+void TasmanianSparseGrid::differentiate(std::vector<double> const &x, std::vector<double> &jacobian) const {
     size_t num_outputs = getNumOutputs();
     size_t num_dimensions = getNumDimensions();
     jacobian.resize(num_outputs * num_dimensions);

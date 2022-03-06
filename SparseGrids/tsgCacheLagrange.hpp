@@ -206,7 +206,7 @@ public:
 
     //! \brief Return the Lagrange derivative cache for given \b dimension, \b level and offset local to the level
     T getLagrangeDerivative(int dimension, int level, int local) const{
-        return cacheDerivativeLevel[dimension][offsets[level] + local];
+        return cacheDerivatives[dimension][offsets[level] + local];
     }
 
 protected:

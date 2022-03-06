@@ -988,7 +988,7 @@ public:
      *
      * \param jacobian will be resized to getNumOutputs() * getNumDimensions() and overwritten with the Jacobian matrix.
      */
-    void differentiate(std::vector<double> const &x, std::vector<double> jacobian) const;
+    void differentiate(std::vector<double> const &x, std::vector<double> &jacobian) const;
     /*!
      * \brief Overload that uses a raw-array.
      *
