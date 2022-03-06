@@ -92,6 +92,7 @@ public:
 
     virtual void evaluate(const double x[], double y[]) const = 0;
     virtual void integrate(double q[], double *conformal_correction) const = 0;
+    virtual void differentiate(const double x[], double jacobian[]) const;
 
     virtual void evaluateBatch(const double x[], int num_x, double y[]) const = 0;
 

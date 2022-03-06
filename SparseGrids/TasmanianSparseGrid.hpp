@@ -983,6 +983,18 @@ public:
      * \param q must have size of at least getNumOutputs().
      */
     void integrate(double q[]) const;
+    /*!
+     * \brief Computes the derivative (if available) of the surrogate model at an input point.
+     *
+     * \param jacobian will be resized to getNumOutputs() * getNumDimensions() and overwritten with the Jacobian matrix.
+     */
+    void differentiate(std::vector<double> const &x, std::vector<double> jacobian) const;
+    /*!
+     * \brief Overload that uses a raw-array.
+     *
+     * Equivalent to differentiate() but \b jacobian must have sufficient size to write the result.
+     */
+    void differentiate(const double x[], double jacobian[]) const;
 
     //! \brief Returns \b true if the grid is of type global, \b false otherwise.
     bool isGlobal() const{ return base && base->isGlobal(); }
