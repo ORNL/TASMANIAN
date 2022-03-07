@@ -280,20 +280,28 @@ void GridGlobal::getDerivativeWeights(const double x[], double weights[]) const{
     CacheLagrangeDerivative<double> ldcache(num_dimensions, max_levels, wrapper, x);
 
     std::vector<int> num_oned_points(num_dimensions);
-    for(int n=0; n<active_tensors.getNumIndexes(); n++){
+    for(int n=0; n<active_tensors.getNumIndexes(); n++) {
         const int* levels = active_tensors.getIndex(n);
         num_oned_points[0] = wrapper.getNumPoints(levels[0]);
         int num_tensor_points = num_oned_points[0];
-        for(int j=1; j<num_dimensions; j++){
+        for(int j=1; j<num_dimensions; j++) {
             num_oned_points[j] = wrapper.getNumPoints(levels[j]);
             num_tensor_points *= num_oned_points[j];
         }
         double tensor_weight = (double) active_w[n];
-        for(int i=0; i<num_tensor_points; i++){
+        for(int i=0; i<num_tensor_points; i++) {
             int t = i;
-            for(int j=num_dimensions-1; j>=0; j--){
+            double val_prod = 1.0;
+            for(int j=num_dimensions-1; j>=0; j--) {
+                val_prod *= ldcache.getLagrange(j, levels[j], t % num_oned_points[j]);
+                t /= num_oned_points[j];
+            }
+            t = i;
+            for(int j=num_dimensions-1; j>=0; j--) {
                 weights[tensor_refs[n][i] * num_dimensions + j] +=
-                        tensor_weight * ldcache.getLagrangeDerivative(j, levels[j], t % num_oned_points[j]);
+                        tensor_weight *
+                        val_prod / ldcache.getLagrange(j, levels[j], t % num_oned_points[j]) *
+                        ldcache.getLagrangeDerivative(j, levels[j], t % num_oned_points[j]);
                 t /= num_oned_points[j];
             }
         }
@@ -675,11 +683,11 @@ void GridGlobal::integrate(double q[], double *conformal_correction) const{
 }
 
 void GridGlobal::differentiate(const double x[], double jacobian[]) const {
-    // Based on the GridGlobal::evaluate() function.
+    // Based on the logic in the GridGlobal::evaluate() function.
     std::vector<double> w(points.getNumIndexes() * num_dimensions);
     getDerivativeWeights(x, w.data());
     std::fill_n(jacobian, num_outputs * num_dimensions, 0.0);
-    for(int i=0; i<points.getNumIndexes(); i++){
+    for(int i=0; i<points.getNumIndexes(); i++) {
         const double *v = values.getValues(i);
         int pt_start = i * num_dimensions;
         for(int j=0; j<num_outputs*num_dimensions; j++) {

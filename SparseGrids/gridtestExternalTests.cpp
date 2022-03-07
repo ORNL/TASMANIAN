@@ -2197,12 +2197,13 @@ void ExternalTester::debugTest(){
     // Create the test grid.
     int num_dimensions = 2;
     int num_outputs = 1;
-    int depth = 4;
+    int depth = 3;
     TasmanianSparseGrid grid = makeGlobalGrid(num_dimensions, num_outputs, depth, type_iptotal, rule_gausslegendre);
 
     // Load the value of a basic 2nd-order polynomial.
     auto f = [=](std::vector<double> &x) {
         return x[0] * x[0] + 2.0 * x[0] * x[1] + 3.0 * x[1] * x[1] + 4.0 * x[0] + 5.0 * x[1] + 6.0;
+        // return x[0];
     };
     std::vector<double> needed_points = grid.getNeededPoints();
     std::vector<double> needed_values(needed_points.size() / num_dimensions);
@@ -2220,31 +2221,35 @@ void ExternalTester::debugTest(){
     };
     auto grad_f = [=](std::vector<double> &x) {
         std::vector<double> gradient(num_dimensions);
-        gradient[0] = 2.0 * x[0] + 2.0 * x[1] + 4.0;
-        gradient[1] = 6.0 * x[1] + 2.0 * x[0] + 5.0;
+        gradient = {
+            2.0 * x[0] + 2.0 * x[1] + 4.0,
+            6.0 * x[1] + 2.0 * x[0] + 5.0
+        };
         return gradient;
     };
-    auto is_grad_equal = [=](std::vector<double> x) {
+    auto compare_gradients = [=](std::vector<double> x) {
         std::vector<double> gg = get_grid_gradient(x);
         std::vector<double> tg = grad_f(x);
 
         std::cout << "Grid Gradient: ";
-        for (auto xi : gg) std::cout << xi << "\t";
+        for (auto xi : gg) std::cout << std::setprecision(3) << std::fixed << xi << "\t";
         std::cout << std::endl;
 
         std::cout << "True Gradient: ";
-        for (auto xi : tg) std::cout << xi << "\t";
+        for (auto xi : tg) std::cout << std::setprecision(3) << std::fixed << xi << "\t";
         std::cout << std::endl;
     };
 
     // Compare at some points.
     std::vector<std::vector<double>> points = {
-        {0.50, 0.75},
-        {0.33, 0.66}
+        {0.50,  0.75},
+        {-0.33, 0.66},
+        {0.00,  0.00},
+        {1.00, -0.12}
     };
     for (auto v : points) {
         std::cout << std::endl;
-        is_grad_equal(v);
+        compare_gradients(v);
     }
 }
 

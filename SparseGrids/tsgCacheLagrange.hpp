@@ -125,10 +125,6 @@ protected:
 
 template <typename T>
 class CacheLagrangeDerivative : public CacheLagrange<T> {
-protected:
-    using CacheLagrange<T>::offsets;
-    using CacheLagrange<T>::cacheValues;
-
 public:
     /*!
      * \brief Constructor that takes into account a single canonical point \b x.
@@ -142,7 +138,6 @@ public:
      *   and the actual nodes with the pre-computed Lagrange coefficients
      * - \b holds the coordinates of the canonical point to cache
      */
-
     CacheLagrangeDerivative(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper &rule, const double x[]) :
             CacheLagrange<T>(num_dimensions, max_levels, rule, x) {
         cacheDerivatives.resize(num_dimensions);
@@ -156,7 +151,7 @@ public:
     ~CacheLagrangeDerivative() = default;
 
     //! \brief Computes the derivatives of all Lagrange polynomials for the given level at the given x
-    static void cacheDerivativeLevel(int level, double x, const OneDimensionalWrapper &rule, T *cc_vals, T *cc){
+    static void cacheDerivativeLevel(int level, double x, const OneDimensionalWrapper &rule, T *vals, T *cc){
         // Initialize.
         const double *nodes = rule.getNodes(level);
         int num_points = rule.getNumPoints(level);
@@ -180,14 +175,14 @@ public:
             const double *coeff = rule.getCoefficients(level);
             cc[0] = 1.0;
             T c = 1.0;
-            for(int j=0; j<num_points-1; j++){
+            for(int j=0; j<num_points-1; j++) {
                 if (j != match_idx)
                     c *= (x - nodes[j]);
                 cc[j+1] = c;
             }
             c *= clenshawcurtis0_offset;
             cc[num_points-1] *= c * coeff[num_points-1];
-            for(int j=num_points-2; j>=0; j--){
+            for(int j=num_points-2; j>=0; j--) {
                 if (j != match_idx)
                     c *= (x - nodes[j+1]);
                 cc[j] *= c * coeff[j];
@@ -195,23 +190,25 @@ public:
         } else {
             // Gradient evaluation at all other points. Can be built from the cached Lagrange values.
             double inv_sum = 0.0;
-            for (int j=0; j<num_points; j++)
-                inv_sum += 1.0 / (x - nodes[j]);
+            for (int i=0; i<num_points; i++)
+                inv_sum += 1.0 / (x - nodes[i]);
             for (int j=0; j<num_points; j++) {
-                cc[j] = cc_vals[j] * (inv_sum - 1.0 / (x - nodes[j]));
+                cc[j] = vals[j] * (inv_sum - 1.0 / (x - nodes[j]));
             }
         }
 
     }
 
     //! \brief Return the Lagrange derivative cache for given \b dimension, \b level and offset local to the level
-    T getLagrangeDerivative(int dimension, int level, int local) const{
+    T getLagrangeDerivative(int dimension, int level, int local) const {
         return cacheDerivatives[dimension][offsets[level] + local];
     }
 
 protected:
     std::vector<std::vector<T>> cacheDerivatives;
-
+    // Needed for proper inheritance.
+    using CacheLagrange<T>::offsets;
+    using CacheLagrange<T>::cacheValues;
 };
 
 }
