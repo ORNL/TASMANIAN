@@ -52,6 +52,7 @@ target_link_libraries(Tasmanian_dreamtest  Tasmanian_libdream)
 ########################################################################
 add_test(DreamAnalytic dreamtest analytic)
 add_test(DreamModel dreamtest posterior)
+add_test(Optimization dreamtest optimization)
 Tasmanian_set_test_properties(TESTS DreamAnalytic DreamModel)
 
 
