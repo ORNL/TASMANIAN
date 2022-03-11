@@ -99,7 +99,7 @@ void ParticleSwarm(ObjectiveFunction f, int max_iterations, TasDREAM::DreamDomai
 
     // Create a lambda that converts f to a constrained version that only evaluates points inside the domain. This lambda also
     // writes to a bool vector whose i-th entry is true if particle i is in the domain.
-    auto f_constrained = [&](const std::vector<double> &x_batch, std::vector<double> &fval_batch, std::vector<bool> &inside_batch)->void {
+    auto f_constrained = [=](const std::vector<double> &x_batch, std::vector<double> &fval_batch, std::vector<bool> &inside_batch)->void {
         // Collect and apply the domain information given by inside() and x_batch.
         size_t num_batch(fval_batch.size()), num_inside(0);
         std::vector<double> candidate(num_dimensions), is_inside(num_batch), inside_points;
