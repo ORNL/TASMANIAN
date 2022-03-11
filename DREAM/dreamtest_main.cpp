@@ -60,6 +60,7 @@ int main(int argc, const char ** argv){
         else if (args.front() == "debug") debug = true;
         else if (args.front() == "analytic") test = test_analytic;
         else if (args.front() == "posterior") test = test_posterior;
+        else if (args.front() == "optimization") test = test_optimization;
         else if (args.front() == "all") test = test_all;
         else{
             cerr << "ERROR: Unknown option '" << args.front() << "'" << endl;
