@@ -2,7 +2,7 @@
 
 # necessary import for every use of TASMANIAN
 #
-import TasmanianSG
+import Tasmanian
 import numpy as np
 import math
 
