@@ -39,9 +39,9 @@
 namespace TasOptimization {
 
 
-ParticleSwarmState::ParticleSwarmState(int num_dimensions, int num_particles):
+ParticleSwarmState::ParticleSwarmState(int cnum_dimensions, int cnum_particles):
         positions_initialized(false), velocities_initialized(false), best_positions_initialized(false), cache_initialized(false),
-        num_dimensions(num_dimensions), num_particles(num_particles),
+        num_dimensions(cnum_dimensions), num_particles(cnum_particles),
         particle_positions(std::vector<double>(num_particles * num_dimensions)),
         particle_velocities(std::vector<double>(num_particles * num_dimensions)),
         best_particle_positions(std::vector<double>((num_particles + 1) * num_dimensions)),
@@ -51,9 +51,9 @@ ParticleSwarmState::ParticleSwarmState(int num_dimensions, int num_particles):
         cache_best_particle_inside(std::vector<bool>(num_particles + 1, false)) {};
 
 
-ParticleSwarmState::ParticleSwarmState(int num_dimensions, std::vector<double> &&pp, std::vector<double> &&pv):
+ParticleSwarmState::ParticleSwarmState(int cnum_dimensions, std::vector<double> &&pp, std::vector<double> &&pv):
         positions_initialized(true), velocities_initialized(true), best_positions_initialized(false), cache_initialized(false),
-        num_dimensions(num_dimensions), num_particles(pp.size() / num_dimensions),
+        num_dimensions(cnum_dimensions), num_particles(pp.size() / num_dimensions),
         particle_positions(std::move(pp)), particle_velocities(std::move(pv)),
         best_particle_positions(std::vector<double>((num_particles + 1) * num_dimensions)),
         cache_particle_fvals(std::vector<double>(num_particles, std::numeric_limits<double>::max())),
@@ -99,11 +99,11 @@ void ParticleSwarm(ObjectiveFunction f, int max_iterations, TasDREAM::DreamDomai
 
     // Create a lambda that converts f to a constrained version that only evaluates points inside the domain. This lambda also
     // writes to a bool vector whose i-th entry is true if particle i is in the domain.
-    auto f_constrained = [&](const std::vector<double> &x_batch, std::vector<double> &fval_batch, std::vector<bool> &inside_batch)->void {
+    auto f_constrained = [=](const std::vector<double> &x_batch, std::vector<double> &fval_batch, std::vector<bool> &inside_batch)->void {
         // Collect and apply the domain information given by inside() and x_batch.
-        size_t num_particles(fval_batch.size()), num_inside(0);
-        std::vector<double> candidate(num_dimensions), is_inside(num_particles), inside_points;
-        for (size_t i=0; i<num_particles; i++) {
+        size_t num_batch(fval_batch.size()), num_inside(0);
+        std::vector<double> candidate(num_dimensions), is_inside(num_batch), inside_points;
+        for (size_t i=0; i<num_batch; i++) {
             fval_batch[i] = std::numeric_limits<double>::max();
             std::copy_n(x_batch.begin() + i * num_dimensions, num_dimensions, candidate.begin());
             inside_batch[i] = inside(candidate);
@@ -116,7 +116,7 @@ void ParticleSwarm(ObjectiveFunction f, int max_iterations, TasDREAM::DreamDomai
         std::vector<double> inside_vals(num_inside);
         f(inside_points, inside_vals);
         int j = 0;
-        for (size_t i=0; i<num_particles; i++) {
+        for (size_t i=0; i<num_batch; i++) {
             if (inside_batch[i])
                 fval_batch[i] = inside_vals[j++];
         }

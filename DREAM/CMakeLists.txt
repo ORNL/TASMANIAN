@@ -52,6 +52,7 @@ target_link_libraries(Tasmanian_dreamtest  Tasmanian_libdream)
 ########################################################################
 add_test(DreamAnalytic dreamtest analytic)
 add_test(DreamModel dreamtest posterior)
+add_test(Optimization dreamtest optimization)
 Tasmanian_set_test_properties(TESTS DreamAnalytic DreamModel)
 
 
@@ -70,7 +71,7 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
         set(Tasmanian_MSVC_PATH_STRING "${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Release;${CMAKE_CURRENT_BINARY_DIR}/../SparseGrids/Debug;$ENV{PATH}")
         string(REPLACE ";" "\\;" Tasmanian_MSVC_PATH_STRING "${Tasmanian_MSVC_PATH_STRING}")
-        set_tests_properties(DreamAnalytic DreamModel PROPERTIES ENVIRONMENT "PATH=${Tasmanian_MSVC_PATH_STRING}")
+        set_tests_properties(DreamAnalytic DreamModel Optimization PROPERTIES ENVIRONMENT "PATH=${Tasmanian_MSVC_PATH_STRING}")
     endif()
 
 endif()
