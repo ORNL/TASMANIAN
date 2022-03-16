@@ -122,11 +122,14 @@ private:
     std::string description;
 };
 
-//! \internal
-//! \brief Generates a subset of rules as a CustomTabulated object. The subset has a short description string given by \b
-//  description and takes the levels of the input \b ct starting from level \b start_index with distance \b stride between
-//  consecutive levels.
-//! \ingroup TasmanianCoreOneDimensional
+/*! \internal
+ * \ingroup TasmanianCoreOneDimensional
+ * \brief Generates a subset of rules as a CustomTabulated object. The subset has a short description string given by
+ * \b description and takes the levels of the input \b ct starting from level \b start_index with distance \b stride between
+ * consecutive levels.
+ *
+ * \endinternal
+ */
 CustomTabulated getSubrules(CustomTabulated &ct, int start_index, int stride, std::string description);
 
 //! \internal

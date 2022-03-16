@@ -35,7 +35,6 @@
 #define __TASMANIAN_OPTIM_ENUMERATES_HPP
 
 #include "TasmanianDREAM.hpp"
-#include <assert.h>
 
 /*!
  * \internal
@@ -82,16 +81,18 @@ using ObjectiveFunctionSingle = std::function<double(const std::vector<double> &
 /*! \ingroup OptimizationUtil
  * \brief Generic batched objective function signature.
  *
- * Batched version of ObjectiveFunctionSingle. Accepts multiple points \b x_batch and writes their corresponding values into
+ * Batched version of TasOptimization::ObjectiveFunctionSingle.
+ * Accepts multiple points \b x_batch and writes their corresponding values into
  * \b fval_batch. It is expected that the size of \b x_batch is a multiple of the size of \b fval_batch.
  */
 using ObjectiveFunction = std::function<void(const std::vector<double> &x_batch, std::vector<double> &fval_batch)>;
 
 /*! \ingroup OptimizationUtil
- * \brief Creates an ObjectiveFunction object from an ObjectiveFunctionSingle object.
+ * \brief Creates a TasOptimization::ObjectiveFunction object from a TasOptimization::ObjectiveFunctionSingle object.
  *
- * Given an ObjectiveFunctionSingle \b f_single and the size of its input \b ndim, returns an ObjectiveFunction that evaluates
- * a batch of points \f$x_1,\ldots,x_k\f$ to \f${\rm f\_single}(x_1),\ldots, {\rm f\_single}(x_k)\f$.
+ * Given a TasOptimization::ObjectiveFunctionSingle \b f_single and the size of its input \b ndim,
+ * returns a TasOptimization::ObjectiveFunction that evaluates
+ * a batch of points \f$ x_1,\ldots,x_k \f$ to \f$ {\rm f\_single}(x_1),\ldots, {\rm f\_single}(x_k) \f$.
  */
 inline ObjectiveFunction makeObjectiveFunction(const int ndim, const ObjectiveFunctionSingle f_single) {
     return [=](const std::vector<double> &x_values, std::vector<double> &fval_values)->void {

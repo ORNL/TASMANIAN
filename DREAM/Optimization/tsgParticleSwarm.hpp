@@ -72,7 +72,7 @@ namespace TasOptimization {
  * particle swarm algorithm without doing this step is otherwise \a undefined.
  */
 class ParticleSwarmState {
-  public:
+public:
     //! \brief The particle swarm state must be initialized with data that defines number of particles and dimensions.
     ParticleSwarmState() = delete;
     //! \brief Constructor for a particle swarm state with the number of particles and dimensions.
@@ -171,15 +171,26 @@ class ParticleSwarmState {
     /*! \brief Applies the particle swarm algorithm to a particle swarm state.
      * \ingroup OptimizationAlgorithm Particle Swarm Algorithm
      *
-     * Runs \b max_iterations of the particle swarm algorithm to a particle swarm \b state to minimize the function \b f over the
+     * Runs \b num_iterations of the particle swarm algorithm to a particle swarm \b state to minimize the function \b f over the
      * domain \b inside. The parameters of the algorithm are \b inertia_weight , \b cognitive_coeff , and \b social_coeff. The
      * uniform [0,1] random number generator used by the algorithm is \b get_random01.
+     *
+     * \param f Objective function to be minimized
+     * \param num_iterations number of iterations to perform
+     * \param inside indicates whether a given point is inside or outside of the domain of interest
+     * \param state holds the state of the particles, e.g., positions and velocities, see TasOptimization::ParticleSwarmState
+     * \param inertia_weight inertial weight for the particle swarm algorithm
+     * \param cognitive_coeff cognitive coefficient for the particle swarm algorithm
+     * \param social_coeff social coefficient for the particle swarm algorithm
+     * \param get_random01 random number generator, defaults to rand()
+     *
+     * \throws std::runtime_error if either the positions or the velocities of the \b state have not been initialized
      */
-    friend void ParticleSwarm(const ObjectiveFunction f, const int max_iterations, const TasDREAM::DreamDomain inside,
+    friend void ParticleSwarm(const ObjectiveFunction f, const int num_iterations, const TasDREAM::DreamDomain inside,
                               ParticleSwarmState &state, const double inertia_weight, const double cognitive_coeff,
                               const double social_coeff, const std::function<double(void)> get_random01);
 
-  protected:
+protected:
     //! \brief Returns a reference to the particle positions.
     inline std::vector<double> &getParticlePositionsRef() {return particle_positions;}
     //! \brief Returns a reference to the particle velocities.
@@ -195,6 +206,7 @@ class ParticleSwarmState {
     //! \brief Returns a reference to a boolean hash map of the domain of the previously best known loaded particles.
     inline std::vector<bool> &getCacheBestParticleInsideRef() {return cache_best_particle_inside;}
 
+private:
     bool positions_initialized, velocities_initialized, best_positions_initialized, cache_initialized;
     int num_dimensions, num_particles;
     std::vector<double> particle_positions, particle_velocities, best_particle_positions, cache_particle_fvals, cache_best_particle_fvals;
@@ -202,7 +214,7 @@ class ParticleSwarmState {
 };
 
 // Forward declarations.
-void ParticleSwarm(const ObjectiveFunction f, const int max_iterations, const TasDREAM::DreamDomain inside, ParticleSwarmState &state,
+void ParticleSwarm(const ObjectiveFunction f, const int num_iterations, const TasDREAM::DreamDomain inside, ParticleSwarmState &state,
                    const double inertia_weight, const double cognitive_coeff, const double social_coeff,
                    const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
 
