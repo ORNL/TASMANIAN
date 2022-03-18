@@ -33,7 +33,8 @@ SparseGridsObj = \
           ./SparseGrids/TasmanianSparseGridWrapC.o ./SparseGrids/TasmanianSparseGrid.o ./InterfaceTPL/tsgGpuNull.o
 
 DREAMObj = \
-          ./DREAM/tsgDreamState.o ./DREAM/tsgDreamLikelyGaussian.o ./DREAM/tsgDreamSampleWrapC.o
+          ./DREAM/tsgDreamState.o ./DREAM/tsgDreamLikelyGaussian.o ./DREAM/tsgDreamSampleWrapC.o \
+          ./DREAM/Optimization/tsgParticleSwarm.o
 
 AddonsObj = \
           ./Addons/tsgCLoadNeededValues.o ./Addons/tsgCConstructSurrogate.o ./Addons/tsgCLoadUnstructuredPoints.o ./Addons/tsgCExoticQuadrature.o
@@ -47,7 +48,7 @@ GidtestObj = \
           ./SparseGrids/gridtestUnitTests.o ./SparseGrids/gridtestTestInterfaceC.o
 
 DREAMTestObj = \
-          ./DREAM/dreamtest_main.o ./DREAM/tasdreamExternalTests.o
+          ./DREAM/dreamtest_main.o ./DREAM/tasdreamExternalTests.o ./DREAM/Optimization/tasdreamOptimizationTests.o
 
 AddonTestObj = \
           ./Addons/testAddons.o
