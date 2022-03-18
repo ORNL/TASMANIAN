@@ -73,20 +73,20 @@ public:
      * - \b holds the coordinates of the canonical point to cache
      */
     CacheLagrange(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper &rule, const double x[]){
-        cacheValues.resize(num_dimensions);
+        cache.resize(num_dimensions);
         offsets = rule.getPointsCount();
 
         for(int dim=0; dim<num_dimensions; dim++){
-            cacheValues[dim].resize(offsets[max_levels[dim] + 1]);
+            cache[dim].resize(offsets[max_levels[dim] + 1]);
             for(int level=0; level <= max_levels[dim]; level++)
-                cacheValueLevel(level, x[dim], rule, &(cacheValues[dim][offsets[level]]));
+                cacheLevel(level, x[dim], rule, &(cache[dim][offsets[level]]));
         }
     }
     //! \brief Destructor, clear all used data.
     ~CacheLagrange() = default;
 
     //! \brief Computes the values of all Lagrange polynomials for the given level at the given x
-    static void cacheValueLevel(int level, double x, const OneDimensionalWrapper &rule, T *cc){
+    static void cacheLevel(int level, double x, const OneDimensionalWrapper &rule, T *cc){
         const double *nodes = rule.getNodes(level);
         const double *coeff = rule.getCoefficients(level);
         int num_points = rule.getNumPoints(level);
@@ -107,11 +107,11 @@ public:
 
     //! \brief Return the Lagrange cache for given \b dimension, \b level and offset local to the level
     T getLagrange(int dimension, int level, int local) const{
-        return cacheValues[dimension][offsets[level] + local];
+        return cache[dimension][offsets[level] + local];
     }
 
 protected:
-    std::vector<std::vector<T>> cacheValues;
+    std::vector<std::vector<T>> cache;
     std::vector<int> offsets;
 };
 
@@ -144,7 +144,7 @@ public:
         for(int dim=0; dim<num_dimensions; dim++){
             cacheDerivatives[dim].resize(offsets[max_levels[dim] + 1]);
             for(int level=0; level <= max_levels[dim]; level++)
-                cacheDerivativeLevel(level, x[dim], rule, &(cacheValues[dim][offsets[level]]), &(cacheDerivatives[dim][offsets[level]]));
+                cacheDerivativeLevel(level, x[dim], rule, &(cache[dim][offsets[level]]), &(cacheDerivatives[dim][offsets[level]]));
         }
     }
     //! \brief Destructor, clear all used data.
@@ -165,26 +165,24 @@ public:
             if (std::fabs(x - nodes[j]) <= num_tol)
                 match_idx = j;
         }
-        if (rule.getType() == rule_clenshawcurtis0 and std::fabs(x * x - 1.0) <= std::numeric_limits<T>::epsilon()) {
-            match_idx = num_points;
-            clenshawcurtis0_offset = x < 0.0 ? (x - 1) : (x + 1);
-        }
 
-        if (match_idx >= 0) {
+        bool clenshaw_bdy_point = rule.getType() == rule_clenshawcurtis0 and std::fabs(x * x - 1.0) <= std::numeric_limits<T>::epsilon();
+        if (clenshaw_bdy_point)
+            clenshawcurtis0_offset = x < 0.0 ? (x + 1.0) : (x - 1.0);
+
+        if (match_idx >= 0 or clenshaw_bdy_point) {
             // Gradient evaluation at one of roots of the Lagrange polynomial. Must be built from scratch.
-            const double *coeff = rule.getCoefficients(level);
             cc[0] = 1.0;
             T c = 1.0;
             for(int j=0; j<num_points-1; j++) {
-                if (j != match_idx)
-                    c *= (x - nodes[j]);
+                c *= (j == match_idx) ? 1.0 : (x - nodes[j]);
                 cc[j+1] = c;
             }
-            c *= clenshawcurtis0_offset;
+            c = clenshawcurtis0_offset;
+            const double *coeff = rule.getCoefficients(level);
             cc[num_points-1] *= c * coeff[num_points-1];
             for(int j=num_points-2; j>=0; j--) {
-                if (j != match_idx)
-                    c *= (x - nodes[j+1]);
+                c *= (j == match_idx) ? 1.0 : (x - nodes[j+1]);
                 cc[j] *= c * coeff[j];
             }
         } else {
@@ -208,7 +206,7 @@ protected:
     std::vector<std::vector<T>> cacheDerivatives;
     // Needed for proper inheritance.
     using CacheLagrange<T>::offsets;
-    using CacheLagrange<T>::cacheValues;
+    using CacheLagrange<T>::cache;
 };
 
 }
