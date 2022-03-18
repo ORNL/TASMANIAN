@@ -2197,13 +2197,12 @@ void ExternalTester::debugTest(){
     // Create the test grid.
     int num_dimensions = 2;
     int num_outputs = 1;
-    int depth = 3;
+    int depth = 4;
     TasmanianSparseGrid grid = makeGlobalGrid(num_dimensions, num_outputs, depth, type_iptotal, rule_gausslegendre);
 
     // Load the value of a basic 2nd-order polynomial.
     auto f = [=](std::vector<double> &x) {
         return x[0] * x[0] + 2.0 * x[0] * x[1] + 3.0 * x[1] * x[1] + 4.0 * x[0] + 5.0 * x[1] + 6.0;
-        // return x[0];
     };
     std::vector<double> needed_points = grid.getNeededPoints();
     std::vector<double> needed_values(needed_points.size() / num_dimensions);
@@ -2244,8 +2243,8 @@ void ExternalTester::debugTest(){
     std::vector<std::vector<double>> points = {
         {0.50,  0.75},
         {-0.33, 0.66},
-        {0.00,  0.00},
-        {1.00, -0.12}
+        {1.00, -0.12},
+        {0.00,  0.00}
     };
     for (auto v : points) {
         std::cout << std::endl;

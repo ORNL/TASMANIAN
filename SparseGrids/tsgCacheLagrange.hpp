@@ -154,45 +154,52 @@ public:
     static void cacheDerivativeLevel(int level, double x, const OneDimensionalWrapper &rule, T *vals, T *cc){
         // Initialize.
         const double *nodes = rule.getNodes(level);
+        const double *coeff = rule.getCoefficients(level);
         int num_points = rule.getNumPoints(level);
-        int match_idx = -1;
-        // The Clenshaw-Curtis-Zero rule multiplies (x - 1.0)(x + 1.0) to the usual polynomial.
-        double clenshawcurtis0_offset = 1.0;
 
         // Check to see if x is a root of the Lagrange polynomial.
+        int match_idx = -1;
         for (int j=0; j<num_points; j++) {
-            int num_tol = std::numeric_limits<T>::epsilon() * std::max(std::abs(x), std::abs(nodes[j]));
-            if (std::fabs(x - nodes[j]) <= num_tol)
+            if (std::fabs(x - nodes[j]) <= Maths::num_tol) {
                 match_idx = j;
+                break;
+            }
         }
 
-        bool clenshaw_bdy_point = rule.getType() == rule_clenshawcurtis0 and std::fabs(x * x - 1.0) <= std::numeric_limits<T>::epsilon();
-        if (clenshaw_bdy_point)
-            clenshawcurtis0_offset = x < 0.0 ? (x + 1.0) : (x - 1.0);
+        // The Clenshaw-Curtis-Zero rule multiplies (x - 1.0)(x + 1.0) to the usual polynomial. The gradient of resulting
+        // polynomial should hence be modified if x is 1.0 or -1.0.
+        bool clenshaw_bdy_point = rule.getType() == rule_clenshawcurtis0 and std::fabs(x * x - 1.0) <= Maths::num_tol;
 
         if (match_idx >= 0 or clenshaw_bdy_point) {
             // Gradient evaluation at one of roots of the Lagrange polynomial. Must be built from scratch.
             cc[0] = 1.0;
             T c = 1.0;
-            for(int j=0; j<num_points-1; j++) {
-                c *= (j == match_idx) ? 1.0 : (x - nodes[j]);
+            T inv_sum = (1.0            * (0 != match_idx) + 0.0 * (0 == match_idx)) /
+                        ((x - nodes[0]) * (0 != match_idx) + 1.0 * (0 == match_idx));
+            for (int j=0; j<num_points-1; j++) {
+                // Forward iterations.
+                c *= (x - nodes[j]) * (j != match_idx) + 1.0 * (j == match_idx);
                 cc[j+1] = c;
+                inv_sum += (1.0              * (j+1 != match_idx) + 0.0 * (j+1 == match_idx)) /
+                           ((x - nodes[j+1]) * (j+1 != match_idx) + 1.0 * (j+1 == match_idx));
             }
-            c = clenshawcurtis0_offset;
-            const double *coeff = rule.getCoefficients(level);
+            c = clenshaw_bdy_point ? 2.0 * x : 1.0;
+            // cc[match_idx] is a special case. It is equivalent to computing the gradient at x of the Lagrange polynomial
+            // that interpolates all of the points in nodes except nodes[match_idx].
+            cc[match_idx] = c * inv_sum * coeff[match_idx];
             cc[num_points-1] *= c * coeff[num_points-1];
             for(int j=num_points-2; j>=0; j--) {
-                c *= (j == match_idx) ? 1.0 : (x - nodes[j+1]);
+                // Backward iterations.
+                c *= (x - nodes[j+1]) * (j+1 != match_idx) + 1.0 * (j+1 == match_idx);
                 cc[j] *= c * coeff[j];
             }
         } else {
             // Gradient evaluation at all other points. Can be built from the cached Lagrange values.
-            double inv_sum = 0.0;
+            T inv_sum = 0.0;
             for (int i=0; i<num_points; i++)
                 inv_sum += 1.0 / (x - nodes[i]);
-            for (int j=0; j<num_points; j++) {
+            for (int j=0; j<num_points; j++)
                 cc[j] = vals[j] * (inv_sum - 1.0 / (x - nodes[j]));
-            }
         }
 
     }
