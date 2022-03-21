@@ -2246,6 +2246,9 @@ void ExternalTester::debugTest(){
         {1.00, -0.12},
         {0.00,  0.00}
     };
+
+    // TODO: Add tests where the points are the roots of the function.
+
     for (auto v : points) {
         std::cout << std::endl;
         compare_gradients(v);

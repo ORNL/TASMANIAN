@@ -291,18 +291,40 @@ void GridGlobal::getDerivativeWeights(const double x[], double weights[]) const{
         double tensor_weight = (double) active_w[n];
         for(int i=0; i<num_tensor_points; i++) {
             int t = i;
-            double val_prod = 1.0;
+            int idx_zero_fval = -1;
+            int num_zero_fval = 0;
+            double nonzero_fval_prod = 1.0;
             for(int j=num_dimensions-1; j>=0; j--) {
-                val_prod *= ldcache.getLagrange(j, levels[j], t % num_oned_points[j]);
+                double val = ldcache.getLagrange(j, levels[j], t % num_oned_points[j]);
+                if (std::fabs(val) <= Maths::num_tol) {
+                    idx_zero_fval = j;
+                    num_zero_fval++;
+                } else {
+                    nonzero_fval_prod *= val;
+                }
                 t /= num_oned_points[j];
             }
             t = i;
-            for(int j=num_dimensions-1; j>=0; j--) {
-                weights[tensor_refs[n][i] * num_dimensions + j] +=
-                        tensor_weight *
-                        val_prod / ldcache.getLagrange(j, levels[j], t % num_oned_points[j]) *
-                        ldcache.getLagrangeDerivative(j, levels[j], t % num_oned_points[j]);
-                t /= num_oned_points[j];
+            if (num_zero_fval >= 2) {
+                // If at least two basis values are zero, the contribution to the Jacobian is always zero.
+                continue;
+            } else if (num_zero_fval == 1) {
+                // If one basis values is zero at dimension j, the contribution to the Jacobian is only at dimension j.
+                int j = num_dimensions - 1;
+                while (j != idx_zero_fval)
+                    t /= num_oned_points[j--];
+                weights[tensor_refs[n][i] * num_dimensions + j] =
+                            tensor_weight * nonzero_fval_prod *
+                            ldcache.getLagrangeDerivative(j, levels[j], t % num_oned_points[j]);
+            } else {
+                // If all basis values are positive, we need to apply the full product rule.
+                for(int j=num_dimensions-1; j>=0; j--) {
+                    weights[tensor_refs[n][i] * num_dimensions + j] +=
+                            tensor_weight * nonzero_fval_prod *
+                            1.0 / ldcache.getLagrange(j, levels[j], t % num_oned_points[j]) *
+                            ldcache.getLagrangeDerivative(j, levels[j], t % num_oned_points[j]);
+                    t /= num_oned_points[j];
+                 }
             }
         }
     }
