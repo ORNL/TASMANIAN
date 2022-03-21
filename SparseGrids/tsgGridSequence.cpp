@@ -526,6 +526,27 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
     }
 }
 
+void GridSequence::differentiate(const double x[], double jacobian[]) const {
+    // Based on the logic in the GridSequence::evaluate() function.
+    std::vector<std::vector<double>> value_cache = cacheBasisValues<double>(x);
+    std::vector<std::vector<double>> derivative_cache = cacheBasisDerivatives<double>(x, value_cache);
+    std::fill_n(jacobian, num_outputs * num_dimensions, 0.0);
+    int num_points = points.getNumIndexes();
+    for(int i=0; i<num_points; i++){
+        const int* p = points.getIndex(i);
+        const double *s = surpluses.getStrip(i);
+        double basis_value = 1.0;
+        for(int j=0; j<num_dimensions; j++){
+            basis_value *= value_cache[j][p[j]];
+        }
+        for(int j=0; j<num_outputs*num_dimensions; j++) {
+            int dims = j % num_dimensions;
+            int outs = j / num_dimensions;
+            jacobian[j] += derivative_cache[dims][p[dims]] * basis_value / value_cache[dims][p[dims]] * s[outs];
+        }
+    }
+}
+
 void GridSequence::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     int num_points = (points.empty()) ? needed.getNumIndexes() : points.getNumIndexes();
     Utils::Wrapper2D<double const> xwrap(num_dimensions, x);

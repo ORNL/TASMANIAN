@@ -67,6 +67,7 @@ public:
 
     void evaluate(const double x[], double y[]) const override;
     void integrate(double q[], double *conformal_correction) const override;
+    void differentiate(const double x[], double jacobian[]) const;
 
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
@@ -126,6 +127,45 @@ protected:
             }
             for(int i=1; i<=max_levels[j]; i++){
                 cache[j][i] /= coeff[i];
+            }
+        }
+        return cache;
+    }
+
+    // The second argument should be the result of calling TasGrid::GridSequence::cacheBasisValues(x).
+    template<typename T>
+    std::vector<std::vector<T>> cacheBasisDerivatives(const T x[], std::vector<std::vector<T>> &value_cache) const {
+        std::vector<std::vector<T>> cache(num_dimensions);
+        for(int j=0; j<num_dimensions; j++){
+            cache[j].resize(max_levels[j] + 1);
+            // Check to see if x is a root of the Newton polynomial.
+            T this_x = x[j];
+            int match_idx = max_levels[j] + 1;
+            for(int i=0; i<=max_levels[j]; i++) {
+                if (std::fabs(this_x - nodes[i]) <= Maths::num_tol) {
+                    match_idx = j;
+                    break;
+                }
+            }
+            // Build up the cache according to the matched index.
+            T inv_sum = 0.0;
+            for (int i=0; i<match_idx; i++) {
+                std::cout << "val = " << value_cache[j][i] << std::endl;
+                inv_sum += 1.0 / (this_x - nodes[i]);
+                std::cout << "inv_sum = " << inv_sum << std::endl;
+                cache[j][i] = value_cache[j][i] * inv_sum;
+                std::cout << "adj_val = " << cache[j][i] << std::endl;
+            }
+            if (match_idx == 0) {
+                std::cout << "FOOBAR\n";
+                cache[j][match_idx] = 1.0;
+            } else if (match_idx <= max_levels[j]) {
+                std::cout << "FOO\n";
+                cache[j][match_idx] = cache[j][match_idx-1] * coeff[match_idx-1] / coeff[match_idx];
+            }
+            for (int i=match_idx; i<=max_levels[j]; i++) {
+                std::cout << "BAR\n";
+                cache[j][i] = cache[j][i-1] * coeff[i-1] / coeff[i];
             }
         }
         return cache;
