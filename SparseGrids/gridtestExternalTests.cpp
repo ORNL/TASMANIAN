@@ -284,7 +284,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         };
         R.error = err;
     }else if (type == type_internal_interpolation or type == type_internal_differentiation){
-        if (type == type_internal_differentiation and !grid.isGlobal()) {
+        if (type == type_internal_differentiation and !(grid.isGlobal() or grid.isSequence())) {
             // Avoid testing grids where derivatives have not been implemented.
             R.error = 0.0;
         } else {
@@ -387,21 +387,20 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
 
     if (TasGrid::OneDimensionalMeta::isSequence(rule)){
         for(size_t i=0; i<num_global_tests; i++){
-            if (tests[i] == type_internal_interpolation or tests[i] == type_nodal_interpolation){
-                grid = makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule,
-                                        (anisotropic != nullptr) ? std::vector<int>(anisotropic, anisotropic + f->getNumInputs()) : std::vector<int>());
-                R = getError(f, grid, tests[i], x);
-            }else if (tests[i] == type_integration){
+            std::cout << "SEQUENCE TESTING: " << testName(tests[i]) << std::endl;
+            if (tests[i] == type_integration){
                 grid.makeSequenceGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic);
                 R = getError(f, grid, type_integration);
             }else{
-                // TODO: add tests when sequence grid differentiation is implemented.
+                grid = makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule,
+                                        (anisotropic != nullptr) ? std::vector<int>(anisotropic, anisotropic + f->getNumInputs()) : std::vector<int>());
+                R = getError(f, grid, tests[i], x);
             }
             if (R.error > tols[i]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED sequence" << setw(25) << IO::getRuleString(rule);
                 cout << setw(25) << testName(tests[i]) << "   failed function: " << f->getDescription();
-                cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
+                cout << setw(10) << "  observed: " << R.error << "  expected: " << tols[i] << endl;
             }
         }
     }
@@ -2284,8 +2283,88 @@ bool ExternalTester::testAllAcceleration() const{
 }
 
 void ExternalTester::debugTest(){
-    cout << "Debug Test (callable from the CMake build folder)" << endl;
-    cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
+    // cout << "Debug Test (callable from the CMake build folder)" << endl;
+    // cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
+
+    // double alpha = 0.3, beta = 0.7;
+    // TasGrid::TypeOneDRule oned = TasGrid::rule_leja;
+    // const int depths1[5] = { 20, 20, 20, 20, 20 };
+    // const double tols1[5] = { 3.E-10, 5.E-09, 5.E-09, 5.E-07, 5.E-07 };
+    // testGlobalRule(&f11p3, oned, 0, alpha, beta, all_test_types, depths1, tols1);
+
+    // // Create the test grid.
+    // int num_dimensions = 1;
+    // int num_outputs = 1;
+    // int depth = 20;
+    // TasmanianSparseGrid grid = makeSequenceGrid(num_dimensions, num_outputs, depth, type_iptotal, rule_leja);
+
+    // std::cout << "isGlobal() = " << grid.isGlobal() << std::endl;
+    // std::cout << "isSequence() = " << grid.isSequence() << std::endl;
+
+    // // Load the value of a basic 2nd-order polynomial.
+    // auto f = [=](std::vector<double> &x) {
+    //     return x[0]*x[0]*x[0] + 2.0*x[0]*x[0] + x[0] + 3.0;
+    // };
+    // std::vector<double> needed_points = grid.getNeededPoints();
+    // std::vector<double> needed_values(needed_points.size() / num_dimensions);
+    // for (size_t i=0; i<needed_values.size(); i++) {
+    //     std::vector<double> point = {needed_points[i * num_dimensions], needed_points[i * num_dimensions + 1]};
+    //     needed_values[i] = f(point);
+    // }
+    // grid.loadNeededValues(needed_values);
+
+    // // Add some utility functions.
+    // auto get_grid_gradient = [&grid](std::vector<double> &x) {
+    //     std::vector<double> gradient;
+    //     grid.differentiate(x, gradient);
+    //     return gradient;
+    // };
+    // auto get_grid_weights = [&grid](std::vector<double> &x) {
+    //     std::vector<double> weights;
+    //     grid.getDifferentiationWeights(x, weights);
+    //     return weights;
+    // };
+    // auto grad_f = [=](std::vector<double> &x) {
+    //     std::vector<double> gradient(num_dimensions);
+    //     gradient = {3.0*x[0]*x[0] + 4.0*x[0] + 1.0};
+    //     return gradient;
+    // };
+    // auto compare_gradients = [=,&grid,&f](std::vector<double> x) {
+    //     std::vector<double> gg = get_grid_gradient(x);
+    //     std::vector<double> gw = get_grid_weights(x);
+    //     std::vector<double> tg = grad_f(x);
+
+    //     auto points = grid.getPoints();
+    //     double comp_grad = 0.0;
+    //     for (size_t i=0; i<points.size(); i++) {
+    //         std::vector<double> vp = {points[i]};
+    //         comp_grad += f(vp) * gw[i];
+    //         std::cout << "COMPUTED W, V, J = " << gw[i] << " " << f(vp) << " " << comp_grad << std::endl;
+    //     }
+
+    //     std::cout << "Grid Nodal Gradient: " << std::setprecision(3) << std::fixed << comp_grad << "\t";
+    //     std::cout << std::endl;
+
+    //     std::cout << "Grid Gradient: ";
+    //     for (auto xi : gg) std::cout << std::setprecision(3) << std::fixed << xi << "\t";
+    //     std::cout << std::endl;
+
+    //     std::cout << "True Gradient: ";
+    //     for (auto xi : tg) std::cout << std::setprecision(3) << std::fixed << xi << "\t";
+    //     std::cout << std::endl;
+    // };
+
+    // // Compare at some points.
+    // std::vector<std::vector<double>> points = {
+    //     {0.700649},
+    //     {0.00}
+    // };
+
+    // for (auto v : points) {
+    //     std::cout << std::endl;
+    //     compare_gradients(v);
+    // }
+
 }
 
 void ExternalTester::debugTestII(){

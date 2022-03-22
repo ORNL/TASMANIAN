@@ -62,6 +62,7 @@ public:
 
     void getQuadratureWeights(double weights[]) const override;
     void getInterpolationWeights(const double x[], double weights[]) const override;
+    void getDifferentiationWeights(const double x[], double weights[]) const;
 
     void loadNeededValues(const double *vals) override;
 
@@ -140,32 +141,26 @@ protected:
             cache[j].resize(max_levels[j] + 1);
             // Check to see if x is a root of the Newton polynomial.
             T this_x = x[j];
-            int match_idx = max_levels[j] + 1;
+            int match_idx = max_levels[j];
             for(int i=0; i<=max_levels[j]; i++) {
                 if (std::fabs(this_x - nodes[i]) <= Maths::num_tol) {
-                    match_idx = j;
+                    match_idx = i;
                     break;
                 }
             }
-            // Build up the cache according to the matched index.
+            // Derivatives from 0 to match_idx.
             T inv_sum = 0.0;
-            for (int i=0; i<match_idx; i++) {
-                std::cout << "val = " << value_cache[j][i] << std::endl;
-                inv_sum += 1.0 / (this_x - nodes[i]);
-                std::cout << "inv_sum = " << inv_sum << std::endl;
+            cache[j][0] = 0.0;
+            for (int i=1; i<=match_idx; i++) {
+                inv_sum += 1.0 / (this_x - nodes[i-1]);
                 cache[j][i] = value_cache[j][i] * inv_sum;
-                std::cout << "adj_val = " << cache[j][i] << std::endl;
             }
-            if (match_idx == 0) {
-                std::cout << "FOOBAR\n";
-                cache[j][match_idx] = 1.0;
-            } else if (match_idx <= max_levels[j]) {
-                std::cout << "FOO\n";
-                cache[j][match_idx] = cache[j][match_idx-1] * coeff[match_idx-1] / coeff[match_idx];
-            }
-            for (int i=match_idx; i<=max_levels[j]; i++) {
-                std::cout << "BAR\n";
-                cache[j][i] = cache[j][i-1] * coeff[i-1] / coeff[i];
+            // Derivatives from match_idx+1 to max_levels[j]. Uses the product rule applied to the recursive definition.
+            if (match_idx+1 <= max_levels[j]) {
+                cache[j][match_idx+1] = value_cache[j][match_idx] * coeff[match_idx] / coeff[match_idx+1] ;
+                for (int i=match_idx+2; i<=max_levels[j]; i++) {
+                    cache[j][i] = coeff[i-1] / coeff[i] * (cache[j][i-1] * (this_x - nodes[i-1]) + value_cache[j][i-1]);
+                }
             }
         }
         return cache;

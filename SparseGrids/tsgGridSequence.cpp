@@ -174,6 +174,38 @@ void GridSequence::getInterpolationWeights(const double x[], double *weights) co
     applyTransformationTransposed(weights);
 }
 
+void GridSequence::getDifferentiationWeights(const double x[], double weights[]) const {
+    std::vector<std::vector<double>> value_cache = cacheBasisValues<double>(x);
+    std::vector<std::vector<double>> derivative_cache = cacheBasisDerivatives<double>(x, value_cache);
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
+    int n = work.getNumIndexes();
+    std::fill_n(weights, n * num_dimensions, 0.0);
+    for(int i=0; i<n; i++) {
+        const int* p = work.getIndex(i);
+        int idx_zero_fval = -1;
+        int num_zero_fval = 0;
+        double nonzero_fval_prod = 1.0;
+        for(int dim=0; dim<num_dimensions; dim++) {
+            if (std::fabs(value_cache[dim][p[dim]]) <= Maths::num_tol) {
+                idx_zero_fval = dim;
+                num_zero_fval++;
+            } else {
+                nonzero_fval_prod *= value_cache[dim][p[dim]];
+            }
+        }
+        if (num_zero_fval >= 2) {
+            continue;
+        } else if (num_zero_fval == 1) {
+            weights[i * num_dimensions + idx_zero_fval] +=
+                    derivative_cache[idx_zero_fval][p[idx_zero_fval]] * nonzero_fval_prod;
+        } else {
+            for(int j=0; j<num_dimensions; j++)
+                weights[i * num_dimensions + j] +=
+                        derivative_cache[j][p[j]] * nonzero_fval_prod / value_cache[j][p[j]];
+        }
+    }
+}
+
 void GridSequence::loadNeededValues(const double *vals){
     clearGpuSurpluses(); // changing values and surpluses, clear the cache
     if (needed.empty()){ // overwrite the existing values
@@ -527,22 +559,40 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
 }
 
 void GridSequence::differentiate(const double x[], double jacobian[]) const {
-    // Based on the logic in the GridSequence::evaluate() function.
+    // Based on the logic in the TasGrid::GridSequence::evaluate() and TasGrid::GridSequence::getDifferentiationWeights() functions.
     std::vector<std::vector<double>> value_cache = cacheBasisValues<double>(x);
     std::vector<std::vector<double>> derivative_cache = cacheBasisDerivatives<double>(x, value_cache);
     std::fill_n(jacobian, num_outputs * num_dimensions, 0.0);
-    int num_points = points.getNumIndexes();
-    for(int i=0; i<num_points; i++){
-        const int* p = points.getIndex(i);
-        const double *s = surpluses.getStrip(i);
-        double basis_value = 1.0;
-        for(int j=0; j<num_dimensions; j++){
-            basis_value *= value_cache[j][p[j]];
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
+    int n = work.getNumIndexes();
+    for(int i=0; i<n; i++) {
+        const int* p = work.getIndex(i);
+        int idx_zero_fval = -1;
+        int num_zero_fval = 0;
+        double nonzero_fval_prod = 1.0;
+        for(int dim=0; dim<num_dimensions; dim++) {
+            if (std::fabs(value_cache[dim][p[dim]]) <= Maths::num_tol) {
+                idx_zero_fval = dim;
+                num_zero_fval++;
+            } else {
+                nonzero_fval_prod *= value_cache[dim][p[dim]];
+            }
         }
-        for(int j=0; j<num_outputs*num_dimensions; j++) {
-            int dims = j % num_dimensions;
-            int outs = j / num_dimensions;
-            jacobian[j] += derivative_cache[dims][p[dims]] * basis_value / value_cache[dims][p[dims]] * s[outs];
+        const double *s = surpluses.getStrip(i);
+        if (num_zero_fval >= 2) {
+            continue;
+        } else if (num_zero_fval == 1) {
+            // The contribution to the Jacobian is only at column/dimension idx_zero_fval.
+            for (int outs=0; outs<num_outputs; outs++) {
+                jacobian[outs * num_dimensions + idx_zero_fval] +=
+                        derivative_cache[idx_zero_fval][p[idx_zero_fval]] * nonzero_fval_prod * s[outs];
+            }
+        } else {
+            for(int j=0; j<num_outputs*num_dimensions; j++) {
+                int dims = j % num_dimensions;
+                int outs = j / num_dimensions;
+                jacobian[j] += derivative_cache[dims][p[dims]] * nonzero_fval_prod / value_cache[dims][p[dims]] * s[outs];
+            }
         }
     }
 }
