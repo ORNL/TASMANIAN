@@ -177,31 +177,32 @@ public:
             T inv_sum = (1.0            * (0 != match_idx) + 0.0 * (0 == match_idx)) /
                         ((x - nodes[0]) * (0 != match_idx) + 1.0 * (0 == match_idx));
             for (int j=0; j<num_points-1; j++) {
-                // Forward iterations.
                 c *= (x - nodes[j]) * (j != match_idx) + 1.0 * (j == match_idx);
                 cc[j+1] = c;
                 inv_sum += (1.0              * (j+1 != match_idx) + 0.0 * (j+1 == match_idx)) /
                            ((x - nodes[j+1]) * (j+1 != match_idx) + 1.0 * (j+1 == match_idx));
             }
-            c = clenshaw_bdy_point ? 2.0 * x : 1.0;
-            // cc[match_idx] is a special case. It is equivalent to computing the gradient at x of the Lagrange polynomial
-            // that interpolates all of the points in nodes except nodes[match_idx].
-            cc[match_idx] = c * inv_sum * coeff[match_idx];
+            c = 1.0;
+            if (rule.getType() == rule_clenshawcurtis0)
+                c = clenshaw_bdy_point ? 2.0 * x : (x - 1.0) * (x + 1.0);
             cc[num_points-1] *= c * coeff[num_points-1];
             for(int j=num_points-2; j>=0; j--) {
-                // Backward iterations.
                 c *= (x - nodes[j+1]) * (j+1 != match_idx) + 1.0 * (j+1 == match_idx);
                 cc[j] *= c * coeff[j];
             }
+            // cc[match_idx] is a special case due to the definition of the Lagrange polynomial.
+            if (!clenshaw_bdy_point)
+                cc[match_idx] = inv_sum;
         } else {
             // Gradient evaluation at all other points. Can be built from the cached Lagrange values.
             T inv_sum = 0.0;
             for (int i=0; i<num_points; i++)
                 inv_sum += 1.0 / (x - nodes[i]);
+            if (rule.getType() == rule_clenshawcurtis0)
+                inv_sum += 1.0 / (x - 1.0) + 1.0 / (x + 1.0);
             for (int j=0; j<num_points; j++)
                 cc[j] = vals[j] * (inv_sum - 1.0 / (x - nodes[j]));
         }
-
     }
 
     //! \brief Return the Lagrange derivative cache for given \b dimension, \b level and offset local to the level

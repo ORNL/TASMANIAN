@@ -313,7 +313,7 @@ void GridGlobal::getDerivativeWeights(const double x[], double weights[]) const{
                 int j = num_dimensions - 1;
                 while (j != idx_zero_fval)
                     t /= num_oned_points[j--];
-                weights[tensor_refs[n][i] * num_dimensions + j] =
+                weights[tensor_refs[n][i] * num_dimensions + j] +=
                             tensor_weight * nonzero_fval_prod *
                             ldcache.getLagrangeDerivative(j, levels[j], t % num_oned_points[j]);
             } else {
