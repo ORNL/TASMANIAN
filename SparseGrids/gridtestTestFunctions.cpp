@@ -101,7 +101,7 @@ const char* TwoOneExpm40::getDescription() const{ return "f(x,y) = 1.0 / (1.0 + 
 void TwoOneExpm40::eval(const double x[], double y[]) const{ y[0] = 1.0 / (1.0 + exp(-40.0 * (std::sqrt(x[0]*x[0] + x[1]*x[1]) - 0.4))); } void TwoOneExpm40::getIntegral(double y[]) const{ y[0] = 0.0; }
 
 FiveOneExpSum::FiveOneExpSum(){} FiveOneExpSum::~FiveOneExpSum(){} int FiveOneExpSum::getNumInputs() const{ return 5; } int FiveOneExpSum::getNumOutputs() const{ return 1; }
-const char* FiveOneExpSum::getDescription() const{ return "f(y_i) = 1 + exp(-2 - 0.4 * sum(y_i))"; }
+const char* FiveOneExpSum::getDescription() const{ return "f(y_i) = 1 + exp(-2 - 0.4 * sum(x_i))"; }
 void FiveOneExpSum::eval(const double x[], double y[]) const{ y[0] = 1.0 + std::exp(-2.0 -0.4 * (x[0]+x[1]+x[2]+x[3]+x[4])); } void FiveOneExpSum::getIntegral(double y[]) const{ y[0] = 32.0 + std::exp(-2.0) * pow((1.0/0.4) * (exp(0.4) - std::exp(-0.4)), 5.0); }
 
 SixOneExpSum::SixOneExpSum(){} SixOneExpSum::~SixOneExpSum(){} int SixOneExpSum::getNumInputs() const{ return 6; } int SixOneExpSum::getNumOutputs() const{ return 1; }
