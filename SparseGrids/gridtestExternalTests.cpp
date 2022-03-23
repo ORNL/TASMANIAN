@@ -54,6 +54,27 @@ std::vector<double> genRandom(int num_samples, int num_dimensions = 1){
     for(auto &v : x) v = unif(park_miller);
     return x;
 }
+double loadedDerivativeTests(const BaseFunction *f, TasmanianSparseGrid &grid) {
+    // Test the differentiate method on some common 1D nodes (in the 1st dimension) and return the max relative error.
+    std::vector<double> unique_nodes = {0.0, -1.0, 1.0, -0.5, 0.5, -0.5773502691896257, 0.5773502691896257};
+    int num_dimensions = f->getNumInputs();
+    int num_outputs = f->getNumOutputs();
+    std::vector<double> points(num_dimensions * unique_nodes.size(), 0.0);
+    for (size_t i=0; i<unique_nodes.size(); i++) {
+        points[i * num_dimensions] = unique_nodes[i];
+    }
+    double err = 0.0;
+    std::vector<double> r(num_outputs * num_dimensions), y(num_outputs * num_dimensions);
+    for (size_t k=0; k<unique_nodes.size(); k++) {
+        f->getDerivative(&(points[k * num_dimensions]), r.data());
+        grid.differentiate(&(points[k * num_dimensions]), y.data());
+        for (int i=0; i<num_outputs*num_dimensions; i++) {
+            double nrm = 1.0 + std::fabs(r[i]);
+            err = std::max(err, std::fabs(r[i] - y[i]) / nrm);
+        }
+    }
+    return err;
+}
 
 void loadValues(const BaseFunction *f, TasmanianSparseGrid &grid){
     int num_needed     = grid.getNumNeeded();
@@ -127,12 +148,10 @@ const char* ExternalTester::testName(TestType type){
         return "integration test";
     else if (type == type_nodal_interpolation)
         return "w-interpolation";
-    else if (type == type_nodal_differentiation)
-        return "w-differentiation test";
     else if (type == type_internal_interpolation)
         return "interpolation";
-    else if (type == type_internal_differentiation)
-        return "differentiation test";
+    else if (type == type_differentiation)
+        return "differentiation";
     else
         return "unknown test";
 }
@@ -199,7 +218,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
     int num_dimensions = f->getNumInputs();
     int num_outputs = f->getNumOutputs();
     int num_points = grid.getNumPoints();
-    if ((type == type_integration) or (type == type_nodal_interpolation)){
+    if (type == type_integration or type == type_nodal_interpolation){
         auto points = grid.getPoints();
         auto weights = (type == type_integration) ? grid.getQuadratureWeights() : grid.getInterpolationWeights(x);
 
@@ -221,8 +240,8 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
             err += std::abs(y[j] - r[j]);
         };
         R.error = err;
-    }else if (type == type_internal_interpolation or type == type_internal_differentiation){
-        if (type == type_internal_differentiation and !grid.isGlobal()) {
+    }else if (type == type_internal_interpolation or type == type_differentiation){
+        if (type == type_differentiation and (!grid.isGlobal() or grid.isSequence())) {
             // Avoid testing grids where derivatives have not been implemented.
             R.error = 0.0;
         } else {
@@ -262,9 +281,12 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
 
             double rel_err = 0.0; // relative error
             for(int k=0; k<num_entries; k++){
-                double relative_errork = err[k] / nrm[k];
+                double relative_errork = err[k] / (1.0 + nrm[k]); // Avoid possible division by zero.
                 if (rel_err < relative_errork) rel_err = relative_errork;
             }
+
+            if (type == type_differentiation)
+                rel_err = std::max(rel_err, loadedDerivativeTests(f, grid));
 
             R.error = rel_err;
         }
@@ -277,7 +299,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     TasGrid::TasmanianSparseGrid grid;
     TestResults R;
     int num_global_tests = (interpolation) ? 4 : 1;
-    TestType tests[4] = { type_integration, type_nodal_interpolation, type_internal_interpolation, type_internal_differentiation };
+    TestType tests[4] = { type_integration, type_nodal_interpolation, type_internal_interpolation, type_differentiation };
     TasGrid::TypeDepth type = (rule == rule_fourier ? TasGrid::type_level : TasGrid::type_iptotal);
     std::vector<double> x = genRandom(f->getNumInputs());
     if (rule == rule_fourier){ for(int i=0; i<f->getNumInputs(); i++) x[i] = 0.5*(x[i]+1.0); }    // map to canonical [0,1]^d
@@ -358,7 +380,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const int depths1[4] = { 25, 25, 25, 25 };
         const double tols1[4] = { 1.E-12, 1.E-12, 1.E-11, 1.E-10 };
         const int depths2[4] = { 25, 27, 27, 27 };
-        const double tols2[4] = { 1.E-12, 1.E-10, 1.E-11, 1.E-09 };
+        const double tols2[4] = { 1.E-12, 1.E-10, 1.E-11, 1.E-10 };
         if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
@@ -376,7 +398,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
     }else if ((rule == TasGrid::rule_chebyshev) || (rule == TasGrid::rule_chebyshevodd)){
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[4] = { 22, 22, 22, 22 };
-        const double tols1[4] = { 1.E-12, 1.E-10, 1.E-10, 1.E-9 };
+        const double tols1[4] = { 1.E-12, 1.E-10, 1.E-10, 1.E-09 };
         const int depths2[4] = { 22, 22, 22, 22 };
         const double tols2[4] = { 1.E-12, 1.E-09, 1.E-09, 1.E-08 };
         if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, depths2, tols2)){

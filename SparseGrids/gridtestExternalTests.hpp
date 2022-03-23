@@ -43,9 +43,8 @@ struct TestResults{
 enum TestType{
     type_integration,
     type_nodal_interpolation,
-    type_nodal_differentiation,
     type_internal_interpolation,
-    type_internal_differentiation
+    type_differentiation
 };
 
 /*!
