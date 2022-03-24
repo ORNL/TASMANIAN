@@ -90,16 +90,16 @@ using ObjectiveFunction = std::function<void(const std::vector<double> &x_batch,
 /*! \ingroup OptimizationUtil
  * \brief Creates a TasOptimization::ObjectiveFunction object from a TasOptimization::ObjectiveFunctionSingle object.
  *
- * Given a TasOptimization::ObjectiveFunctionSingle \b f_single and the size of its input \b ndim,
+ * Given a TasOptimization::ObjectiveFunctionSingle \b f_single and the size of its input \b num_dimensions,
  * returns a TasOptimization::ObjectiveFunction that evaluates
  * a batch of points \f$ x_1,\ldots,x_k \f$ to \f$ {\rm f\_single}(x_1),\ldots, {\rm f\_single}(x_k) \f$.
  */
-inline ObjectiveFunction makeObjectiveFunction(const int ndim, const ObjectiveFunctionSingle f_single) {
+inline ObjectiveFunction makeObjectiveFunction(const int num_dimensions, const ObjectiveFunctionSingle f_single) {
     return [=](const std::vector<double> &x_values, std::vector<double> &fval_values)->void {
-        int num_points = x_values.size() / ndim;
-        std::vector<double> x(ndim);
+        int num_points = x_values.size() / num_dimensions;
+        std::vector<double> x(num_dimensions);
         for (int i=0; i<num_points; i++) {
-            std::copy(x_values.begin() + i * ndim, x_values.begin() + (i + 1) * ndim, x.begin());
+            std::copy_n(x_values.begin() + i * num_dimensions, num_dimensions, x.begin());
             fval_values[i] = f_single(x);
         }
     };

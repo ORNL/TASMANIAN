@@ -151,10 +151,10 @@ public:
     //! \brief Clear the particle swarm cache.
     void clearCache() {
         cache_initialized = false;
-        cache_particle_fvals = std::vector<double>(num_particles);
-        cache_particle_inside = std::vector<bool>(num_particles);
-        cache_best_particle_fvals = std::vector<double>(num_particles + 1);
-        cache_best_particle_inside = std::vector<bool>(num_particles + 1);
+        std::fill(cache_particle_fvals.begin(), cache_particle_fvals.end(), 0.0);
+        std::fill(cache_particle_inside.begin(), cache_particle_inside.end(), false);
+        std::fill(cache_best_particle_fvals.begin(), cache_best_particle_fvals.end(), 0.0);
+        std::fill(cache_best_particle_inside.begin(), cache_best_particle_inside.end(), false);
     }
 
     /*! \brief Randomly initializes all of the particle positions and velocities.
