@@ -74,11 +74,13 @@ public:
 
     void getQuadratureWeights(double weights[]) const override;
     void getInterpolationWeights(const double x[], double weights[]) const override;
+    void getDifferentiationWeights(const double x[], double weights[]) const;
 
     void loadNeededValues(const double *vals) override;
 
     void evaluate(const double x[], double y[]) const override;
     void integrate(double q[], double *conformal_correction) const override;
+    void differentiate(const double x[], double jacobian[]) const;
 
     void evaluateBatchOpenMP(const double x[], int num_x, double y[]) const;
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
@@ -181,6 +183,7 @@ protected:
      * - \b mode \b 0, ignore \b sindx and \b svals, find the non-zero basis functions multiply them by the surpluses and add to \b y
      * - \b mode \b 1, ignore \b y, form a sparse vector by std::vector::push_back() to the \b sindx and \b svals
      * - \b mode \b 2, same as \b mode \b 1 but it also sorts the entries within the vector (requirement of Nvidia cusparseDgemvi)
+     * - \b mode \b 3, same as \mode \b 1, but replaces the non-zero basis function values with their derivatives
      *
      * In all cases, \b work is the \b points or \b needed set that has been used to construct the tree.
      */
@@ -191,15 +194,27 @@ protected:
 
         for(const auto &r : roots){
             bool isSupported;
-            double basis_value = evalBasisSupported(work.getIndex(r), x, isSupported);
+            double basis_value;
+            std::vector<double> basis_derivative;
+
+            if (mode == 0 or mode == 1 or mode == 2) {
+                basis_value = evalBasisSupported(work.getIndex(r), x, isSupported);
+            }else{
+                basis_derivative = diffBasisSupported(work.getIndex(r), x, isSupported);
+            }
 
             if (isSupported){
                 if (mode == 0){
                     double const *s = surpluses.getStrip(r);
                     for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
-                }else{
+                }else if (mode == 1 or mode == 2){
                     sindx.push_back(r);
                     svals.push_back(basis_value);
+                }else{
+                    double const *s = surpluses.getStrip(r);
+                    for(int k=0; k<num_outputs; k++)
+                        for (int d=0; d<num_dimensions; d++)
+                            y[k * num_dimensions + d] += basis_derivative[d] * s[k];
                 }
 
                 int current = 0;
@@ -209,16 +224,22 @@ protected:
                 while(monkey_count[0] < pntr[monkey_tail[0]+1]){
                     if (monkey_count[current] < pntr[monkey_tail[current]+1]){
                         int p = indx[monkey_count[current]];
-                        basis_value = evalBasisSupported(work.getIndex(p), x, isSupported);
                         if (isSupported){
                             if (mode == 0){
+                                basis_value = evalBasisSupported(work.getIndex(p), x, isSupported);
                                 double const *s = surpluses.getStrip(p);
                                 for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
-                            }else{
+                            }else if (mode == 1 or mode == 2){
+                                basis_value = evalBasisSupported(work.getIndex(p), x, isSupported);
                                 sindx.push_back(p);
                                 svals.push_back(basis_value);
+                            }else{
+                                basis_derivative = diffBasisSupported(work.getIndex(p), x, isSupported);
+                                double const *s = surpluses.getStrip(p);
+                                for(int k=0; k<num_outputs; k++)
+                                    for (int d=0; d<num_dimensions; d++)
+                                        y[k * num_dimensions + d] += basis_derivative[d] * s[k];
                             }
-
                             monkey_tail[++current] = p;
                             monkey_count[current] = pntr[p];
                         }else{
@@ -249,6 +270,9 @@ protected:
 
     double evalBasisRaw(const int point[], const double x[]) const;
     double evalBasisSupported(const int point[], const double x[], bool &isSupported) const;
+
+    std::vector<double> diffBasisRaw(const int point[], const double x[]) const;
+    std::vector<double> diffBasisSupported(const int point[], const double x[], bool &isSupported) const;
 
     std::vector<double> getNormalization() const;
 

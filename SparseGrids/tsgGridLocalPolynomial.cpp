@@ -757,6 +757,79 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     }
 }
 
+void GridLocalPolynomial::getDifferentiationWeights(const double x[], double *weights) const {
+    // Based on GridLocalPolynomial::getInterpolationWeights().
+    const MultiIndexSet &work = (points.empty()) ? needed : points;
+
+    std::vector<int> active_points;
+    std::vector<double> hbasis_values;
+    std::fill_n(weights, work.getNumIndexes(), 0.0);
+
+    walkTree<1>(work, x, active_points, hbasis_values, nullptr);
+    auto ibasis = hbasis_values.begin();
+    for(auto i : active_points) weights[i] = *ibasis++;
+
+    Data2D<int> lparents = (parents.getNumStrips() != work.getNumIndexes()) ?
+                            HierarchyManipulations::computeDAGup(work, rule.get()) :
+                            Data2D<int>();
+
+    const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
+
+    std::vector<int> level(active_points.size());
+    int active_top_level = 0;
+    for(size_t i=0; i<active_points.size(); i++){
+        const int *p = work.getIndex(active_points[i]);
+        int current_level = rule->getLevel(p[0]);
+        for(int j=1; j<num_dimensions; j++){
+            current_level += rule->getLevel(p[j]);
+        }
+        if (active_top_level < current_level) active_top_level = current_level;
+        level[i] = current_level;
+    }
+
+    std::vector<int> monkey_count(top_level+1);
+    std::vector<int> monkey_tail(top_level+1);
+    std::vector<bool> used(work.getNumIndexes());
+    int max_parents = rule->getMaxNumParents() * num_dimensions;
+
+    for(int l=active_top_level; l>0; l--){
+        for(size_t i=0; i<active_points.size(); i++){
+            if (level[i] == l){
+                std::vector<double> node = MultiIndexManipulations::indexesToNodes(work.getIndex(active_points[i]), num_dimensions, *rule);
+
+                std::fill(used.begin(), used.end(), false);
+
+                monkey_count[0] = 0;
+                monkey_tail[0] = active_points[i];
+                int current = 0;
+
+                while(monkey_count[0] < max_parents){
+                    if (monkey_count[current] < max_parents){
+                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
+                        if (branch == -1 or used[branch]){
+                            monkey_count[current]++;
+                        }else{
+                            const int *func = work.getIndex(branch);
+                            double basis_value = rule->evalRaw(func[0], node[0]);
+                            for(int j=1; j<num_dimensions; j++)
+                                basis_value *= rule->evalRaw(func[j], node[j]);
+                            for (int d=0; d<num_dimensions; d++)
+                                weights[branch * num_dimensions + d] -=
+                                        weights[active_points[i] * num_dimensions + d] * basis_value;
+                            used[branch] = true;
+
+                            monkey_count[++current] = 0;
+                            monkey_tail[current] = branch;
+                        }
+                    }else{
+                        monkey_count[--current]++;
+                    }
+                }
+            }
+        }
+    }
+}
+
 void GridLocalPolynomial::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
@@ -844,6 +917,54 @@ double GridLocalPolynomial::evalBasisSupported(const int point[], const double x
         if (!isSupported) return 0.0;
     }
     return f;
+}
+
+std::vector<double> GridLocalPolynomial::diffBasisRaw(const int point[], const double x[]) const{
+    std::vector<double> df(num_dimensions, 0.0);
+    std::vector<double> basis_values(num_dimensions);
+    int num_zero_values = 0;
+    double nonzero_values_prod = 1.0;
+    int idx_zero_value;
+    for(int j=1; j<num_dimensions; j++) {
+        basis_values[j] = rule->diffRaw(point[j], x[j]);
+        if (std::fabs(basis_values[j]) < Maths::num_tol) {
+            num_zero_values++;
+            idx_zero_value = j;
+        } else {
+            nonzero_values_prod *= basis_values[j]; 
+        }
+    }
+    if (num_zero_values == 0)
+        for (int j=0; j<num_dimensions; j++)
+            df[j] += nonzero_values_prod / basis_values[j] * rule->diffRaw(point[j], x[j]);
+    else if (num_zero_values == 1)
+        df[idx_zero_value] += nonzero_values_prod * rule->diffRaw(point[idx_zero_value], x[idx_zero_value]);
+    return df;
+}
+std::vector<double> GridLocalPolynomial::diffBasisSupported(const int point[], const double x[], bool &isSupported) const{
+    std::vector<double> df(num_dimensions, 0.0);
+    std::vector<double> basis_values(num_dimensions);
+    int num_zero_values = 0;
+    double nonzero_values_prod = 1.0;
+    int idx_zero_value;
+    for(int j=1; j<num_dimensions; j++) {
+        basis_values[j] = rule->diffRaw(point[j], x[j]);
+        if (std::fabs(basis_values[j]) < Maths::num_tol) {
+            num_zero_values++;
+            idx_zero_value = j;
+        } else {
+            nonzero_values_prod *= basis_values[j]; 
+        }
+    }
+    isSupported = true;
+    if (num_zero_values == 0)
+        for (int j=0; j<num_dimensions; j++)
+            df[j] += nonzero_values_prod / basis_values[j] * rule->diffRaw(point[j], x[j]);
+    else if (num_zero_values == 1)
+        df[idx_zero_value] += nonzero_values_prod * rule->diffRaw(point[idx_zero_value], x[idx_zero_value]);
+    else
+        isSupported = false;
+    return df;
 }
 
 void GridLocalPolynomial::buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, std::vector<int> &spntr, std::vector<int> &sindx, std::vector<double> &svals) const{
@@ -1082,6 +1203,14 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
             for(int k=0; k<num_outputs; k++) q[k] += wi * vals[k];
         }
     }
+}
+
+void GridLocalPolynomial::differentiate(const double x[], double jacobian[]) const {
+    std::fill_n(jacobian, num_outputs * num_dimensions, 0.0);
+    // dummy variables, never references in mode 3 below
+    std::vector<int> sindx; 
+    std::vector<double> svals;
+    walkTree<3>(points, x, sindx, svals, jacobian);
 }
 
 std::vector<double> GridLocalPolynomial::getNormalization() const{
