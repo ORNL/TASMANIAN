@@ -110,11 +110,112 @@ public:
         return cache[dimension][offsets[level] + local];
     }
 
-private:
+protected:
     std::vector<std::vector<T>> cache;
     std::vector<int> offsets;
 };
 
+
+/*!
+ * \internal
+ * \ingroup TasmanianAcceleration
+ * \brief Cache that holds the derivatives of 1D Lagrange polynomials. Uses the same interface as CacheLagrange.
+ * \endinternal
+ */
+
+template <typename T>
+class CacheLagrangeDerivative : public CacheLagrange<T> {
+public:
+    /*!
+     * \brief Constructor that takes into account a single canonical point \b x.
+     *
+     * The cache is constructed for each dimension and each level up to \b max_levels,
+     * the derivatives of the Lagrange polynomials are computed in two passes resulting in O(n) operations.
+     * - \b num_dimensions is the number of dimensions to consider
+     * - \b max_levels indicates how many levels to consider in each direction,
+     *   heavily anisotropic grids require only a few levels for the "less important" directions
+     * - \b rule is the wrapper of the Global grid that contains information about number of points per level
+     *   and the actual nodes with the pre-computed Lagrange coefficients
+     * - \b holds the coordinates of the canonical point to cache
+     */
+    CacheLagrangeDerivative(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper &rule, const double x[]) :
+            CacheLagrange<T>(num_dimensions, max_levels, rule, x) {
+        cacheDerivatives.resize(num_dimensions);
+        for(int dim=0; dim<num_dimensions; dim++){
+            cacheDerivatives[dim].resize(offsets[max_levels[dim] + 1]);
+            for(int level=0; level <= max_levels[dim]; level++)
+                cacheDerivativeLevel(level, x[dim], rule, &(cache[dim][offsets[level]]), &(cacheDerivatives[dim][offsets[level]]));
+        }
+    }
+    //! \brief Destructor, clear all used data.
+    ~CacheLagrangeDerivative() = default;
+
+    //! \brief Computes the derivatives of all Lagrange polynomials for the given level at the given x
+    static void cacheDerivativeLevel(int level, double x, const OneDimensionalWrapper &rule, T *vals, T *cc){
+        // Initialize.
+        const double *nodes = rule.getNodes(level);
+        const double *coeff = rule.getCoefficients(level);
+        int num_points = rule.getNumPoints(level);
+
+        // Check to see if x is a root of the Lagrange polynomial.
+        int match_idx = -1;
+        for (int j=0; j<num_points; j++) {
+            if (std::fabs(x - nodes[j]) <= Maths::num_tol) {
+                match_idx = j;
+                break;
+            }
+        }
+
+        // The Clenshaw-Curtis-Zero rule multiplies (x - 1.0)(x + 1.0) to the usual polynomial. The gradient of resulting
+        // polynomial should hence be modified if x is 1.0 or -1.0.
+        bool clenshaw_bdy_point = rule.getType() == rule_clenshawcurtis0 and std::fabs(x * x - 1.0) <= Maths::num_tol;
+
+        if (match_idx >= 0 or clenshaw_bdy_point) {
+            // Gradient evaluation at one of roots of the Lagrange polynomial. Must be built from scratch.
+            cc[0] = 1.0;
+            T c = 1.0;
+            T inv_sum = (1.0            * (0 != match_idx) + 0.0 * (0 == match_idx)) /
+                        ((x - nodes[0]) * (0 != match_idx) + 1.0 * (0 == match_idx));
+            for (int j=0; j<num_points-1; j++) {
+                c *= (x - nodes[j]) * (j != match_idx) + 1.0 * (j == match_idx);
+                cc[j+1] = c;
+                inv_sum += (1.0              * (j+1 != match_idx) + 0.0 * (j+1 == match_idx)) /
+                           ((x - nodes[j+1]) * (j+1 != match_idx) + 1.0 * (j+1 == match_idx));
+            }
+            c = 1.0;
+            if (rule.getType() == rule_clenshawcurtis0)
+                c = clenshaw_bdy_point ? 2.0 * x : (x - 1.0) * (x + 1.0);
+            cc[num_points-1] *= c * coeff[num_points-1];
+            for(int j=num_points-2; j>=0; j--) {
+                c *= (x - nodes[j+1]) * (j+1 != match_idx) + 1.0 * (j+1 == match_idx);
+                cc[j] *= c * coeff[j];
+            }
+            // cc[match_idx] is a special case due to the definition of the Lagrange polynomial.
+            if (!clenshaw_bdy_point)
+                cc[match_idx] = inv_sum;
+        } else {
+            // Gradient evaluation at all other points. Can be built from the cached Lagrange values.
+            T inv_sum = 0.0;
+            for (int i=0; i<num_points; i++)
+                inv_sum += 1.0 / (x - nodes[i]);
+            if (rule.getType() == rule_clenshawcurtis0)
+                inv_sum += 1.0 / (x - 1.0) + 1.0 / (x + 1.0);
+            for (int j=0; j<num_points; j++)
+                cc[j] = vals[j] * (inv_sum - 1.0 / (x - nodes[j]));
+        }
+    }
+
+    //! \brief Return the Lagrange derivative cache for given \b dimension, \b level and offset local to the level
+    T getLagrangeDerivative(int dimension, int level, int local) const {
+        return cacheDerivatives[dimension][offsets[level] + local];
+    }
+
+protected:
+    std::vector<std::vector<T>> cacheDerivatives;
+    // Needed for proper inheritance.
+    using CacheLagrange<T>::offsets;
+    using CacheLagrange<T>::cache;
+};
 
 }
 

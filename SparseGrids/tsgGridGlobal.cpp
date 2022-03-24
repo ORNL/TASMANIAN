@@ -273,6 +273,63 @@ void GridGlobal::getInterpolationWeights(const double x[], double weights[]) con
     }
 }
 
+void GridGlobal::getDerivativeWeights(const double x[], double weights[]) const{
+    // The weight of the i-th point in the k-th dimension is given by weights[i * num_dimensions + k].
+    std::fill_n(weights, (points.empty() ? needed.getNumIndexes(): points.getNumIndexes()) * num_dimensions, 0.0);
+
+    CacheLagrangeDerivative<double> ldcache(num_dimensions, max_levels, wrapper, x);
+
+    std::vector<int> num_oned_points(num_dimensions);
+    for(int n=0; n<active_tensors.getNumIndexes(); n++) {
+        const int* levels = active_tensors.getIndex(n);
+        num_oned_points[0] = wrapper.getNumPoints(levels[0]);
+        int num_tensor_points = num_oned_points[0];
+        for(int j=1; j<num_dimensions; j++) {
+            num_oned_points[j] = wrapper.getNumPoints(levels[j]);
+            num_tensor_points *= num_oned_points[j];
+        }
+        double tensor_weight = (double) active_w[n];
+        for(int i=0; i<num_tensor_points; i++) {
+            int t = i;
+            int idx_zero_fval = -1;
+            int num_zero_fval = 0;
+            double nonzero_fval_prod = 1.0;
+            for(int j=num_dimensions-1; j>=0; j--) {
+                double val = ldcache.getLagrange(j, levels[j], t % num_oned_points[j]);
+                if (std::fabs(val) <= Maths::num_tol) {
+                    idx_zero_fval = j;
+                    num_zero_fval++;
+                } else {
+                    nonzero_fval_prod *= val;
+                }
+                t /= num_oned_points[j];
+            }
+            t = i;
+            if (num_zero_fval >= 2) {
+                // If at least two basis values are zero, the contribution to the Jacobian is always zero.
+                continue;
+            } else if (num_zero_fval == 1) {
+                // If one basis values is zero at dimension j, the contribution to the Jacobian is only at dimension j.
+                int j = num_dimensions - 1;
+                while (j != idx_zero_fval)
+                    t /= num_oned_points[j--];
+                weights[tensor_refs[n][i] * num_dimensions + j] +=
+                            tensor_weight * nonzero_fval_prod *
+                            ldcache.getLagrangeDerivative(j, levels[j], t % num_oned_points[j]);
+            } else {
+                // If all basis values are positive, we need to apply the full product rule.
+                for(int j=num_dimensions-1; j>=0; j--) {
+                    weights[tensor_refs[n][i] * num_dimensions + j] +=
+                            tensor_weight * nonzero_fval_prod *
+                            1.0 / ldcache.getLagrange(j, levels[j], t % num_oned_points[j]) *
+                            ldcache.getLagrangeDerivative(j, levels[j], t % num_oned_points[j]);
+                    t /= num_oned_points[j];
+                 }
+            }
+        }
+    }
+}
+
 void GridGlobal::acceptUpdatedTensors(){
     if (points.empty()){
         points = std::move(needed);
@@ -643,6 +700,21 @@ void GridGlobal::integrate(double q[], double *conformal_correction) const{
     for(int k=0; k<num_outputs; k++){
         for(int i=0; i<points.getNumIndexes(); i++){
             q[k] += w[i] * values.getValues(i)[k];
+        }
+    }
+}
+
+void GridGlobal::differentiate(const double x[], double jacobian[]) const {
+    // Based on the logic in the GridGlobal::evaluate() function.
+    std::vector<double> w(points.getNumIndexes() * num_dimensions);
+    getDerivativeWeights(x, w.data());
+    std::fill_n(jacobian, num_outputs * num_dimensions, 0.0);
+    for(int i=0; i<points.getNumIndexes(); i++) {
+        const double *v = values.getValues(i);
+        for(int j=0; j<num_outputs*num_dimensions; j++) {
+            int dims = j % num_dimensions;
+            int outs = j / num_dimensions;
+            jacobian[j] += w[i * num_dimensions + dims] * v[outs];
         }
     }
 }
