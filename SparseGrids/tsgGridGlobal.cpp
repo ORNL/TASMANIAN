@@ -711,11 +711,10 @@ void GridGlobal::differentiate(const double x[], double jacobian[]) const {
     std::fill_n(jacobian, num_outputs * num_dimensions, 0.0);
     for(int i=0; i<points.getNumIndexes(); i++) {
         const double *v = values.getValues(i);
-        int pt_start = i * num_dimensions;
         for(int j=0; j<num_outputs*num_dimensions; j++) {
             int dims = j % num_dimensions;
             int outs = j / num_dimensions;
-            jacobian[j] += w[pt_start + dims] * v[outs];
+            jacobian[j] += w[i * num_dimensions + dims] * v[outs];
         }
     }
 }
