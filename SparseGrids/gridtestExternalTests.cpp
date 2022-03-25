@@ -63,17 +63,20 @@ double unitDerivativeTests(const BaseFunction *f, TasmanianSparseGrid &grid) {
     for (size_t i=0; i<unique_nodes.size(); i++) {
         points[Utils::size_mult(i, num_dimensions)] = unique_nodes[i];
     }
-    double err = 0.0;
+    std::vector<double> err(unique_nodes.size(), 0.0), nrm(unique_nodes.size(), 0.0);
     std::vector<double> r(num_outputs * num_dimensions), y(num_outputs * num_dimensions);
     for (size_t k=0; k<unique_nodes.size(); k++) {
         f->getDerivative(&(points[Utils::size_mult(k, num_dimensions)]), r.data());
         grid.differentiate(&(points[Utils::size_mult(k, num_dimensions)]), y.data());
         for (int i=0; i<num_outputs*num_dimensions; i++) {
-            double nrm = 1.0 + std::fabs(r[i]);
-            err = std::max(err, std::fabs(r[i] - y[i]) / nrm);
+            nrm[k] = std::max(nrm[k], std::fabs(r[i]));
+            err[k] = std::max(err[k], std::fabs(r[i] - y[i]));
         }
     }
-    return err;
+    double rel_err = 0.0;
+    for (size_t k=0; k<unique_nodes.size(); k++)
+        rel_err = std::max(rel_err, std::fabs(nrm[k]) < Maths::num_tol ? err[k] : err[k] / nrm[k]);
+    return rel_err;
 }
 
 void loadValues(const BaseFunction *f, TasmanianSparseGrid &grid){
@@ -125,6 +128,23 @@ ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false
     #ifdef Tasmanian_ENABLE_DPCPP
     test_queue.init_testing();
     #endif
+    // Hardcoded test types.
+    integr_only = {type_integration};
+    interp_only = {type_nodal_interpolation, type_internal_interpolation};
+    differ_only = {type_internal_differentiation}; // TODO: add nodal differentiation when ready.
+    integr_interp.reserve(integr_only.size() + interp_only.size());
+    std::copy(integr_only.begin(), integr_only.end(), std::back_inserter(integr_interp));
+    std::copy(interp_only.begin(), interp_only.end(), std::back_inserter(integr_interp));
+    integr_differ.reserve(integr_only.size() + differ_only.size());
+    std::copy(integr_only.begin(), integr_only.end(), std::back_inserter(integr_differ));
+    std::copy(differ_only.begin(), differ_only.end(), std::back_inserter(integr_differ));
+    interp_differ.reserve(interp_only.size() + differ_only.size());
+    std::copy(interp_only.begin(), interp_only.end(), std::back_inserter(interp_differ));
+    std::copy(differ_only.begin(), differ_only.end(), std::back_inserter(interp_differ));
+    all_test_types.reserve(integr_only.size() + interp_only.size() + differ_only.size());
+    std::copy(integr_only.begin(), integr_only.end(), std::back_inserter(all_test_types));
+    std::copy(interp_only.begin(), interp_only.end(), std::back_inserter(all_test_types));
+    std::copy(differ_only.begin(), differ_only.end(), std::back_inserter(all_test_types));
 }
 ExternalTester::~ExternalTester(){}
 void ExternalTester::resetRandomSeed(){ park_miller.seed(static_cast<long unsigned>(std::time(nullptr))); }
@@ -282,7 +302,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
 
             double rel_err = 0.0; // relative error
             for(int k=0; k<num_entries; k++){
-                double relative_errork = err[k] / (1.0 + nrm[k]); // Avoid possible division by zero.
+                double relative_errork = std::fabs(nrm[k]) <= Maths::num_tol ? err[k] : err[k] / nrm[k];
                 if (rel_err < relative_errork) rel_err = relative_errork;
             }
 
@@ -296,22 +316,23 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
     return R;
 }
 
-bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, const bool interpolation, const bool differentiation, const int depths[], const double tols[]) const{
+bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, const std::vector<TestType> &tests, const int depths[], const double tols[]) const{
     TasGrid::TasmanianSparseGrid grid;
     TestResults R;
-    std::vector<TestType> tests = { type_integration };
-    if (interpolation) {
-        tests.push_back(type_nodal_interpolation);
-        tests.push_back(type_internal_interpolation);
-    }
-    if (differentiation) {
-        tests.push_back(type_internal_differentiation);
-    }
     size_t num_global_tests = tests.size();
     TasGrid::TypeDepth type = (rule == rule_fourier ? TasGrid::type_level : TasGrid::type_iptotal);
     std::vector<double> x = genRandom(f->getNumInputs());
     if (rule == rule_fourier){ for(int i=0; i<f->getNumInputs(); i++) x[i] = 0.5*(x[i]+1.0); }    // map to canonical [0,1]^d
     bool bPass = true;
+    bool integration(false), interpolation(false), differentiation(false);
+    for (auto t : tests) {
+        if (t == type_integration)
+            integration = true;
+        if (t == type_internal_interpolation or t == type_nodal_interpolation)
+            interpolation = true;
+        if (t == type_internal_differentiation or t == type_nodal_differentiation)
+            differentiation = true;
+    }
     const char *custom_filename = (rule == rule_customtabulated) ? findGaussPattersonTable() : 0;
     for(size_t i=0; i<num_global_tests; i++){
         if (rule == rule_fourier){
@@ -332,7 +353,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
         if (R.error > tols[i]){
             bPass = false;
             cout << setw(18) << "ERROR: FAILED " << (rule == rule_fourier ? "fourier" : "global") << setw(25) << IO::getRuleString(rule);
-            cout << setw(25) << testName(tests[i % num_global_tests]) << "   failed function: " << f->getDescription();
+            cout << setw(25) << testName(tests[i]) << "   failed function: " << f->getDescription();
             cout << setw(10) << "  observed: " << R.error << "  expected: " << tols[i] << endl;
         }
     }
@@ -352,7 +373,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
             if (R.error > tols[(i < num_global_tests) ? i : i - num_global_tests]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED global" << setw(25) << IO::getRuleString(rule);
-                cout << setw(25) << testName(tests[i % num_global_tests]) << "   failed function: " << f->getDescription();
+                cout << setw(25) << testName(tests[i]) << "   failed function: " << f->getDescription();
                 cout << setw(10) << "observed: " << R.error << "  expected: " << tols[(i < num_global_tests) ? i : i - num_global_tests] << endl;
             }
         }
@@ -371,7 +392,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
             if (R.error > tols[i]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED sequence" << setw(25) << IO::getRuleString(rule);
-                cout << setw(25) << testName(tests[i % num_global_tests]) << "   failed function: " << f->getDescription();
+                cout << setw(25) << testName(tests[i]) << "   failed function: " << f->getDescription();
                 cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
             }
         }
@@ -389,7 +410,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[4] = { 1.E-12, 1.E-12, 1.E-11, 1.E-10 };
         const int depths2[4] = { 25, 27, 27, 27 };
         const double tols2[4] = { 1.E-12, 1.E-10, 1.E-11, 1.E-10 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, true, depths2, tols2)){
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) &&
+            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -398,7 +420,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = TasGrid::rule_clenshawcurtis0;
         const int depths1[4] = { 25, 25, 25, 25 };
         const double tols1[4] = { 1.E-12, 1.E-12, 1.E-11, 1.E-10 };
-        if (testGlobalRule(&f21sinsin, oned, 0, alpha, beta, true, true, depths1, tols1)){
+        if (testGlobalRule(&f21sinsin, oned, 0, alpha, beta, all_test_types, depths1, tols1)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -409,7 +431,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[4] = { 1.E-12, 1.E-10, 1.E-10, 1.E-09 };
         const int depths2[4] = { 22, 22, 22, 22 };
         const double tols2[4] = { 1.E-12, 1.E-09, 1.E-09, 1.E-08 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, true, depths2, tols2)){
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) &&
+            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -417,10 +440,11 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
     }else if ((rule == TasGrid::rule_leja) || (rule == TasGrid::rule_lejaodd)){
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[4] = { 20, 20, 20, 20 };
-        const double tols1[4] = { 3.E-10, 5.E-09, 5.E-09, 5.E-08 };
+        const double tols1[4] = { 3.E-10, 5.E-09, 5.E-09, 5.E-07 };
         const int depths2[4] = { 20, 20, 20, 20 };
-        const double tols2[4] = { 3.E-09, 5.E-08, 5.E-08, 5.E-07 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, true, depths2, tols2)){
+        const double tols2[4] = { 3.E-09, 5.E-08, 5.E-08, 5.E-06 };
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) &&
+            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -429,9 +453,10 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = TasGrid::rule_rleja;
         const int depths1[4] = { 20, 20, 20, 20 };
         const double tols1[4] = { 3.E-10, 1.E-08, 1.E-08, 1.E-07 };
-        const int depths2[4] = { 20, 20, 20, 20  };
-        const double tols2[4] = { 3.E-09, 5.E-08, 5.E-08, 5.E-07 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, true, depths2, tols2)){
+        const int depths2[4] = { 20, 20, 20, 20 };
+        const double tols2[4] = { 3.E-09, 5.E-08, 5.E-08, 5.E-06 };
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) &&
+            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -442,7 +467,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[4] = { 1.E-12, 1.E-11, 1.E-11, 1.E-10 };
         const int depths2[4] = { 25, 27, 27, 27 };
         const double tols2[4] = { 1.E-12, 1.E-10, 1.E-10, 1.E-09 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, true, depths2, tols2)){
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) &&
+            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -453,7 +479,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[4] = { 3.E-10, 5.E-09, 5.E-09, 5.E-08 };
         const int depths2[4] = { 20, 20, 20, 20 };
         const double tols2[4] = { 3.E-09, 5.E-08, 5.E-08, 5.E-07 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, true, depths2, tols2)){
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) &&
+            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -464,7 +491,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[4] = { 3.E-10, 1.E-08, 1.E-08, 1.E-07 };
         const int depths2[4] = { 20, 20, 20, 20 };
         const double tols2[4] = { 3.E-09, 5.E-08, 5.E-08, 5.E-07 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, true, depths2, tols2)){
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) &&
+            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -475,7 +503,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[4] = { 3.E-10, 5.E-09, 5.E-09, 5.E-08 };
         const int depths2[4] = { 20, 20, 20, 20 };
         const double tols2[4] = { 6.E-09, 5.E-08, 5.E-08, 5.E-07 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, true, depths2, tols2)){
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) &&
+            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -486,7 +515,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[4] = { 1.E-12, 1.E-12, 1.E-11, 1.E-10 };
         const int depths2[4] = { 25, 27, 27, 27 };
         const double tols2[4] = { 1.E-12, 1.E-10, 1.E-11, 1.E-10 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, true, depths2, tols2)){
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) &&
+            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -499,7 +529,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[4] = { 3.E-10, 5.E-09, 5.E-09, 5.E-08 };
         const int depths2[4] = { 20, 20, 20, 20 };
         const double tols2[4] = { 3.E-09, 5.E-08, 5.E-08, 5.E-07 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, true, depths2, tols2)){
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) &&
+            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -532,7 +563,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[4] = { 1.E-10, 1.E-07, 1.E-07, 1.E-06 };
         const int depths2[4] = { 24, 36, 36, 36 };
         const double tols2[4] = { 1.E-10, 1.E-07, 1.E-07, 1.E-06 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, true, depths2, tols2)){
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) &&
+            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -543,7 +575,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[4] = { 1.E-10, 1.E-07, 1.E-07, 1.E-06 };
         const int depths2[4] = { 24, 36, 36, 36 };
         const double tols2[4] = { 1.E-10, 1.E-07, 1.E-07, 1.E-06 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, true, depths2, tols2)){
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) &&
+            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -554,7 +587,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[4] = { 1.E-10, 1.E-07, 1.E-07, 1.E-06 };
         const int depths2[4] = { 24, 36, 36, 36 };
         const double tols2[4] = { 1.E-10, 1.E-07, 1.E-07, 1.E-06 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, true, true, depths1, tols1) && testGlobalRule(&f21cos, oned, 0, alpha, beta, true, true, depths2, tols2)){
+        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) &&
+            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -563,7 +597,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = TasGrid::rule_fejer2;
         const int depths1[4] = { 20, 40, 40, 40 };
         const double tols1[4] = { 1.E-14, 1.E-12, 1.E-12, 1.E-11 };
-        if (testGlobalRule(&f21coscos, oned, 0, alpha, beta, true, true, depths1, tols1)){
+        if (testGlobalRule(&f21coscos, oned, 0, alpha, beta, all_test_types, depths1, tols1)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -572,7 +606,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[4] = { 20, 20, 20, 20 };
         const double tols1[4] = { 5.E-14, 1.E-05, 1.E-05, 1.E-04 };
-        if (testGlobalRule(&f21constGC1, oned, 0, alpha, beta, true, true, depths1, tols1) && performGaussTransfromTest(oned)){
+        if (testGlobalRule(&f21constGC1, oned, 0, alpha, beta, all_test_types, depths1, tols1) && performGaussTransfromTest(oned)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -581,7 +615,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[4] = { 20, 20, 20, 20 };
         const double tols1[4] = { 1.1E-14, 1.E-05, 1.E-05, 1.E-04 };
-        if (testGlobalRule(&f21constGC2, oned, 0, alpha, beta, true, true, depths1, tols1) && performGaussTransfromTest(oned)){
+        if (testGlobalRule(&f21constGC2, oned, 0, alpha, beta, all_test_types, depths1, tols1) && performGaussTransfromTest(oned)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -590,7 +624,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[4] = { 20, 20, 20, 20 };
         const double tols1[4] = { 1.E-11, 1.E-05, 1.E-05, 1.E-04 };
-        if (testGlobalRule(&f21constGG, oned, 0, alpha, beta, true, true, depths1, tols1) && performGaussTransfromTest(oned)){
+        if (testGlobalRule(&f21constGG, oned, 0, alpha, beta, all_test_types, depths1, tols1) && performGaussTransfromTest(oned)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -599,7 +633,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[4] = { 20, 20, 20, 20 };
         const double tols1[4] = { 1.E-08, 1.E-05, 1.E-05, 1.E-04 };
-        if (testGlobalRule(&f21constGJ, oned, 0, alpha, beta, true, true, depths1, tols1) && performGaussTransfromTest(oned)){
+        if (testGlobalRule(&f21constGJ, oned, 0, alpha, beta, all_test_types, depths1, tols1) && performGaussTransfromTest(oned)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -608,7 +642,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[1] = { 20 };
         const double tols1[1] = { 1.E-08 };
-        if (testGlobalRule(&f21constGGL, oned, 0, alpha, beta, false, false, depths1, tols1) && performGaussTransfromTest(oned)){
+        if (testGlobalRule(&f21constGGL, oned, 0, alpha, beta, integr_only, depths1, tols1) && performGaussTransfromTest(oned)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -617,7 +651,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[1] = { 20 };
         const double tols1[1] = { 1.E-09 };
-        if (testGlobalRule(&f21constGH, oned, 0, alpha, beta, false, false, depths1, tols1) && performGaussTransfromTest(oned)){
+        if (testGlobalRule(&f21constGH, oned, 0, alpha, beta, integr_only, depths1, tols1) && performGaussTransfromTest(oned)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -1145,7 +1179,8 @@ bool ExternalTester::testAllFourier() const{
     const double tols1[3] = { 1.E-11, 1.E-06, 1.E-06 };
     const double tols2[3] = { 1.E-11, 5.E-03, 5.E-03 };
     int wfirst = 11, wsecond = 34, wthird = 15;
-    if (testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, true, false, depths1, tols1) && testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, true, false, depths2, tols2)){
+    if (testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, integr_interp, depths1, tols1) &&
+        testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, integr_interp, depths2, tols2)){
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "fourier" << setw(wthird) << "Pass" << endl;
     }else{
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "fourier" << setw(wthird) << "FAIL" << endl; pass = false;

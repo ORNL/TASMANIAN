@@ -100,7 +100,7 @@ public:
 
     bool Test(TestList test) const;
 
-    bool testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, bool interpolation, bool differentiation, const int depths[], const double tols[]) const;
+    bool testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, const std::vector<TestType> &tests, const int depths[], const double tols[]) const;
     bool performGlobalTest(TasGrid::TypeOneDRule rule) const;
     bool performGaussTransfromTest(TasGrid::TypeOneDRule rule) const;
 
@@ -140,6 +140,8 @@ private:
     int gpuid;
 
     std::vector<TypeAcceleration> available_acc;
+
+    std::vector<TestType> integr_only, interp_only, differ_only, integr_interp, integr_differ, interp_differ, all_test_types;
 
     OneOneP3 f11p3;
 
