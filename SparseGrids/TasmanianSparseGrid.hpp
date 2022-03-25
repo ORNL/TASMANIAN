@@ -175,7 +175,7 @@ namespace TasGrid{
  * - getLoadedValues()
  * - getQuadratureWeights()
  * - getInterpolationWeights()
- * - getDerivativeWeights()
+ * - getDifferentiationWeights()
  *
  * \par Load Model Values or Hierarchical Coefficients
  * In order to construct an interpolant, Tasmanian needed to compute the
