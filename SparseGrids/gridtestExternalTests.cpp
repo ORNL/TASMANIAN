@@ -59,15 +59,15 @@ double unitDerivativeTests(const BaseFunction *f, TasmanianSparseGrid &grid) {
     std::vector<double> unique_nodes = {0.0, -1.0, 1.0, -0.5, 0.5, -0.5773502691896257, 0.5773502691896257};
     int num_dimensions = f->getNumInputs();
     int num_outputs = f->getNumOutputs();
-    std::vector<double> points(num_dimensions * unique_nodes.size(), 0.0);
+    std::vector<double> points(Utils::size_mult(num_dimensions, unique_nodes.size()), 0.0);
     for (size_t i=0; i<unique_nodes.size(); i++) {
-        points[i * num_dimensions] = unique_nodes[i];
+        points[Utils::size_mult(i, num_dimensions)] = unique_nodes[i];
     }
     double err = 0.0;
     std::vector<double> r(num_outputs * num_dimensions), y(num_outputs * num_dimensions);
     for (size_t k=0; k<unique_nodes.size(); k++) {
-        f->getDerivative(&(points[k * num_dimensions]), r.data());
-        grid.differentiate(&(points[k * num_dimensions]), y.data());
+        f->getDerivative(&(points[Utils::size_mult(k, num_dimensions)]), r.data());
+        grid.differentiate(&(points[Utils::size_mult(k, num_dimensions)]), y.data());
         for (int i=0; i<num_outputs*num_dimensions; i++) {
             double nrm = 1.0 + std::fabs(r[i]);
             err = std::max(err, std::fabs(r[i] - y[i]) / nrm);
@@ -250,13 +250,12 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
             // load needed points
             loadValues(f, grid);
 
-            std::vector<double> err(num_outputs, 0.0); // absolute error
-            std::vector<double> nrm(num_outputs, 0.0); // norm, needed to compute relative error
-
             std::vector<double> test_x = genRandom(num_mc, num_dimensions);
             int num_entries = (type == type_internal_interpolation) ? num_outputs : num_outputs * num_dimensions;
             std::vector<double> result_tasm(num_mc * num_entries);
             std::vector<double> result_true(num_mc * num_entries);
+            std::vector<double> err(num_entries, 0.0); // absolute error
+            std::vector<double> nrm(num_entries, 0.0); // norm, needed to compute relative error
 
             if (type == type_internal_interpolation) {
                 #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
@@ -308,28 +307,28 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     if (differentiation) {
         tests.push_back(type_internal_differentiation);
     }
-    int num_global_tests = tests.size();
+    size_t num_global_tests = tests.size();
     TasGrid::TypeDepth type = (rule == rule_fourier ? TasGrid::type_level : TasGrid::type_iptotal);
     std::vector<double> x = genRandom(f->getNumInputs());
     if (rule == rule_fourier){ for(int i=0; i<f->getNumInputs(); i++) x[i] = 0.5*(x[i]+1.0); }    // map to canonical [0,1]^d
     bool bPass = true;
     const char *custom_filename = (rule == rule_customtabulated) ? findGaussPattersonTable() : 0;
-    for(int i=0; i<num_global_tests; i++){
+    for(size_t i=0; i<num_global_tests; i++){
         if (rule == rule_fourier){
             if (anisotropic == nullptr){
-                grid = makeFourierGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type);
+                grid = makeFourierGrid(f->getNumInputs(), ((interpolation or differentiation) ? f->getNumOutputs() : 0), depths[i], type);
             }else{
-                grid.makeFourierGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, anisotropic);
+                grid.makeFourierGrid(f->getNumInputs(), ((interpolation or differentiation) ? f->getNumOutputs() : 0), depths[i], type, anisotropic);
             }
             grid.setDomainTransform(std::vector<double>(grid.getNumDimensions(), -1.0), std::vector<double>(grid.getNumDimensions(), 1.0));
         }else{
             if (anisotropic == nullptr){
-                grid = makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, std::vector<int>(), alpha, beta, custom_filename);
+                grid = makeGlobalGrid(f->getNumInputs(), ((interpolation or differentiation) ? f->getNumOutputs() : 0), depths[i], type, rule, std::vector<int>(), alpha, beta, custom_filename);
             }else{
-                grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+                grid.makeGlobalGrid(f->getNumInputs(), ((interpolation or differentiation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
             }
         }
-        R = getError(f, grid, ((interpolation) ? tests[i] : type_integration), x);
+        R = getError(f, grid, tests[i], x);
         if (R.error > tols[i]){
             bPass = false;
             cout << setw(18) << "ERROR: FAILED " << (rule == rule_fourier ? "fourier" : "global") << setw(25) << IO::getRuleString(rule);
@@ -339,17 +338,17 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     }
     if (rule == rule_customtabulated){
         TasGrid::TasmanianSparseGrid grid_copy;
-        for(int i=0; i<2*num_global_tests; i++){
+        for(size_t i=0; i<2*num_global_tests; i++){
             if (i < num_global_tests){
-                grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+                grid.makeGlobalGrid(f->getNumInputs(), ((interpolation or differentiation) ? f->getNumOutputs() : 0), depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
             }else{
                 CustomTabulated custom;
                 custom.read(custom_filename);
                 grid = TasmanianSparseGrid();
-                grid.makeGlobalGrid(f->getNumInputs(), ((interpolation) ? f->getNumOutputs() : 0), depths[i-num_global_tests], type, std::move(custom), anisotropic);
+                grid.makeGlobalGrid(f->getNumInputs(), ((interpolation or differentiation) ? f->getNumOutputs() : 0), depths[i-num_global_tests], type, std::move(custom), anisotropic);
             }
             grid_copy = grid;
-            R = getError(f, grid_copy, ((interpolation) ? tests[(i < num_global_tests) ? i : i - num_global_tests] : type_integration), x);
+            R = getError(f, grid_copy, ((interpolation or differentiation) ? tests[(i < num_global_tests) ? i : i - num_global_tests] : type_integration), x);
             if (R.error > tols[(i < num_global_tests) ? i : i - num_global_tests]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED global" << setw(25) << IO::getRuleString(rule);
@@ -360,7 +359,7 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     }
 
     if (TasGrid::OneDimensionalMeta::isSequence(rule)){
-        for(int i=0; i<num_global_tests; i++){
+        for(size_t i=0; i<num_global_tests; i++){
             if (interpolation){
                 grid = makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule,
                                         (anisotropic != nullptr) ? std::vector<int>(anisotropic, anisotropic + f->getNumInputs()) : std::vector<int>());
