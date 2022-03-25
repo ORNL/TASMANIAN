@@ -164,16 +164,18 @@ namespace TasGrid{
  * \par Get Points and Weights
  * The points on the grid are labeled as "loaded" or "needed" based on
  * whether the associated model values are already provided by the user.
- * The grid points are also associated with quadrature and interpolation
- * weights, where the computed weights correspond to the loaded points
- * unless all points are labeled as needed. If the grid is set to work
- * with zero model outputs, then the distinction is meaningless and
- * the points will be accessed through the generic getPoints() methods.
+ * The grid points are also associated with quadrature, interpolation,
+ * and differentiation weights, where the computed weights correspond
+ * to the loaded points unless all points are labeled as needed. If the
+ * grid is set to work with zero model outputs, then the distinction is
+ * meaningless and the points will be accessed through the generic
+ * getPoints() methods.
  * - getNumLoaded(), getNumNeeded(), getNumPoints()
  * - getLoadedPoints(), getNeededPoints(), getPoints()
  * - getLoadedValues()
  * - getQuadratureWeights()
  * - getInterpolationWeights()
+ * - getDerivativeWeights()
  *
  * \par Load Model Values or Hierarchical Coefficients
  * In order to construct an interpolant, Tasmanian needed to compute the
@@ -788,6 +790,50 @@ public:
      * the length of \b x must be at least getNumDimensions() and the length of \b weighs must be at least getNumPoints().
      */
     void getInterpolationWeights(const double x[], double weights[]) const;
+
+    /*!
+     * \brief Returns the weights of the model outputs that combine to construct the approximate Jacobian matrix (derivative) at \b x.
+     *
+     * The sum of the model values outer product the weights will produce the Jacobian matrix at \b x.
+     *
+     * \param x is a vector of size getNumDimensions() with the coordinates of the point of interest
+     * in the transformed domain.
+     *
+     * \returns A vector of size getNumPoints() * getNumDimensions() with the differentiation weights,
+     * the order of the weights matches the order of the getPoints().
+     *
+     * Note that using a vector \b x outside of the domain will result in undefined behavior,
+     * but will not throw an exception.
+     *
+     * \throws std::runtime_error if \b x has an incorrect size.
+     */
+    std::vector<double> getDifferentiationWeights(std::vector<double> const &x) const;
+    /*!
+     * \brief Overload that uses raw-array, does not check the array size.
+     *
+     * Identical to getDifferentiationWeights() but does not throw if \b x is larger than getNumDimensions();
+     * however, using shorter \b x is undefined behavior and will likely segfault.
+     */
+    std::vector<double> getDifferentiationWeights(double const x[]) const {
+        std::vector<double> w((size_t) getNumPoints() * (size_t) getNumDimensions());
+        getDifferentiationWeights(x, w.data());
+        return w;
+    }
+    /*!
+     * \brief Overload that uses the vector as a parameter.
+     *
+     * Identical to getDifferentiationWeights() but the \b weights vector will be resized to size
+     * getNumPoints() * getNumDimensions() and the entries will be overwritten with the output of getDifferentiationWeights().
+     */
+    void getDifferentiationWeights(const std::vector<double> &x, std::vector<double> &weights) const;
+    /*!
+     * \brief Overload that uses raw-array, does not check the array size.
+     *
+     * Identical to getDifferentiationWeights() but does not throw if \b x is larger than getNumDimensions();
+     * the length of \b x must be at least getNumDimensions() and the length of \b weighs must be at least
+     * getNumPoints() * getNumDimensions().
+     */
+    void getDifferentiationWeights(const double x[], double weights[]) const;
 
     /*!
      * \brief Provides the values of the model outputs at the needed points, or overwrites the currently loaded points.

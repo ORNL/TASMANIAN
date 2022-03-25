@@ -132,7 +132,7 @@ ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false
     // Hardcoded test types.
     quad_only = {type_integration};
     int_only = {type_nodal_interpolation, type_internal_interpolation};
-    diff_only = {type_internal_differentiation}; // TODO: add nodal differentiation when ready.
+    diff_only = {type_nodal_differentiation, type_internal_differentiation};
     quad_int.reserve(quad_only.size() + int_only.size());
     std::copy(quad_only.begin(), quad_only.end(), std::back_inserter(quad_int));
     std::copy(int_only.begin(), int_only.end(), std::back_inserter(quad_int));
@@ -241,16 +241,29 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
     int num_dimensions = f->getNumInputs();
     int num_outputs = f->getNumOutputs();
     int num_points = grid.getNumPoints();
-    if (type == type_integration or type == type_nodal_interpolation){
+    if (type == type_integration or type == type_nodal_interpolation or type == type_nodal_differentiation){
         auto points = grid.getPoints();
-        auto weights = (type == type_integration) ? grid.getQuadratureWeights() : grid.getInterpolationWeights(x);
 
-        std::vector<double> y(num_outputs);
-        std::vector<double> r(num_outputs, 0.0);
-//      Sequential version: integration
+        std::vector<double> weights;
+        if (type == type_integration)
+            weights = grid.getQuadratureWeights();
+        else if (type == type_nodal_interpolation)
+            weights = grid.getInterpolationWeights(x);
+        else
+            weights = grid.getDifferentiationWeights(x);
+
+        int num_entries = (type == type_nodal_differentiation) ? num_dimensions * num_outputs : num_outputs;
+        std::vector<double> y(num_entries);
+        std::vector<double> r(num_entries, 0.0);
+
+        // Sequential version
         for(int i=0; i<num_points; i++){
             f->eval(&(points[i*num_dimensions]), y.data());
-            for(int k=0; k<num_outputs; k++) r[k] += weights[i] * y[k];
+            for(int k=0; k<num_entries; k++) {
+                int widx = (type == type_nodal_differentiation) ? (i * num_dimensions) + (k % num_dimensions) : i;
+                int vidx = (type == type_nodal_differentiation) ? k / num_dimensions : k;
+                r[k] += weights[widx] * y[vidx];
+            }
         }
 
         double err = 0.0;
@@ -259,7 +272,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         }else{
             f->eval(x.data(), y.data());
         }
-        for(int j=0; j<num_outputs; j++){
+        for(int j=0; j<num_entries; j++){
             err += std::abs(y[j] - r[j]);
         };
         R.error = err;
