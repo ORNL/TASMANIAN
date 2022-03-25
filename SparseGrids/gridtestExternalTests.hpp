@@ -141,7 +141,7 @@ private:
 
     std::vector<TypeAcceleration> available_acc;
 
-    std::vector<TestType> integr_only, interp_only, differ_only, integr_interp, integr_differ, interp_differ, all_test_types;
+    std::vector<TestType> quad_only, int_only, diff_only, quad_int, quad_diff, int_diff, all_test_types;
 
     OneOneP3 f11p3;
 
