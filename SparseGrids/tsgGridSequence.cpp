@@ -204,6 +204,7 @@ void GridSequence::getDifferentiationWeights(const double x[], double weights[])
                         derivative_cache[j][p[j]] * nonzero_fval_prod / value_cache[j][p[j]];
         }
     }
+    applyDifferentiationTransformation(weights, num_dimensions);
 }
 
 void GridSequence::loadNeededValues(const double *vals){
@@ -916,6 +917,52 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
                             monkey_count[current]++;
                         }else{
                             weights[branch] -= weights[i] * evalBasis(work.getIndex(branch), p);
+                            used[branch] = true;
+
+                            monkey_count[++current] = 0;
+                            monkey_tail[current] = branch;
+                        }
+                    }else{
+                        monkey_count[--current]++;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void GridSequence::applyDifferentiationTransformation(double weights[], const int num_dimensions) const{
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
+    int num_points = work.getNumIndexes();
+
+    std::vector<int> level = MultiIndexManipulations::computeLevels(work);
+    int top_level = *std::max_element(level.begin(), level.end());
+
+    Data2D<int> parents = MultiIndexManipulations::computeDAGup(work);
+
+    std::vector<int> monkey_count(top_level + 1);
+    std::vector<int> monkey_tail(top_level + 1);
+    std::vector<bool> used(num_points);
+
+    for(int l=top_level; l>0; l--){
+        for(int i=0; i<num_points; i++){
+            if (level[i] == l){
+                const int* p = work.getIndex(i);
+                int current = 0;
+
+                monkey_count[0] = 0;
+                monkey_tail[0] = i;
+                std::fill(used.begin(), used.end(), false);
+
+                while(monkey_count[0] < num_dimensions){
+                    if (monkey_count[current] < num_dimensions){
+                        int branch = parents.getStrip(monkey_tail[current])[monkey_count[current]];
+                        if ((branch == -1) || used[branch]){
+                            monkey_count[current]++;
+                        }else{
+                            double weight_mult = evalBasis(work.getIndex(branch), p);
+                            for (int d=0; d<num_dimensions; d++)
+                                weights[branch * num_dimensions + d] -= weights[i * num_dimensions + d] * weight_mult;
                             used[branch] = true;
 
                             monkey_count[++current] = 0;

@@ -171,6 +171,7 @@ protected:
     void loadConstructedPoints();
     void recomputeSurpluses();
     void applyTransformationTransposed(double weights[]) const;
+    void applyDifferentiationTransformation(double weights[], const int num_dimensions) const;
 
     double evalBasis(const int f[], const int p[]) const; // evaluate function corresponding to f at p
 
