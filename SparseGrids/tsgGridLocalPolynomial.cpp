@@ -686,7 +686,7 @@ std::vector<int> GridLocalPolynomial::getSubGraph(std::vector<int> const &point)
     return graph;
 }
 
-void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weights) const{
+void GridLocalPolynomial::getInterpolationWeights(const double x[], double weights[]) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
 
     std::vector<int> active_points;
@@ -757,7 +757,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     }
 }
 
-void GridLocalPolynomial::getDifferentiationWeights(const double x[], double *weights) const {
+void GridLocalPolynomial::getDifferentiationWeights(const double x[], double weights[]) const {
     // Based on GridLocalPolynomial::getInterpolationWeights().
     const MultiIndexSet &work = (points.empty()) ? needed : points;
 
@@ -765,9 +765,11 @@ void GridLocalPolynomial::getDifferentiationWeights(const double x[], double *we
     std::vector<double> hbasis_values;
     std::fill_n(weights, work.getNumIndexes(), 0.0);
 
-    walkTree<1>(work, x, active_points, hbasis_values, nullptr);
+    walkTree<4>(work, x, active_points, hbasis_values, nullptr);
     auto ibasis = hbasis_values.begin();
-    for(auto i : active_points) weights[i] = *ibasis++;
+    for(auto i : active_points)
+        for (int d=0; d<num_dimensions; d++)
+            weights[i * num_dimensions + d] = *ibasis++;
 
     Data2D<int> lparents = (parents.getNumStrips() != work.getNumIndexes()) ?
                             HierarchyManipulations::computeDAGup(work, rule.get()) :
@@ -925,13 +927,14 @@ std::vector<double> GridLocalPolynomial::diffBasisRaw(const int point[], const d
     int num_zero_values = 0;
     double nonzero_values_prod = 1.0;
     int idx_zero_value;
+    bool supported_at_j;
     for(int j=1; j<num_dimensions; j++) {
-        basis_values[j] = rule->diffRaw(point[j], x[j]);
-        if (std::fabs(basis_values[j]) < Maths::num_tol) {
+        basis_values[j] = rule->evalSupport(point[j], x[j], supported_at_j);
+        if (std::fabs(basis_values[j]) < Maths::num_tol or !supported_at_j) {
             num_zero_values++;
             idx_zero_value = j;
         } else {
-            nonzero_values_prod *= basis_values[j]; 
+            nonzero_values_prod *= basis_values[j];
         }
     }
     if (num_zero_values == 0)
@@ -943,27 +946,33 @@ std::vector<double> GridLocalPolynomial::diffBasisRaw(const int point[], const d
 }
 std::vector<double> GridLocalPolynomial::diffBasisSupported(const int point[], const double x[], bool &isSupported) const{
     std::vector<double> df(num_dimensions, 0.0);
-    std::vector<double> basis_values(num_dimensions);
+    std::vector<double> basis_values(num_dimensions, 0.0);
     int num_zero_values = 0;
     double nonzero_values_prod = 1.0;
-    int idx_zero_value;
-    for(int j=1; j<num_dimensions; j++) {
-        basis_values[j] = rule->diffRaw(point[j], x[j]);
-        if (std::fabs(basis_values[j]) < Maths::num_tol) {
+    int idx_zero_value = -1;
+    bool supported_at_j;
+    for(int j=0; j<num_dimensions; j++) {
+        basis_values[j] = rule->evalSupport(point[j], x[j], supported_at_j);
+        if (std::fabs(basis_values[j]) < Maths::num_tol or !supported_at_j) {
             num_zero_values++;
             idx_zero_value = j;
         } else {
-            nonzero_values_prod *= basis_values[j]; 
+            nonzero_values_prod *= basis_values[j];
         }
     }
     isSupported = true;
-    if (num_zero_values == 0)
-        for (int j=0; j<num_dimensions; j++)
-            df[j] += nonzero_values_prod / basis_values[j] * rule->diffRaw(point[j], x[j]);
-    else if (num_zero_values == 1)
-        df[idx_zero_value] += nonzero_values_prod * rule->diffRaw(point[idx_zero_value], x[idx_zero_value]);
-    else
+    double df_raw_val;
+    if (num_zero_values == 0) {
+        for (int j=0; j<num_dimensions; j++) {
+            df_raw_val = rule->diffSupport(point[j], x[j], isSupported);
+            df[j] = nonzero_values_prod / basis_values[j] * (isSupported ? df_raw_val : 0.0);
+        }
+    } else if (num_zero_values == 1) {
+        df_raw_val = rule->diffSupport(point[idx_zero_value], x[idx_zero_value], isSupported);
+        df[idx_zero_value] = nonzero_values_prod * (isSupported ? df_raw_val : 0.0);
+    } else {
         isSupported = false;
+    }
     return df;
 }
 
@@ -1208,7 +1217,7 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
 void GridLocalPolynomial::differentiate(const double x[], double jacobian[]) const {
     std::fill_n(jacobian, num_outputs * num_dimensions, 0.0);
     // dummy variables, never references in mode 3 below
-    std::vector<int> sindx; 
+    std::vector<int> sindx;
     std::vector<double> svals;
     walkTree<3>(points, x, sindx, svals, jacobian);
 }

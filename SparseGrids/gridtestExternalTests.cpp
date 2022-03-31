@@ -56,7 +56,12 @@ std::vector<double> genRandom(int num_samples, int num_dimensions = 1){
 }
 double unitDerivativeTests(const BaseFunction *f, TasmanianSparseGrid &grid) {
     // Test the differentiate method on some common 1D nodes (in the 1st dimension) and return the max relative error.
-    std::vector<double> unique_nodes = {0.0, -1.0, 1.0, -0.5, 0.5, -0.5773502691896257, 0.5773502691896257};
+    std::vector<double> unique_nodes;
+    if (grid.getRule() == TasGrid::rule_localp0)
+        // Avoid boundary points as not all functions have value zero on these points.
+        unique_nodes = {0.0, -0.5, 0.5, -0.5773502691896257, 0.5773502691896257};
+    else
+        unique_nodes = {0.0, -1.0, 1.0, -0.5, 0.5, -0.5773502691896257, 0.5773502691896257};
     int num_dimensions = f->getNumInputs();
     int num_outputs = f->getNumOutputs();
     std::vector<double> points(Utils::size_mult(num_dimensions, unique_nodes.size()), 0.0);
@@ -255,21 +260,20 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         // Sequential version
         std::vector<double> y(num_entries);
         std::vector<double> r(num_entries, 0.0);
-        if (type == type_nodal_differentiation) {
+        if (type == type_nodal_differentiation){
             for(int i=0; i<num_points; i++){
                 f->eval(&(points[i*num_dimensions]), y.data());
                 for (int k=0; k<num_outputs; k++)
                     for(int j=0; j<num_dimensions; j++)
                         r[k * num_dimensions + j] += weights[i * num_dimensions + j] * y[k];
             }
-        } else {
+        }else{
             for(int i=0; i<num_points; i++){
                 f->eval(&(points[i*num_dimensions]), y.data());
                 for(int k=0; k<num_entries; k++)
                     r[k] += weights[i] * y[k];
             }
         }
-
 
         double err = 0.0;
         if (type == type_integration){
@@ -284,10 +288,11 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         };
         R.error = err;
     }else if (type == type_internal_interpolation or type == type_internal_differentiation){
-        if (type == type_internal_differentiation and !(grid.isGlobal() or grid.isSequence())) {
+        if (type == type_internal_differentiation and !(grid.isGlobal() or grid.isSequence() or grid.isLocalPolynomial())) {
             // Avoid testing grids where derivatives have not been implemented.
             R.error = 0.0;
         } else {
+
             // load needed points
             loadValues(f, grid);
 
@@ -302,7 +307,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
                     f->eval(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
                 }
             } else {
-                #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
+                // #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing
                 for(int i=0; i<num_mc; i++){
                     grid.differentiate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_entries]));
                     f->getDerivative(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
@@ -872,13 +877,21 @@ bool ExternalTester::testAllGlobal() const{
 bool ExternalTester::testLocalPolynomialRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int depths[], const double tols[]) const{
     TasGrid::TasmanianSparseGrid grid;
     TestResults R;
+    BaseFunction* const_fn = new OneOneP0();
     std::vector<int> orders = { 0, 1, 2, 3, 4, -1 };
     std::vector<double> x = genRandom(f->getNumInputs());
+    std::vector<double> x_const_fn = genRandom(const_fn->getNumInputs());
     bool bPass = true;
     for(int i=0; i<30; i++) {
-        grid = makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i / 5], rule);
-        R = getError(f, grid, all_test_types[i % 5], x);
-        if (R.error > tols[i]){
+        if (orders[i / 5] == 0 and (all_test_types[i % 5] == type_nodal_differentiation or all_test_types[i % 5] == type_internal_differentiation)) {
+            // When order = 0, all derivatives are equal to zero.
+            grid = makeLocalPolynomialGrid(const_fn->getNumInputs(), const_fn->getNumOutputs(), depths[i], orders[i / 5], rule);
+            R = getError(const_fn, grid, all_test_types[i % 5], x_const_fn);
+        } else {
+            grid = makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i / 5], rule);
+            R = getError(f, grid, all_test_types[i % 5], x);
+        }
+        if (R.error > tols[i]) {
             bPass = false;
             cout << setw(18) << "ERROR: FAILED ";
             cout << setw(6) << IO::getRuleString(rule) << " order: " << orders[i / 5];
@@ -1044,9 +1057,10 @@ bool ExternalTester::testAllPWLocal() const{
                                 8, 8, 8, 8, 8,
                                 8, 8, 8, 8, 8,
                                 8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8 };
+                                8, 8, 8, 8, 8,
+                                8, 8, 8, 8, 8};
       const double tols1[30] = { 1.E-03, 5.E-01, 5.E-01, 5.E-00, 5.E-00,
-                                 1.E-03, 1.E-03, 1.E-03, 1.E-02, 1.E-02,
+                                 1.E-03, 1.E-03, 1.E-03, 1.E-01, 1.E-01,
                                  1.E-07, 1.E-04, 1.E-04, 1.E-03, 1.E-03,
                                  1.E-07, 1.E-05, 1.E-05, 1.E-04, 1.E-04,
                                  1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05,
@@ -1062,9 +1076,10 @@ bool ExternalTester::testAllPWLocal() const{
                                 8, 8, 8, 8, 8,
                                 8, 8, 8, 8, 8,
                                 8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8 };
+                                8, 8, 8, 8, 8,
+                                8, 8, 8, 8, 8};
       const double tols1[30] = { 1.E-03, 5.E-01, 5.E-01, 5.E-00, 5.E-00,
-                                 1.E-03, 1.E-03, 1.E-03, 1.E-02, 1.E-02,
+                                 1.E-03, 1.E-03, 1.E-03, 1.E-01, 1.E-01,
                                  1.E-07, 1.E-04, 1.E-04, 1.E-03, 1.E-03,
                                  1.E-07, 1.E-05, 1.E-05, 1.E-04, 1.E-04,
                                  1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05,
@@ -1080,9 +1095,10 @@ bool ExternalTester::testAllPWLocal() const{
                                 8, 8, 8, 8, 8,
                                 8, 8, 8, 8, 8,
                                 8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8 };
+                                8, 8, 8, 8, 8,
+                                8, 8, 8, 8, 8};
       const double tols1[30] = { 1.E-03, 5.E-01, 5.E-01, 5.E-00, 5.E-00,
-                                 1.E-03, 1.E-03, 1.E-03, 1.E-02, 1.E-02,
+                                 1.E-03, 1.E-03, 1.E-03, 5.E-02, 5.E-02,
                                  1.E-07, 1.E-04, 1.E-04, 1.E-03, 1.E-03,
                                  1.E-07, 1.E-05, 1.E-05, 1.E-04, 1.E-04,
                                  1.E-07, 9.E-06, 9.E-06, 9.E-05, 9.E-05,
@@ -1098,11 +1114,12 @@ bool ExternalTester::testAllPWLocal() const{
                                 8, 8, 8, 8, 8,
                                 8, 8, 8, 8, 8,
                                 8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8 };
+                                8, 8, 8, 8, 8,
+                                8, 8, 8, 8, 8};
       const double tols1[30] = { 1.E-03, 5.E-01, 5.E-01, 5.E-00, 5.E-00,
-                                 1.E-03, 2.E-04, 2.E-04, 2.E-03, 2.E-03,
-                                 1.E-09, 1.E-06, 1.E-06, 1.E-05, 1.E-05,
-                                 1.E-09, 3.E-08, 3.E-08, 3.E-07, 3.E-07,
+                                 1.E-03, 2.E-04, 2.E-04, 2.E-02, 2.E-02,
+                                 1.E-09, 1.E-06, 1.E-06, 1.E-04, 1.E-04,
+                                 1.E-09, 3.E-08, 3.E-08, 3.E-06, 3.E-06,
                                  1.E-09, 4.E-09, 4.E-09, 4.E-08, 4.E-08,
                                  1.E-09, 4.E-09, 4.E-09, 4.E-08, 4.E-08};
       if (testLocalPolynomialRule(&f21coscos, oned, depths1, tols1)){
@@ -2320,9 +2337,111 @@ bool ExternalTester::testAllAcceleration() const{
     return pass;
 }
 
+
+
+// TODO: Remove this LATER!
+TestResults getDiffError(BaseFunction *f, TasGrid::TasmanianSparseGrid &grid, std::vector<double> &x) {
+    TestResults R;
+    int num_dimensions = f->getNumInputs();
+    int num_outputs = f->getNumOutputs();
+    int num_entries =  num_outputs * num_dimensions;
+    int num_points = grid.getNumPoints();
+
+    // True derivative computation
+    std::vector<double> result_true(num_entries);
+    f->getDerivative(x.data(), result_true.data());
+    std::cout << "Expected derivative = ";
+    for (auto xi : result_true)
+        std::cout << xi << " ";
+    std::cout << std::endl;
+
+    // Internal error computation.
+    loadValues(f, grid);
+    std::vector<double> result_tasm(num_entries, 0.0);
+    grid.differentiate(x.data(), result_tasm.data());
+    double rel_err = 0.0;
+    for(int k=0; k<num_entries; k++){
+        double nrm = 0.0; // norm, needed to compute relative error
+        double err = 0.0; // absolute error
+        nrm = std::max(nrm, std::fabs(result_true[k]));
+        err = std::max(err, std::fabs(result_true[k] - result_tasm[k]));
+        rel_err = std::max(rel_err, std::fabs(nrm) <= Maths::num_tol ? err : err / nrm);
+    }
+    std::cout << "Internal derivative = ";
+    for (auto xi : result_tasm)
+        std::cout << xi << " ";
+    std::cout << std::endl;
+
+
+    // Nodal error computation.
+    std::fill(result_tasm.begin(), result_tasm.end(), 0.0);
+    std::vector<double> weights(num_dimensions * num_points);
+    grid.getDifferentiationWeights(x.data(), weights.data());
+    std::vector<double> points = grid.getPoints();
+    std::vector<double> fvals(num_outputs);
+    for(int i=0; i<num_points; i++){
+        f->eval(&(points[i*num_dimensions]), fvals.data());
+        for (int k=0; k<num_outputs; k++)
+            for (int j=0; j<num_dimensions; j++)
+                result_tasm[k * num_dimensions + j] += weights[i * num_dimensions + j] * fvals[k];
+    }
+    for(int k=0; k<num_entries; k++){
+        double nrm = 0.0; // norm, needed to compute relative error
+        double err = 0.0; // absolute error
+        nrm = std::max(nrm, std::fabs(result_true[k]));
+        err = std::max(err, std::fabs(result_true[k] - result_tasm[k]));
+        rel_err = std::max(rel_err, std::fabs(nrm) <= Maths::num_tol ? err : err / nrm);
+    }
+    std::cout << "Nodal derivative    = ";
+    for (auto xi : result_tasm)
+        std::cout << xi << " ";
+    std::cout << std::endl;
+
+    R.error = rel_err;
+    R.num_points = grid.getNumPoints();
+    return R;
+}
+
 void ExternalTester::debugTest(){
-    cout << "Debug Test (callable from the CMake build folder)" << endl;
-    cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
+    // cout << "Debug Test (callable from the CMake build folder)" << endl;
+    // cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
+
+    int depth = 10;
+    int order = 1;
+    double tol = 1E-01;
+    BaseFunction *f = new TwoOneExpNX2();
+    TestType test = type_internal_differentiation;
+    TasGrid::TypeOneDRule rule = TasGrid::rule_localpb;
+    std::vector<std::vector<double>> xs = {
+        std::vector<double>(f->getNumInputs(), 0.0),
+        std::vector<double>(f->getNumInputs(), -0.1),
+        std::vector<double>(f->getNumInputs(), 0.1),
+        std::vector<double>(f->getNumInputs(), -0.5),
+        std::vector<double>(f->getNumInputs(), 0.5),
+        std::vector<double>(f->getNumInputs(), -1.0),
+        std::vector<double>(f->getNumInputs(), 1.0)
+    };
+    std::cout << "depth = " << depth << ", order = " << order << ", tol = " << tol << std::endl << std::endl;
+
+    for (auto x : xs) {
+        TasmanianSparseGrid grid = makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), depth, order, rule);
+        TestResults R = getDiffError(f, grid, x);
+
+        std::cout << "x = ";
+        for (auto xi : x)
+            std::cout << xi << " ";
+        std::cout << std::endl;
+        std::cout << "f(x) = " << f->getDescription() << std::endl;
+        std::cout << "Residual = " << R.error << std::endl;
+        if (R.error > tol){
+            cout << setw(18) << "ERROR: FAILED ";
+            cout << setw(6) << IO::getRuleString(rule) << " order: " << order;
+            cout << setw(25) << testName(test) << "   failed function: " << f->getDescription();
+            cout << setw(10) << "  observed: " << R.error << "  expected: " << tol << endl;
+        }
+        std::cout << std::endl;
+    }
+
 }
 
 void ExternalTester::debugTestII(){

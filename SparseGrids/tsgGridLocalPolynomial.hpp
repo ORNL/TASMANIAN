@@ -183,7 +183,8 @@ protected:
      * - \b mode \b 0, ignore \b sindx and \b svals, find the non-zero basis functions multiply them by the surpluses and add to \b y
      * - \b mode \b 1, ignore \b y, form a sparse vector by std::vector::push_back() to the \b sindx and \b svals
      * - \b mode \b 2, same as \b mode \b 1 but it also sorts the entries within the vector (requirement of Nvidia cusparseDgemvi)
-     * - \b mode \b 3, same as \mode \b 1, but replaces the non-zero basis function values with their derivatives
+     * - \b mode \b 3, same as \b mode \b 0, but replaces the non-zero basis function values with their derivatives
+     * - \b mode \b 4, same as \b mode \b 1, but replaces the non-zero basis function values with their derivatives
      *
      * In all cases, \b work is the \b points or \b needed set that has been used to construct the tree.
      */
@@ -197,24 +198,29 @@ protected:
             double basis_value;
             std::vector<double> basis_derivative;
 
-            if (mode == 0 or mode == 1 or mode == 2) {
-                basis_value = evalBasisSupported(work.getIndex(r), x, isSupported);
-            }else{
+            if (mode == 3 or mode == 4) {
                 basis_derivative = diffBasisSupported(work.getIndex(r), x, isSupported);
+            }else{
+                basis_value = evalBasisSupported(work.getIndex(r), x, isSupported);
             }
 
             if (isSupported){
                 if (mode == 0){
                     double const *s = surpluses.getStrip(r);
-                    for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
+                    for(int k=0; k<num_outputs; k++)
+                        y[k] += basis_value * s[k];
                 }else if (mode == 1 or mode == 2){
                     sindx.push_back(r);
                     svals.push_back(basis_value);
-                }else{
+                }else if (mode == 3){
                     double const *s = surpluses.getStrip(r);
                     for(int k=0; k<num_outputs; k++)
                         for (int d=0; d<num_dimensions; d++)
                             y[k * num_dimensions + d] += basis_derivative[d] * s[k];
+                }else{
+                    sindx.push_back(r);
+                    for (auto dx : basis_derivative)
+                        svals.push_back(dx);
                 }
 
                 int current = 0;
@@ -224,21 +230,28 @@ protected:
                 while(monkey_count[0] < pntr[monkey_tail[0]+1]){
                     if (monkey_count[current] < pntr[monkey_tail[current]+1]){
                         int p = indx[monkey_count[current]];
+                        if (mode == 3 or mode == 4){
+                            basis_derivative = diffBasisSupported(work.getIndex(p), x, isSupported);
+                        }else{
+                            basis_value = evalBasisSupported(work.getIndex(p), x, isSupported);
+                        }
                         if (isSupported){
                             if (mode == 0){
-                                basis_value = evalBasisSupported(work.getIndex(p), x, isSupported);
                                 double const *s = surpluses.getStrip(p);
-                                for(int k=0; k<num_outputs; k++) y[k] += basis_value * s[k];
+                                for(int k=0; k<num_outputs; k++)
+                                    y[k] += basis_value * s[k];
                             }else if (mode == 1 or mode == 2){
-                                basis_value = evalBasisSupported(work.getIndex(p), x, isSupported);
                                 sindx.push_back(p);
                                 svals.push_back(basis_value);
-                            }else{
-                                basis_derivative = diffBasisSupported(work.getIndex(p), x, isSupported);
+                            }else if (mode == 3){
                                 double const *s = surpluses.getStrip(p);
                                 for(int k=0; k<num_outputs; k++)
                                     for (int d=0; d<num_dimensions; d++)
                                         y[k * num_dimensions + d] += basis_derivative[d] * s[k];
+                            }else{
+                                sindx.push_back(p);
+                                for (auto dx : basis_derivative)
+                                    svals.push_back(dx);
                             }
                             monkey_tail[++current] = p;
                             monkey_count[current] = pntr[p];

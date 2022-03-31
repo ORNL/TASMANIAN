@@ -479,10 +479,12 @@ void TasmanianSparseGrid::integrate(double q[]) const{
 }
 
 void TasmanianSparseGrid::differentiate(const double x[], double jacobian[]) const {
-    if (isGlobal() or isLocalPolynomial()) {
+    if (isGlobal()) {
         get<GridGlobal>()->differentiate(x, jacobian);
     } else if (isSequence()) {
         get<GridSequence>()->differentiate(x, jacobian);
+    } else if (isLocalPolynomial()) {
+        get<GridLocalPolynomial>()->differentiate(x, jacobian);
     } else {
         throw std::runtime_error("ERROR: in differentiate(), jacobians/gradients are not available for this type of grid");
     }
