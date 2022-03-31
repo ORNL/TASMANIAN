@@ -794,7 +794,8 @@ public:
     /*!
      * \brief Returns the weights of the model outputs that combine to construct the approximate Jacobian matrix (derivative) at \b x.
      *
-     * The sum of the model values outer product the weights will produce the Jacobian matrix at \b x.
+     * The Jacobian of the k-th output at \b x is the sum of the model values of the k-th output times the Jacobian of the nodal
+     * functions at \b x.
      *
      * \param x is a vector of size getNumDimensions() with the coordinates of the point of interest
      * in the transformed domain.

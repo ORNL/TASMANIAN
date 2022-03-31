@@ -243,8 +243,6 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
     int num_points = grid.getNumPoints();
     if (type == type_integration or type == type_nodal_interpolation or type == type_nodal_differentiation){
         int num_entries = (type == type_nodal_differentiation) ? num_dimensions * num_outputs : num_outputs;
-        std::vector<double> y(num_entries);
-        std::vector<double> r(num_entries, 0.0);
         auto points = grid.getPoints();
         std::vector<double> weights;
         if (type == type_integration)
@@ -255,16 +253,23 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
             weights = grid.getDifferentiationWeights(x);
 
         // Sequential version
-        for(int i=0; i<num_points; i++){
-            f->eval(&(points[i*num_dimensions]), y.data());
-            for(int k=0; k<num_entries; k++) {
-                int widx = (type == type_nodal_differentiation) * (i * num_dimensions + k % num_dimensions) +
-                           (type != type_nodal_differentiation) * i;
-                int vidx = (type == type_nodal_differentiation) * k / num_dimensions +
-                           (type != type_nodal_differentiation) * k;
-                r[k] += weights[widx] * y[vidx];
+        std::vector<double> y(num_entries);
+        std::vector<double> r(num_entries, 0.0);
+        if (type == type_nodal_differentiation) {
+            for(int i=0; i<num_points; i++){
+                f->eval(&(points[i*num_dimensions]), y.data());
+                for (int k=0; k<num_outputs; k++)
+                    for(int j=0; j<num_dimensions; j++)
+                        r[k * num_dimensions + j] += weights[i * num_dimensions + j] * y[k];
+            }
+        } else {
+            for(int i=0; i<num_points; i++){
+                f->eval(&(points[i*num_dimensions]), y.data());
+                for(int k=0; k<num_entries; k++)
+                    r[k] += weights[i] * y[k];
             }
         }
+
 
         double err = 0.0;
         if (type == type_integration){
@@ -315,7 +320,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
                 rel_err = std::max(rel_err, std::fabs(nrm) <= Maths::num_tol ? err : err / nrm);
             }
 
-            if (type == type_internal_differentiation)
+            if (type == type_internal_differentiation or type == type_nodal_differentiation)
                 rel_err = std::max(rel_err, unitDerivativeTests(f, grid));
 
             R.error = rel_err;
@@ -467,7 +472,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
     }else if ((rule == TasGrid::rule_rlejadouble2) || (rule == TasGrid::rule_rlejadouble4)){
         { TasGrid::TypeOneDRule oned = TasGrid::rule_rlejadouble2;
         const int depths1[5] = { 25, 25, 25, 25, 25 };
-        const double tols1[5] = { 1.E-12, 1.E-11, 1.E-11, 1.E-10, 1.E-10 };
+        const double tols1[5] = { 1.E-12, 1.E-11, 1.E-11, 1.E-09, 1.E-09 };
         const int depths2[5] = { 25, 27, 27, 27, 27 };
         const double tols2[5] = { 1.E-12, 1.E-10, 1.E-10, 1.E-09, 1.E-09 };
         if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
@@ -599,7 +604,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
     }else if (rule == TasGrid::rule_fejer2){
         { TasGrid::TypeOneDRule oned = TasGrid::rule_fejer2;
         const int depths1[5] = { 20, 40, 40, 40, 40 };
-        const double tols1[5] = { 1.E-14, 1.E-12, 1.E-12, 1.E-11, 1.E-11 };
+        const double tols1[5] = { 1.E-14, 1.E-12, 1.E-12, 1.E-10, 1.E-10 };
         if (testGlobalRule(&f21coscos, oned, 0, alpha, beta, all_test_types, depths1, tols1)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
