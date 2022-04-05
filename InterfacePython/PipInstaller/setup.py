@@ -85,5 +85,6 @@ setup(
     install_requires=['numpy>=1.10'],
     ### cmake portion of the setup, specific to skbuild ###
     setup_requires=setup_requires,
-    cmake_args=cmake_args
+    cmake_args=cmake_args,
+    py_modules=[]
 )
