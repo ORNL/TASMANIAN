@@ -292,7 +292,6 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
             // Avoid testing grids where derivatives have not been implemented.
             R.error = 0.0;
         } else {
-
             // load needed points
             loadValues(f, grid);
 
@@ -307,7 +306,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
                     f->eval(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
                 }
             } else {
-                // #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing
+                #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
                 for(int i=0; i<num_mc; i++){
                     grid.differentiate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_entries]));
                     f->getDerivative(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
@@ -1098,9 +1097,9 @@ bool ExternalTester::testAllPWLocal() const{
                                 8, 8, 8, 8, 8,
                                 8, 8, 8, 8, 8};
       const double tols1[30] = { 1.E-03, 5.E-01, 5.E-01, 5.E-00, 5.E-00,
-                                 1.E-03, 1.E-03, 1.E-03, 5.E-02, 5.E-02,
-                                 1.E-07, 1.E-04, 1.E-04, 1.E-03, 1.E-03,
-                                 1.E-07, 1.E-05, 1.E-05, 1.E-04, 1.E-04,
+                                 1.E-03, 1.E-03, 1.E-03, 5.E-01, 5.E-01,
+                                 1.E-07, 1.E-04, 1.E-04, 1.E-02, 1.E-02,
+                                 1.E-07, 1.E-05, 1.E-05, 1.E-03, 1.E-03,
                                  1.E-07, 9.E-06, 9.E-06, 9.E-05, 9.E-05,
                                  1.E-06, 2.E-05, 2.E-05, 2.E-04, 2.E-04 };
       if (testLocalPolynomialRule(&f21sincosaxis, oned, depths1, tols1)){
@@ -2337,111 +2336,9 @@ bool ExternalTester::testAllAcceleration() const{
     return pass;
 }
 
-
-
-// TODO: Remove this LATER!
-TestResults getDiffError(BaseFunction *f, TasGrid::TasmanianSparseGrid &grid, std::vector<double> &x) {
-    TestResults R;
-    int num_dimensions = f->getNumInputs();
-    int num_outputs = f->getNumOutputs();
-    int num_entries =  num_outputs * num_dimensions;
-    int num_points = grid.getNumPoints();
-
-    // True derivative computation
-    std::vector<double> result_true(num_entries);
-    f->getDerivative(x.data(), result_true.data());
-    std::cout << "Expected derivative = ";
-    for (auto xi : result_true)
-        std::cout << xi << " ";
-    std::cout << std::endl;
-
-    // Internal error computation.
-    loadValues(f, grid);
-    std::vector<double> result_tasm(num_entries, 0.0);
-    grid.differentiate(x.data(), result_tasm.data());
-    double rel_err = 0.0;
-    for(int k=0; k<num_entries; k++){
-        double nrm = 0.0; // norm, needed to compute relative error
-        double err = 0.0; // absolute error
-        nrm = std::max(nrm, std::fabs(result_true[k]));
-        err = std::max(err, std::fabs(result_true[k] - result_tasm[k]));
-        rel_err = std::max(rel_err, std::fabs(nrm) <= Maths::num_tol ? err : err / nrm);
-    }
-    std::cout << "Internal derivative = ";
-    for (auto xi : result_tasm)
-        std::cout << xi << " ";
-    std::cout << std::endl;
-
-
-    // Nodal error computation.
-    std::fill(result_tasm.begin(), result_tasm.end(), 0.0);
-    std::vector<double> weights(num_dimensions * num_points);
-    grid.getDifferentiationWeights(x.data(), weights.data());
-    std::vector<double> points = grid.getPoints();
-    std::vector<double> fvals(num_outputs);
-    for(int i=0; i<num_points; i++){
-        f->eval(&(points[i*num_dimensions]), fvals.data());
-        for (int k=0; k<num_outputs; k++)
-            for (int j=0; j<num_dimensions; j++)
-                result_tasm[k * num_dimensions + j] += weights[i * num_dimensions + j] * fvals[k];
-    }
-    for(int k=0; k<num_entries; k++){
-        double nrm = 0.0; // norm, needed to compute relative error
-        double err = 0.0; // absolute error
-        nrm = std::max(nrm, std::fabs(result_true[k]));
-        err = std::max(err, std::fabs(result_true[k] - result_tasm[k]));
-        rel_err = std::max(rel_err, std::fabs(nrm) <= Maths::num_tol ? err : err / nrm);
-    }
-    std::cout << "Nodal derivative    = ";
-    for (auto xi : result_tasm)
-        std::cout << xi << " ";
-    std::cout << std::endl;
-
-    R.error = rel_err;
-    R.num_points = grid.getNumPoints();
-    return R;
-}
-
 void ExternalTester::debugTest(){
-    // cout << "Debug Test (callable from the CMake build folder)" << endl;
-    // cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
-
-    int depth = 10;
-    int order = 1;
-    double tol = 1E-01;
-    BaseFunction *f = new TwoOneExpNX2();
-    TestType test = type_internal_differentiation;
-    TasGrid::TypeOneDRule rule = TasGrid::rule_localpb;
-    std::vector<std::vector<double>> xs = {
-        std::vector<double>(f->getNumInputs(), 0.0),
-        std::vector<double>(f->getNumInputs(), -0.1),
-        std::vector<double>(f->getNumInputs(), 0.1),
-        std::vector<double>(f->getNumInputs(), -0.5),
-        std::vector<double>(f->getNumInputs(), 0.5),
-        std::vector<double>(f->getNumInputs(), -1.0),
-        std::vector<double>(f->getNumInputs(), 1.0)
-    };
-    std::cout << "depth = " << depth << ", order = " << order << ", tol = " << tol << std::endl << std::endl;
-
-    for (auto x : xs) {
-        TasmanianSparseGrid grid = makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), depth, order, rule);
-        TestResults R = getDiffError(f, grid, x);
-
-        std::cout << "x = ";
-        for (auto xi : x)
-            std::cout << xi << " ";
-        std::cout << std::endl;
-        std::cout << "f(x) = " << f->getDescription() << std::endl;
-        std::cout << "Residual = " << R.error << std::endl;
-        if (R.error > tol){
-            cout << setw(18) << "ERROR: FAILED ";
-            cout << setw(6) << IO::getRuleString(rule) << " order: " << order;
-            cout << setw(25) << testName(test) << "   failed function: " << f->getDescription();
-            cout << setw(10) << "  observed: " << R.error << "  expected: " << tol << endl;
-        }
-        std::cout << std::endl;
-    }
-
+    cout << "Debug Test (callable from the CMake build folder)" << endl;
+    cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
 }
 
 void ExternalTester::debugTestII(){

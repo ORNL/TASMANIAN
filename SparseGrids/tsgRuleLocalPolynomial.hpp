@@ -279,9 +279,18 @@ public:
             }
             double xn = scaleX(point, x);
             double an = scaleDiffX(point);
-            if (rule != rule_semilocalp) if (max_order == 1) {
-                if (std::fabs(x - 1.0) <= Maths::num_tol and point == 2) return an;
-                else return (xn >= 0 ? -1.0 : 1.0) * an;
+            if (rule != rule_semilocalp and max_order == 1) {
+                if (x == 1.0) {
+                    if (rule == rule_localp0 and point == 0)
+                        return  -1.0;
+                    else if (rule == rule_localpb and point == 1)
+                        return 0.5;
+                    else if (rule == rule_localpb and point == 2)
+                        return -1.0;
+                    else if (point == 2)
+                        return an;
+                }
+                return (xn >= 0 ? -1.0 : 1.0) * an;
             }
             if (max_order == 2) return an * diffPWQuadratic(point, xn);
             if (max_order == 3) return an * diffPWCubic(point, xn);
@@ -309,13 +318,13 @@ public:
             // Note that the support will be of the form [a, b), except for x = +1.0, i.e., the rightmost node in the domain. This
             // is to avoid double-counting derivatives at points of discontinuity.
             double xn = scaleX(point, x);
-            bool rightmost_node = (std::fabs(x - 1.0) <= Maths::num_tol) and (std::fabs(xn - 1.0) <= Maths::num_tol);
-            isSupported = (-1.0 <= xn and xn < (1.0 - Maths::num_tol)) or rightmost_node;
+            bool rightmost_node = (x == 1.0 and xn == 1.0);
+            isSupported = (-1.0 <= xn and xn < 1.0) or rightmost_node;
             if (isSupported) {
                 double an = scaleDiffX(point);
                 if (rule != rule_semilocalp and max_order == 1) {
                     // Edge cases due to the logic of avoiding double-counting.
-                    if (std::fabs(x - 1.0) <= Maths::num_tol) {
+                    if (x == 1.0) {
                         if (rule == rule_localp0 and point == 0)
                             return  -1.0;
                         else if (rule == rule_localpb and point == 1)
