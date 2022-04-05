@@ -122,7 +122,7 @@ const char* TwoOneExpSinCos::getDescription() const{ return "f(x,y) = exp(sin(2*
 void TwoOneExpSinCos::eval(const double x[], double y[]) const{ y[0] = std::exp(std::sin(2*pi*x[0])+std::cos(2*pi*x[1])); } void TwoOneExpSinCos::getIntegral(double y[]) const{ y[0] = 1.6029228068079633 * 4.0; }
 void TwoOneExpSinCos::getDerivative(const double x[], double y[]) const{
     y[0] = 2*pi * std::cos(2*pi*x[0]) * std::exp(std::sin(2*pi*x[0])+std::cos(2*pi*x[1]));
-    y[1] = -2*pi * std::sin(2*pi*x[0]) * std::exp(std::sin(2*pi*x[0])+std::cos(2*pi*x[1]));
+    y[1] = -2*pi * std::sin(2*pi*x[1]) * std::exp(std::sin(2*pi*x[0])+std::cos(2*pi*x[1]));
 }
 
 TwoOneSinCosAxis::TwoOneSinCosAxis() {} TwoOneSinCosAxis::~TwoOneSinCosAxis() {} int TwoOneSinCosAxis::getNumInputs() const{ return 2; } int TwoOneSinCosAxis::getNumOutputs() const{ return 1; }

@@ -288,7 +288,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         };
         R.error = err;
     }else if (type == type_internal_interpolation or type == type_internal_differentiation){
-        if (type == type_internal_differentiation and !(grid.isGlobal() or grid.isSequence() or grid.isLocalPolynomial())) {
+        if (type == type_internal_differentiation and !(grid.isGlobal() or grid.isSequence() or grid.isLocalPolynomial() or grid.isFourier())) {
             // Avoid testing grids where derivatives have not been implemented.
             R.error = 0.0;
         } else {
@@ -326,7 +326,6 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
 
             if (type == type_internal_differentiation or type == type_nodal_differentiation)
                 rel_err = std::max(rel_err, unitDerivativeTests(f, grid));
-
             R.error = rel_err;
         }
     }
@@ -1216,13 +1215,13 @@ bool ExternalTester::testAllWavelet() const{
 
 bool ExternalTester::testAllFourier() const{
     bool pass = true;
-    const int depths1[3] = { 6, 6, 6 };
-    const int depths2[3] = { 5, 5, 5 };
-    const double tols1[3] = { 1.E-11, 1.E-06, 1.E-06 };
-    const double tols2[3] = { 1.E-11, 5.E-03, 5.E-03 };
+    const int depths1[5] = { 6, 6, 6, 8, 8 };
+    const int depths2[5] = { 5, 5, 5, 7, 7 };
+    const double tols1[5] = { 1.E-11, 1.E-06, 1.E-06, 1.E-05, 1.E-05 };
+    const double tols2[5] = { 1.E-11, 5.E-03, 5.E-03, 5.E-02, 5.E-02 };
     int wfirst = 11, wsecond = 34, wthird = 15;
-    if (testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, quad_int, depths1, tols1) &&
-        testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, quad_int, depths2, tols2)){
+    if (testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, all_test_types, depths1, tols1) &&
+        testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, all_test_types, depths2, tols2)){
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "fourier" << setw(wthird) << "Pass" << endl;
     }else{
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "fourier" << setw(wthird) << "FAIL" << endl; pass = false;
@@ -2318,8 +2317,32 @@ bool ExternalTester::testAllAcceleration() const{
 }
 
 void ExternalTester::debugTest(){
-    cout << "Debug Test (callable from the CMake build folder)" << endl;
-    cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
+    // cout << "Debug Test (callable from the CMake build folder)" << endl;
+    // cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
+
+    int depth = 8;
+    // auto f = &f21sinsin;
+    auto f = &f21expsincos;
+    auto grid = makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), depth, TasGrid::type_level);
+
+    // // BASIC TEST.
+    // loadValues(f, grid);
+
+    // std::vector<double> x0 = {0.30, 0.60};
+    // std::vector<double> grad_tasm(f->getNumInputs()), grad_true(f->getNumInputs());
+    // grid.differentiate(x0.data(), grad_tasm.data());
+    // f->getDerivative(x0.data(), grad_true.data());
+
+    // std::cout << f->getDescription(); std::cout << ", x = "; for (auto xi : x0) std::cout << xi << " ";
+    // std::cout << std::endl;
+    // std::cout << "tasm = "; for (auto g : grad_tasm) std::cout << g << " ";
+    // std::cout << std::endl;
+    // std::cout << "true = "; for (auto g : grad_true) std::cout << g << " ";
+
+    // SIMULATED TEST.
+    auto R = getError(f, grid, type_internal_differentiation);
+    std::cout << "err = " << R.error << std::endl;
+
 }
 
 void ExternalTester::debugTestII(){
