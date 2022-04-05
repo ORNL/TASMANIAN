@@ -273,7 +273,7 @@ void GridGlobal::getInterpolationWeights(const double x[], double weights[]) con
     }
 }
 
-void GridGlobal::getDerivativeWeights(const double x[], double weights[]) const{
+void GridGlobal::getDifferentiationWeights(const double x[], double weights[]) const{
     // The weight of the i-th point in the k-th dimension is given by weights[i * num_dimensions + k].
     std::fill_n(weights, (points.empty() ? needed.getNumIndexes(): points.getNumIndexes()) * num_dimensions, 0.0);
 
@@ -707,7 +707,7 @@ void GridGlobal::integrate(double q[], double *conformal_correction) const{
 void GridGlobal::differentiate(const double x[], double jacobian[]) const {
     // Based on the logic in the GridGlobal::evaluate() function.
     std::vector<double> w(points.getNumIndexes() * num_dimensions);
-    getDerivativeWeights(x, w.data());
+    getDifferentiationWeights(x, w.data());
     std::fill_n(jacobian, num_outputs * num_dimensions, 0.0);
     for(int i=0; i<points.getNumIndexes(); i++) {
         const double *v = values.getValues(i);

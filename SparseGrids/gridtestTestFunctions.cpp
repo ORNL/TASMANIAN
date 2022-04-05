@@ -48,7 +48,7 @@ void OneOneP0::getDerivative(const double*, double y[]) const{ y[0] = 0.0; }
 OneOneP3::OneOneP3(){} OneOneP3::~OneOneP3(){} int OneOneP3::getNumInputs() const{ return 1; } int OneOneP3::getNumOutputs() const{ return 1; }
 const char* OneOneP3::getDescription() const{ return "f(x) = x^3 + 2 x^2 + x + 3"; }
 void OneOneP3::eval(const double x[], double y[]) const{ y[0] = x[0]*x[0]*x[0] + 2.0*x[0]*x[0] + x[0] + 3.0; } void OneOneP3::getIntegral(double y[]) const{ y[0] = 22.0/3.0; }
-void OneOneP3::getDerivative(const double x[], double y[]) const{ y[0] = 2.0*x[0]*x[0] + 4.0*x[0] + 1.0; }
+void OneOneP3::getDerivative(const double x[], double y[]) const{ y[0] = 3.0*x[0]*x[0] + 4.0*x[0] + 1.0; }
 
 OneOneP4::OneOneP4(){} OneOneP4::~OneOneP4(){} int OneOneP4::getNumInputs() const{ return 1; } int OneOneP4::getNumOutputs() const{ return 1; }
 const char* OneOneP4::getDescription() const{ return "f(x) = 0.5 x^4 + x^3 + 2 x^2 + x + 3"; }

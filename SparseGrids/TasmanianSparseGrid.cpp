@@ -379,6 +379,26 @@ void TasmanianSparseGrid::getInterpolationWeights(const double x[], double weigh
     base->getInterpolationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
 }
 
+std::vector<double> TasmanianSparseGrid::getDifferentiationWeights(std::vector<double> const &x) const{
+    std::vector<double> w;
+    getDifferentiationWeights(x, w);
+    return w;
+}
+void TasmanianSparseGrid::getDifferentiationWeights(const std::vector<double> &x, std::vector<double> &weights) const{
+    if (x.size() != (size_t) base->getNumDimensions())
+        throw std::runtime_error("ERROR: getDifferentiationWeights() incorrect size of x, must be same as getNumDimensions()");
+    weights.resize((size_t) getNumPoints() * (size_t) getNumDimensions());
+    getDifferentiationWeights(x.data(), weights.data());
+}
+void TasmanianSparseGrid::getDifferentiationWeights(const double x[], double weights[]) const{
+    Data2D<double> x_tmp;
+    if (isGlobal()) {
+        get<GridGlobal>()->getDifferentiationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
+    } else {
+        throw std::runtime_error("ERROR: getDifferentiationWeights() cannot be called for grids of this type");
+    }
+}
+
 void TasmanianSparseGrid::loadNeededValues(const double *vals){
     if (empty()) throw std::runtime_error("Cannot load model values into an empty grid!");
     base->loadNeededValues(vals);
