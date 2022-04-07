@@ -415,9 +415,9 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
     if (rule == TasGrid::rule_clenshawcurtis){
         { TasGrid::TypeOneDRule oned = TasGrid::rule_clenshawcurtis;
         const int depths1[5] = { 25, 25, 25, 25, 25 };
-        const double tols1[5] = { 1.E-12, 1.E-12, 1.E-11, 1.E-10, 1.E-10 };
+        const double tols1[5] = { 1.E-12, 1.E-12, 1.E-11, 1.E-09, 1.E-09 };
         const int depths2[5] = { 25, 27, 27, 27, 27 };
-        const double tols2[5] = { 1.E-12, 1.E-10, 1.E-11, 1.E-10, 1.E-10 };
+        const double tols2[5] = { 1.E-12, 1.E-10, 1.E-11, 1.E-09, 1.E-09 };
         if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
             testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
@@ -520,9 +520,9 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
     }else if (rule == TasGrid::rule_rlejashifteddouble){
         { TasGrid::TypeOneDRule oned = TasGrid::rule_rlejashifteddouble;
         const int depths1[5] = { 25, 25, 25, 25, 25 };
-        const double tols1[5] = { 1.E-12, 1.E-12, 1.E-11, 1.E-10, 1.E-10 };
+        const double tols1[5] = { 1.E-12, 1.E-12, 1.E-11, 1.E-08, 1.E-08 };
         const int depths2[5] = { 25, 27, 27, 27, 27 };
-        const double tols2[5] = { 1.E-12, 1.E-10, 1.E-11, 1.E-10, 1.E-10 };
+        const double tols2[5] = { 1.E-12, 1.E-10, 1.E-11, 1.E-08, 1.E-08 };
         if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
             testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
