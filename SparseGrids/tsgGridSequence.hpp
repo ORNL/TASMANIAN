@@ -170,8 +170,7 @@ protected:
     void expandGrid(const std::vector<int> &point, const std::vector<double> &values, const std::vector<double> &surplus);
     void loadConstructedPoints();
     void recomputeSurpluses();
-    void applyTransformationTransposed(double weights[]) const;
-    void applyDifferentiationTransformation(double weights[], const int num_dimensions) const;
+    template<int mode> void applyTransformationTransposed(double weights[]) const;
 
     double evalBasis(const int f[], const int p[]) const; // evaluate function corresponding to f at p
 
