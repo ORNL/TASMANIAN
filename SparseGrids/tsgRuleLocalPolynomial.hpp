@@ -503,10 +503,7 @@ protected:
         if (rule == rule_localp0)    max_ancestors = level;
         if (max_order > 0) max_ancestors = std::min(max_ancestors, max_order - 2);
         int most_turns = 1;
-        double derivative = 1.0;
         double phantom_distance = 1.0;
-        double inv_sum = 0.0;
-        double node;
         auto update_and_get_next_node = [&]() {
             most_turns *= 2;
             phantom_distance = 2.0 * phantom_distance + 1.0;
@@ -515,38 +512,28 @@ protected:
                     (phantom_distance - 2.0 * ((double) turns)) :
                     (-phantom_distance + 2.0 * ((double) (most_turns - 1 - turns)));
         };
-        if (std::fabs(x * x - 1.0) <= Maths::num_tol) {
-            // Evaluation at x = -1.0 or +1.0.
-            derivative *= -2.0 * x;
-            for(int j=0; j < max_ancestors; j++) {
-                node = update_and_get_next_node();
-                derivative *= (x - node) / (-node);
-            }
-        } else {
-            derivative *= (1.0 - x) * (1.0 + x);
-            inv_sum += -1.0 / (1.0 - x) + 1.0 / (1.0 + x);
-            int matched_idx = max_ancestors;
-            for(int j=0; j<max_ancestors; j++) {
-                node = update_and_get_next_node();
-                if (std::fabs(x - node) <= Maths::num_tol) {
-                    matched_idx = j;
-                    break;
-                }
-                derivative *= (x - node) / (-node);
-                inv_sum += 1.0 / (x - node);
-            }
-            if (matched_idx == max_ancestors) {
-                // Evaluation when x is not at an abscissa.
-                derivative *= inv_sum;
-            } else {
-                // Evaluation when x is at an abscissa that is not -1.0 or +1.0.
-                derivative /= -node;
-                for(int j=matched_idx+1; j<max_ancestors; j++) {
-                    node = update_and_get_next_node();
-                    derivative *= (x - node) / (-node);
-                }
-            }
+
+        // Does not include the additional factor (1-x)(1+x) and the Lagrange coefficient.
+        std::vector<double> nodes(max_ancestors), left_prods(max_ancestors);
+        left_prods[0] = 1.0;
+        nodes[0] = update_and_get_next_node();
+        double coeff = 1 / (-nodes[0]);
+        for(int j=1; j<max_ancestors; j++) {
+            nodes[j] = update_and_get_next_node();
+            coeff *= 1 / (-nodes[j]);
+            left_prods[j] = left_prods[j-1] * (x - nodes[j-1]);
         }
+        double right_prod = 1.0;
+        double derivative = left_prods[max_ancestors-1];
+        for (int j=max_ancestors-2; j>=0; j--) {
+            right_prod *= x - nodes[j+1];
+            derivative += right_prod * left_prods[j];
+        }
+
+        // Adjust for the Lagrange coefficient and the additional factor (1-x)(1+x).
+        derivative = derivative * (1.0 - x) * (1.0 + x) + right_prod * (x - nodes[0]) * (-2.0) * x;
+        derivative *= coeff;
+
         return derivative;
     }
 };
