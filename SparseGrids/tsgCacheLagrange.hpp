@@ -72,10 +72,8 @@ public:
      *   and the actual nodes with the pre-computed Lagrange coefficients
      * - \b holds the coordinates of the canonical point to cache
      */
-    CacheLagrange(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper &rule, const double x[]){
-        cache.resize(num_dimensions);
-        offsets = rule.getPointsCount();
-
+    CacheLagrange(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper &rule, const double x[]) :
+            cache(std::vector<std::vector<T>>(num_dimensions, std::vector<T>())), offsets(rule.getPointsCount()){
         for(int dim=0; dim<num_dimensions; dim++){
             cache[dim].resize(offsets[max_levels[dim] + 1]);
             for(int level=0; level <= max_levels[dim]; level++)
@@ -138,9 +136,8 @@ public:
      *   and the actual nodes with the pre-computed Lagrange coefficients
      * - \b holds the coordinates of the canonical point to cache
      */
-    CacheLagrangeDerivative(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper &rule, const double x[]) {
-        offsets = rule.getPointsCount();
-        cache.resize(num_dimensions);
+    CacheLagrangeDerivative(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper &rule, const double x[]) :
+            cache(std::vector<std::vector<T>>(num_dimensions, std::vector<T>())), offsets(rule.getPointsCount()) {
         for(int dim=0; dim<num_dimensions; dim++){
             cache[dim].resize(offsets[max_levels[dim] + 1]);
             for(int level=0; level <= max_levels[dim]; level++)
@@ -165,7 +162,7 @@ public:
         const double *coeff = rule.getCoefficients(level);
         int num_points = rule.getNumPoints(level);
         // cc first stores fj'(x), aux_f stores fj(x), and aux_g stores gj(x).
-        T aux_f[num_points], aux_g[num_points];
+        std::vector<T> aux_f(num_points), aux_g(num_points);
         cc[0] = (rule.getType() == rule_clenshawcurtis0) ? 2.0 * x : 0.0;
         aux_f[0] = (rule.getType() == rule_clenshawcurtis0) ? x * x - 1.0 : 1.0;
         aux_g[num_points-1] = 1.0;
@@ -175,7 +172,7 @@ public:
             cc[i] = aux_f[i-1] + (x - nodes[i-1]) * cc[i-1];
         }
         cc[num_points-1] *= coeff[num_points-1];
-        double diff_gj = 0.0;
+        T diff_gj = 0.0;
         for(int i=num_points-2; i>=0; i--) {
             diff_gj = aux_g[i+1] + diff_gj * (x - nodes[i+1]);
             cc[i] = coeff[i] * (cc[i] * aux_g[i] + aux_f[i] * diff_gj);
