@@ -697,64 +697,7 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double weigh
     walkTree<1>(work, x, active_points, hbasis_values, nullptr);
     auto ibasis = hbasis_values.begin();
     for(auto i : active_points) weights[i] = *ibasis++;
-
-    // apply the transpose of the surplus transformation
-    Data2D<int> lparents = (parents.getNumStrips() != work.getNumIndexes()) ? // if the current dag loaded in parents does not reflect the indexes in work
-                            HierarchyManipulations::computeDAGup(work, rule.get()) :
-                            Data2D<int>();
-
-    const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
-
-    std::vector<int> level(active_points.size());
-    int active_top_level = 0;
-    for(size_t i=0; i<active_points.size(); i++){
-        const int *p = work.getIndex(active_points[i]);
-        int current_level = rule->getLevel(p[0]);
-        for(int j=1; j<num_dimensions; j++){
-            current_level += rule->getLevel(p[j]);
-        }
-        if (active_top_level < current_level) active_top_level = current_level;
-        level[i] = current_level;
-    }
-
-    std::vector<int> monkey_count(top_level+1);
-    std::vector<int> monkey_tail(top_level+1);
-    std::vector<bool> used(work.getNumIndexes());
-    int max_parents = rule->getMaxNumParents() * num_dimensions;
-
-    for(int l=active_top_level; l>0; l--){
-        for(size_t i=0; i<active_points.size(); i++){
-            if (level[i] == l){
-                std::vector<double> node = MultiIndexManipulations::indexesToNodes(work.getIndex(active_points[i]), num_dimensions, *rule);
-
-                std::fill(used.begin(), used.end(), false);
-
-                monkey_count[0] = 0;
-                monkey_tail[0] = active_points[i];
-                int current = 0;
-
-                while(monkey_count[0] < max_parents){
-                    if (monkey_count[current] < max_parents){
-                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
-                        if ((branch == -1) || used[branch]){
-                            monkey_count[current]++;
-                        }else{
-                            const int *func = work.getIndex(branch);
-                            double basis_value = rule->evalRaw(func[0], node[0]);
-                            for(int j=1; j<num_dimensions; j++) basis_value *= rule->evalRaw(func[j], node[j]);
-                            weights[branch] -= weights[active_points[i]] * basis_value;
-                            used[branch] = true;
-
-                            monkey_count[++current] = 0;
-                            monkey_tail[current] = branch;
-                        }
-                    }else{
-                        monkey_count[--current]++;
-                    }
-                }
-            }
-        }
-    }
+    applyTransformationTransposed<0>(weights, work, active_points);
 }
 
 void GridLocalPolynomial::getDifferentiationWeights(const double x[], double weights[]) const {
@@ -770,66 +713,7 @@ void GridLocalPolynomial::getDifferentiationWeights(const double x[], double wei
     for(auto i : active_points)
         for (int d=0; d<num_dimensions; d++)
             weights[i * num_dimensions + d] = *ibasis++;
-
-    Data2D<int> lparents = (parents.getNumStrips() != work.getNumIndexes()) ?
-                            HierarchyManipulations::computeDAGup(work, rule.get()) :
-                            Data2D<int>();
-
-    const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
-
-    std::vector<int> level(active_points.size());
-    int active_top_level = 0;
-    for(size_t i=0; i<active_points.size(); i++){
-        const int *p = work.getIndex(active_points[i]);
-        int current_level = rule->getLevel(p[0]);
-        for(int j=1; j<num_dimensions; j++){
-            current_level += rule->getLevel(p[j]);
-        }
-        if (active_top_level < current_level) active_top_level = current_level;
-        level[i] = current_level;
-    }
-
-    std::vector<int> monkey_count(top_level+1);
-    std::vector<int> monkey_tail(top_level+1);
-    std::vector<bool> used(work.getNumIndexes());
-    int max_parents = rule->getMaxNumParents() * num_dimensions;
-
-    for(int l=active_top_level; l>0; l--){
-        for(size_t i=0; i<active_points.size(); i++){
-            if (level[i] == l){
-                std::vector<double> node = MultiIndexManipulations::indexesToNodes(work.getIndex(active_points[i]), num_dimensions, *rule);
-
-                std::fill(used.begin(), used.end(), false);
-
-                monkey_count[0] = 0;
-                monkey_tail[0] = active_points[i];
-                int current = 0;
-
-                while(monkey_count[0] < max_parents){
-                    if (monkey_count[current] < max_parents){
-                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
-                        if (branch == -1 or used[branch]){
-                            monkey_count[current]++;
-                        }else{
-                            const int *func = work.getIndex(branch);
-                            double basis_value = rule->evalRaw(func[0], node[0]);
-                            for(int j=1; j<num_dimensions; j++)
-                                basis_value *= rule->evalRaw(func[j], node[j]);
-                            for (int d=0; d<num_dimensions; d++)
-                                weights[branch * num_dimensions + d] -=
-                                        weights[active_points[i] * num_dimensions + d] * basis_value;
-                            used[branch] = true;
-
-                            monkey_count[++current] = 0;
-                            monkey_tail[current] = branch;
-                        }
-                    }else{
-                        monkey_count[--current]++;
-                    }
-                }
-            }
-        }
-    }
+    applyTransformationTransposed<1>(weights, work, active_points);
 }
 
 void GridLocalPolynomial::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
@@ -900,6 +784,73 @@ void GridLocalPolynomial::updateSurpluses(MultiIndexSet const &work, int max_lev
                     }
                 }else{
                     monkey_count[--current]++;
+                }
+            }
+        }
+    }
+}
+
+template<int mode>
+void GridLocalPolynomial::applyTransformationTransposed(double weights[], const MultiIndexSet &work, const std::vector<int> &active_points) const {
+    Data2D<int> lparents = (parents.getNumStrips() != work.getNumIndexes()) ? // if the current dag loaded in parents does not reflect the indexes in work
+                            HierarchyManipulations::computeDAGup(work, rule.get()) :
+                            Data2D<int>();
+
+    const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
+
+    std::vector<int> level(active_points.size());
+    int active_top_level = 0;
+    for(size_t i=0; i<active_points.size(); i++){
+        const int *p = work.getIndex(active_points[i]);
+        int current_level = rule->getLevel(p[0]);
+        for(int j=1; j<num_dimensions; j++){
+            current_level += rule->getLevel(p[j]);
+        }
+        if (active_top_level < current_level) active_top_level = current_level;
+        level[i] = current_level;
+    }
+
+    std::vector<int> monkey_count(top_level+1);
+    std::vector<int> monkey_tail(top_level+1);
+    std::vector<bool> used(work.getNumIndexes());
+    int max_parents = rule->getMaxNumParents() * num_dimensions;
+
+    for(int l=active_top_level; l>0; l--){
+        for(size_t i=0; i<active_points.size(); i++){
+            if (level[i] == l){
+                std::vector<double> node = MultiIndexManipulations::indexesToNodes(work.getIndex(active_points[i]), num_dimensions, *rule);
+
+                std::fill(used.begin(), used.end(), false);
+
+                monkey_count[0] = 0;
+                monkey_tail[0] = active_points[i];
+                int current = 0;
+
+                while(monkey_count[0] < max_parents){
+                    if (monkey_count[current] < max_parents){
+                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
+                        if ((branch == -1) || used[branch]){
+                            monkey_count[current]++;
+                        }else{
+                            const int *func = work.getIndex(branch);
+                            double basis_value = rule->evalRaw(func[0], node[0]);
+                            for(int j=1; j<num_dimensions; j++) basis_value *= rule->evalRaw(func[j], node[j]);
+
+                            if (mode == 0) {
+                                weights[branch] -= weights[active_points[i]] * basis_value;
+                            } else {
+                                for (int d=0; d<num_dimensions; d++)
+                                weights[branch * num_dimensions + d] -=
+                                        weights[active_points[i] * num_dimensions + d] * basis_value;
+                            }
+                            used[branch] = true;
+
+                            monkey_count[++current] = 0;
+                            monkey_tail[current] = branch;
+                        }
+                    }else{
+                        monkey_count[--current]++;
+                    }
                 }
             }
         }

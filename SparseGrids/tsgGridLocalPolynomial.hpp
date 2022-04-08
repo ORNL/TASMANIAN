@@ -173,6 +173,9 @@ protected:
      */
     void updateSurpluses(MultiIndexSet const &work, int max_level, std::vector<int> const &level, Data2D<int> const &dagUp);
 
+    // Same idea as in GridSequence::applyTransformationTransposed().
+    template<int mode> void applyTransformationTransposed(double weights[], const MultiIndexSet &work, const std::vector<int> &active_points) const;
+
     void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, std::vector<int> &numnz,
                                     std::vector<std::vector<int>> &tindx, std::vector<std::vector<double>> &tvals) const;
 
