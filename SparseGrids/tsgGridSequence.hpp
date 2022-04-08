@@ -62,11 +62,13 @@ public:
 
     void getQuadratureWeights(double weights[]) const override;
     void getInterpolationWeights(const double x[], double weights[]) const override;
+    void getDifferentiationWeights(const double x[], double weights[]) const;
 
     void loadNeededValues(const double *vals) override;
 
     void evaluate(const double x[], double y[]) const override;
     void integrate(double q[], double *conformal_correction) const override;
+    void differentiate(const double x[], double jacobian[]) const;
 
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
@@ -131,11 +133,31 @@ protected:
         return cache;
     }
 
+    template<typename T>
+    std::vector<std::vector<T>> cacheBasisDerivatives(const T x[]) const {
+        std::vector<std::vector<T>> cache(num_dimensions);
+        for(int j=0; j<num_dimensions; j++){
+            cache[j].resize(max_levels[j] + 1);
+            T this_x = x[j];
+            T b = 1.0;
+            T s = 1.0;
+            cache[j][0] = 0.0;
+            if (max_levels[j] > 0) cache[j][1] = 1.0 / coeff[1];
+            for(int i=2; i <= max_levels[j]; i++){
+                s *= (this_x - nodes[i-1]);
+                b *= (this_x - nodes[i-2]);
+                s += b;
+                cache[j][i] = s / coeff[i];
+            }
+        }
+        return cache;
+    }
+
     std::vector<int> getMultiIndex(const double x[]);
     void expandGrid(const std::vector<int> &point, const std::vector<double> &values, const std::vector<double> &surplus);
     void loadConstructedPoints();
     void recomputeSurpluses();
-    void applyTransformationTransposed(double weights[]) const;
+    template<int mode> void applyTransformationTransposed(double weights[]) const;
 
     double evalBasis(const int f[], const int p[]) const; // evaluate function corresponding to f at p
 

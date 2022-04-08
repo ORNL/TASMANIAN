@@ -394,6 +394,8 @@ void TasmanianSparseGrid::getDifferentiationWeights(const double x[], double wei
     Data2D<double> x_tmp;
     if (isGlobal()) {
         get<GridGlobal>()->getDifferentiationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
+    } else if (isSequence()) {
+        get<GridSequence>()->getDifferentiationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
     } else {
         throw std::runtime_error("ERROR: getDifferentiationWeights() cannot be called for grids of this type");
     }
@@ -477,6 +479,8 @@ void TasmanianSparseGrid::integrate(double q[]) const{
 void TasmanianSparseGrid::differentiate(const double x[], double jacobian[]) const {
     if (isGlobal()) {
         get<GridGlobal>()->differentiate(x, jacobian);
+    } else if (isSequence()) {
+        get<GridSequence>()->differentiate(x, jacobian);
     } else {
         throw std::runtime_error("ERROR: in differentiate(), jacobians/gradients are not available for this type of grid");
     }

@@ -156,7 +156,7 @@ void GridSequence::getQuadratureWeights(double *weights) const{
         }
     }
 
-    applyTransformationTransposed(weights);
+    applyTransformationTransposed<0>(weights);
 }
 
 void GridSequence::getInterpolationWeights(const double x[], double *weights) const{
@@ -171,7 +171,30 @@ void GridSequence::getInterpolationWeights(const double x[], double *weights) co
             weights[i] *= cache[j][p[j]];
         }
     }
-    applyTransformationTransposed(weights);
+    applyTransformationTransposed<0>(weights);
+}
+
+void GridSequence::getDifferentiationWeights(const double x[], double weights[]) const {
+    std::vector<std::vector<double>> value_cache = cacheBasisValues<double>(x);
+    std::vector<std::vector<double>> derivative_cache = cacheBasisDerivatives<double>(x);
+    std::vector<double> diff_values(num_dimensions);
+    const MultiIndexSet& work = (points.empty()) ? needed : points;
+    int n = work.getNumIndexes();
+    std::fill_n(weights, n * num_dimensions, 0.0);
+    for(int i=0; i<n; i++) {
+        const int* p = work.getIndex(i);
+        diff_values[0] = derivative_cache[0][p[0]];
+        for(int j=1; j<num_dimensions; j++) diff_values[j] = value_cache[0][p[0]];
+
+        for(int k=1; k<num_dimensions; k++) {
+            for(int j=0; j<k; j++) diff_values[j] *= value_cache[k][p[k]];
+            diff_values[k] *= derivative_cache[k][p[k]];
+            for(int j=k+1; j<num_dimensions; j++) diff_values[j] *= value_cache[k][p[k]];
+        }
+
+        for(int j=0; j<num_dimensions; j++) weights[i * num_dimensions + j] +=  diff_values[j];
+    }
+    applyTransformationTransposed<1>(weights);
 }
 
 void GridSequence::loadNeededValues(const double *vals){
@@ -526,6 +549,31 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
     }
 }
 
+void GridSequence::differentiate(const double x[], double jacobian[]) const {
+    // Based on the logic in the TasGrid::GridSequence::evaluate() and TasGrid::GridSequence::getDifferentiationWeights() functions.
+    std::vector<std::vector<double>> value_cache = cacheBasisValues<double>(x);
+    std::vector<std::vector<double>> derivative_cache = cacheBasisDerivatives<double>(x);
+    std::vector<double> diff_values(num_dimensions);
+    std::fill_n(jacobian, num_outputs * num_dimensions, 0.0);
+    int n = points.getNumIndexes();
+    for(int i=0; i<n; i++) {
+        const int* p = points.getIndex(i);
+        const double *s = surpluses.getStrip(i);
+
+        diff_values[0] = derivative_cache[0][p[0]];
+        for(int j=1; j<num_dimensions; j++) diff_values[j] = value_cache[0][p[0]];
+
+        for(int k=1; k<num_dimensions; k++) {
+            for(int j=0; j<k; j++) diff_values[j] *= value_cache[k][p[k]];
+            diff_values[k] *= derivative_cache[k][p[k]];
+            for(int j=k+1; j<num_dimensions; j++) diff_values[j] *= value_cache[k][p[k]];
+        }
+        for(int k=0; k<num_outputs; k++)
+            for(int j=0; j<num_dimensions; j++)
+                jacobian[k * num_dimensions + j] += s[k] * diff_values[j];
+    }
+}
+
 void GridSequence::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     int num_points = (points.empty()) ? needed.getNumIndexes() : points.getNumIndexes();
     Utils::Wrapper2D<double const> xwrap(num_dimensions, x);
@@ -815,7 +863,10 @@ void GridSequence::recomputeSurpluses(){
     }
 }
 
+template <int mode>
 void GridSequence::applyTransformationTransposed(double weights[]) const{
+    // mode 0: applies the transposed linear operator for interpolation and quadrature.
+    // mode 1: applies the transposed linear operator for differentiation.
     const MultiIndexSet& work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
 
@@ -844,7 +895,13 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{
-                            weights[branch] -= weights[i] * evalBasis(work.getIndex(branch), p);
+                            if (mode == 0) {
+                                weights[branch] -= weights[i] * evalBasis(work.getIndex(branch), p);
+                            } else {
+                                double weight_mult = evalBasis(work.getIndex(branch), p);
+                                for (int d=0; d<num_dimensions; d++)
+                                    weights[branch * num_dimensions + d] -= weights[i * num_dimensions + d] * weight_mult;
+                            }
                             used[branch] = true;
 
                             monkey_count[++current] = 0;

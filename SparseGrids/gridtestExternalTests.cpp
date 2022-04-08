@@ -284,7 +284,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         };
         R.error = err;
     }else if (type == type_internal_interpolation or type == type_internal_differentiation){
-        if (type == type_internal_differentiation and !grid.isGlobal()) {
+        if (type == type_internal_differentiation and !(grid.isGlobal() or grid.isSequence())) {
             // Avoid testing grids where derivatives have not been implemented.
             R.error = 0.0;
         } else {
@@ -387,21 +387,19 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
 
     if (TasGrid::OneDimensionalMeta::isSequence(rule)){
         for(size_t i=0; i<num_global_tests; i++){
-            if (tests[i] == type_internal_interpolation or tests[i] == type_nodal_interpolation){
-                grid = makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule,
-                                        (anisotropic != nullptr) ? std::vector<int>(anisotropic, anisotropic + f->getNumInputs()) : std::vector<int>());
-                R = getError(f, grid, tests[i], x);
-            }else if (tests[i] == type_integration){
+            if (tests[i] == type_integration){
                 grid.makeSequenceGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic);
                 R = getError(f, grid, type_integration);
             }else{
-                // TODO: add tests when sequence grid differentiation is implemented.
+                grid = makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule,
+                                        (anisotropic != nullptr) ? std::vector<int>(anisotropic, anisotropic + f->getNumInputs()) : std::vector<int>());
+                R = getError(f, grid, tests[i], x);
             }
             if (R.error > tols[i]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED sequence" << setw(25) << IO::getRuleString(rule);
                 cout << setw(25) << testName(tests[i]) << "   failed function: " << f->getDescription();
-                cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
+                cout << setw(10) << "  observed: " << R.error << "  expected: " << tols[i] << endl;
             }
         }
     }
