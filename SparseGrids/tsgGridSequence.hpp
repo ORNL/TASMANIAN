@@ -133,34 +133,21 @@ protected:
         return cache;
     }
 
-    // The second argument should be the result of calling TasGrid::GridSequence::cacheBasisValues(x).
     template<typename T>
-    std::vector<std::vector<T>> cacheBasisDerivatives(const T x[], std::vector<std::vector<T>> &value_cache) const {
+    std::vector<std::vector<T>> cacheBasisDerivatives(const T x[]) const {
         std::vector<std::vector<T>> cache(num_dimensions);
         for(int j=0; j<num_dimensions; j++){
             cache[j].resize(max_levels[j] + 1);
-            // Check to see if x is a root of the Newton polynomial.
             T this_x = x[j];
-            int match_idx = max_levels[j];
-            for(int i=0; i<=max_levels[j]; i++) {
-                if (std::fabs(this_x - nodes[i]) <= Maths::num_tol) {
-                    match_idx = i;
-                    break;
-                }
-            }
-            // Derivatives from 0 to match_idx.
-            T inv_sum = 0.0;
+            T b = 1.0;
+            T s = 1.0;
             cache[j][0] = 0.0;
-            for (int i=1; i<=match_idx; i++) {
-                inv_sum += 1.0 / (this_x - nodes[i-1]);
-                cache[j][i] = value_cache[j][i] * inv_sum;
-            }
-            // Derivatives from match_idx+1 to max_levels[j]. Uses the product rule applied to the recursive definition.
-            if (match_idx+1 <= max_levels[j]) {
-                cache[j][match_idx+1] = value_cache[j][match_idx] * coeff[match_idx] / coeff[match_idx+1] ;
-                for (int i=match_idx+2; i<=max_levels[j]; i++) {
-                    cache[j][i] = coeff[i-1] / coeff[i] * (cache[j][i-1] * (this_x - nodes[i-1]) + value_cache[j][i-1]);
-                }
+            if (max_levels[j] > 0) cache[j][1] = 1.0 / coeff[1];
+            for(int i=2; i <= max_levels[j]; i++){
+                s *= (this_x - nodes[i-1]);
+                b *= (this_x - nodes[i-2]);
+                s += b;
+                cache[j][i] = s / coeff[i];
             }
         }
         return cache;

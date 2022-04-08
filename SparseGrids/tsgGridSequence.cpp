@@ -176,7 +176,7 @@ void GridSequence::getInterpolationWeights(const double x[], double *weights) co
 
 void GridSequence::getDifferentiationWeights(const double x[], double weights[]) const {
     std::vector<std::vector<double>> value_cache = cacheBasisValues<double>(x);
-    std::vector<std::vector<double>> derivative_cache = cacheBasisDerivatives<double>(x, value_cache);
+    std::vector<std::vector<double>> derivative_cache = cacheBasisDerivatives<double>(x);
     const MultiIndexSet& work = (points.empty()) ? needed : points;
     int n = work.getNumIndexes();
     std::fill_n(weights, n * num_dimensions, 0.0);
@@ -562,7 +562,7 @@ void GridSequence::integrate(double q[], double *conformal_correction) const{
 void GridSequence::differentiate(const double x[], double jacobian[]) const {
     // Based on the logic in the TasGrid::GridSequence::evaluate() and TasGrid::GridSequence::getDifferentiationWeights() functions.
     std::vector<std::vector<double>> value_cache = cacheBasisValues<double>(x);
-    std::vector<std::vector<double>> derivative_cache = cacheBasisDerivatives<double>(x, value_cache);
+    std::vector<std::vector<double>> derivative_cache = cacheBasisDerivatives<double>(x);
     std::fill_n(jacobian, num_outputs * num_dimensions, 0.0);
     const MultiIndexSet& work = (points.empty()) ? needed : points;
     int n = work.getNumIndexes();
