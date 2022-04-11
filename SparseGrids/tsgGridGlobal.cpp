@@ -305,11 +305,8 @@ void GridGlobal::getDifferentiationWeights(const double x[], double weights[]) c
                 for(int j=k+1; j<num_dimensions; j++) diff_values[j] *= basis_value;
                 t /= num_oned_points[k];
             }
-            t = i;
-            for(int j=num_dimensions-1; j>=0; j--) {
+            for(int j=num_dimensions-1; j>=0; j--)
                 weights[tensor_refs[n][i] * num_dimensions + j] += tensor_weight * diff_values[j];
-                t /= num_oned_points[j];
-            }
         }
     }
 }
