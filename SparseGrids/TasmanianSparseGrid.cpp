@@ -391,7 +391,9 @@ void TasmanianSparseGrid::getDifferentiationWeights(const std::vector<double> &x
     getDifferentiationWeights(x.data(), weights.data());
 }
 void TasmanianSparseGrid::getDifferentiationWeights(const double x[], double weights[]) const{
+    // See differentiate() for how the domain transforms are taken into consideration.
     Data2D<double> x_tmp;
+    // Jacobian of f(.) at g(x).
     if (isGlobal()) {
         get<GridGlobal>()->getDifferentiationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
     } else if (isSequence()) {
@@ -402,6 +404,16 @@ void TasmanianSparseGrid::getDifferentiationWeights(const double x[], double wei
         get<GridFourier>()->getDifferentiationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
     } else {
         throw std::runtime_error("ERROR: getDifferentiationWeights() cannot be called for grids of this type");
+    }
+    // Jacobian of f(g(.)) at x.
+    if (domain_transform_a.size() != 0 or conformal_asin_power.size() != 0) {
+        int num_dimensions = getNumDimensions();
+        int num_points = getNumPoints();
+        std::vector<double> jacobian_g_diag(num_dimensions);
+        diffCanonicalTransform<double>(x, jacobian_g_diag.data());
+        for(int i=0; i<num_points; i++)
+            for(int j=0; j<num_dimensions; j++)
+                weights[i * num_dimensions + j] = weights[i * num_dimensions + j] * jacobian_g_diag[j];
     }
 }
 
@@ -481,16 +493,30 @@ void TasmanianSparseGrid::integrate(double q[]) const{
 }
 
 void TasmanianSparseGrid::differentiate(const double x[], double jacobian[]) const {
+    // For a grid with a transformed-to-canonical operator g(x) and model f(x) over the canonical domain, this returns the
+    // Jacobian of f(g(x)), i.e., [Jacobian of f(.) at g(x)] * [Jacobian of g(.) at x].
+    Data2D<double> x_tmp;
+    // Jacobian of f(.) at g(x).
     if (isGlobal()) {
-        get<GridGlobal>()->differentiate(x, jacobian);
+        get<GridGlobal>()->differentiate(formCanonicalPoints(x, x_tmp, 1), jacobian);
     } else if (isSequence()) {
-        get<GridSequence>()->differentiate(x, jacobian);
+        get<GridSequence>()->differentiate(formCanonicalPoints(x, x_tmp, 1), jacobian);
     } else if (isLocalPolynomial()) {
-        get<GridLocalPolynomial>()->differentiate(x, jacobian);
+        get<GridLocalPolynomial>()->differentiate(formCanonicalPoints(x, x_tmp, 1), jacobian);
     } else if (isFourier()) {
-        get<GridFourier>()->differentiate(x, jacobian);
+        get<GridFourier>()->differentiate(formCanonicalPoints(x, x_tmp, 1), jacobian);
     } else {
         throw std::runtime_error("ERROR: in differentiate(), jacobians/gradients are not available for this type of grid");
+    }
+    // Jacobian of f(g(.)) at x.
+    if (domain_transform_a.size() != 0 or conformal_asin_power.size() != 0) {
+        int num_dimensions = getNumDimensions();
+        int num_outputs = getNumOutputs();
+        std::vector<double> jacobian_g_diag(num_dimensions);
+        diffCanonicalTransform<double>(x, jacobian_g_diag.data());
+        for(int j=0; j<num_dimensions; j++)
+            for(int k=0; k<num_outputs; k++)
+                jacobian[k * num_dimensions + j] = jacobian[k * num_dimensions + j] * jacobian_g_diag[j];
     }
 }
 
@@ -821,6 +847,31 @@ template<typename FloatType> const FloatType* TasmanianSparseGrid::formCanonical
 }
 template const float* TasmanianSparseGrid::formCanonicalPoints(const float *x, Data2D<float> &x_temp, int num_x) const;
 template const double* TasmanianSparseGrid::formCanonicalPoints<double>(const double *x, Data2D<double> &x_temp, int num_x) const;
+
+template<typename FloatType> void TasmanianSparseGrid::diffCanonicalTransform(const FloatType*, FloatType *jacobian_diag) const {
+    int num_dimensions = base->getNumDimensions();
+    for(int i=0; i<num_dimensions; i++)
+        jacobian_diag[i] = 1.0;
+    if (conformal_asin_power.size() != 0) {
+        throw std::runtime_error("ERROR: in diffCanonicalTransform() derivatives/Jacobians are not available for conformal mappings");
+    }
+    if (domain_transform_a.size() != 0) {
+        // Based on the logic in mapTransformedToCanonical(). These are all affine transforms.
+        TypeOneDRule rule = base->getRule();
+        if (rule == rule_gausslaguerre or rule == rule_gausslaguerreodd)
+            for(int j=0; j<num_dimensions; j++)
+                jacobian_diag[j] *= (FloatType) domain_transform_b[j];
+        else if (rule == rule_gausshermite or rule == rule_gausshermiteodd)
+            for(int j=0; j<num_dimensions; j++)
+                jacobian_diag[j] *= (FloatType) std::sqrt(domain_transform_b[j]);
+        else if (rule == rule_fourier)
+            for(int j=0; j< num_dimensions; j++)
+                jacobian_diag[j] /= (FloatType) (domain_transform_b[j]-domain_transform_a[j]);
+        else
+            for(int j=0; j<num_dimensions; j++)
+                jacobian_diag[j] *= (FloatType) (2.0 / (domain_transform_b[j] - domain_transform_a[j]));
+    }
+}
 
 void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) const{
     mapConformalCanonicalToTransformed(base->getNumDimensions(), num_points, x); // internally switch based on the conformal transform

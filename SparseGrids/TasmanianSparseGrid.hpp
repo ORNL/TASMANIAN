@@ -2140,6 +2140,15 @@ protected:
     const T* formCanonicalPointsGPU(const T *gpu_x, int num_x, GpuVector<T> &gpu_x_temp) const;
     /*!
      * \internal
+     * \brief Calculates the Jacobian matrix (derivative) of the transform defined by formCanonicalPoints(). Since this matrix is
+     * diagonal, we only return the diagonal vector.
+     *
+     * This is primarily used in the TasmanianSparseGrid::differentiate() method, which applies the chain rule to the (possibly)
+     * transformed grid.
+     */
+    template<typename FloatType> void diffCanonicalTransform(const FloatType *x, FloatType *jacobian_diag) const;
+    /*!
+     * \internal
      * \brief Applies both linear and non-linear transformation to the canonical points.
      *
      * The raw-array \b x holds \b num_points and will be overwritten with the result
