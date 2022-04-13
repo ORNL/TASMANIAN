@@ -312,12 +312,6 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
                     f->getDerivative(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
                 }
             }
-
-
-            std::cout << "TEST: " << testName(type) << std::endl;
-            std::cout << f->getDescription() << std::endl;
-
-
             double rel_err = 0.0; // relative error
             for(int k=0; k<num_entries; k++){
                 double nrm = 0.0; // norm, needed to compute relative error
@@ -329,12 +323,8 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
                 rel_err = std::max(rel_err, std::fabs(nrm) <= Maths::num_tol ? err : err / nrm);
             }
 
-            std::cout << "rel_err (pre): " << rel_err << std::endl;
-
             if (type == type_internal_differentiation)
                 rel_err = std::max(rel_err, unitDerivativeTests(f, grid));
-
-            std::cout << "rel_err (post): " << rel_err << std::endl;
 
             R.error = rel_err;
         }
@@ -368,13 +358,6 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
                 grid.makeGlobalGrid(f->getNumInputs(), num_fn_outputs, depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
             }
         }
-
-
-        std::cout << std::endl;
-        std::cout << "tests[i]: " << testName(tests[i]) << std::endl;
-        std::cout << "depths[i]: " << depths[i] << std::endl;
-
-
         R = getError(f, grid, tests[i], x);
         if (R.error > tols[i]){
             bPass = false;
@@ -1234,8 +1217,8 @@ bool ExternalTester::testAllFourier() const{
     bool pass = true;
     const int depths1[5] = { 6, 6, 6, 6, 6 };
     const int depths2[5] = { 5, 5, 5, 5, 5 };
-    const double tols1[5] = { 1.E-11, 1.E-06, 1.E-06, 1.E-05, 1.E-05 };
-    const double tols2[5] = { 1.E-11, 5.E-03, 5.E-03, 5.E-02, 5.E-02 };
+    const double tols1[5] = { 1.E-11, 1.E-06, 1.E-06, 5.E-05, 1.E-05 };
+    const double tols2[5] = { 1.E-11, 1.E-02, 1.E-02, 5.E-01, 1.E-01 };
     int wfirst = 11, wsecond = 34, wthird = 15;
     if (testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, all_test_types, depths1, tols1) &&
         testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, all_test_types, depths2, tols2)){
@@ -2337,15 +2320,15 @@ void ExternalTester::debugTest(){
     // cout << "Debug Test (callable from the CMake build folder)" << endl;
     // cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
 
-    int depth = 5;
-    // auto f = &f21sinsin;
+    int depth = 7;
     auto f = &f21expsincos;
+    std::vector<double> x0 = genRandom(f->getNumInputs());
+    for (auto &x0i : x0) x0i = 0.5 * (x0i + 1.0);
     auto grid = makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), depth, TasGrid::type_level);
 
     // // BASIC TEST.
     // loadValues(f, grid);
 
-    // std::vector<double> x0 = {0.30, 0.60};
     // std::vector<double> grad_tasm(f->getNumInputs()), grad_true(f->getNumInputs());
     // grid.differentiate(x0.data(), grad_tasm.data());
     // f->getDerivative(x0.data(), grad_true.data());
@@ -2357,13 +2340,23 @@ void ExternalTester::debugTest(){
     // std::cout << "true = "; for (auto g : grad_true) std::cout << g << " ";
 
     // // SIMULATED TEST.
-    // auto R = getError(f, grid, type_internal_differentiation);
-    // std::cout << "err = " << R.error << std::endl;
 
-    // FOURIER TEST.
-    int depths[2] = { 6, 6 };
-    double tols[2] = { 1E-05, 1E-05 };
-    testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, diff_only, depths, tols);
+    std::cout << "NODAL INTERPOLATION\n";
+    auto R0 = getError(f, grid, type_nodal_interpolation, x0);
+    std::cout << "err = " << R0.error << "\n\n";
+
+    std::cout << "NODAL DIFFERENTIATION\n";
+    auto R1 = getError(f, grid, type_nodal_differentiation, x0);
+    std::cout << "err = " << R1.error << "\n\n";
+
+    std::cout << "INTERNAL DIFFERENTIATION\n";
+    auto R2 = getError(f, grid, type_internal_differentiation, x0);
+    std::cout << "err = " << R2.error << "\n\n";
+
+    // // FOURIER TEST.
+    // int depths[2] = { 6, 6 };
+    // double tols[2] = { 1E-05, 1E-05 };
+    // testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, diff_only, depths, tols);
 
 }
 

@@ -387,6 +387,7 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
             weights[work.getSlot(p)] += (tensorw * fftprod);
         }
     }
+
 }
 
 void GridFourier::getQuadratureWeights(double weights[]) const{
@@ -414,74 +415,91 @@ void GridFourier::getQuadratureWeights(double weights[]) const{
 
 void GridFourier::getDifferentiationWeights(const double x[], double weights[]) const {
     /* Our goal is to differentiate the function A^* b(x) where A is the DFT and b(x) are the basis functions evaluated at x.
+     * The mathematics below is based on the derivation in getInterpolationWeights().
      *
-     * In the 1D-tensor case, we have the following simplifications. Using the equations in getInterpolationWeights(), the FFT is
+     * For the 1D-tensor case, if x = m/N for some -(N-1)/2 <= m <= (N-1)/2, then X[m] = N and dX[m]/dx = 0. Otherwise, we have
+     * X[l] = 2.0 * ℜ[u(x)] - 1.0, where
      *
-     *     X[l] = 2 * ℜ[sum_{j=0}^{(N-1)/2} exp[-2πIj(l - Nx)/N] - 1, for l = -(N-1)/2,...,(N-1)/2,
+     *   u(x) = {1 - exp[I * a(x)]} / {1 - exp[I * b(x)])},
+     *   a(x) = 2 * π * (x - m / N) * (N + 1) /2,
+     *   b(x) = 2 * π * (x - m / N),
      *
-     * where I^2 = -1. If x = m/N for some -(N-1)/2 <= m <= (N-1)/2, then
+     * and I^2 = -1. Note that
      *
-     *     X[m] = 2 * [(N-1)/2 + 1] - 1 = N.
+     *   |1 - exp[I * b(x)]|^2 * u(x) = {1 - exp[I * a(x)]} * {1 - exp[-I * b(x)])}
+     *                                = 1 - exp[I * a(x)] - exp[-I * b(x)] + exp[I * {a(x) - b(x)}].
      *
-     * Otherwise, continuing the equations in getInterpolationWeights(), and using the fact that cotangent has the alternate form
-     * cot(z) = I * [exp(Iz) + exp(-Iz)] / [exp(Iz) - exp(-Iz)], we have that
+     * Since |1 - exp[I * b(x)]|^2 == 2 - 2 * cos[b(x)], we have the expressions
      *
-     *     X[l] = 2 * ℜ[1 - exp(Iα)/(1 - exp(Iβ)] - 1
-     *          = -ℜ[exp(Iα)/(1 - exp(Iβ)] + 1
-     *          = -0.5 * ℜ[{cos(α) + I * sin(α)} * {1 + I * cot(β/2)}] + 1
-     *          = -0.5 * [cos(α) - sin(α) * cot(β/2)] + 1
+     *   ℜ[u(x)] = (1 - cos[a(x)] - cos[b(x)] + cos[a(x) - b(x)]) * (2 - cos[b(x)]) ^ {-1},
      *
-     * where α = π * (x-l/N) * (N+1) and β = 2 * π * (x-l/N). The derivative of {A^* b(x)}[l] is thus given by
+     *   d{ℜ[u(x)]}/dx = (  {a'(x) * sin[a(x)] + b'(x) * sin[b(x)] - [a'(x) - b'(x)] * sin[a(x) - b(x)]} * {2 - 2 * cos[b(x)]} -
+     *                      {1 - cos[a(x)] - cos[b(x)] + cos[a(x) - b(x)]} * {2 * b'(x) * sin[b(x)]}
+     *                   ) * (2 - 2 * cos[b(x)]) ^ {-2},
      *
-     *     ∂X[l]/∂x = 0.5 * π * [(N+1) * sin(α) - (N+1) * cos(α) * cot(β/2) + 0.5 * {csc(β/2)}^2 * sin(α)].
-     *
-     * The generalization to nD-tensors follows similarly.
+     * which then gives us dX[l]/dx = 2.0 * d{ℜ[u(x)]}/dx. To save computational effort, we apply the same caching strategy as
+     * in getInterpolationWeights().
      */
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     std::vector<std::vector<int>> index_map = generateIndexingMap();
     std::fill_n(weights, work.getNumIndexes(), 0.0);
-    auto dft_val = [=](double alpha, double beta) {
-        return -0.5 * (std::cos(alpha) - std::sin(alpha) * std::cos(0.5 * beta) / std::sin(0.5 * beta)) + 1.0;
-    };
-    auto diff_dft_val = [=](double alpha, double beta, double N_dbl) {
-        return 0.5 * Maths::pi * ((N_dbl + 1.0) * std::sin(alpha) -
-                                  (N_dbl + 1.0) * std::cos(alpha) * std::cos(0.5 * beta) / std::sin(0.5 * beta) +
-                                  0.5 * std::sin(alpha) / (std::sin(0.5 * beta) * std::sin(0.5 * beta)));
-    };
 
-    // Cache the values and derivatives of A^* b(x) for each dimension.
-    std::vector<std::vector<double>> value_cache(num_dimensions), diff_value_cache(num_dimensions);
-    for(int k=0; k<num_dimensions; k++) {
-        int N = max_levels[k];
-        double N_dbl = (double) N;
-        double beta = 2.0 * Maths::pi * x[k];
-        double alpha = beta * (N_dbl + 1.0)  / 2.0;
-        value_cache[k].resize(N+1);
-        diff_value_cache[k].resize(N+1);
-        int freq_match = N+1;
-        // Check if x is of the form l/N.
-        if (std::fabs(x[k] * N_dbl - std::round(x[k] * N_dbl)) < Maths::num_tol)
-            freq_match = std::round(x[k] * N_dbl);
-        for(int j=0; j<freq_match; j++) {
-            value_cache[k][j] = dft_val(alpha, beta);
-            diff_value_cache[k][j] = diff_dft_val(alpha, beta, N_dbl);
-            beta += -2.0 * Maths::pi / N_dbl;
-            alpha = beta * (N_dbl + 1.0)  / 2.0;
-        }
-        if (freq_match <= N) {
-            value_cache[k][freq_match] = N;
-            diff_value_cache[k][freq_match] = 0.0;
-        }
-         for(int j=freq_match+1; j<N+1; j++) {
-            value_cache[k][j] = dft_val(alpha, beta);
-            diff_value_cache[k][j] = diff_dft_val(alpha, beta, N_dbl);
-            beta += -2.0 * Maths::pi / N_dbl;
-            alpha = beta * (N_dbl + 1.0)  / 2.0;
+    // Cache exp(-2 * π * I * m / 3^{l}) for every (m, l) where N = 3^l.
+    int maxl = active_tensors.getMaxIndex() + 1;
+    std::vector<std::vector<std::complex<double>>> shift_cache(maxl);
+    for(int i=0; i<maxl; i++){
+        int num_oned_points = wrapper.getNumPoints(i);
+        shift_cache[i].resize(num_oned_points);
+        shift_cache[i][0] = std::complex<double>(1.0, 0.0);
+        double theta = -2.0 * Maths::pi / ((double) num_oned_points);
+        std::complex<double> step(std::cos(theta), std::sin(theta));
+        for(int j=1; j<num_oned_points; j++) shift_cache[i][j] = shift_cache[i][j-1] * step;
+    }
+
+    // Cache exp(-2 * π * x[k] * [3^{l} + 1] / 2) for every (k, l) where N = 3^l.
+    std::vector<std::vector<std::complex<double>>> slope_cache(num_dimensions);
+    for(int k=0; k<num_dimensions; k++){
+        slope_cache[k].resize(max_levels[k]+1);
+        double theta = 2.0 * Maths::pi * x[k];
+        slope_cache[k][0] = std::complex<double>(std::cos(theta), std::sin(theta));
+        for(int j=1; j<max_levels[k]+1; j++){
+            slope_cache[k][j] = slope_cache[k][j-1];
+            for(int i=0; i<wrapper.getNumPoints(j-1); i++) slope_cache[k][j] *= slope_cache[k][0];
         }
     }
 
+    // This lambda returns the FFT value for the interpolant in dimension d, level l, # of points N, and local
+    // offset (within the level) r. Based on getInterpolationWeights().
+    auto get_fft_val = [&](const int d, const int l, int N, int r) {
+        std::complex<double> exp_Ibx = slope_cache[d][0] * shift_cache[l][r];
+        if (std::abs(1.0 - exp_Ibx.real()) <= Maths::num_tol)
+            return (double) N;
+        int offset = (r * (N + 1) / 2) % N;
+        std::complex<double> exp_Iax = slope_cache[d][l] * shift_cache[l][offset];
+        return 2.0 * ((1.0 - exp_Iax) / (1.0 - exp_Ibx)).real() - 1.0;
+     };
+
+    // This lambda is the same as get_fft_val(), but returns the FFT derivative.
+    auto get_fft_diff_val = [&](const int d, const int l, int N, int r) {
+        std::complex<double> exp_Ibx = slope_cache[d][0] * shift_cache[l][r];
+        if (std::abs(1.0 - exp_Ibx.real()) <= Maths::num_tol)
+            return 0.0;
+        double N_dbl = (double) N;
+        double slope_b = 2.0 * Maths::pi;
+        double slope_a = Maths::pi * (N_dbl + 1.0);
+        int offset = (r * (N + 1) / 2) % N;
+        std::complex<double> exp_Iax = slope_cache[d][l] * shift_cache[l][offset];
+        std::complex<double> exp_Ia_sub_Ib = exp_Iax * std::conj(exp_Ibx);
+        // q1 below is equivalent to [2.0 - 2.0 * cos(b)], but is more computationally stable since it combines
+        // both real and imaginary parts.
+        double q0 = std::abs(1.0 - exp_Ibx);
+        double q1 = q0 * q0;
+        double s1 = (slope_a * exp_Iax.imag() + slope_b * exp_Ibx.imag() - (slope_a - slope_b) * exp_Ia_sub_Ib.imag()) * q1;
+        double s2 = (1.0 - exp_Iax.real() - exp_Ibx.real() + exp_Ia_sub_Ib.real()) * 2.0 * slope_b * exp_Ibx.imag();
+        return 2.0 * (s1 - s2) / (q1 * q1);
+   };
+
     // Compute the weights for each tensor.
-    std::vector<double> diff_values(num_dimensions);
     for(int n=0; n<active_tensors.getNumIndexes(); n++){
         const int *levels = active_tensors.getIndex(n);
         int num_tensor_points = 1;
@@ -492,30 +510,26 @@ void GridFourier::getDifferentiationWeights(const double x[], double weights[]) 
         }
         std::vector<int> p(num_dimensions);
         double tensorw = ((double) active_w[n]) / ((double) num_tensor_points);
-
-        for(int i=0; i<num_tensor_points; i++) {
-            // Re-initialization.
+        for(int i=0; i<num_tensor_points; i++){
             int t = i;
-            int local = t % num_oned_points[num_dimensions - 1];
-            diff_values[num_dimensions-1] = 1.0;
-            for(int j=0; j<num_dimensions-1; j++) diff_values[j] = value_cache[j][local];
-            p[num_dimensions-1] = index_map[levels[num_dimensions-1]][local];
-            t /= num_oned_points[num_dimensions-1];
-            // Main computation
-            for(int k=num_dimensions-2; k>=0; k--) {
-                local = t % num_oned_points[k];
-                for(int j=0; j<k; j++) diff_values[j] *= value_cache[j][local];
-                diff_values[k] *= diff_value_cache[k][local];
-                for(int j=k+1; j<num_dimensions; j++) diff_values[j] *= value_cache[j][local];
-                p[k] = index_map[levels[k]][local];
-                t /= num_oned_points[k];
+            std::vector<double> fft_vals(num_dimensions);
+            std::vector<double> fft_diff_vals(num_dimensions);
+            for(int j=num_dimensions-1; j>=0; j--) {
+                int r = t % num_oned_points[j];
+                fft_vals[j] = get_fft_val(j, levels[j], num_oned_points[j], r);
+                fft_diff_vals[j] = get_fft_diff_val(j, levels[j], num_oned_points[j], r);
+                p[j] = index_map[levels[j]][r];
+                t /= num_oned_points[j];
             }
-            for(int j=num_dimensions-1; j>=0; j--)
-                weights[work.getSlot(p) * num_dimensions + j] += tensorw * diff_values[j];
+            for(int k=0; k<num_dimensions; k++) {
+                double fftprod = 1.0;
+                for(int j=0; j<k; j++) fftprod *= fft_vals[j];
+                fftprod *= fft_diff_vals[k];
+                for(int j=k+1; j<num_dimensions; j++) fftprod *= fft_vals[j];
+                weights[work.getSlot(p) * num_dimensions + k] += tensorw * fftprod;
+            }
         }
     }
-
-
 }
 
 void GridFourier::evaluate(const double x[], double y[]) const{
