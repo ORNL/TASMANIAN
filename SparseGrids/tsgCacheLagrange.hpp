@@ -72,10 +72,8 @@ public:
      *   and the actual nodes with the pre-computed Lagrange coefficients
      * - \b holds the coordinates of the canonical point to cache
      */
-    CacheLagrange(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper &rule, const double x[]){
-        cache.resize(num_dimensions);
-        offsets = rule.getPointsCount();
-
+    CacheLagrange(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper &rule, const double x[]) :
+            cache(std::vector<std::vector<T>>(num_dimensions, std::vector<T>())), offsets(rule.getPointsCount()){
         for(int dim=0; dim<num_dimensions; dim++){
             cache[dim].resize(offsets[max_levels[dim] + 1]);
             for(int level=0; level <= max_levels[dim]; level++)
@@ -124,7 +122,7 @@ protected:
  */
 
 template <typename T>
-class CacheLagrangeDerivative : public CacheLagrange<T> {
+class CacheLagrangeDerivative {
 public:
     /*!
      * \brief Constructor that takes into account a single canonical point \b x.
@@ -139,100 +137,56 @@ public:
      * - \b holds the coordinates of the canonical point to cache
      */
     CacheLagrangeDerivative(int num_dimensions, const std::vector<int> &max_levels, const OneDimensionalWrapper &rule, const double x[]) :
-            CacheLagrange<T>(num_dimensions, max_levels, rule, x) {
-        cacheDerivatives.resize(num_dimensions);
+            cache(std::vector<std::vector<T>>(num_dimensions, std::vector<T>())), offsets(rule.getPointsCount()) {
         for(int dim=0; dim<num_dimensions; dim++){
-            cacheDerivatives[dim].resize(offsets[max_levels[dim] + 1]);
+            cache[dim].resize(offsets[max_levels[dim] + 1]);
             for(int level=0; level <= max_levels[dim]; level++)
-                cacheDerivativeLevel(level, x[dim], rule, &(cache[dim][offsets[level]]), &(cacheDerivatives[dim][offsets[level]]));
+                cacheDerivativeLevel(level, x[dim], rule, &(cache[dim][offsets[level]]));
         }
     }
     //! \brief Destructor, clear all used data.
     ~CacheLagrangeDerivative() = default;
 
     //! \brief Computes the derivatives of all Lagrange polynomials for the given level at the given x
-    static void cacheDerivativeLevel(int level, double x, const OneDimensionalWrapper &rule, T *vals, T *cc){
-        // Initialize.
+    static void cacheDerivativeLevel(int level, double x, const OneDimensionalWrapper &rule, T *cc){
+        /*
+         * The usual j-th Lagrange derivative is of the form Lj(x) = cj * fj(x) * gj(x) where
+         *
+         *   fj(x) = (x - nodes[0])...(x - nodes[j-1]),
+         *   gj(x) = (x - nodes[j+1])...(x - nodes[num_points-1]),
+         *
+         * and cj is the j-th Lagrange coefficient. The product rule gives Lj'(x) = cj * [fj'(x) * gj(x) + fj(x) * gj'(x)].
+         * Hence, we do a forward pass for [fj(x), fj'(x)] and a backward pass for [gj(x), gj'(x)].
+         */
         const double *nodes = rule.getNodes(level);
         const double *coeff = rule.getCoefficients(level);
         int num_points = rule.getNumPoints(level);
-
-        // Check to see if x is one of the cached roots.
-        int match_idx = -1;
-        for (int j=0; j<num_points; j++) {
-            if (std::fabs(x - nodes[j]) <= Maths::num_tol) {
-                match_idx = j;
-                break;
-            }
+        // cc first stores fj'(x), aux_f stores fj(x), and aux_g stores gj(x).
+        std::vector<T> aux_f(num_points), aux_g(num_points);
+        cc[0] = (rule.getType() == rule_clenshawcurtis0) ? 2.0 * x : 0.0;
+        aux_f[0] = (rule.getType() == rule_clenshawcurtis0) ? x * x - 1.0 : 1.0;
+        aux_g[num_points-1] = 1.0;
+        for(int i=1; i<num_points; i++) {
+            aux_f[i] = aux_f[i-1] * (x - nodes[i-1]);
+            aux_g[num_points-1-i] = aux_g[num_points-i] * (x - nodes[num_points-i]);
+            cc[i] = aux_f[i-1] + (x - nodes[i-1]) * cc[i-1];
         }
-
-        if (match_idx >= 0) {
-            // Gradient evaluation at one of cached roots. Must be built from scratch.
-            cc[0] = 1.0;
-            T c = 1.0;
-            T inv_sum = (rule.getType() == rule_clenshawcurtis0) ? 1 / (x + 1.0) + 1 / (x - 1.0) : 0.0;
-            for (int j=0; j<=match_idx-1; j++) {
-                c *= x - nodes[j];
-                cc[j+1] = c;
-                inv_sum += 1 / (x - nodes[j]);
-            }
-            if (match_idx+1 < num_points)
-                cc[match_idx+1] = c;
-            for (int j=match_idx+1; j<num_points-1; j++) {
-                c *= x - nodes[j];
-                cc[j+1] = c;
-                inv_sum += 1 / (x - nodes[j]);
-            }
-            inv_sum += (match_idx == num_points-1) ? 0.0 : 1 / (x - nodes[num_points-1]);
-            c = rule.getType() == rule_clenshawcurtis0 ? (x - 1.0) * (x + 1.0) : 1.0;
-            cc[num_points-1] *= c * coeff[num_points-1];
-            for(int j=num_points-2; j>=match_idx; j--) {
-                c *= x - nodes[j+1];
-                cc[j] *= c * coeff[j];
-            }
-            if (match_idx >= 1)
-                cc[match_idx-1] *= c * coeff[match_idx-1];
-            for(int j=match_idx-2; j>=0; j--) {
-                c *= x - nodes[j+1];
-                cc[j] *= c * coeff[j];
-            }
-            // Special case where we expand the full product rule.
-            cc[match_idx] = inv_sum;
-        } else if (rule.getType() == rule_clenshawcurtis0 and std::fabs(x * x - 1.0) <= Maths::num_tol) {
-            // Gradient evaluation at x = -1.0, +1.0 when the rule is Clenshaw-Curtis-Zero.
-            cc[0] = 1.0;
-            T c = 1.0;
-            T inv_sum = 1 / (2.0 * x);
-            for (int j=0; j<num_points-1; j++) {
-                c *= x - nodes[j];
-                cc[j+1] = c;
-                inv_sum += 1 / (x - nodes[j]);
-            }
-            c = 2.0 * x;
-            for(int j=num_points-2; j>=0; j--) {
-                c *= x - nodes[j+1];
-                cc[j] *= c * coeff[j];
-            }
-        } else {
-            // Gradient evaluation at all other points. Can be built from the cached Lagrange values.
-            T inv_sum = (rule.getType() == rule_clenshawcurtis0) ? 1 / (x + 1.0) + 1 / (x - 1.0) : 0.0;
-            for (int j=0; j<num_points; j++)
-                inv_sum += 1 / (x - nodes[j]);
-            for (int j=0; j<num_points; j++)
-                cc[j] = vals[j] * (inv_sum - 1.0 / (x - nodes[j]));
+        cc[num_points-1] *= coeff[num_points-1];
+        T diff_gj = 0.0;
+        for(int i=num_points-2; i>=0; i--) {
+            diff_gj = aux_g[i+1] + diff_gj * (x - nodes[i+1]);
+            cc[i] = coeff[i] * (cc[i] * aux_g[i] + aux_f[i] * diff_gj);
         }
     }
 
     //! \brief Return the Lagrange derivative cache for given \b dimension, \b level and offset local to the level
     T getLagrangeDerivative(int dimension, int level, int local) const {
-        return cacheDerivatives[dimension][offsets[level] + local];
+        return cache[dimension][offsets[level] + local];
     }
 
 protected:
-    std::vector<std::vector<T>> cacheDerivatives;
-    // Needed for proper inheritance.
-    using CacheLagrange<T>::offsets;
-    using CacheLagrange<T>::cache;
+    std::vector<std::vector<T>> cache;
+    std::vector<int> offsets;
 };
 
 }
