@@ -872,46 +872,20 @@ double GridLocalPolynomial::evalBasisSupported(const int point[], const double x
     return f;
 }
 
-std::vector<double> GridLocalPolynomial::diffBasisRaw(const int point[], const double x[]) const{
-    std::vector<double> df(num_dimensions, 0.0);
-    std::vector<double> basis_values(num_dimensions);
-    int num_zero_values = 0;
-    double nonzero_values_prod = 1.0;
-    int idx_zero_value;
-    bool supported_at_j;
-    for(int j=1; j<num_dimensions; j++) {
-        basis_values[j] = rule->evalSupport(point[j], x[j], supported_at_j);
-        if (std::fabs(basis_values[j]) < Maths::num_tol or !supported_at_j) {
-            num_zero_values++;
-            idx_zero_value = j;
-        } else {
-            nonzero_values_prod *= basis_values[j];
-        }
-    }
-    if (num_zero_values == 0)
-        for (int j=0; j<num_dimensions; j++)
-            df[j] += nonzero_values_prod / basis_values[j] * rule->diffRaw(point[j], x[j]);
-    else if (num_zero_values == 1)
-        df[idx_zero_value] += nonzero_values_prod * rule->diffRaw(point[idx_zero_value], x[idx_zero_value]);
-    return df;
-}
-std::vector<double> GridLocalPolynomial::diffBasisSupported(const int point[], const double x[], bool &isSupported) const{
+void GridLocalPolynomial::diffBasisSupported(const int point[], const double x[], double diff_values[], bool &isSupported) const{
     isSupported = false;
-    std::vector<double> diff_values(num_dimensions, 1.0);
+    for(int i=0; i<num_dimensions; i++) diff_values[i] = 1.0;
     bool isDimSupported = false;
     for(int k=0; k<num_dimensions; k++) {
-        for(int j=0; j<k; j++) {
-            diff_values[k] *= rule->evalSupport(point[j], x[j], isDimSupported);
-            isSupported = isDimSupported or isSupported;
-        }
+        double fval = rule->evalSupport(point[k], x[k], isDimSupported);
+        isSupported = isDimSupported or isSupported;
+        for(int j=0; j<k; j++) diff_values[j] *= fval;
+        for(int j=k+1; j<num_dimensions; j++) diff_values[j] *= fval;
+    }
+    for (int k=0; k<num_dimensions; k++) {
         diff_values[k] *= rule->diffSupport(point[k], x[k], isDimSupported);
         isSupported = isDimSupported or isSupported;
-        for(int j=k+1; j<num_dimensions; j++) {
-            diff_values[k] *= rule->evalSupport(point[j], x[j], isDimSupported);
-            isSupported = isDimSupported or isSupported;
-        }
     }
-    return diff_values;
 }
 
 void GridLocalPolynomial::buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, std::vector<int> &spntr, std::vector<int> &sindx, std::vector<double> &svals) const{

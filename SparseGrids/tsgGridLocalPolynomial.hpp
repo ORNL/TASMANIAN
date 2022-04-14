@@ -198,14 +198,10 @@ protected:
 
         for(const auto &r : roots){
             bool isSupported;
-            double basis_value;
-            std::vector<double> basis_derivative;
-
-            if (mode == 3 or mode == 4) {
-                basis_derivative = diffBasisSupported(work.getIndex(r), x, isSupported);
-            }else{
-                basis_value = evalBasisSupported(work.getIndex(r), x, isSupported);
-            }
+            double basis_value = (mode == 3 or mode == 4) ? 0.0 : evalBasisSupported(work.getIndex(r), x, isSupported);
+            std::vector<double> basis_derivative(num_dimensions);
+            if (mode == 3 or mode == 4)
+                diffBasisSupported(work.getIndex(r), x, basis_derivative.data(), isSupported);
 
             if (isSupported){
                 if (mode == 0){
@@ -234,7 +230,7 @@ protected:
                     if (monkey_count[current] < pntr[monkey_tail[current]+1]){
                         int p = indx[monkey_count[current]];
                         if (mode == 3 or mode == 4){
-                            basis_derivative = diffBasisSupported(work.getIndex(p), x, isSupported);
+                            diffBasisSupported(work.getIndex(p), x, basis_derivative.data(), isSupported);
                         }else{
                             basis_value = evalBasisSupported(work.getIndex(p), x, isSupported);
                         }
@@ -286,9 +282,7 @@ protected:
 
     double evalBasisRaw(const int point[], const double x[]) const;
     double evalBasisSupported(const int point[], const double x[], bool &isSupported) const;
-
-    std::vector<double> diffBasisRaw(const int point[], const double x[]) const;
-    std::vector<double> diffBasisSupported(const int point[], const double x[], bool &isSupported) const;
+    void diffBasisSupported(const int point[], const double x[], double diff_values[], bool &isSupported) const;
 
     std::vector<double> getNormalization() const;
 

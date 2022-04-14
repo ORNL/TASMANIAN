@@ -318,22 +318,12 @@ public:
             // Note that the support will be of the form [a, b), except for x = +1.0, i.e., the rightmost node in the domain. This
             // is to avoid double-counting derivatives at points of discontinuity.
             double xn = scaleX(point, x);
-            bool rightmost_node = (x == 1.0 and xn == 1.0);
-            isSupported = (-1.0 <= xn and xn < 1.0) or rightmost_node;
+            isSupported = (-1.0 <= xn and xn < 1.0) or (x == 1.0 and xn == 1.0);
             if (isSupported) {
                 double an = scaleDiffX(point);
                 if (rule != rule_semilocalp and max_order == 1) {
-                    // Edge cases due to the logic of avoiding double-counting.
-                    if (x == 1.0) {
-                        if (rule == rule_localp0 and point == 0)
-                            return  -1.0;
-                        else if (rule == rule_localpb and point == 1)
-                            return 0.5;
-                        else if (rule == rule_localpb and point == 2)
-                            return -1.0;
-                        else if (point == 2)
-                            return an;
-                    }
+                    // Edge case due to the logic of avoiding double-counting.
+                    if (x == 1.0 and rule == rule_localp and point == 2) return an;
                     return (xn >= 0 ? -1.0 : 1.0) * an;
                 }
                 if (max_order == 2) return an * diffPWQuadratic(point, xn);
@@ -491,10 +481,10 @@ protected:
         return (point % 2 == 0) ? 1.0 / 3.0 - x * (x + 2.0) : -1.0 / 3.0 + x * (x - 2.0);
     }
     double diffPWPower(int point, double x) const{
-        if (rule == rule_localp)     if (point <= 8) return diffPWCubic(point, x);
-        if (rule == rule_semilocalp) if (point <= 4) return diffPWCubic(point, x);
-        if (rule == rule_localpb)    if (point <= 4) return diffPWCubic(point, x);
-        if (rule == rule_localp0)    if (point <= 2) return diffPWCubic(point, x);
+        if (rule == rule_localp     and point <= 8) return diffPWCubic(point, x);
+        if (rule == rule_semilocalp and point <= 4) return diffPWCubic(point, x);
+        if (rule == rule_localpb    and point <= 4) return diffPWCubic(point, x);
+        if (rule == rule_localp0    and point <= 2) return diffPWCubic(point, x);
         int level = getLevel(point);
         int max_ancestors;
         if (rule == rule_localp)     max_ancestors = level-2;
@@ -502,6 +492,9 @@ protected:
         if (rule == rule_localpb)    max_ancestors = level-1;
         if (rule == rule_localp0)    max_ancestors = level;
         if (max_order > 0) max_ancestors = std::min(max_ancestors, max_order - 2);
+
+        // This lambda captures most_turns and phantom_distance by reference, uses those as internal state variables, and on each
+        // call it returns the next normalized ancestor node.
         int most_turns = 1;
         double phantom_distance = 1.0;
         auto update_and_get_next_node = [&]() {
@@ -513,25 +506,36 @@ protected:
                     (-phantom_distance + 2.0 * ((double) (most_turns - 1 - turns)));
         };
 
-        // Does not include the additional factor (1-x)(1+x) and the Lagrange coefficient.
-        std::vector<double> nodes(max_ancestors), left_prods(max_ancestors);
+        // This lambda is the inverse transform of update_and_get_next_node() above, and returns the previous descendant node.
+        auto rollback_and_get_prev_node = [&]() {
+            most_turns /= 2;
+            phantom_distance = 0.5 * (phantom_distance - 1.0);
+            int turns = (rule == rule_localp0) ? ((point+1) % most_turns) : ((point-1) % most_turns);
+            return (turns < most_turns / 2) ?
+                    (phantom_distance - 2.0 * ((double) turns)) :
+                    (-phantom_distance + 2.0 * ((double) (most_turns - 1 - turns)));
+        };
+
+        // Does not include the additional factor (1-x) * (1+x) and the Lagrange coefficient.
+        std::vector<double> left_prods(max_ancestors);
         left_prods[0] = 1.0;
-        nodes[0] = update_and_get_next_node();
-        double coeff = 1 / (-nodes[0]);
+        double node = update_and_get_next_node();
+        double coeff = 1.0 / (-node);
         for(int j=1; j<max_ancestors; j++) {
-            nodes[j] = update_and_get_next_node();
-            coeff *= 1 / (-nodes[j]);
-            left_prods[j] = left_prods[j-1] * (x - nodes[j-1]);
+            left_prods[j] = left_prods[j-1] * (x - node);
+            node = update_and_get_next_node();
+            coeff *= 1.0 / (-node);
         }
         double right_prod = 1.0;
         double derivative = left_prods[max_ancestors-1];
         for (int j=max_ancestors-2; j>=0; j--) {
-            right_prod *= x - nodes[j+1];
+            right_prod *= x - node;
             derivative += right_prod * left_prods[j];
+            node = rollback_and_get_prev_node();
         }
 
-        // Adjust for the Lagrange coefficient and the additional factor (1-x)(1+x).
-        derivative = derivative * (1.0 - x) * (1.0 + x) + right_prod * (x - nodes[0]) * (-2.0) * x;
+        // Adjust for the additional factor (1-x) * (1+x) and the Lagrange coefficient.
+        derivative = derivative * (1.0 - x) * (1.0 + x) + right_prod * (x - node) * (-2.0) * x;
         derivative *= coeff;
 
         return derivative;

@@ -143,6 +143,7 @@ private:
 
     std::vector<TestType> quad_only, int_only, diff_only, quad_int, quad_diff, int_diff, all_test_types;
 
+    OneOneP0 f11p0;
     OneOneP3 f11p3;
 
     TwoOneExpNX2 f21nx2;

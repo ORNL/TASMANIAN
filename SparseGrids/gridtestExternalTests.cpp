@@ -876,25 +876,22 @@ bool ExternalTester::testAllGlobal() const{
 bool ExternalTester::testLocalPolynomialRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int depths[], const double tols[]) const{
     TasGrid::TasmanianSparseGrid grid;
     TestResults R;
-    BaseFunction* const_fn = new OneOneP0();
     std::vector<int> orders = { 0, 1, 2, 3, 4, -1 };
-    std::vector<double> x = genRandom(f->getNumInputs());
-    std::vector<double> x_const_fn = genRandom(const_fn->getNumInputs());
+    std::vector<double> test_x;
+    const BaseFunction* test_fn;
     bool bPass = true;
     for(int i=0; i<30; i++) {
-        if (orders[i / 5] == 0 and (all_test_types[i % 5] == type_nodal_differentiation or all_test_types[i % 5] == type_internal_differentiation)) {
-            // When order = 0, all derivatives are equal to zero.
-            grid = makeLocalPolynomialGrid(const_fn->getNumInputs(), const_fn->getNumOutputs(), depths[i], orders[i / 5], rule);
-            R = getError(const_fn, grid, all_test_types[i % 5], x_const_fn);
-        } else {
-            grid = makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i / 5], rule);
-            R = getError(f, grid, all_test_types[i % 5], x);
-        }
+        bool zero_order_diff_test = (orders[i / 5] == 0 and (all_test_types[i % 5] == type_nodal_differentiation or
+                                                             all_test_types[i % 5] == type_internal_differentiation));
+        test_fn = zero_order_diff_test ? &f11p0 : f;
+        test_x = genRandom(test_fn->getNumInputs());
+        grid = makeLocalPolynomialGrid(test_fn->getNumInputs(), test_fn->getNumOutputs(), depths[i], orders[i / 5], rule);
+        R = getError(test_fn, grid, all_test_types[i % 5], test_x);
         if (R.error > tols[i]) {
             bPass = false;
             cout << setw(18) << "ERROR: FAILED ";
             cout << setw(6) << IO::getRuleString(rule) << " order: " << orders[i / 5];
-            cout << setw(25) << testName(all_test_types[i % 5]) << "   failed function: " << f->getDescription();
+            cout << setw(25) << testName(all_test_types[i % 5]) << "   failed function: " << test_fn->getDescription();
             cout << setw(10) << "  observed: " << R.error << "  expected: " << tols[i] << endl;
         }
     }
@@ -1052,76 +1049,60 @@ bool ExternalTester::testAllPWLocal() const{
     int wfirst = 10, wsecond = 35, wthird = 15;
 
     { TasGrid::TypeOneDRule oned = TasGrid::rule_semilocalp;
-      const int depths1[30] = { 8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8};
-      const double tols1[30] = { 1.E-03, 5.E-01, 5.E-01, 5.E-00, 5.E-00,
-                                 1.E-03, 1.E-03, 1.E-03, 1.E-01, 1.E-01,
-                                 1.E-07, 1.E-04, 1.E-04, 1.E-03, 1.E-03,
-                                 1.E-07, 1.E-05, 1.E-05, 1.E-04, 1.E-04,
-                                 1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05,
-                                 1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05 };
-      if (testLocalPolynomialRule(&f21nx2, oned, depths1, tols1)){
+      const std::vector<int> depths1(30, 8);
+      // Tolerances for semi-local quadrature (column 1), interpolation (columns 2-3), and differentiation (columns 4-5).
+      const std::vector<double> tols1 = { 1.E-03, 5.E-01, 5.E-01, 5.E-01, 5.E-01, // order 0
+                                          1.E-03, 1.E-03, 1.E-03, 1.E-01, 1.E-01, // order 1
+                                          1.E-07, 1.E-04, 1.E-04, 1.E-03, 1.E-03, // order 2
+                                          1.E-07, 1.E-05, 1.E-05, 1.E-04, 1.E-04, // order 3
+                                          1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05, // order 4
+                                          1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05 }; // order -1
+      if (testLocalPolynomialRule(&f21nx2, oned, depths1.data(), tols1.data())){
           if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
       }else{
           cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl; pass = false;
       }
     }
     { TasGrid::TypeOneDRule oned = TasGrid::rule_localp;
-      const int depths1[30] = { 8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8};
-      const double tols1[30] = { 1.E-03, 5.E-01, 5.E-01, 5.E-00, 5.E-00,
-                                 1.E-03, 1.E-03, 1.E-03, 1.E-01, 1.E-01,
-                                 1.E-07, 1.E-04, 1.E-04, 1.E-03, 1.E-03,
-                                 1.E-07, 1.E-05, 1.E-05, 1.E-04, 1.E-04,
-                                 1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05,
-                                 1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05 };
-      if (testLocalPolynomialRule(&f21nx2, oned, depths1, tols1)){
+      const std::vector<int> depths1(30, 8);
+      // Tolerances for local quadrature (column 1), interpolation (columns 2-3), and differentiation (columns 4-5).
+      const std::vector<double> tols1 = { 1.E-03, 5.E-01, 5.E-01, 5.E-01, 5.E-01, // order 0
+                                          1.E-03, 1.E-03, 1.E-03, 1.E-01, 1.E-01, // order 1
+                                          1.E-07, 1.E-04, 1.E-04, 1.E-03, 1.E-03, // order 2
+                                          1.E-07, 1.E-05, 1.E-05, 1.E-04, 1.E-04, // order 3
+                                          1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05, // order 4
+                                          1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05 }; // order -1
+      if (testLocalPolynomialRule(&f21nx2, oned, depths1.data(), tols1.data())){
           if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
       }else{
           cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl; pass = false;
       }
     }
     { TasGrid::TypeOneDRule oned = TasGrid::rule_localpb;
-      const int depths1[30] = { 8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8};
-      const double tols1[30] = { 1.E-03, 5.E-01, 5.E-01, 5.E-00, 5.E-00,
-                                 1.E-03, 1.E-03, 1.E-03, 5.E-01, 5.E-01,
-                                 1.E-07, 1.E-04, 1.E-04, 1.E-02, 1.E-02,
-                                 1.E-07, 1.E-05, 1.E-05, 1.E-03, 1.E-03,
-                                 1.E-07, 9.E-06, 9.E-06, 9.E-05, 9.E-05,
-                                 1.E-06, 2.E-05, 2.E-05, 2.E-04, 2.E-04 };
-      if (testLocalPolynomialRule(&f21sincosaxis, oned, depths1, tols1)){
+      const std::vector<int> depths1(30, 8);
+      // Tolerances for local-boundary quadrature (column 1), interpolation (columns 2-3), and differentiation (columns 4-5).
+      const std::vector<double> tols1 = { 1.E-03, 5.E-01, 5.E-01, 5.E-01, 5.E-01, // order 0
+                                          1.E-03, 1.E-03, 1.E-03, 5.E-01, 5.E-01, // order 1
+                                          1.E-07, 1.E-04, 1.E-04, 1.E-02, 1.E-02, // order 2
+                                          1.E-07, 1.E-05, 1.E-05, 1.E-03, 1.E-03, // order 3
+                                          1.E-07, 9.E-06, 9.E-06, 9.E-05, 9.E-05, // order 4
+                                          1.E-06, 2.E-05, 2.E-05, 2.E-04, 2.E-04 }; // order -1
+      if (testLocalPolynomialRule(&f21sincosaxis, oned, depths1.data(), tols1.data())){
           if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
       }else{
           cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl; pass = false;
       }
     }
     { TasGrid::TypeOneDRule oned = TasGrid::rule_localp0;
-      const int depths1[30] = { 8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8,
-                                8, 8, 8, 8, 8};
-      const double tols1[30] = { 1.E-03, 5.E-01, 5.E-01, 5.E-00, 5.E-00,
-                                 1.E-03, 2.E-04, 2.E-04, 2.E-02, 2.E-02,
-                                 1.E-09, 1.E-06, 1.E-06, 1.E-04, 1.E-04,
-                                 1.E-09, 3.E-08, 3.E-08, 3.E-06, 3.E-06,
-                                 1.E-09, 4.E-09, 4.E-09, 4.E-08, 4.E-08,
-                                 1.E-09, 4.E-09, 4.E-09, 4.E-08, 4.E-08};
-      if (testLocalPolynomialRule(&f21coscos, oned, depths1, tols1)){
+      const std::vector<int> depths1(30, 8);
+      // Tolerances for local-zero quadrature (column 1), interpolation (columns 2-3), and differentiation (columns 4-5).
+      const std::vector<double> tols1 = { 1.E-03, 5.E-01, 5.E-01, 5.E-01, 5.E-01, // order 0
+                                          1.E-03, 2.E-04, 2.E-04, 2.E-02, 2.E-02, // order 1
+                                          1.E-09, 1.E-06, 1.E-06, 1.E-04, 1.E-04, // order 2
+                                          1.E-09, 3.E-08, 3.E-08, 3.E-06, 3.E-06, // order 3
+                                          1.E-09, 4.E-09, 4.E-09, 4.E-08, 4.E-08, // order 4
+                                          1.E-09, 4.E-09, 4.E-09, 4.E-08, 4.E-08}; // order -1
+      if (testLocalPolynomialRule(&f21coscos, oned, depths1.data(), tols1.data())){
           if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
       }else{
           cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl; pass = false;
