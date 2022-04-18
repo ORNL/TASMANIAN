@@ -387,7 +387,6 @@ void GridFourier::getInterpolationWeights(const double x[], double weights[]) co
             weights[work.getSlot(p)] += (tensorw * fftprod);
         }
     }
-
 }
 
 void GridFourier::getQuadratureWeights(double weights[]) const{

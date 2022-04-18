@@ -312,6 +312,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
                     f->getDerivative(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
                 }
             }
+
             double rel_err = 0.0; // relative error
             for(int k=0; k<num_entries; k++){
                 double nrm = 0.0; // norm, needed to compute relative error
@@ -1217,7 +1218,7 @@ bool ExternalTester::testAllFourier() const{
     bool pass = true;
     const int depths1[5] = { 6, 6, 6, 6, 6 };
     const int depths2[5] = { 5, 5, 5, 5, 5 };
-    const double tols1[5] = { 1.E-11, 1.E-06, 1.E-06, 5.E-05, 1.E-05 };
+    const double tols1[5] = { 1.E-11, 1.E-06, 1.E-06, 5.E-04, 1.E-05 };
     const double tols2[5] = { 1.E-11, 1.E-02, 1.E-02, 5.E-01, 1.E-01 };
     int wfirst = 11, wsecond = 34, wthird = 15;
     if (testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, all_test_types, depths1, tols1) &&
@@ -2317,47 +2318,8 @@ bool ExternalTester::testAllAcceleration() const{
 }
 
 void ExternalTester::debugTest(){
-    // cout << "Debug Test (callable from the CMake build folder)" << endl;
-    // cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
-
-    int depth = 7;
-    auto f = &f21expsincos;
-    std::vector<double> x0 = genRandom(f->getNumInputs());
-    for (auto &x0i : x0) x0i = 0.5 * (x0i + 1.0);
-    auto grid = makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), depth, TasGrid::type_level);
-
-    // // BASIC TEST.
-    // loadValues(f, grid);
-
-    // std::vector<double> grad_tasm(f->getNumInputs()), grad_true(f->getNumInputs());
-    // grid.differentiate(x0.data(), grad_tasm.data());
-    // f->getDerivative(x0.data(), grad_true.data());
-
-    // std::cout << f->getDescription(); std::cout << ", x = "; for (auto xi : x0) std::cout << xi << " ";
-    // std::cout << std::endl;
-    // std::cout << "tasm = "; for (auto g : grad_tasm) std::cout << g << " ";
-    // std::cout << std::endl;
-    // std::cout << "true = "; for (auto g : grad_true) std::cout << g << " ";
-
-    // // SIMULATED TEST.
-
-    std::cout << "NODAL INTERPOLATION\n";
-    auto R0 = getError(f, grid, type_nodal_interpolation, x0);
-    std::cout << "err = " << R0.error << "\n\n";
-
-    std::cout << "NODAL DIFFERENTIATION\n";
-    auto R1 = getError(f, grid, type_nodal_differentiation, x0);
-    std::cout << "err = " << R1.error << "\n\n";
-
-    std::cout << "INTERNAL DIFFERENTIATION\n";
-    auto R2 = getError(f, grid, type_internal_differentiation, x0);
-    std::cout << "err = " << R2.error << "\n\n";
-
-    // // FOURIER TEST.
-    // int depths[2] = { 6, 6 };
-    // double tols[2] = { 1E-05, 1E-05 };
-    // testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, diff_only, depths, tols);
-
+    cout << "Debug Test (callable from the CMake build folder)" << endl;
+    cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
 }
 
 void ExternalTester::debugTestII(){
