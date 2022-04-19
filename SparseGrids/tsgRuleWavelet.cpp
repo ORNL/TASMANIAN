@@ -312,6 +312,25 @@ double RuleWavelet::eval(int point, double x) const{
     return 0.;
 }
 
+double RuleWavelet::diff(int point, double x) const {
+    // Returns the right derivative when it exists, otherwise, returns the left derivative.
+    if(order == 1) {
+        if (point < 3){
+            double node = getNode(point);
+            double w = 1.0 - std::abs(x - node);
+            double slope = ((x - node < 0.0) or (x == 1.0 and node == 1.0)) ? 1.0 : -1.0;
+            return (w < 0.0) ? 0.0 : slope;
+        }
+        // TODO: Implement this.
+        // return diff_linear(point, x);
+    }
+    else if(order == 3){
+        // TODO: Implement this.
+        // return diff_cubic(point, x);
+    }
+    return 0.0;
+}
+
 inline double RuleWavelet::eval_cubic(int point, double x) const{
     // Evaluates a third order wavelet at a given point x.
     if (point < 5){ // Scaling functions

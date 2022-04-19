@@ -313,6 +313,22 @@ void GridWavelet::integrate(double q[], double *conformal_correction) const{
     }
 }
 
+void GridWavelet::differentiate(const double x[], double jacobian[]) const{
+    std::fill(jacobian, jacobian + num_outputs * num_dimensions, 0.0);
+
+    int num_points = points.getNumIndexes();
+    std::vector<double> basis_jacobian(num_outputs * num_dimensions);
+    for(int i=0; i<num_points; i++){
+        const double *s = coefficients.getStrip(i);
+        evalDiffBasis(points.getIndex(i), x, basis_jacobian.data());
+        for(int k=0; k<num_outputs; k++) {
+            for (int d=0; d<num_dimensions; d++) {
+                jacobian[k * num_dimensions + d] += basis_jacobian[d] * s[k];
+            }
+        }
+    }
+}
+
 double GridWavelet::evalBasis(const int p[], const double x[]) const{
     // Evaluates the wavelet basis given at point p at the coordinates given by x.
     double v = 1.0;
@@ -330,6 +346,14 @@ double GridWavelet::evalIntegral(const int p[]) const{
         if (v == 0.0){ break; }; // MIRO: reduce the expensive wavelet evaluations
     }
     return v;
+}
+void GridWavelet::evalDiffBasis(const int p[], const double x[], double jacobian[]) const {
+    // Evaluates the derivative of the wavelet basis given at point p at the coordinates given by x.
+    double v = 1.0;
+    for(int i=0; i<num_dimensions; i++) {
+        // TODO: Change this:
+        // jacobian[i] *= rule1D.eval(p[i], x[i]);
+    }
 }
 
 void GridWavelet::buildInterpolationMatrix() const{

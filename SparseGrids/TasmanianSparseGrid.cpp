@@ -504,6 +504,8 @@ void TasmanianSparseGrid::differentiate(const double x[], double jacobian[]) con
         get<GridLocalPolynomial>()->differentiate(formCanonicalPoints(x, x_tmp, 1), jacobian);
     } else if (isFourier()) {
         get<GridFourier>()->differentiate(formCanonicalPoints(x, x_tmp, 1), jacobian);
+    } else if (isWavelet()) {
+        get<GridWavelet>()->differentiate(formCanonicalPoints(x, x_tmp, 1), jacobian);
     } else {
         throw std::runtime_error("ERROR: in differentiate(), jacobians/gradients are not available for this type of grid");
     }
