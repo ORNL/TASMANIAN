@@ -402,6 +402,8 @@ void TasmanianSparseGrid::getDifferentiationWeights(const double x[], double wei
         get<GridLocalPolynomial>()->getDifferentiationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
     } else if (isFourier()) {
         get<GridFourier>()->getDifferentiationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
+    } else if (isWavelet()) {
+        get<GridWavelet>()->getDifferentiationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
     } else {
         throw std::runtime_error("ERROR: getDifferentiationWeights() cannot be called for grids of this type");
     }

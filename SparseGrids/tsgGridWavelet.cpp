@@ -123,7 +123,7 @@ void GridWavelet::getPoints(double *x) const{
     if (points.empty()){ getNeededPoints(x); }else{ getLoadedPoints(x); }
 }
 
-void GridWavelet::getQuadratureWeights(double *weights) const{
+void GridWavelet::getQuadratureWeights(double weights[]) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
     #pragma omp parallel for
@@ -133,7 +133,7 @@ void GridWavelet::getQuadratureWeights(double *weights) const{
     if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
     inter_matrix.invertTransposed(acceleration, weights);
 }
-void GridWavelet::getInterpolationWeights(const double x[], double *weights) const{
+void GridWavelet::getInterpolationWeights(const double x[], double weights[]) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
     #pragma omp parallel for
@@ -143,6 +143,17 @@ void GridWavelet::getInterpolationWeights(const double x[], double *weights) con
     if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
     inter_matrix.invertTransposed(acceleration, weights);
 }
+void GridWavelet::getDifferentiationWeights(const double x[], double weights[]) const{
+    const MultiIndexSet &work = (points.empty()) ? needed : points;
+    int num_points = work.getNumIndexes();
+    #pragma omp parallel for
+    for(int i=0; i<num_points; i++){
+        evalDiffBasis(work.getIndex(i), x, &(weights[i * num_points]));
+    }
+    // if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
+    // inter_matrix.invertTransposed(acceleration, weights);
+}
+
 void GridWavelet::loadNeededValues(const double *vals){
     clearGpuCoefficients();
     if (points.empty()){
@@ -333,7 +344,7 @@ double GridWavelet::evalBasis(const int p[], const double x[]) const{
     // Evaluates the wavelet basis given at point p at the coordinates given by x.
     double v = 1.0;
     for(int i = 0; i < num_dimensions; i++){
-        v *= rule1D.eval(p[i], x[i]);
+        v *= rule1D.eval<0>(p[i], x[i]);
         if (v == 0.0){ break; }; // MIRO: reduce the expensive wavelet evaluations
     }
     return v;
@@ -349,10 +360,27 @@ double GridWavelet::evalIntegral(const int p[]) const{
 }
 void GridWavelet::evalDiffBasis(const int p[], const double x[], double jacobian[]) const {
     // Evaluates the derivative of the wavelet basis given at point p at the coordinates given by x.
-    double v = 1.0;
+    std::vector<double> value_cache(num_dimensions), derivative_cache(num_dimensions);
     for(int i=0; i<num_dimensions; i++) {
-        // TODO: Change this:
-        // jacobian[i] *= rule1D.eval(p[i], x[i]);
+        value_cache[i] = rule1D.eval<0>(p[i], x[i]);
+        derivative_cache[i] = rule1D.eval<1>(p[i], x[i]);
+    }
+    std::fill(jacobian, jacobian + num_dimensions * num_outputs, 0.0);
+    // Note that excessive branching is done to intentionally mirror the logic in evalBasis() and evalIntegral().
+    for(int i=0; i<num_dimensions; i++) {
+        double derivative = 1.0;
+        for(int j=0; j<i; j++) {
+            derivative *= value_cache[j];
+            if (derivative == 0.0) break;
+        }
+        if (derivative == 0.0) continue;
+        derivative *= derivative_cache[i];
+        for(int j=i+1; j<num_dimensions; j++) {
+            derivative *= value_cache[j];
+            if (derivative == 0.0) break;
+        }
+        if (derivative == 0.0) continue;
+        jacobian[i] = derivative;
     }
 }
 
@@ -394,7 +422,7 @@ void GridWavelet::buildInterpolationMatrix() const{
 
                 double v = 1.0;
                 for(int j=0; j<num_dimensions; j++){
-                    v *= rule1D.eval(w[j], xi[j]);
+                    v *= rule1D.eval<0>(w[j], xi[j]);
                     if (v == 0.0) break; // evaluating the wavelets is expensive, stop if any one of them is zero
                 }
 
@@ -852,7 +880,7 @@ void GridWavelet::evaluateHierarchicalFunctions(const double x[], int num_x, dou
             const int* p = work.getIndex(j);
             double v = 1.0;
             for(int k=0; k<num_dimensions; k++){
-                v *= rule1D.eval(p[k], this_x[k]);
+                v *= rule1D.eval<0>(p[k], this_x[k]);
                 if (v == 0.0){ break; }; // MIRO: evaluating the wavelets is expensive, stop if any one of them is zero
             }
             this_y[j] = v;

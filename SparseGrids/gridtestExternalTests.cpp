@@ -1140,22 +1140,26 @@ bool ExternalTester::testAllPWLocal() const{
 
 bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depths[], const double tols[], bool flavor) const{
     TestResults R;
-    TestType tests[3] = { type_integration, type_nodal_interpolation, type_internal_interpolation };
     int orders[2] = { 1, 3 };
     std::vector<double> x = genRandom(f->getNumInputs());
     bool bPass = true;
     for(auto acc : available_acc){
-        for(int i=0; i<6; i++){
-            auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/3]);
+        for(int i=0; i<10; i++){
+
+
+            std::cout << "i = " << i << ", order = " << orders[i/5] << ", test = " << testName(all_test_types[i%5]) << "\n";
+
+
+            auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/5]);
             grid.enableAcceleration(acc, (gpuid == -1) ? 0 : gpuid);
             grid.favorSparseAcceleration(flavor);
-            R = getError(f, grid, tests[i%3], x);
+            R = getError(f, grid, all_test_types[i%5], x);
             if (R.error > tols[i]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED";
                 cout << setw(6) << IO::getRuleString(rule_wavelet);
-                cout << " order: " << orders[i/3];
-                cout << testName(tests[i%3]) << "   failed function: " << f->getDescription();
+                cout << " order: " << orders[i/5];
+                cout << testName(all_test_types[i%5]) << "   failed function: " << f->getDescription();
                 cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
             }
         }
@@ -1164,8 +1168,11 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
 }
 bool ExternalTester::testAllWavelet() const{
     bool pass = true;
-    const int depths1[6] = { 7, 7, 7, 5, 5, 5 };
-    const double tols1[6] = { 5.E-05, 1.E-04, 1.E-04, 1.E-08, 1.E-07, 1.E-07 };
+    // Depths and tolerances for quadrature (column 1), interpolation (columns 2-3), and differentiation (columns 4-5).
+    const int depths1[10] = { 7, 7, 7, 7, 7, // order 1
+                              5, 5, 5, 5, 5 }; // order 3
+    const double tols1[10] = { 5.E-05, 1.E-04, 1.E-04, 1E-03, 1E-03, // order 1
+                               1.E-08, 1.E-07, 1.E-07, 1E-06, 1E-06 }; // order 3
     int wfirst = 11, wsecond = 34, wthird = 15;
     if (testLocalWaveletRule(&f21nx2, depths1, tols1, true) and testLocalWaveletRule(&f21nx2, depths1, tols1, false)){
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "wavelet" << setw(wthird) << "Pass" << endl;
