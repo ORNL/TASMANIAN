@@ -70,8 +70,8 @@ public:
 protected:
     template<int mode> inline double eval_linear(int pt, double x) const;
     template<int mode> inline double eval_cubic(int pt, double x) const;
-    template<int mode> inline double linear_boundary_wavelet(double x) const;
-    template<int mode> inline double linear_central_wavelet(double x) const;
+    template<int mode> inline double linear_boundary_wavelet(double x, bool right) const;
+    template<int mode> inline double linear_central_wavelet(double x, bool right) const;
     int order;
     int iteration_depth;
     int num_data_points;

@@ -148,7 +148,7 @@ void GridWavelet::getDifferentiationWeights(const double x[], double weights[]) 
     int num_points = work.getNumIndexes();
     #pragma omp parallel for
     for(int i=0; i<num_points; i++){
-        evalDiffBasis(work.getIndex(i), x, &(weights[i * num_points]));
+        evalDiffBasis(work.getIndex(i), x, &(weights[i * num_dimensions]));
     }
     // if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
     // inter_matrix.invertTransposed(acceleration, weights);
@@ -328,10 +328,19 @@ void GridWavelet::differentiate(const double x[], double jacobian[]) const{
     std::fill(jacobian, jacobian + num_outputs * num_dimensions, 0.0);
 
     int num_points = points.getNumIndexes();
-    std::vector<double> basis_jacobian(num_outputs * num_dimensions);
+    std::vector<double> basis_jacobian(num_dimensions);
     for(int i=0; i<num_points; i++){
         const double *s = coefficients.getStrip(i);
         evalDiffBasis(points.getIndex(i), x, basis_jacobian.data());
+
+
+        // std::cout << "  p = " << *(points.getIndex(i)) << ", x = ";
+        // for (int d=0; d<num_dimensions; d++) std::cout << x[d] << " ";
+        // std::cout << ", db/dx = ";
+        // for (int j=0; j<num_dimensions; j++) std::cout << basis_jacobian[j] << " ";
+        // std::cout << "\n";
+        
+
         for(int k=0; k<num_outputs; k++) {
             for (int d=0; d<num_dimensions; d++) {
                 jacobian[k * num_dimensions + d] += basis_jacobian[d] * s[k];
@@ -360,13 +369,15 @@ double GridWavelet::evalIntegral(const int p[]) const{
 }
 void GridWavelet::evalDiffBasis(const int p[], const double x[], double jacobian[]) const {
     // Evaluates the derivative of the wavelet basis given at point p at the coordinates given by x.
+    // The derivative function of a symmetric function will be antisymmetric across the origin for every x != 0.0.
     std::vector<double> value_cache(num_dimensions), derivative_cache(num_dimensions);
     for(int i=0; i<num_dimensions; i++) {
         value_cache[i] = rule1D.eval<0>(p[i], x[i]);
         derivative_cache[i] = rule1D.eval<1>(p[i], x[i]);
     }
-    std::fill(jacobian, jacobian + num_dimensions * num_outputs, 0.0);
-    // Note that excessive branching is done to intentionally mirror the logic in evalBasis() and evalIntegral().
+
+    std::fill(jacobian, jacobian + num_dimensions, 0.0);
+    // Note that excessive branching is done to mirror the logic in evalBasis() and evalIntegral().
     for(int i=0; i<num_dimensions; i++) {
         double derivative = 1.0;
         for(int j=0; j<i; j++) {
@@ -379,9 +390,12 @@ void GridWavelet::evalDiffBasis(const int p[], const double x[], double jacobian
             derivative *= value_cache[j];
             if (derivative == 0.0) break;
         }
-        if (derivative == 0.0) continue;
         jacobian[i] = derivative;
     }
+
+    // std::cout << "jacobian = ";
+    // for (int d=0; d<num_dimensions; d++) std::cout << jacobian[d] << " ";
+    // std::cout << "\n";
 }
 
 void GridWavelet::buildInterpolationMatrix() const{

@@ -80,7 +80,17 @@ double unitDerivativeTests(const BaseFunction *f, TasmanianSparseGrid &grid) {
             nrm = std::max(nrm, std::fabs(r[i]));
             err = std::max(err, std::fabs(r[i] - y[i]));
         }
+
         rel_err = std::max(rel_err, std::fabs(nrm) < Maths::num_tol ? err : err / nrm);
+
+        // std::cout << "REL_ERR = ";
+        // for (int i=0; i<num_entries; i++) std::cout << std::fabs(r[i]-y[i]) / (std::fabs(r[i]) < Maths::num_tol ? 1.0 :  std::fabs(r[i])) << " ";
+        // std::cout << ", xi = " << unique_nodes[k] << ", TASM = ";
+        // for (auto t : y) std::cout << t << " ";
+        // std::cout << ", TRUE = ";
+        // for (auto t : r) std::cout << t << " ";
+        // std::cout << "\n";
+
     }
     return rel_err;
 }
@@ -288,7 +298,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         };
         R.error = err;
     }else if (type == type_internal_interpolation or type == type_internal_differentiation){
-        if (type == type_internal_differentiation and !(grid.isGlobal() or grid.isSequence() or grid.isLocalPolynomial() or grid.isFourier())) {
+      if (type == type_internal_differentiation and !(grid.isGlobal() or grid.isSequence() or grid.isLocalPolynomial() or grid.isWavelet() or grid.isFourier())) {
             // Avoid testing grids where derivatives have not been implemented.
             R.error = 0.0;
         } else {
@@ -320,12 +330,32 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
                 for(int i=0; i<num_mc; i++){
                     nrm = std::max(nrm, std::fabs(result_true[i * num_entries + k]));
                     err = std::max(err, std::fabs(result_true[i * num_entries + k] - result_tasm[i * num_entries + k]));
+
+
+                    // double errI = std::fabs(result_true[i * num_entries + k] - result_tasm[i * num_entries + k]);
+                    // double nrmI = std::fabs(result_true[i * num_entries + k]);
+                    // double rel_errI = std::fabs(nrmI) <= Maths::num_tol ? errI : errI / nrmI;
+                    // if (rel_errI > 0.4) {
+                    //     std::cout << "err = " << errI << ", nrm = " << nrmI << ", rel_err = " << rel_errI << ", tasm = " << result_tasm[i * num_entries + k]
+                    //               << ", true = " << result_true[i * num_entries + k] << ", x = " << test_x[i * num_dimensions + k]
+                    //               << "\n";
+                    // }
+
+
                 }
                 rel_err = std::max(rel_err, std::fabs(nrm) <= Maths::num_tol ? err : err / nrm);
             }
 
+<<<<<<< HEAD
             if (type == type_internal_differentiation)
+=======
+            // std::cout << "rel_err (pre) = " << rel_err << "\n";
+
+            if (type == type_internal_differentiation or type == type_nodal_differentiation)
+>>>>>>> Debug non-nodal wavelet differentiation logic.
                 rel_err = std::max(rel_err, unitDerivativeTests(f, grid));
+
+            // std::cout << "rel_err (post) = " << rel_err << "\n";
 
             R.error = rel_err;
         }
@@ -1147,7 +1177,7 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
         for(int i=0; i<10; i++){
 
 
-            std::cout << "i = " << i << ", order = " << orders[i/5] << ", test = " << testName(all_test_types[i%5]) << "\n";
+            // std::cout << "i = " << i << ", order = " << orders[i/5] << ", test = " << testName(all_test_types[i%5]) << "\n";
 
 
             auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/5]);
@@ -1156,11 +1186,11 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
             R = getError(f, grid, all_test_types[i%5], x);
             if (R.error > tols[i]){
                 bPass = false;
-                cout << setw(18) << "ERROR: FAILED";
+                cout << setw(18) << "ERROR: FAILED ";
                 cout << setw(6) << IO::getRuleString(rule_wavelet);
                 cout << " order: " << orders[i/5];
-                cout << testName(all_test_types[i%5]) << "   failed function: " << f->getDescription();
-                cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i] << endl;
+                cout << " " << testName(all_test_types[i%5]) << "   failed function: " << f->getDescription();
+                cout << setw(10) << "  observed: " << R.error << "  expected: " << tols[i] << endl;
             }
         }
     }
@@ -1171,8 +1201,8 @@ bool ExternalTester::testAllWavelet() const{
     // Depths and tolerances for quadrature (column 1), interpolation (columns 2-3), and differentiation (columns 4-5).
     const int depths1[10] = { 7, 7, 7, 7, 7, // order 1
                               5, 5, 5, 5, 5 }; // order 3
-    const double tols1[10] = { 5.E-05, 1.E-04, 1.E-04, 1E-03, 1E-03, // order 1
-                               1.E-08, 1.E-07, 1.E-07, 1E-06, 1E-06 }; // order 3
+    const double tols1[10] = { 5.E-05, 1.E-04, 1.E-04, 5E-02, 5E-02, // order 1
+                               1.E-08, 1.E-07, 1.E-07, 5E-05, 5E-05 }; // order 3
     int wfirst = 11, wsecond = 34, wthird = 15;
     if (testLocalWaveletRule(&f21nx2, depths1, tols1, true) and testLocalWaveletRule(&f21nx2, depths1, tols1, false)){
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "wavelet" << setw(wthird) << "Pass" << endl;
@@ -2325,8 +2355,45 @@ bool ExternalTester::testAllAcceleration() const{
 }
 
 void ExternalTester::debugTest(){
-    cout << "Debug Test (callable from the CMake build folder)" << endl;
-    cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
+    // cout << "Debug Test (callable from the CMake build folder)" << endl;
+    // cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
+
+    // BaseFunction *f = &f11p3;
+    // BaseFunction *f = &f21nx2;
+    // BaseFunction *f = new OneOneP0()
+    BaseFunction *f = new OneOneExpMX();
+
+    int depth = 5;
+    int order = 1;
+    auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depth, order);
+    loadValues(f, grid);
+
+    // std::vector<double> x = genRandom(f->getNumInputs());
+    std::vector<double> x(f->getNumInputs(), 0.0);
+
+    std::cout << "x = ";
+    for (auto xi : x) std::cout << xi << " ";
+    std::cout << "\n";
+
+    std::vector<double> result_tasm(f->getNumInputs() * f->getNumOutputs());
+    grid.differentiate(x.data(), result_tasm.data());
+
+    std::cout << "TASM = ";
+    for (auto xi : result_tasm) std::cout << xi << " ";
+    std::cout << "\n";
+
+    std::vector<double> result_true(f->getNumInputs() * f->getNumOutputs());
+    f->getDerivative(x.data(), result_true.data());
+    
+    std::cout << "TRUE = ";
+    for (auto xi : result_true) std::cout << xi << " ";
+    std::cout << "\n";
+
+    // auto R0 = getError(f, grid, type_internal_interpolation, x);
+    // std::cout << "INTERPOLATION ERROR = " << R0.error << "\n";
+
+    // auto R1 = getError(f, grid, type_internal_differentiation, x);
+    // std::cout << "DIFFERENTIATION ERROR = " << R1.error << "\n";
 }
 
 void ExternalTester::debugTestII(){
