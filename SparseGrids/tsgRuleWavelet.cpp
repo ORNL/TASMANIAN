@@ -316,9 +316,6 @@ double RuleWavelet::eval(int point, double x) const{
         return eval_linear<mode>(point, x);
     }
     else if (order == 3) {
-
-        // if (mode == 1) std::cout << "point = " << point << ", value = " << eval_cubic<mode>(point, x) << "\n";
-
         return eval_cubic<mode>(point, x);
     }
     return 0.;

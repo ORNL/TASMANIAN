@@ -1177,7 +1177,7 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
         for(int i=0; i<10; i++){
 
 
-            // std::cout << "i = " << i << ", order = " << orders[i/5] << ", test = " << testName(all_test_types[i%5]) << "\n";
+            std::cout << "i = " << i << ", order = " << orders[i/5] << ", test = " << testName(all_test_types[i%5]) << "\n";
 
 
             auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/5]);
@@ -2359,41 +2359,81 @@ void ExternalTester::debugTest(){
     // cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
 
     // BaseFunction *f = &f11p3;
-    // BaseFunction *f = &f21nx2;
+    BaseFunction *f = &f21nx2;
     // BaseFunction *f = new OneOneP0()
-    BaseFunction *f = new OneOneExpMX();
+    // BaseFunction *f = new OneOneExpMX();
+    int num_dimensions = f->getNumInputs();
+    int num_outputs = f->getNumOutputs();
 
-    int depth = 5;
+    int depth = 7;
     int order = 1;
-    auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depth, order);
+    auto grid = makeWaveletGrid(num_dimensions, num_outputs, depth, order);
     loadValues(f, grid);
 
-    // std::vector<double> x = genRandom(f->getNumInputs());
-    std::vector<double> x(f->getNumInputs(), 0.0);
-
+    std::vector<double> x = genRandom(num_dimensions);
+    // std::vector<double> x(num_dimensions, 0.0);
     std::cout << "x = ";
     for (auto xi : x) std::cout << xi << " ";
-    std::cout << "\n";
+    std::cout << std::endl;
 
-    std::vector<double> result_tasm(f->getNumInputs() * f->getNumOutputs());
-    grid.differentiate(x.data(), result_tasm.data());
+    // ---------------------------------------------------------------------------------------------------------------------------
+    // INTERNAL DIFFERENTIATION
+    // ---------------------------------------------------------------------------------------------------------------------------
+    // std::vector<double> result_tasm(num_dimensions * num_outputs);
+    // grid.differentiate(x.data(), result_tasm.data());
 
-    std::cout << "TASM = ";
-    for (auto xi : result_tasm) std::cout << xi << " ";
-    std::cout << "\n";
+    // std::cout << "TASM = ";
+    // for (auto xi : result_tasm) std::cout << xi << " ";
+    // std::cout << "\n";
 
-    std::vector<double> result_true(f->getNumInputs() * f->getNumOutputs());
-    f->getDerivative(x.data(), result_true.data());
-    
-    std::cout << "TRUE = ";
-    for (auto xi : result_true) std::cout << xi << " ";
-    std::cout << "\n";
+    // std::vector<double> result_true(num_dimensions * num_outputs);
+    // f->getDerivative(x.data(), result_true.data());
+
+    // std::cout << "TRUE = ";
+    // for (auto xi : result_true) std::cout << xi << " ";
+    // std::cout << "\n";
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+    // NODAL DIFFERENTIATION
+    // ---------------------------------------------------------------------------------------------------------------------------
+
+    // int num_points = grid.getNumPoints();
+    // std::vector<double> y(num_outputs), result_tasm(num_dimensions * num_outputs);
+    // auto points = grid.getPoints();
+    // std::vector<double> weights = grid.getDifferentiationWeights(x);
+    // for(int i=0; i<num_points; i++){
+    //   f->eval(&(points[i*num_dimensions]), y.data());
+    //   for (int k=0; k<num_outputs; k++)
+    //     for(int j=0; j<num_dimensions; j++)
+    //       result_tasm[k * num_dimensions + j] += weights[i * num_dimensions + j] * y[k];
+    // }
+
+    // std::cout << "TASM = ";
+    // for (auto xi : result_tasm) std::cout << xi << " ";
+    // std::cout << "\n";
+
+    // std::vector<double> result_true(num_dimensions * num_outputs);
+    // f->getDerivative(x.data(), result_true.data());
+
+    // std::cout << "TRUE = ";
+    // for (auto xi : result_true) std::cout << xi << " ";
+    // std::cout << "\n";
+
+    // ---------------------------------------------------------------------------------------------------------------------------
+    // FORMAL TESTS
+    // ---------------------------------------------------------------------------------------------------------------------------
 
     // auto R0 = getError(f, grid, type_internal_interpolation, x);
-    // std::cout << "INTERPOLATION ERROR = " << R0.error << "\n";
+    // std::cout << "INTERNAL INTERPOLATION ERROR = " << R0.error << "\n";
+
+    // auto R0b = getError(f, grid, type_nodal_interpolation, x);
+    // std::cout << "NODAL INTERPOLATION ERROR = " << R0b.error << "\n";
 
     // auto R1 = getError(f, grid, type_internal_differentiation, x);
-    // std::cout << "DIFFERENTIATION ERROR = " << R1.error << "\n";
+    // std::cout << "INTERNAL DIFFERENTIATION ERROR = " << R1.error << "\n";
+
+    // auto R1b = getError(f, grid, type_nodal_differentiation, x);
+    // std::cout << "NODAL DIFFERENTIATION ERROR = " << R1b.error << "\n";
 }
 
 void ExternalTester::debugTestII(){

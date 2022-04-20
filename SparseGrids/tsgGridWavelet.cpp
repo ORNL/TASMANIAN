@@ -143,15 +143,23 @@ void GridWavelet::getInterpolationWeights(const double x[], double weights[]) co
     if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
     inter_matrix.invertTransposed(acceleration, weights);
 }
-void GridWavelet::getDifferentiationWeights(const double x[], double weights[]) const{
+void GridWavelet::getDifferentiationWeights(const double x[], double weights[]) const {
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
     #pragma omp parallel for
-    for(int i=0; i<num_points; i++){
-        evalDiffBasis(work.getIndex(i), x, &(weights[i * num_dimensions]));
+    for (int i=0; i<num_points; i++) {
+      evalDiffBasis(work.getIndex(i), x, &(weights[i * num_dimensions]));
     }
-    // if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
-    // inter_matrix.invertTransposed(acceleration, weights);
+    if (inter_matrix.getNumRows() != num_points) buildInterpolationMatrix();
+    // Solve the linear wavelet system for each direction/partial derivative and re-index.
+    std::vector<double> local_weights(num_points);
+    for (int d=0; d<num_dimensions; d++) {
+      for (int i=0; i<num_points; i++)
+        local_weights[i] = weights[i * num_dimensions + d];
+      inter_matrix.invertTransposed(acceleration, local_weights.data());
+      for (int i=0; i<num_points; i++)
+        weights[i * num_dimensions + d] = local_weights[i];
+    }
 }
 
 void GridWavelet::loadNeededValues(const double *vals){
@@ -332,15 +340,6 @@ void GridWavelet::differentiate(const double x[], double jacobian[]) const{
     for(int i=0; i<num_points; i++){
         const double *s = coefficients.getStrip(i);
         evalDiffBasis(points.getIndex(i), x, basis_jacobian.data());
-
-
-        // std::cout << "  p = " << *(points.getIndex(i)) << ", x = ";
-        // for (int d=0; d<num_dimensions; d++) std::cout << x[d] << " ";
-        // std::cout << ", db/dx = ";
-        // for (int j=0; j<num_dimensions; j++) std::cout << basis_jacobian[j] << " ";
-        // std::cout << "\n";
-        
-
         for(int k=0; k<num_outputs; k++) {
             for (int d=0; d<num_dimensions; d++) {
                 jacobian[k * num_dimensions + d] += basis_jacobian[d] * s[k];
@@ -392,10 +391,6 @@ void GridWavelet::evalDiffBasis(const int p[], const double x[], double jacobian
         }
         jacobian[i] = derivative;
     }
-
-    // std::cout << "jacobian = ";
-    // for (int d=0; d<num_dimensions; d++) std::cout << jacobian[d] << " ";
-    // std::cout << "\n";
 }
 
 void GridWavelet::buildInterpolationMatrix() const{
