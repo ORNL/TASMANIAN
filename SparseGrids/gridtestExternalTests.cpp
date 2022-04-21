@@ -80,17 +80,7 @@ double unitDerivativeTests(const BaseFunction *f, TasmanianSparseGrid &grid) {
             nrm = std::max(nrm, std::fabs(r[i]));
             err = std::max(err, std::fabs(r[i] - y[i]));
         }
-
         rel_err = std::max(rel_err, std::fabs(nrm) < Maths::num_tol ? err : err / nrm);
-
-        // std::cout << "REL_ERR = ";
-        // for (int i=0; i<num_entries; i++) std::cout << std::fabs(r[i]-y[i]) / (std::fabs(r[i]) < Maths::num_tol ? 1.0 :  std::fabs(r[i])) << " ";
-        // std::cout << ", xi = " << unique_nodes[k] << ", TASM = ";
-        // for (auto t : y) std::cout << t << " ";
-        // std::cout << ", TRUE = ";
-        // for (auto t : r) std::cout << t << " ";
-        // std::cout << "\n";
-
     }
     return rel_err;
 }
@@ -330,33 +320,10 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
                 for(int i=0; i<num_mc; i++){
                     nrm = std::max(nrm, std::fabs(result_true[i * num_entries + k]));
                     err = std::max(err, std::fabs(result_true[i * num_entries + k] - result_tasm[i * num_entries + k]));
-
-
-                    // double errI = std::fabs(result_true[i * num_entries + k] - result_tasm[i * num_entries + k]);
-                    // double nrmI = std::fabs(result_true[i * num_entries + k]);
-                    // double rel_errI = std::fabs(nrmI) <= Maths::num_tol ? errI : errI / nrmI;
-                    // if (rel_errI > 0.4) {
-                    //     std::cout << "err = " << errI << ", nrm = " << nrmI << ", rel_err = " << rel_errI << ", tasm = " << result_tasm[i * num_entries + k]
-                    //               << ", true = " << result_true[i * num_entries + k] << ", x = " << test_x[i * num_dimensions + k]
-                    //               << "\n";
-                    // }
-
-
                 }
                 rel_err = std::max(rel_err, std::fabs(nrm) <= Maths::num_tol ? err : err / nrm);
             }
-
-<<<<<<< HEAD
-            if (type == type_internal_differentiation)
-=======
-            // std::cout << "rel_err (pre) = " << rel_err << "\n";
-
-            if (type == type_internal_differentiation or type == type_nodal_differentiation)
->>>>>>> Debug non-nodal wavelet differentiation logic.
-                rel_err = std::max(rel_err, unitDerivativeTests(f, grid));
-
-            // std::cout << "rel_err (post) = " << rel_err << "\n";
-
+            rel_err = std::max(rel_err, unitDerivativeTests(f, grid));
             R.error = rel_err;
         }
     }
@@ -1175,11 +1142,6 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
     bool bPass = true;
     for(auto acc : available_acc){
         for(int i=0; i<10; i++){
-
-
-            std::cout << "i = " << i << ", order = " << orders[i/5] << ", test = " << testName(all_test_types[i%5]) << "\n";
-
-
             auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/5]);
             grid.enableAcceleration(acc, (gpuid == -1) ? 0 : gpuid);
             grid.favorSparseAcceleration(flavor);
@@ -2355,85 +2317,8 @@ bool ExternalTester::testAllAcceleration() const{
 }
 
 void ExternalTester::debugTest(){
-    // cout << "Debug Test (callable from the CMake build folder)" << endl;
-    // cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
-
-    // BaseFunction *f = &f11p3;
-    BaseFunction *f = &f21nx2;
-    // BaseFunction *f = new OneOneP0()
-    // BaseFunction *f = new OneOneExpMX();
-    int num_dimensions = f->getNumInputs();
-    int num_outputs = f->getNumOutputs();
-
-    int depth = 7;
-    int order = 1;
-    auto grid = makeWaveletGrid(num_dimensions, num_outputs, depth, order);
-    loadValues(f, grid);
-
-    std::vector<double> x = genRandom(num_dimensions);
-    // std::vector<double> x(num_dimensions, 0.0);
-    std::cout << "x = ";
-    for (auto xi : x) std::cout << xi << " ";
-    std::cout << std::endl;
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-    // INTERNAL DIFFERENTIATION
-    // ---------------------------------------------------------------------------------------------------------------------------
-    // std::vector<double> result_tasm(num_dimensions * num_outputs);
-    // grid.differentiate(x.data(), result_tasm.data());
-
-    // std::cout << "TASM = ";
-    // for (auto xi : result_tasm) std::cout << xi << " ";
-    // std::cout << "\n";
-
-    // std::vector<double> result_true(num_dimensions * num_outputs);
-    // f->getDerivative(x.data(), result_true.data());
-
-    // std::cout << "TRUE = ";
-    // for (auto xi : result_true) std::cout << xi << " ";
-    // std::cout << "\n";
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-    // NODAL DIFFERENTIATION
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    // int num_points = grid.getNumPoints();
-    // std::vector<double> y(num_outputs), result_tasm(num_dimensions * num_outputs);
-    // auto points = grid.getPoints();
-    // std::vector<double> weights = grid.getDifferentiationWeights(x);
-    // for(int i=0; i<num_points; i++){
-    //   f->eval(&(points[i*num_dimensions]), y.data());
-    //   for (int k=0; k<num_outputs; k++)
-    //     for(int j=0; j<num_dimensions; j++)
-    //       result_tasm[k * num_dimensions + j] += weights[i * num_dimensions + j] * y[k];
-    // }
-
-    // std::cout << "TASM = ";
-    // for (auto xi : result_tasm) std::cout << xi << " ";
-    // std::cout << "\n";
-
-    // std::vector<double> result_true(num_dimensions * num_outputs);
-    // f->getDerivative(x.data(), result_true.data());
-
-    // std::cout << "TRUE = ";
-    // for (auto xi : result_true) std::cout << xi << " ";
-    // std::cout << "\n";
-
-    // ---------------------------------------------------------------------------------------------------------------------------
-    // FORMAL TESTS
-    // ---------------------------------------------------------------------------------------------------------------------------
-
-    // auto R0 = getError(f, grid, type_internal_interpolation, x);
-    // std::cout << "INTERNAL INTERPOLATION ERROR = " << R0.error << "\n";
-
-    // auto R0b = getError(f, grid, type_nodal_interpolation, x);
-    // std::cout << "NODAL INTERPOLATION ERROR = " << R0b.error << "\n";
-
-    // auto R1 = getError(f, grid, type_internal_differentiation, x);
-    // std::cout << "INTERNAL DIFFERENTIATION ERROR = " << R1.error << "\n";
-
-    // auto R1b = getError(f, grid, type_nodal_differentiation, x);
-    // std::cout << "NODAL DIFFERENTIATION ERROR = " << R1b.error << "\n";
+    cout << "Debug Test (callable from the CMake build folder)" << endl;
+    cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
 }
 
 void ExternalTester::debugTestII(){
