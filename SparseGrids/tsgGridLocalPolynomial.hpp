@@ -186,8 +186,11 @@ protected:
      * - \b mode \b 0, ignore \b sindx and \b svals, find the non-zero basis functions multiply them by the surpluses and add to \b y
      * - \b mode \b 1, ignore \b y, form a sparse vector by std::vector::push_back() to the \b sindx and \b svals
      * - \b mode \b 2, same as \b mode \b 1 but it also sorts the entries within the vector (requirement of Nvidia cusparseDgemvi)
-     * - \b mode \b 3, same as \b mode \b 0, but replaces the non-zero basis function values with their derivatives
-     * - \b mode \b 4, same as \b mode \b 1, but replaces the non-zero basis function values with their derivatives
+     * - \b mode \b 3, same as \b mode \b 0, but replaces the non-zero basis function values with their gradient vectors
+     * - \b mode \b 4, same as \b mode \b 1, but replaces the non-zero basis function values with their gradient vectors
+     *
+     * For mode 4, the i-th entry of sindx maps to the set of num_dimension values in svals at index (i * num_dimension). Hence,
+     * we have (sindx.size() * num_dimensions == svals.size()).
      *
      * In all cases, \b work is the \b points or \b needed set that has been used to construct the tree.
      */

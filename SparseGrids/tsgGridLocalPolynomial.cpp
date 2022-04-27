@@ -705,11 +705,11 @@ void GridLocalPolynomial::getDifferentiationWeights(const double x[], double wei
     const MultiIndexSet &work = (points.empty()) ? needed : points;
 
     std::vector<int> active_points;
-    std::vector<double> hbasis_values;
+    std::vector<double> diff_hbasis_values;
     std::fill_n(weights, work.getNumIndexes(), 0.0);
 
-    walkTree<4>(work, x, active_points, hbasis_values, nullptr);
-    auto ibasis = hbasis_values.begin();
+    walkTree<4>(work, x, active_points, diff_hbasis_values, nullptr);
+    auto ibasis = diff_hbasis_values.begin();
     for(auto i : active_points)
         for (int d=0; d<num_dimensions; d++)
             weights[i * num_dimensions + d] = *ibasis++;
