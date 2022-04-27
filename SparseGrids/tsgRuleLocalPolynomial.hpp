@@ -63,6 +63,10 @@ public:
     virtual double evalRaw(int point, double x) const = 0; // normalizes x (i.e., (x-node) / support), but it does not check the support
     virtual double evalSupport(int point, double x, bool &isSupported) const = 0; // // normalizes x (i.e., (x-node) / support) and checks if x is within the support
 
+    // Analogous to the eval functions, but differentiates at x instead.
+    virtual double diffRaw(int point, double x) const = 0;
+    virtual double diffSupport(int point, double x, bool &isSupported) const = 0;
+
     virtual double getArea(int point, std::vector<double> const &w, std::vector<double> const &x) const = 0;
     // integrate the function associated with the point, constant to cubic are known analytically, higher order need a 1-D quadrature rule
 
@@ -261,6 +265,76 @@ public:
             }
         }
     }
+
+    double diffRaw(int point, double x) const override{
+        if (isZeroOrder) {
+            return 0.0;
+        } else {
+            if (rule == rule_localp or rule == rule_semilocalp) {
+                if (point == 0) return 0.0;
+                if (rule == rule_semilocalp) {
+                    if (point == 1) return x - 0.5;
+                    if (point == 2) return x + 0.5;
+                }
+            }
+            double xn = scaleX(point, x);
+            double an = scaleDiffX(point);
+            if (rule != rule_semilocalp and max_order == 1) {
+                if (x == 1.0) {
+                    if (rule == rule_localp0 and point == 0)
+                        return  -1.0;
+                    else if (rule == rule_localpb and point == 1)
+                        return 0.5;
+                    else if (rule == rule_localpb and point == 2)
+                        return -1.0;
+                    else if (point == 2)
+                        return an;
+                }
+                return (xn >= 0 ? -1.0 : 1.0) * an;
+            }
+            if (max_order == 2) return an * diffPWQuadratic(point, xn);
+            if (max_order == 3) return an * diffPWCubic(point, xn);
+            return an * diffPWPower(point, xn);
+        }
+    }
+
+    double diffSupport(int point, double x, bool &isSupported) const override{
+        if (isZeroOrder) {
+            isSupported = false;
+            return 0.0;
+        } else {
+            // We still need (isSupported == true) at point = 0 so that TasGrid::GridLocalPolynomial::walkTree<3>()
+            // walks through the children of this point.
+           isSupported = true;
+            if (rule == rule_localp or rule == rule_semilocalp) {
+                if (point == 0) {
+                    return 0.0;
+                }
+                if (rule == rule_semilocalp) {
+                    if (point == 1) return x - 0.5;
+                    if (point == 2) return x + 0.5;
+                }
+            }
+            // Note that the support will be of the form [a, b), except for x = +1.0, i.e., the rightmost node in the domain. This
+            // is to avoid double-counting derivatives at points of discontinuity.
+            double xn = scaleX(point, x);
+            isSupported = (-1.0 <= xn and xn < 1.0) or (x == 1.0 and xn == 1.0);
+            if (isSupported) {
+                double an = scaleDiffX(point);
+                if (rule != rule_semilocalp and max_order == 1) {
+                    // Edge case due to the logic of avoiding double-counting.
+                    if (x == 1.0 and rule == rule_localp and point == 2) return an;
+                    return (xn >= 0 ? -1.0 : 1.0) * an;
+                }
+                if (max_order == 2) return an * diffPWQuadratic(point, xn);
+                if (max_order == 3) return an * diffPWCubic(point, xn);
+                return an * diffPWPower(point, xn);
+            } else {
+                return 0.0;
+            }
+        }
+    }
+
     double getArea(int point, std::vector<double> const &w, std::vector<double> const &x) const override{
         if (isZeroOrder){
             return 2.0 * getSupport(point);
@@ -304,6 +378,21 @@ protected:
                 if (point == 2) return x;
             }
             return ((double) Maths::int2log2(point - 1) * (x + 3.0) + 1.0 - (double) (2*point));
+        }
+    }
+
+    double scaleDiffX(int point) const{
+        if (rule == rule_localp0) {
+            if (point == 0) return 1.0;
+            return (double) Maths::int2log2(point + 1);
+        } else {
+            if (rule == rule_localp) {
+                if (point == 0 or point == 1 or point == 2) return 1.0;
+            } else if (rule == rule_localpb) {
+                if (point == 0 or point == 1) return 0.5;
+                if (point == 2) return 1.0;
+            }
+            return (double) Maths::int2log2(point - 1);
         }
     }
 
@@ -363,6 +452,93 @@ protected:
             value *= ( x - node ) / ( - node);
         }
         return value;
+    }
+
+    // Same logic as the corresponding eval functions.
+    double diffPWQuadratic(int point, double x) const{
+        if (rule == rule_localp) {
+            if (point == 1) return -1.0;
+            if (point == 2) return 1.0;
+        } else if (rule == rule_localpb) {
+            if (point == 0) return -1.0;
+            if (point == 1) return 1.0;
+        }
+        return -2.0 * x;
+    }
+    double diffPWCubic(int point, double x) const{
+        if (rule == rule_localp) {
+            if (point == 0) return 0.0;
+            if (point == 1) return -1.0;
+            if (point == 2) return 1.0;
+            if (point <= 4) return -2.0 * x;
+        } else if (rule == rule_localpb) {
+            if (point == 0) return -1.0;
+            if (point == 1) return 1.0;
+            if (point == 2) return -2.0 * x;
+        } else if (rule == rule_localp0) {
+            if (point == 0) return -2.0 * x;
+        }
+        return (point % 2 == 0) ? 1.0 / 3.0 - x * (x + 2.0) : -1.0 / 3.0 + x * (x - 2.0);
+    }
+    double diffPWPower(int point, double x) const{
+        if (rule == rule_localp     and point <= 8) return diffPWCubic(point, x);
+        if (rule == rule_semilocalp and point <= 4) return diffPWCubic(point, x);
+        if (rule == rule_localpb    and point <= 4) return diffPWCubic(point, x);
+        if (rule == rule_localp0    and point <= 2) return diffPWCubic(point, x);
+        int level = getLevel(point);
+        int max_ancestors;
+        if (rule == rule_localp)     max_ancestors = level-2;
+        if (rule == rule_semilocalp) max_ancestors = level-1;
+        if (rule == rule_localpb)    max_ancestors = level-1;
+        if (rule == rule_localp0)    max_ancestors = level;
+        if (max_order > 0) max_ancestors = std::min(max_ancestors, max_order - 2);
+
+        // This lambda captures most_turns and phantom_distance by reference, uses those as internal state variables, and on each
+        // call it returns the next normalized ancestor node.
+        int most_turns = 1;
+        double phantom_distance = 1.0;
+        auto update_and_get_next_node = [&]() {
+            most_turns *= 2;
+            phantom_distance = 2.0 * phantom_distance + 1.0;
+            int turns = (rule == rule_localp0) ? ((point+1) % most_turns) : ((point-1) % most_turns);
+            return (turns < most_turns / 2) ?
+                    (phantom_distance - 2.0 * ((double) turns)) :
+                    (-phantom_distance + 2.0 * ((double) (most_turns - 1 - turns)));
+        };
+
+        // This lambda is the inverse transform of update_and_get_next_node() above, and returns the previous descendant node.
+        auto rollback_and_get_prev_node = [&]() {
+            most_turns /= 2;
+            phantom_distance = 0.5 * (phantom_distance - 1.0);
+            int turns = (rule == rule_localp0) ? ((point+1) % most_turns) : ((point-1) % most_turns);
+            return (turns < most_turns / 2) ?
+                    (phantom_distance - 2.0 * ((double) turns)) :
+                    (-phantom_distance + 2.0 * ((double) (most_turns - 1 - turns)));
+        };
+
+        // Does not include the additional factor (1-x) * (1+x) and the Lagrange coefficient.
+        std::vector<double> left_prods(max_ancestors);
+        left_prods[0] = 1.0;
+        double node = update_and_get_next_node();
+        double coeff = 1.0 / (-node);
+        for(int j=1; j<max_ancestors; j++) {
+            left_prods[j] = left_prods[j-1] * (x - node);
+            node = update_and_get_next_node();
+            coeff *= 1.0 / (-node);
+        }
+        double right_prod = 1.0;
+        double derivative = left_prods[max_ancestors-1];
+        for (int j=max_ancestors-2; j>=0; j--) {
+            right_prod *= x - node;
+            derivative += right_prod * left_prods[j];
+            node = rollback_and_get_prev_node();
+        }
+
+        // Adjust for the additional factor (1-x) * (1+x) and the Lagrange coefficient.
+        derivative = derivative * (1.0 - x) * (1.0 + x) + right_prod * (x - node) * (-2.0) * x;
+        derivative *= coeff;
+
+        return derivative;
     }
 };
 

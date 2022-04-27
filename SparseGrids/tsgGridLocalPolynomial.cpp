@@ -686,7 +686,7 @@ std::vector<int> GridLocalPolynomial::getSubGraph(std::vector<int> const &point)
     return graph;
 }
 
-void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weights) const{
+void GridLocalPolynomial::getInterpolationWeights(const double x[], double weights[]) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
 
     std::vector<int> active_points;
@@ -697,64 +697,23 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double *weig
     walkTree<1>(work, x, active_points, hbasis_values, nullptr);
     auto ibasis = hbasis_values.begin();
     for(auto i : active_points) weights[i] = *ibasis++;
+    applyTransformationTransposed<0>(weights, work, active_points);
+}
 
-    // apply the transpose of the surplus transformation
-    Data2D<int> lparents = (parents.getNumStrips() != work.getNumIndexes()) ? // if the current dag loaded in parents does not reflect the indexes in work
-                            HierarchyManipulations::computeDAGup(work, rule.get()) :
-                            Data2D<int>();
+void GridLocalPolynomial::getDifferentiationWeights(const double x[], double weights[]) const {
+    // Based on GridLocalPolynomial::getInterpolationWeights().
+    const MultiIndexSet &work = (points.empty()) ? needed : points;
 
-    const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
+    std::vector<int> active_points;
+    std::vector<double> diff_hbasis_values;
+    std::fill_n(weights, work.getNumIndexes(), 0.0);
 
-    std::vector<int> level(active_points.size());
-    int active_top_level = 0;
-    for(size_t i=0; i<active_points.size(); i++){
-        const int *p = work.getIndex(active_points[i]);
-        int current_level = rule->getLevel(p[0]);
-        for(int j=1; j<num_dimensions; j++){
-            current_level += rule->getLevel(p[j]);
-        }
-        if (active_top_level < current_level) active_top_level = current_level;
-        level[i] = current_level;
-    }
-
-    std::vector<int> monkey_count(top_level+1);
-    std::vector<int> monkey_tail(top_level+1);
-    std::vector<bool> used(work.getNumIndexes());
-    int max_parents = rule->getMaxNumParents() * num_dimensions;
-
-    for(int l=active_top_level; l>0; l--){
-        for(size_t i=0; i<active_points.size(); i++){
-            if (level[i] == l){
-                std::vector<double> node = MultiIndexManipulations::indexesToNodes(work.getIndex(active_points[i]), num_dimensions, *rule);
-
-                std::fill(used.begin(), used.end(), false);
-
-                monkey_count[0] = 0;
-                monkey_tail[0] = active_points[i];
-                int current = 0;
-
-                while(monkey_count[0] < max_parents){
-                    if (monkey_count[current] < max_parents){
-                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
-                        if ((branch == -1) || used[branch]){
-                            monkey_count[current]++;
-                        }else{
-                            const int *func = work.getIndex(branch);
-                            double basis_value = rule->evalRaw(func[0], node[0]);
-                            for(int j=1; j<num_dimensions; j++) basis_value *= rule->evalRaw(func[j], node[j]);
-                            weights[branch] -= weights[active_points[i]] * basis_value;
-                            used[branch] = true;
-
-                            monkey_count[++current] = 0;
-                            monkey_tail[current] = branch;
-                        }
-                    }else{
-                        monkey_count[--current]++;
-                    }
-                }
-            }
-        }
-    }
+    walkTree<4>(work, x, active_points, diff_hbasis_values, nullptr);
+    auto ibasis = diff_hbasis_values.begin();
+    for(auto i : active_points)
+        for (int d=0; d<num_dimensions; d++)
+            weights[i * num_dimensions + d] = *ibasis++;
+    applyTransformationTransposed<1>(weights, work, active_points);
 }
 
 void GridLocalPolynomial::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
@@ -831,6 +790,73 @@ void GridLocalPolynomial::updateSurpluses(MultiIndexSet const &work, int max_lev
     }
 }
 
+template<int mode>
+void GridLocalPolynomial::applyTransformationTransposed(double weights[], const MultiIndexSet &work, const std::vector<int> &active_points) const {
+    Data2D<int> lparents = (parents.getNumStrips() != work.getNumIndexes()) ? // if the current dag loaded in parents does not reflect the indexes in work
+                            HierarchyManipulations::computeDAGup(work, rule.get()) :
+                            Data2D<int>();
+
+    const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
+
+    std::vector<int> level(active_points.size());
+    int active_top_level = 0;
+    for(size_t i=0; i<active_points.size(); i++){
+        const int *p = work.getIndex(active_points[i]);
+        int current_level = rule->getLevel(p[0]);
+        for(int j=1; j<num_dimensions; j++){
+            current_level += rule->getLevel(p[j]);
+        }
+        if (active_top_level < current_level) active_top_level = current_level;
+        level[i] = current_level;
+    }
+
+    std::vector<int> monkey_count(top_level+1);
+    std::vector<int> monkey_tail(top_level+1);
+    std::vector<bool> used(work.getNumIndexes());
+    int max_parents = rule->getMaxNumParents() * num_dimensions;
+
+    for(int l=active_top_level; l>0; l--){
+        for(size_t i=0; i<active_points.size(); i++){
+            if (level[i] == l){
+                std::vector<double> node = MultiIndexManipulations::indexesToNodes(work.getIndex(active_points[i]), num_dimensions, *rule);
+
+                std::fill(used.begin(), used.end(), false);
+
+                monkey_count[0] = 0;
+                monkey_tail[0] = active_points[i];
+                int current = 0;
+
+                while(monkey_count[0] < max_parents){
+                    if (monkey_count[current] < max_parents){
+                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
+                        if ((branch == -1) || used[branch]){
+                            monkey_count[current]++;
+                        }else{
+                            const int *func = work.getIndex(branch);
+                            double basis_value = rule->evalRaw(func[0], node[0]);
+                            for(int j=1; j<num_dimensions; j++) basis_value *= rule->evalRaw(func[j], node[j]);
+
+                            if (mode == 0) {
+                                weights[branch] -= weights[active_points[i]] * basis_value;
+                            } else {
+                                for (int d=0; d<num_dimensions; d++)
+                                    weights[branch * num_dimensions + d] -=
+                                            weights[active_points[i] * num_dimensions + d] * basis_value;
+                            }
+                            used[branch] = true;
+
+                            monkey_count[++current] = 0;
+                            monkey_tail[current] = branch;
+                        }
+                    }else{
+                        monkey_count[--current]++;
+                    }
+                }
+            }
+        }
+    }
+}
+
 double GridLocalPolynomial::evalBasisRaw(const int point[], const double x[]) const{
     double f = rule->evalRaw(point[0], x[0]);
     for(int j=1; j<num_dimensions; j++) f *= rule->evalRaw(point[j], x[j]);
@@ -844,6 +870,22 @@ double GridLocalPolynomial::evalBasisSupported(const int point[], const double x
         if (!isSupported) return 0.0;
     }
     return f;
+}
+
+void GridLocalPolynomial::diffBasisSupported(const int point[], const double x[], double diff_values[], bool &isSupported) const{
+    isSupported = false;
+    for(int i=0; i<num_dimensions; i++) diff_values[i] = 1.0;
+    bool isDimSupported = false;
+    for(int k=0; k<num_dimensions; k++) {
+        double fval = rule->evalSupport(point[k], x[k], isDimSupported);
+        isSupported = isDimSupported or isSupported;
+        for(int j=0; j<k; j++) diff_values[j] *= fval;
+        for(int j=k+1; j<num_dimensions; j++) diff_values[j] *= fval;
+    }
+    for (int k=0; k<num_dimensions; k++) {
+        diff_values[k] *= rule->diffSupport(point[k], x[k], isDimSupported);
+        isSupported = isDimSupported or isSupported;
+    }
 }
 
 void GridLocalPolynomial::buildSpareBasisMatrix(const double x[], int num_x, int num_chunk, std::vector<int> &spntr, std::vector<int> &sindx, std::vector<double> &svals) const{
@@ -1082,6 +1124,14 @@ void GridLocalPolynomial::integrate(double q[], double *conformal_correction) co
             for(int k=0; k<num_outputs; k++) q[k] += wi * vals[k];
         }
     }
+}
+
+void GridLocalPolynomial::differentiate(const double x[], double jacobian[]) const {
+    std::fill_n(jacobian, num_outputs * num_dimensions, 0.0);
+    // dummy variables, never references in mode 3 below
+    std::vector<int> sindx;
+    std::vector<double> svals;
+    walkTree<3>(points, x, sindx, svals, jacobian);
 }
 
 std::vector<double> GridLocalPolynomial::getNormalization() const{
