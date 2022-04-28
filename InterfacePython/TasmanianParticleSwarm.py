@@ -238,7 +238,7 @@ class ParticleSwarmState:
         pLibDTSG.tsgParticleSwarmState_InitializeParticlesInsideBox(self.pStatePntr, np.ctypeslib.as_ctypes(lfBoxLower),
                                                                     np.ctypeslib.as_ctypes(lfBoxUpper), type_dream_random(random01.pCallable))
 
-def ParticleSwarm(oObjectiveFunction, iNumIterations, pInside, oParticleSwarmState, fInertiaWeight, fCognitiveCoeff,
+def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmState, fInertiaWeight, fCognitiveCoeff,
                   fSocialCoeff, random01 = DREAM.RandomGenerator(sType = "default")):
     '''
     Wrapper around TasOptimization::ParticleSwarm().
