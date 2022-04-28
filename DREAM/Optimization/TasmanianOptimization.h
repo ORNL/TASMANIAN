@@ -35,8 +35,8 @@
 #define __TASMANIAN_OPTIMIZATION_H
 
 using tsg_dream_random = double (*)();
-using tsg_dream_domain = int (*)(int, const double[]); // first argument is num_dimensions
-using tsg_optim_obj_fn = void (*)(int, int, const double[], double[]); // first argument is num_dimensions, second argument is num_points
+using tsg_dream_domain = int (*)(const double[]);
+using tsg_optim_obj_fn = void (*)(const double[], double[]);
 
 // ------------------------------------------ C Interface for TasmanianOptimization ------------------------------------------ //
 // NOTE: you need to explicitly call the constructor and destructor and, in all cases, void *state is a pointer to a C++ class

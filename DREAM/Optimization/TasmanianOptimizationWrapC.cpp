@@ -39,8 +39,8 @@
 // --------------------------- C Interface for use with Python ctypes and potentially other C codes --------------------------- //
 
 using tsg_dream_random = double (*)();
-using tsg_dream_domain = int (*)(int, const double[]); // first argument is num_dimensions
-using tsg_optim_obj_fn = void (*)(int, int, const double[], double[]); // first argument is num_dimensions, second argument is num_points
+using tsg_dream_domain = int (*)(const double[]);
+using tsg_optim_obj_fn = void (*)(const double[], double[]);
 
 namespace TasOptimization{
 
@@ -106,12 +106,10 @@ extern "C" {
     void tsgParticleSwarm(const tsg_optim_obj_fn f, const int num_iterations, const tsg_dream_domain inside, void *state, const double inertia_weight,
                           const double cognitive_coeff, const double social_coeff, const tsg_dream_random get_random01) {
         auto f_cpp = [&](const std::vector<double> &x_batch, std::vector<double> &fval_batch)->void {
-            int num_points = fval_batch.size();
-            int num_dimensions = x_batch.size() / num_points;
-            f(num_dimensions, num_points, x_batch.data(), fval_batch.data());
+            f(x_batch.data(), fval_batch.data());
         };
         auto inside_cpp = [&](const std::vector<double> &x)->bool {
-            return inside(x.size(), x.data());
+            return inside(x.data());
         };
         ParticleSwarm(f_cpp, num_iterations, inside_cpp, *(reinterpret_cast<ParticleSwarmState*>(state)), inertia_weight,
                       cognitive_coeff, social_coeff, get_random01);

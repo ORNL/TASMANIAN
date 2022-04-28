@@ -41,6 +41,7 @@ from TasmanianSG import *
 SparseGrid = TasmanianSparseGrid
 
 import TasmanianDREAM as DREAM
+import TasmanianOPT as OPT
 
 from TasmanianAddons import *
 
