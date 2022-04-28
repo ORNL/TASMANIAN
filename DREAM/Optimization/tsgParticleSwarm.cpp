@@ -62,10 +62,8 @@ ParticleSwarmState::ParticleSwarmState(int cnum_dimensions, std::vector<double> 
         cache_best_particle_inside(std::vector<bool>(num_particles + 1, false)) {};
 
 
-void ParticleSwarmState::initializeParticlesInsideBox(const std::vector<double> &box_lower, const std::vector<double> &box_upper,
+void ParticleSwarmState::initializeParticlesInsideBox(const double box_lower[], const double box_upper[],
                                                       const std::function<double(void)> get_random01) {
-    checkVarSize("ParticleSwarmState::setParticlesInsideBox", "box lower bounds", box_lower.size(), num_dimensions);
-    checkVarSize("ParticleSwarmState::setParticlesInsideBox", "box upper bounds", box_upper.size(), num_dimensions);
     for (int i=0; i<num_particles * num_dimensions; i++) {
         double range = std::fabs(box_upper[i % num_dimensions] - box_lower[i % num_dimensions]);
         particle_positions[i] = range * get_random01() + box_lower[i % num_dimensions];
@@ -73,6 +71,13 @@ void ParticleSwarmState::initializeParticlesInsideBox(const std::vector<double> 
     }
     positions_initialized = true;
     velocities_initialized = true;
+}
+
+void ParticleSwarmState::initializeParticlesInsideBox(const std::vector<double> &box_lower, const std::vector<double> &box_upper,
+                                                      const std::function<double(void)> get_random01) {
+    checkVarSize("ParticleSwarmState::setParticlesInsideBox", "box lower bounds", box_lower.size(), num_dimensions);
+    checkVarSize("ParticleSwarmState::setParticlesInsideBox", "box upper bounds", box_upper.size(), num_dimensions);
+    ParticleSwarmState::initializeParticlesInsideBox(box_lower.data(), box_upper.data(), get_random01);
 }
 
 void ParticleSwarm(const ObjectiveFunction f, const int max_iterations, const TasDREAM::DreamDomain inside, ParticleSwarmState &state,

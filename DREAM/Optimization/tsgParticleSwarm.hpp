@@ -86,53 +86,63 @@ public:
     //! \brief Return the number of particles.
     inline int getNumParticles() const {return num_particles;}
     //! \brief Return the particle positions.
+    inline void getParticlePositions(double pp[]) const {std::copy_n(particle_positions.begin(), num_particles * num_dimensions, pp);}
     inline std::vector<double> getParticlePositions() const {return particle_positions;}
     //! \brief Return the particle velocities.
+    inline void getParticleVelocities(double pv[]) const {std::copy_n(particle_velocities.begin(), num_particles * num_dimensions, pv);}
     inline std::vector<double> getParticleVelocities() const {return particle_velocities;}
     //! \brief Return the previously best known particle positions.
+    inline void getBestParticlePositions(double bpp[]) const {std::copy_n(best_particle_positions.begin(), (num_particles + 1) * num_dimensions, bpp);}
     inline std::vector<double> getBestParticlePositions() const {return best_particle_positions;}
     //! \brief Return the previously best known position in the swarm.
+    inline void getBestPosition(double bp[]) const {std::copy_n(best_particle_positions.begin() + num_particles * num_dimensions, num_dimensions, bp);}
     inline std::vector<double> getBestPosition() const {
         std::vector<double> best_position(num_dimensions);
-        std::copy_n(best_particle_positions.begin() + num_particles * num_dimensions, num_dimensions, best_position.begin());
+        getBestPosition(best_position.data());
         return best_position;
     }
     //! \brief Return the state vector.
+    inline void getStateVector(bool sv[]) const {
+        sv[0] = positions_initialized;
+        sv[1] = velocities_initialized;
+        sv[2] = best_positions_initialized;
+        sv[3] = cache_initialized;
+    }
     inline std::vector<bool> getStateVector() const {
         return {positions_initialized, velocities_initialized, best_positions_initialized, cache_initialized};
     }
 
     //! \brief Set the particle positions.
+    void setParticlePositions(const double pp[]) {std::copy_n(pp, num_dimensions * num_particles, particle_positions.begin());}
     void setParticlePositions(const std::vector<double> &pp) {
         checkVarSize("ParticleSwarmState::setParticlePositions", "particle position", pp.size(), num_dimensions * num_particles);
         particle_positions = pp;
         positions_initialized = true;
     }
-    //! \brief Set the particle positions.
     void setParticlePositions(std::vector<double> &&pp) {
         checkVarSize("ParticleSwarmState::setParticlePositions", "particle positions", pp.size(), num_dimensions * num_particles);
         particle_positions = std::move(pp);
         positions_initialized = true;
     }
     //! \brief Set the particle velocities.
+    void setParticleVelocities(const double pv[]) {std::copy_n(pv, num_dimensions * num_particles, particle_velocities.begin());}
     void setParticleVelocities(const std::vector<double> &pv) {
         checkVarSize("ParticleSwarmState::setParticleVelocities", "particle velocities", pv.size(), num_dimensions * num_particles);
         particle_velocities = pv;
         velocities_initialized = true;
     }
-    //! \brief Set the particle velocities.
     void setParticleVelocities(std::vector<double> &&pv) {
         checkVarSize("ParticleSwarmState::setParticleVelocities", "particle velocities", pv.size(), num_dimensions * num_particles);
         particle_velocities = std::move(pv);
         velocities_initialized = true;
     }
     //! \brief Set the previously best known particle velocities.
+    void setBestParticlePositions(const double bpp[]) {std::copy_n(bpp, num_dimensions * (num_particles + 1), best_particle_positions.begin());}
     void setBestParticlePositions(const std::vector<double> &bpp) {
         checkVarSize("ParticleSwarmState::setBestParticlePositions", "best particle positions", bpp.size(), num_dimensions * (num_particles + 1));
         best_particle_positions = bpp;
         best_positions_initialized = true;
     }
-    //! \brief Set the previously best known particle velocities.
     void setBestParticlePositions(std::vector<double> &&bpp) {
         checkVarSize("ParticleSwarmState::setBestParticlePositions", "best particle positions", bpp.size(), num_dimensions * (num_particles + 1));
         best_particle_positions = std::move(bpp);
@@ -160,6 +170,8 @@ public:
      * abs(\b box_upper[i] - \b box_lower[i]). The uniform [0,1] random number generator used in the sampling is specified
      * by \b get_random01.
      */
+    void initializeParticlesInsideBox(const double box_lower[], const double box_upper[],
+                                      const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
     void initializeParticlesInsideBox(const std::vector<double> &box_lower, const std::vector<double> &box_upper,
                                       const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
 
