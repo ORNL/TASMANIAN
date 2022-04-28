@@ -102,10 +102,6 @@ public:
         return {positions_initialized, velocities_initialized, best_positions_initialized, cache_initialized};
     }
 
-    //! \brief Set the number of dimensions.
-    void setNumDimensions(const int nd) {num_dimensions = nd;};
-    //! \brief Set the number of particles.
-    void setNumParticles(const int np) {num_particles = np;};
     //! \brief Set the particle positions.
     void setParticlePositions(const std::vector<double> &pp) {
         checkVarSize("ParticleSwarmState::setParticlePositions", "particle position", pp.size(), num_dimensions * num_particles);

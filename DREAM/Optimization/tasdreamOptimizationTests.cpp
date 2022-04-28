@@ -173,8 +173,7 @@ bool testParticleSwarm(bool verbose) {
                         x[0] * x[1] +
                         (-4.0 + 4.0 * x[1]*x[1]) * x[1]*x[1];};
     TasOptimization::ObjectiveFunction shc = TasOptimization::makeObjectiveFunction(num_dimensions, shc_single);
-    state.setNumDimensions(num_dimensions);
-    state.setNumParticles(num_particles);
+    state = ParticleSwarmState(num_dimensions, num_particles);
     state.initializeParticlesInsideBox(lower, upper);
     pass = pass and testParticleSwarmSingle(shc, state, TasDREAM::hypercube(lower, upper), iterations, -1.031628453489877);
 
