@@ -186,6 +186,7 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
         PATTERN "Benchmarks" EXCLUDE
         PATTERN "tsgHiddenExternals.hpp" EXCLUDE)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/TasmanianSparseGrid.h"
+              "${CMAKE_CURRENT_SOURCE_DIR}/../DREAM/Optimization/TasmanianOptimization.h"
         DESTINATION include
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Examples/"

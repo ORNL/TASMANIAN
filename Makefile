@@ -34,7 +34,7 @@ SparseGridsObj = \
 
 DREAMObj = \
           ./DREAM/tsgDreamState.o ./DREAM/tsgDreamLikelyGaussian.o ./DREAM/tsgDreamSampleWrapC.o \
-          ./DREAM/Optimization/tsgParticleSwarm.o
+          ./DREAM/Optimization/tsgParticleSwarm.o ./DREAM/Optimization/TasmanianOptimizationWrapC.o
 
 AddonsObj = \
           ./Addons/tsgCLoadNeededValues.o ./Addons/tsgCConstructSurrogate.o ./Addons/tsgCLoadUnstructuredPoints.o ./Addons/tsgCExoticQuadrature.o
