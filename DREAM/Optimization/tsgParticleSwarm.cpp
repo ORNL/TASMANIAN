@@ -120,7 +120,8 @@ void ParticleSwarm(const ObjectiveFunction f, const int max_iterations, const Ta
         }
         // Evaluate f on the inside points and copy the resulting values to fval_batch.
         std::vector<double> inside_vals(num_inside);
-        f(inside_points, inside_vals);
+        if (num_inside > 0)
+            f(inside_points, inside_vals);
         int j = 0;
         for (size_t i=0; i<num_batch; i++) {
             if (inside_batch[i])

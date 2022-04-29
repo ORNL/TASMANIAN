@@ -34,13 +34,14 @@
 #ifndef __TASMANIAN_OPTIMIZATION_WRAPC_CPP
 #define __TASMANIAN_OPTIMIZATION_WRAPC_CPP
 
-#include "TasmanianOptimization.hpp"
+#include "tsgParticleSwarm.hpp"
 
 // --------------------------- C Interface for use with Python ctypes and potentially other C codes --------------------------- //
 
+// C Function Pointer Aliases
 using tsg_dream_random = double (*)();
-using tsg_dream_domain = int (*)(const double[]);
-using tsg_optim_obj_fn = void (*)(const double[], double[]);
+using tsg_optim_dom_fn = bool   (*)(const int, const double[]);
+using tsg_optim_obj_fn = void   (*)(const int, const int, const double[], double[]);
 
 namespace TasOptimization{
 
@@ -50,45 +51,34 @@ extern "C" {
     void* tsgParticleSwarmState_Construct(int num_dimensions, int num_particles) {
         return (void*) new ParticleSwarmState(num_dimensions, num_particles);
     }
-    void tsgParticleSwarmState_Destruct(void* state) {delete ((ParticleSwarmState*) state);}
-    int tsgParticleSwarmState_GetNumDimensions(void* state) {return ((ParticleSwarmState*) state)->getNumDimensions();};
-    int tsgParticleSwarmState_GetNumParticles(void* state) {return ((ParticleSwarmState*) state)->getNumParticles();};
-    double* tsgParticleSwarmState_GetParticlePositions(void* state) {
-        double* pp = (double*) malloc(reinterpret_cast<ParticleSwarmState*>(state)->getNumParticles() *
-                                      reinterpret_cast<ParticleSwarmState*>(state)->getNumDimensions() * sizeof(double));
-        ((ParticleSwarmState*) state)->getParticlePositions(pp);
-        return pp;
+    void tsgParticleSwarmState_Destruct(void* state) {
+        delete reinterpret_cast<ParticleSwarmState*>(state);
     }
-    double* tsgParticleSwarmState_GetParticleVelocities(void* state) {
-        double* pv = (double*) malloc(reinterpret_cast<ParticleSwarmState*>(state)->getNumParticles() *
-                                      reinterpret_cast<ParticleSwarmState*>(state)->getNumDimensions() * sizeof(double));
-        ((ParticleSwarmState*) state)->getParticleVelocities(pv);
-        return pv;
+    int tsgParticleSwarmState_GetNumDimensions(void* state) {
+        return reinterpret_cast<ParticleSwarmState*>(state)->getNumDimensions();
     }
-    double* tsgParticleSwarmState_GetBestParticlePositions(void* state) {
-        double* bpp = (double*) malloc((reinterpret_cast<ParticleSwarmState*>(state)->getNumParticles() + 1) *
-                                       reinterpret_cast<ParticleSwarmState*>(state)->getNumDimensions() * sizeof(double));
-        ((ParticleSwarmState*) state)->getBestParticlePositions(bpp);
-        return bpp;
+    int tsgParticleSwarmState_GetNumParticles(void* state) {
+        return reinterpret_cast<ParticleSwarmState*>(state)->getNumParticles();
     }
-    double* tsgParticleSwarmState_GetBestPosition(void* state) {
-        double* bp = (double*) malloc(reinterpret_cast<ParticleSwarmState*>(state)->getNumDimensions() * sizeof(double));
-        ((ParticleSwarmState*) state)->getBestPosition(bp);
-        return bp;
+    void tsgParticleSwarmState_GetParticlePositions(void* state, double pp[]) {
+        reinterpret_cast<ParticleSwarmState*>(state)->getParticlePositions(pp);
     }
-    void tsgParticleSwarmState_SetNumDimensions(void* state, const int nd) {
-        reinterpret_cast<ParticleSwarmState*>(state)->setNumDimensions(nd);
+    void tsgParticleSwarmState_GetParticleVelocities(void* state, double pv[]) {
+        reinterpret_cast<ParticleSwarmState*>(state)->getParticleVelocities(pv);
     }
-    void tsgParticleSwarmState_SetNumParticles(void* state, const int np) {
-        reinterpret_cast<ParticleSwarmState*>(state)->setNumParticles(np);
+    void tsgParticleSwarmState_GetBestParticlePositions(void* state, double bpp[]) {
+        reinterpret_cast<ParticleSwarmState*>(state)->getBestParticlePositions(bpp);
     }
-    void tsgParticleSwarmState_SetParticlePositions(void* state, const double* pp) {
+    void tsgParticleSwarmState_GetBestPosition(void* state, double bp[]) {
+        reinterpret_cast<ParticleSwarmState*>(state)->getBestPosition(bp);
+    }
+    void tsgParticleSwarmState_SetParticlePositions(void* state, const double pp[]) {
         reinterpret_cast<ParticleSwarmState*>(state)->setParticlePositions(pp);
     }
-    void tsgParticleSwarmState_SetParticleVelocities(void* state, const double* pv) {
+    void tsgParticleSwarmState_SetParticleVelocities(void* state, const double pv[]) {
         reinterpret_cast<ParticleSwarmState*>(state)->setParticleVelocities(pv);
     }
-    void tsgParticleSwarmState_SetBestParticlePositions(void* state, const double* bpp) {
+    void tsgParticleSwarmState_SetBestParticlePositions(void* state, const double bpp[]) {
         reinterpret_cast<ParticleSwarmState*>(state)->setBestParticlePositions(bpp);
     }
     void tsgParticleSwarmState_ClearBestParticles(void* state) {
@@ -97,22 +87,26 @@ extern "C" {
     void tsgParticleSwarmState_ClearCache(void* state) {
         reinterpret_cast<ParticleSwarmState*>(state)->clearCache();
     }
-    void tsgParticleSwarmState_InitializeParticlesInsideBox(void* state, const double* box_lower, const double* box_upper,
+    void tsgParticleSwarmState_InitializeParticlesInsideBox(void* state, const double box_lower[], const double box_upper[],
                                                             const tsg_dream_random get_random01) {
         reinterpret_cast<ParticleSwarmState*>(state)->initializeParticlesInsideBox(box_lower, box_upper, get_random01);
     }
 
     // Particle Swarm Algorithm.
-    void tsgParticleSwarm(const tsg_optim_obj_fn f, const int num_iterations, const tsg_dream_domain inside, void *state, const double inertia_weight,
-                          const double cognitive_coeff, const double social_coeff, const tsg_dream_random get_random01) {
+    void tsgParticleSwarm(const tsg_optim_obj_fn f_ptr, const int num_iterations, const tsg_optim_dom_fn inside_ptr, void *state,
+                          const double inertia_weight, const double cognitive_coeff, const double social_coeff,
+                          const tsg_dream_random get_random01_ptr) {
         auto f_cpp = [&](const std::vector<double> &x_batch, std::vector<double> &fval_batch)->void {
-            f(x_batch.data(), fval_batch.data());
+            int num_batch = fval_batch.size();
+            int num_dims = x_batch.size() / num_batch;
+            (*f_ptr)(num_dims, num_batch, x_batch.data(), fval_batch.data());
         };
         auto inside_cpp = [&](const std::vector<double> &x)->bool {
-            return inside(x.data());
+            int num_dims = x.size();
+            return (*inside_ptr)(num_dims, x.data());
         };
         ParticleSwarm(f_cpp, num_iterations, inside_cpp, *(reinterpret_cast<ParticleSwarmState*>(state)), inertia_weight,
-                      cognitive_coeff, social_coeff, get_random01);
+                      cognitive_coeff, social_coeff, *get_random01_ptr);
     }
 
 }

@@ -563,9 +563,17 @@ bool DreamExternalTester::performTests(TypeDREAMTest test){
     return pass;
 }
 
+
+#include "Optimization/TasmanianOptimizationWrapC.cpp"
+
 void testDebug(){
-    cout << "Debug Test" << endl;
-    cout << "Put here testing code and call this with ./dreamtest debug" << endl;
+
+    void* pss = TasOptimization::tsgParticleSwarmState_Construct(2, 5);
+    int dim = TasOptimization::tsgParticleSwarmState_GetNumDimensions(pss);
+    cout << "dim = " << dim << endl;
+
+    // cout << "Debug Test" << endl;
+    // cout << "Put here testing code and call this with ./dreamtest debug" << endl;
 }
 
 #endif
