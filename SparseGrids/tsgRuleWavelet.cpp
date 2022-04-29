@@ -298,14 +298,14 @@ double RuleWavelet::getWeight(int point) const{
 template<int mode>
 double RuleWavelet::eval(int point, double x) const{
     // Evaluates or differentiates a wavelet designated by point at coordinate x.
-    if (order == 1) {
+    if(order == 1){
         // Level 0
-        if (point < 3) {
+        if (point < 3){
             double node = getNode(point);
             if (mode == 0) {
                 double w = 1.0 - std::abs(x - node);
                 return (w < 0.0) ? 0.0 : w;
-            } else {
+            }else{
                 // Preserve the symmetry of derivatives as much as possible.
                 if (point == 0) return (x < 0.0) ? 1.0 : -1.0;
                 else if (point == 1) return (x < 0.0) ? -1.0 : 0.0;
@@ -315,7 +315,7 @@ double RuleWavelet::eval(int point, double x) const{
         // Level 1+
         return eval_linear<mode>(point, x);
     }
-    else if (order == 3) {
+    else if(order == 3){
         return eval_cubic<mode>(point, x);
     }
     return 0.;
@@ -368,8 +368,7 @@ inline double RuleWavelet::eval_cubic(int point, double x) const{
     }
     // Standard lifted wavelets.
     int subindex = (point - 1) % (1 << l);
-    double scale = pow(2, l - 4);
-
+    double scale = pow(2,l-4);
     double value;
     if (subindex < 5){
         // Left boundary wavelet.
@@ -424,7 +423,7 @@ inline double RuleWavelet::eval_linear(int point, double x) const{
     // Standard Lifted Wavelets
     int l = Maths::intlog2(point - 1);
     int subindex = (point - 1) % (1 << l);
-    double scale = std::pow(2, l - 2);
+    double scale = std::pow(2,l-2);
 
     double value;
     if (subindex == 0){
@@ -449,7 +448,7 @@ inline double RuleWavelet::linear_boundary_wavelet(double x, bool right) const{
     // Evaluates or differentiates the first order boundary wavelet with support on [-1, 0].
     // If `right` is true, then we return the right derivatives/values (if they exist); else, we return the left ones.
     if (std::abs(x + 0.5) > 0.5) return 0.0;
-    
+
     if ((right and x < -0.75) or (!right and x <= -0.75)) {
         if (mode == 0) return 0.75 * (7.0 * x + 6.0);
         else return 0.75 * 7.0;
@@ -462,7 +461,7 @@ inline double RuleWavelet::linear_boundary_wavelet(double x, bool right) const{
     } else {
         // Case: (right and x == 0.0)
         return 0.0;
-    } 
+    }
 }
 
 template<int mode>

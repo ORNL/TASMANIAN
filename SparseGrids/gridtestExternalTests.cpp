@@ -323,7 +323,10 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
                 }
                 rel_err = std::max(rel_err, std::fabs(nrm) <= Maths::num_tol ? err : err / nrm);
             }
-            rel_err = std::max(rel_err, unitDerivativeTests(f, grid));
+
+            if (type == type_internal_differentiation)
+                rel_err = std::max(rel_err, unitDerivativeTests(f, grid));
+
             R.error = rel_err;
         }
     }
