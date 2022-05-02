@@ -288,7 +288,7 @@ TwoOneConformalOne::TwoOneConformalOne(){} TwoOneConformalOne::~TwoOneConformalO
 const char* TwoOneConformalOne::getDescription() const{ return "f(x) = 1 / ((1 + 5x^2)*(1 + 5y^2))"; }
 void TwoOneConformalOne::eval(const double x[], double y[]) const{ y[0] = 1.0 / ((1.0 + 5.0*x[0]*x[0]) * (1.0 + 5.0*x[1]*x[1])); } void TwoOneConformalOne::getIntegral(double y[]) const{ y[0] = 1.028825601981092*1.028825601981092; }
 void TwoOneConformalOne::getDerivative(const double x[], double y[]) const{
-    double a0 = (1.0 + 5.0 * x[0] * x[0]) * (1.0 + 5.0 * x[1] * x[1]);
+    double a0 = (1.0 + 5.0*x[0]*x[0]) * (1.0 + 5.0*x[1]*x[1]);
     y[0] = -10.0 * x[0] * (1.0 + 5.0 * x[1] * x[1]) / (a0 * a0);
     y[1] = -10.0 * x[1] * (1.0 + 5.0 * x[0] * x[0]) / (a0 * a0);
 }

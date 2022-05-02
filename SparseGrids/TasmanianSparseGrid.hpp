@@ -2146,7 +2146,7 @@ protected:
      * This is primarily used in the TasmanianSparseGrid::differentiate() method, which applies the chain rule to the (possibly)
      * transformed grid.
      */
-    template<typename FloatType> void diffCanonicalTransform(const FloatType *x, FloatType *jacobian_diag) const;
+    template<typename FloatType> std::vector<double> diffCanonicalTransform() const;
     /*!
      * \internal
      * \brief Applies both linear and non-linear transformation to the canonical points.

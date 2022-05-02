@@ -406,11 +406,10 @@ void TasmanianSparseGrid::getDifferentiationWeights(const double x[], double wei
         throw std::runtime_error("ERROR: getDifferentiationWeights() cannot be called for grids of this type");
     }
     // Jacobian of f(g(.)) at x.
-    if (domain_transform_a.size() != 0 or conformal_asin_power.size() != 0) {
+    if (not domain_transform_a.empty()) {
         int num_dimensions = getNumDimensions();
         int num_points = getNumPoints();
-        std::vector<double> jacobian_g_diag(num_dimensions);
-        diffCanonicalTransform<double>(x, jacobian_g_diag.data());
+        std::vector<double> jacobian_g_diag = diffCanonicalTransform<double>();
         for(int i=0; i<num_points; i++)
             for(int j=0; j<num_dimensions; j++)
                 weights[i * num_dimensions + j] = weights[i * num_dimensions + j] * jacobian_g_diag[j];
@@ -509,11 +508,10 @@ void TasmanianSparseGrid::differentiate(const double x[], double jacobian[]) con
         throw std::runtime_error("ERROR: in differentiate(), jacobians/gradients are not available for this type of grid");
     }
     // Jacobian of f(g(.)) at x.
-    if (domain_transform_a.size() != 0 or conformal_asin_power.size() != 0) {
+    if (not domain_transform_a.empty()) {
         int num_dimensions = getNumDimensions();
         int num_outputs = getNumOutputs();
-        std::vector<double> jacobian_g_diag(num_dimensions);
-        diffCanonicalTransform<double>(x, jacobian_g_diag.data());
+        std::vector<double> jacobian_g_diag = diffCanonicalTransform<double>();
         for(int j=0; j<num_dimensions; j++)
             for(int k=0; k<num_outputs; k++)
                 jacobian[k * num_dimensions + j] = jacobian[k * num_dimensions + j] * jacobian_g_diag[j];
@@ -848,10 +846,9 @@ template<typename FloatType> const FloatType* TasmanianSparseGrid::formCanonical
 template const float* TasmanianSparseGrid::formCanonicalPoints(const float *x, Data2D<float> &x_temp, int num_x) const;
 template const double* TasmanianSparseGrid::formCanonicalPoints<double>(const double *x, Data2D<double> &x_temp, int num_x) const;
 
-template<typename FloatType> void TasmanianSparseGrid::diffCanonicalTransform(const FloatType*, FloatType *jacobian_diag) const {
+template<typename FloatType> std::vector<double> TasmanianSparseGrid::diffCanonicalTransform() const {
     int num_dimensions = base->getNumDimensions();
-    for(int i=0; i<num_dimensions; i++)
-        jacobian_diag[i] = 1.0;
+    std::vector<double> jacobian_diag(num_dimensions, 1.0);
     if (conformal_asin_power.size() != 0) {
         throw std::runtime_error("ERROR: in diffCanonicalTransform() derivatives/Jacobians are not available for conformal mappings");
     }
@@ -860,17 +857,18 @@ template<typename FloatType> void TasmanianSparseGrid::diffCanonicalTransform(co
         TypeOneDRule rule = base->getRule();
         if (rule == rule_gausslaguerre or rule == rule_gausslaguerreodd)
             for(int j=0; j<num_dimensions; j++)
-                jacobian_diag[j] *= (FloatType) domain_transform_b[j];
+                jacobian_diag[j] = (FloatType) domain_transform_b[j];
         else if (rule == rule_gausshermite or rule == rule_gausshermiteodd)
             for(int j=0; j<num_dimensions; j++)
-                jacobian_diag[j] *= (FloatType) std::sqrt(domain_transform_b[j]);
+                jacobian_diag[j] = (FloatType) std::sqrt(domain_transform_b[j]);
         else if (rule == rule_fourier)
             for(int j=0; j< num_dimensions; j++)
-                jacobian_diag[j] /= (FloatType) (domain_transform_b[j]-domain_transform_a[j]);
+                jacobian_diag[j] = (FloatType) (1.0 / (domain_transform_b[j]-domain_transform_a[j]));
         else
             for(int j=0; j<num_dimensions; j++)
-                jacobian_diag[j] *= (FloatType) (2.0 / (domain_transform_b[j] - domain_transform_a[j]));
+                jacobian_diag[j] = (FloatType) (2.0 / (domain_transform_b[j] - domain_transform_a[j]));
     }
+    return jacobian_diag;
 }
 
 void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) const{
