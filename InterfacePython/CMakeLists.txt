@@ -82,7 +82,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/sandbox.py" "${CMAKE_CURRENT_BINARY_
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/../SparseGrids/GaussPattersonRule.table"  "${CMAKE_CURRENT_BINARY_DIR}/GaussPattersonRule.table" COPYONLY) # needed for testing
 
 # See the matlab CMakeText.txt on how to copy multiple scripts
-set(Tasmanian_python_test_files TasmanianSG.py TasmanianAddons.py Tasmanian.py 
+set(Tasmanian_python_test_files TasmanianSG.py TasmanianAddons.py Tasmanian.py
                                 TasmanianDREAM.py TasmanianDreamLikely.py TasmanianDreamState.py TasmanianDreamSampler.py
                                 TasmanianOPT.py TasmanianParticleSwarm.py
                                 testTSG.py testCommon.py testBasicIO.py testAcceleration.py testExceptions.py testMakeUpdate.py

@@ -239,7 +239,6 @@ clean:
 	rm -fr include
 	rm -fr ./SparseGrids/*.o
 	rm -fr ./DREAM/*.o
-	rm -fr ./DREAM/Optimization/*.o
 	rm -fr ./Addons/*.o
 	rm -fr ./Tasgrid/*.o
 	rm -fr ./InterfaceTPL/*.o

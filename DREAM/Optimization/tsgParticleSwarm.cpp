@@ -75,8 +75,8 @@ void ParticleSwarmState::initializeParticlesInsideBox(const double box_lower[], 
 
 void ParticleSwarmState::initializeParticlesInsideBox(const std::vector<double> &box_lower, const std::vector<double> &box_upper,
                                                       const std::function<double(void)> get_random01) {
-    checkVarSize("ParticleSwarmState::setParticlesInsideBox", "box lower bounds", box_lower.size(), num_dimensions);
-    checkVarSize("ParticleSwarmState::setParticlesInsideBox", "box upper bounds", box_upper.size(), num_dimensions);
+    checkVarSize("ParticleSwarmState::initializeParticlesInsideBox", "box lower bounds", box_lower.size(), num_dimensions);
+    checkVarSize("ParticleSwarmState::initializeParticlesInsideBox", "box upper bounds", box_upper.size(), num_dimensions);
     ParticleSwarmState::initializeParticlesInsideBox(box_lower.data(), box_upper.data(), get_random01);
 }
 
