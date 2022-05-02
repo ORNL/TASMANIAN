@@ -31,7 +31,7 @@
 
 from random import uniform
 from ctypes import c_int, c_bool, c_double, c_void_p, POINTER, cdll, cast, CFUNCTYPE
-from numpy.ctypeslib import as_ctypes
+from numpy.ctypeslib import as_ctypes, ndpointer
 import numpy as np
 import sys
 
@@ -41,6 +41,7 @@ from TasmanianConfig import TasmanianInputError as InputError
 import TasmanianDREAM as DREAM
 
 c_double_p        = POINTER(c_double)
+np_double_arr     = ndpointer(c_double, flags="C_CONTIGUOUS")
 type_optim_obj_fn = CFUNCTYPE(None, c_int, c_int, c_double_p, c_double_p)
 type_optim_dom_fn = CFUNCTYPE(c_bool, c_int, c_double_p)
 type_dream_random = CFUNCTYPE(c_double)
@@ -56,17 +57,18 @@ pLibDTSG.tsgParticleSwarmState_GetNumDimensions.restype = c_int
 pLibDTSG.tsgParticleSwarmState_GetNumDimensions.argtype = [c_void_p]
 pLibDTSG.tsgParticleSwarmState_GetNumParticles.restype = c_int
 pLibDTSG.tsgParticleSwarmState_GetNumParticles.argtype = [c_void_p]
-pLibDTSG.tsgParticleSwarmState_GetParticlePositions.argtypes = [c_void_p, c_double_p]
-pLibDTSG.tsgParticleSwarmState_GetParticleVelocities.argtypes = [c_void_p, c_double_p]
-pLibDTSG.tsgParticleSwarmState_GetBestPosition.argtypes = [c_void_p, c_double_p]
+pLibDTSG.tsgParticleSwarmState_GetParticlePositions.argtypes = [c_void_p, np_double_arr]
+pLibDTSG.tsgParticleSwarmState_GetParticleVelocities.argtypes = [c_void_p, np_double_arr]
+pLibDTSG.tsgParticleSwarmState_GetBestParticlePositions.argtypes = [c_void_p, np_double_arr]
+pLibDTSG.tsgParticleSwarmState_GetBestPosition.argtypes = [c_void_p, np_double_arr]
 
-pLibDTSG.tsgParticleSwarmState_SetParticlePositions.argtypes = [c_void_p, c_double_p]
-pLibDTSG.tsgParticleSwarmState_SetParticleVelocities.argtypes = [c_void_p, c_double_p]
-pLibDTSG.tsgParticleSwarmState_SetBestParticlePositions.argtypes = [c_void_p, c_double_p]
+pLibDTSG.tsgParticleSwarmState_SetParticlePositions.argtypes = [c_void_p, np_double_arr]
+pLibDTSG.tsgParticleSwarmState_SetParticleVelocities.argtypes = [c_void_p, np_double_arr]
+pLibDTSG.tsgParticleSwarmState_SetBestParticlePositions.argtypes = [c_void_p, np_double_arr]
 
 pLibDTSG.tsgParticleSwarmState_ClearBestParticles.argtypes = [c_void_p]
 pLibDTSG.tsgParticleSwarmState_ClearCache.argtypes = [c_void_p]
-pLibDTSG.tsgParticleSwarmState_InitializeParticlesInsideBox.argtypes = [c_void_p, c_double_p, c_double_p, type_dream_random]
+pLibDTSG.tsgParticleSwarmState_InitializeParticlesInsideBox.argtypes = [c_void_p, np_double_arr, np_double_arr, type_dream_random]
 pLibDTSG.tsgParticleSwarm.argtypes = [type_optim_obj_fn, c_int, type_optim_dom_fn, c_void_p, c_double, c_double, c_double, type_dream_random]
 
 class ParticleSwarmState:
@@ -108,7 +110,7 @@ class ParticleSwarmState:
         iNumDims = self.getNumDimensions()
         iNumPart = self.getNumParticles()
         aResult = np.zeros((iNumDims * iNumPart,), np.float64)
-        pLibDTSG.tsgParticleSwarmState_GetParticlePositions(c_void_p(self.pStatePntr), as_ctypes(aResult))
+        pLibDTSG.tsgParticleSwarmState_GetParticlePositions(c_void_p(self.pStatePntr), aResult)
         return aResult.reshape((iNumPart, iNumDims))
 
     def getParticleVelocities(self):
@@ -118,7 +120,7 @@ class ParticleSwarmState:
         iNumDims = self.getNumDimensions()
         iNumPart = self.getNumParticles()
         aResult = np.zeros((iNumDims * iNumPart,), np.float64)
-        pLibDTSG.tsgParticleSwarmState_GetParticleVelocities(c_void_p(self.pStatePntr), as_ctypes(aResult))
+        pLibDTSG.tsgParticleSwarmState_GetParticleVelocities(c_void_p(self.pStatePntr), aResult)
         return aResult.reshape((iNumPart, iNumDims))
 
     def getBestParticlePositions(self):
@@ -128,7 +130,7 @@ class ParticleSwarmState:
         iNumDims = self.getNumDimensions()
         iNumPart = self.getNumParticles()
         aResult = np.zeros((iNumDims * (iNumPart + 1),), np.float64)
-        pLibDTSG.tsgParticleSwarmState_GetBestParticlePositions(c_void_p(self.pStatePntr), as_ctypes(aResult))
+        pLibDTSG.tsgParticleSwarmState_GetBestParticlePositions(c_void_p(self.pStatePntr), aResult)
         return aResult.reshape((iNumPart + 1, iNumDims))
 
     def getBestPosition(self):
@@ -137,7 +139,7 @@ class ParticleSwarmState:
         '''
         iNumDims = self.getNumDimensions()
         aResult = np.zeros((iNumDims,), np.float64)
-        pLibDTSG.tsgParticleSwarmState_GetBestPosition(c_void_p(self.pStatePntr), as_ctypes(aResult))
+        pLibDTSG.tsgParticleSwarmState_GetBestPosition(c_void_p(self.pStatePntr), aResult)
         return aResult
 
     def setParticlePositions(self, llfNewPPosns):
@@ -154,7 +156,7 @@ class ParticleSwarmState:
             raise InputError("llfNewPPosns", "llfNewPPosns.shape[0] should match the number of particles")
         if (llfNewPPosns.shape[1] != iNumDims):
             raise InputError("llfNewPPosns", "llfNewPPosns.shape[1] should match the number of dimensions")
-        pLibDTSG.tsgParticleSwarmState_SetParticlePositions(c_void_p(self.pStatePntr), as_ctypes(llfNewPPosns.reshape((iNumPart * iNumDims,))))
+        pLibDTSG.tsgParticleSwarmState_SetParticlePositions(c_void_p(self.pStatePntr), llfNewPPosns)
 
     def setParticleVelocities(self, llfNewPVelcs):
         '''
@@ -170,7 +172,7 @@ class ParticleSwarmState:
             raise InputError("llfNewPVelcs", "llfNewPVelcs.shape[0] should match the number of particles")
         if (llfNewPVelcs.shape[1] != iNumDims):
             raise InputError("llfNewPVelcs", "llfNewPVelcs.shape[1] should match the number of dimensions")
-        pLibDTSG.tsgParticleSwarmState_SetParticleVelocities(c_void_p(self.pStatePntr), as_ctypes(llfNewPVelcs.reshape((iNumPart * iNumDims,))))
+        pLibDTSG.tsgParticleSwarmState_SetParticleVelocities(c_void_p(self.pStatePntr), llfNewPVelcs)
 
     def setBestParticlePositions(self, llfNewBPPosns):
         '''
@@ -182,11 +184,12 @@ class ParticleSwarmState:
         '''
         iNumPart = self.getNumParticles()
         iNumDims = self.getNumDimensions()
-        if (llfNewBPPosns.shape[0] != iNumPart):
+        if (llfNewBPPosns.shape[0] != iNumPart + 1):
             raise InputError("llfNewBPPosns", "llfNewBPPosns.shape[0] should match the number of particles + 1")
         if (llfNewBPPosns.shape[1] != iNumDims):
             raise InputError("llfNewBPPosns", "llfNewBPPosns.shape[1] should match the number of dimensions")
-        pLibDTSG.tsgParticleSwarmState_SetBestParticlePositions(c_void_p(self.pStatePntr), as_ctypes(llfNewBPPosns.reshape((iNumPart * iNumDims,))))
+        llfNewBPPosns.resize(((iNumPart + 1) * iNumDims,))
+        pLibDTSG.tsgParticleSwarmState_SetBestParticlePositions(c_void_p(self.pStatePntr), llfNewBPPosns)
 
     def clearBestParticles(self):
         '''
@@ -216,7 +219,7 @@ class ParticleSwarmState:
             raise InputError("lfBoxLower", "lfBoxLower.shape[0] should match the number of dimensions")
         if (lfBoxUpper.shape[0] != iNumDims):
             raise InputError("lfBoxUpper", "lfBoxUpper.shape[0] should match the number of dimensions")
-        pLibDTSG.tsgParticleSwarmState_InitializeParticlesInsideBox(c_void_p(self.pStatePntr), as_ctypes(lfBoxLower), as_ctypes(lfBoxUpper),
+        pLibDTSG.tsgParticleSwarmState_InitializeParticlesInsideBox(c_void_p(self.pStatePntr), lfBoxLower, lfBoxUpper,
                                                                     type_dream_random(random01.pCallable))
 
 def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmState, fInertiaWeight, fCognitiveCoeff,

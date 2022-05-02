@@ -25,23 +25,62 @@ print("Add code to this file to test, debug, or develop features")
 import TasmanianOPT as OPT
 
 iNumDimensions = 2
-iNumParticles = 3
+iNumParticles = 10
 PSS = OPT.ParticleSwarmState(iNumDimensions, iNumParticles)
 
-#print(PSS.getNumDimensions())
+print("iNumDimensions = ", PSS.getNumDimensions())
+print("iNumParticles = ", PSS.getNumParticles(), "\n")
 
 pp = PSS.getParticlePositions()
 print("init_pp = \n", pp, "\n")
+
+pv = PSS.getParticleVelocities()
+print("init_pv = \n", pv, "\n")
+
+bpp = PSS.getBestParticlePositions()
+print("init_bpp = \n", bpp, "\n")
+
+bp = PSS.getBestPosition()
+print("init_bp = \n", bp, "\n")
+
+a1 = np.arange(iNumParticles * iNumDimensions, dtype=np.float64)
+a1.resize((iNumParticles, iNumDimensions))
+a2 = np.arange(-iNumParticles * iNumDimensions, dtype=np.float64, step=-1)
+a2.resize((iNumParticles, iNumDimensions))
+a3 = np.arange(start=(iNumParticles + 1) * iNumDimensions, stop=2 * (iNumParticles + 1) * iNumDimensions, dtype=np.float64)
+a3.resize((iNumParticles + 1, iNumDimensions))
+
+PSS.setParticlePositions(a1)
+pp = PSS.getParticlePositions()
+print("set_pp = \n", pp, "\n")
+
+PSS.setParticleVelocities(a2)
+pv = PSS.getParticleVelocities()
+print("set_pv = \n", pv, "\n")
+
+PSS.setBestParticlePositions(a3)
+bpp = PSS.getBestParticlePositions()
+print("set_bpp = \n", bpp, "\n")
+
+bp = PSS.getBestPosition()
+print("set_bp = \n", bp, "\n")
+
+PSS.clearBestParticles()
+bpp = PSS.getBestParticlePositions()
+print("clear_bpp = \n", bpp, "\n")
 
 lower = np.asarray([-3.0, -1.0])
 upper = np.asarray([3.0, 2.0])
 PSS.initializeParticlesInsideBox(lower, upper)
 
-#print(PSS.getParticlePositions())
-#print(PSS.getParticleVelocities())
-
 pp = PSS.getParticlePositions()
 print("box_pp = \n", pp, "\n")
+
+pv = PSS.getParticleVelocities()
+print("box_pv = \n", pv, "\n")
+
+bp = PSS.getBestPosition()
+print("box_bp = \n", bp, "\n")
 
 def l1_fn(x_batch, fval_batch):
     for i in range(fval_batch.shape[0]):
@@ -55,4 +94,4 @@ for i in range(20):
     OPT.ParticleSwarm(l1_fn, 1, inside_fn, PSS, 0.5, 2.0, 2.0)
     bp = PSS.getBestPosition()
     l1_fn(np.asarray([bp]), fval)
-    print("i = ", i, ", f(bpp) = ", fval[0], "\n")
+    print("f(bpp) = ", fval[0])
