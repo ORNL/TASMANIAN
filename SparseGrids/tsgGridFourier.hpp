@@ -66,10 +66,13 @@ public:
     void getPoints(double *x) const override; // returns the loaded points unless no points are loaded, then returns the needed points
 
     void getInterpolationWeights(const double x[], double weights[]) const override;
-
     void getQuadratureWeights(double weights[]) const override;
+    void getDifferentiationWeights(const double x[], double weights[]) const;
 
     void evaluate(const double x[], double y[]) const override;
+    void integrate(double q[], double *conformal_correction) const override;
+    void differentiate(const double x[], double jacobian[]) const;
+
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
     void evaluateBatchGPU(const double gpu_x[], int cpu_num_x, double gpu_y[]) const override;
@@ -79,8 +82,6 @@ public:
     void evaluateHierarchicalFunctionsGPU(const float gpu_x[], int num_x, float gpu_y[]) const override;
     template<typename T>
     void evaluateHierarchicalFunctionsInternalGPU(const T gpu_x[], int num_x, GpuVector<T> &wreal, GpuVector<T> &wimag) const;
-
-    void integrate(double q[], double *conformal_correction) const override;
 
     void evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const override;
     void evaluateHierarchicalFunctionsInternal(const double x[], int num_x, Data2D<double> &wreal, Data2D<double> &wimag) const;

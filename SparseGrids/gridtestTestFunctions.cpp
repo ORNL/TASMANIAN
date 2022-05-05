@@ -122,7 +122,7 @@ const char* TwoOneExpSinCos::getDescription() const{ return "f(x,y) = exp(sin(2*
 void TwoOneExpSinCos::eval(const double x[], double y[]) const{ y[0] = std::exp(std::sin(2*pi*x[0])+std::cos(2*pi*x[1])); } void TwoOneExpSinCos::getIntegral(double y[]) const{ y[0] = 1.6029228068079633 * 4.0; }
 void TwoOneExpSinCos::getDerivative(const double x[], double y[]) const{
     y[0] = 2*pi * std::cos(2*pi*x[0]) * std::exp(std::sin(2*pi*x[0])+std::cos(2*pi*x[1]));
-    y[1] = -2*pi * std::sin(2*pi*x[0]) * std::exp(std::sin(2*pi*x[0])+std::cos(2*pi*x[1]));
+    y[1] = -2*pi * std::sin(2*pi*x[1]) * std::exp(std::sin(2*pi*x[0])+std::cos(2*pi*x[1]));
 }
 
 TwoOneSinCosAxis::TwoOneSinCosAxis() {} TwoOneSinCosAxis::~TwoOneSinCosAxis() {} int TwoOneSinCosAxis::getNumInputs() const{ return 2; } int TwoOneSinCosAxis::getNumOutputs() const{ return 1; }
@@ -148,7 +148,7 @@ const char* TwoOneExpm40::getDescription() const{ return "f(x,y) = 1.0 / (1.0 + 
 void TwoOneExpm40::eval(const double x[], double y[]) const{ y[0] = 1.0 / (1.0 + exp(-40.0 * (std::sqrt(x[0]*x[0] + x[1]*x[1]) - 0.4))); } void TwoOneExpm40::getIntegral(double y[]) const{ y[0] = 0.0; }
 void TwoOneExpm40::getDerivative(const double x[], double y[]) const{
     double nrm = std::sqrt(x[0]*x[0] + x[1]*x[1]);
-    double a0 = -40.0 * (nrm - 0.4);
+    double a0 = -40.0 * nrm - 0.4;
     double a1 = 40 * exp(a0) / ((exp(a0) + 1) * (exp(a0) + 1) * nrm);
     y[0] = x[0] * a1;
     y[1] = x[1] * a1;
@@ -183,7 +183,7 @@ void EightOneCosSum::getDerivative(const double x[], double y[]) const{
 
 
 ThreeOneUnitBall::ThreeOneUnitBall(){} ThreeOneUnitBall::~ThreeOneUnitBall(){} int ThreeOneUnitBall::getNumInputs() const{ return 3; } int ThreeOneUnitBall::getNumOutputs() const{ return 1; }
-const char* ThreeOneUnitBall::getDescription() const{ return "f(y_i) = 1 if |x| < 1, 0 otherwise"; }
+const char* ThreeOneUnitBall::getDescription() const{ return "f(x_i) = 1 if ||x||_{2} < 1, 0 otherwise"; }
 void ThreeOneUnitBall::eval(const double x[], double y[]) const{ if ((x[0]*x[0]+x[1]*x[1]+x[2]*x[2]) <= 1.0){ y[0] = 1.0; }else{ y[0] = 0.0; } } void ThreeOneUnitBall::getIntegral(double y[]) const{ y[0] = (4.0/3.0) * pi; }
 void ThreeOneUnitBall::getDerivative(const double*, double y[]) const { y[0] = 0.0; y[1] = 0.0; y[2] = 0.0; }
 
@@ -258,9 +258,8 @@ const char* TwoOneDivisionAnisotropic::getDescription() const{ return "f(x,y) = 
 void TwoOneDivisionAnisotropic::eval(const double x[], double y[]) const{ y[0] = 1.0 / ((x[0] - 1.1) * (x[0] + 1.1) * (x[1] - 2) * (x[1] + 2)); } void TwoOneDivisionAnisotropic::getIntegral(double y[]) const{ y[0] = 1.520340801458519; }
 void TwoOneDivisionAnisotropic::getDerivative(const double x[], double y[]) const{
     double a0 = ((x[0] - 1.1) * (x[0] + 1.1) * (x[1] - 2.0) * (x[1] + 2.0));
-    double a1 = 1 / (a0 * a0);
-    y[0] = 2.0 * (x[0] - 1.1) * (x[1] - 2.0) * (x[1] + 2.0) * a1;
-    y[1] = 2.0 * (x[1] - 2.0) * (x[0] - 1.1) * (x[0] + 1.1) * a1;
+    y[0] = -2.0 * x[0] * (x[1] - 2.0) * (x[1] + 2.0) / (a0 * a0);
+    y[1] = -2.0 * x[1] * (x[0] - 1.1) * (x[0] + 1.1) / (a0 * a0);
 }
 
 TwoOne1DCurved::TwoOne1DCurved(){} TwoOne1DCurved::~TwoOne1DCurved(){} int TwoOne1DCurved::getNumInputs() const{ return 2; } int TwoOne1DCurved::getNumOutputs() const{ return 1; }
@@ -271,14 +270,18 @@ void TwoOne1DCurved::getDerivative(const double x[], double y[]) const{ y[0] = -
 TwoOneExpShiftedDomain::TwoOneExpShiftedDomain(){} TwoOneExpShiftedDomain::~TwoOneExpShiftedDomain(){} int TwoOneExpShiftedDomain::getNumInputs() const{ return 2; } int TwoOneExpShiftedDomain::getNumOutputs() const{ return 1; }
 const char* TwoOneExpShiftedDomain::getDescription() const{ return "f(x,y) = exp(x[0] / 3.0 + x[1] / 5.0)"; }
 void TwoOneExpShiftedDomain::eval(const double x[], double y[]) const{ y[0] = std::exp(x[0]/3.0  + x[1]/5.0); } void TwoOneExpShiftedDomain::getIntegral(double y[]) const{ y[0] = 15.0*(std::exp(26.0/15.0) - std::exp(11.0/15.0) - std::exp(7.0/5.0) + std::exp(2.0/5.0)); }
-void TwoOneExpShiftedDomain::getDerivative(const double x[], double y[]) const{ y[0] = 1/3.0 * std::exp(x[0]/3.0  + x[1]/5.0); y[1] = 1/5.0 * std::exp(x[0]/3.0  + x[1]/5.0); }
+void TwoOneExpShiftedDomain::getDerivative(const double x[], double y[]) const{
+    double a0 = std::exp(x[0]/3.0  + x[1]/5.0);
+    y[0] = 1/3.0 * a0;
+    y[1] = 1/5.0 * a0;
+}
 
 OneOneConformalOne::OneOneConformalOne(){} OneOneConformalOne::~OneOneConformalOne(){} int OneOneConformalOne::getNumInputs() const{ return 1; } int OneOneConformalOne::getNumOutputs() const{ return 1; }
 const char* OneOneConformalOne::getDescription() const{ return "f(x) = 1 / (1 + 5x^2)"; }
 void OneOneConformalOne::eval(const double x[], double y[]) const{ y[0] = 1.0 / (1.0 + 5.0 * x[0]*x[0]); } void OneOneConformalOne::getIntegral(double y[]) const{ y[0] = 1.028825601981092; }
 void OneOneConformalOne::getDerivative(const double x[], double y[]) const{
     double a0 = 1.0 + 5.0 * x[0]*x[0];
-    y[0] = 10.0 * x[0] / (a0 * a0);
+    y[0] = -10.0 * x[0] / (a0 * a0);
 }
 
 TwoOneConformalOne::TwoOneConformalOne(){} TwoOneConformalOne::~TwoOneConformalOne(){} int TwoOneConformalOne::getNumInputs() const{ return 2; } int TwoOneConformalOne::getNumOutputs() const{ return 1; }
@@ -286,8 +289,8 @@ const char* TwoOneConformalOne::getDescription() const{ return "f(x) = 1 / ((1 +
 void TwoOneConformalOne::eval(const double x[], double y[]) const{ y[0] = 1.0 / ((1.0 + 5.0*x[0]*x[0]) * (1.0 + 5.0*x[1]*x[1])); } void TwoOneConformalOne::getIntegral(double y[]) const{ y[0] = 1.028825601981092*1.028825601981092; }
 void TwoOneConformalOne::getDerivative(const double x[], double y[]) const{
     double a0 = (1.0 + 5.0*x[0]*x[0]) * (1.0 + 5.0*x[1]*x[1]);
-    y[0] = 10.0 * x[0] / (a0 * a0);
-    y[1] = 10.0 * x[1] / (a0 * a0);
+    y[0] = -10.0 * x[0] * (1.0 + 5.0 * x[1] * x[1]) / (a0 * a0);
+    y[1] = -10.0 * x[1] * (1.0 + 5.0 * x[0] * x[0]) / (a0 * a0);
 }
 
 Two3KExpSinCos::Two3KExpSinCos(){} Two3KExpSinCos::~Two3KExpSinCos(){} int Two3KExpSinCos::getNumInputs() const{ return 2; } int Two3KExpSinCos::getNumOutputs() const{ return 3072; }
