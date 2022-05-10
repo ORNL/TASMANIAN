@@ -341,7 +341,7 @@ inline double RuleWavelet::eval_cubic(int point, double x) const{
             x = -x;
         }
         const double *phi = &(data[1][((point+1)/2) * num_data_points]);
-        return (mode == 0 ? 1.0 : sgn) * interpolate<mode>(phi, x);
+        return (mode == 0 ? interpolate<mode>(phi, x) : sgn * interpolate<mode>(phi, x));
     }
     int l = Maths::intlog2(point - 1);
 

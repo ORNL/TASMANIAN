@@ -288,7 +288,7 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         };
         R.error = err;
     }else if (type == type_internal_interpolation or type == type_internal_differentiation){
-      if (type == type_internal_differentiation and !(grid.isGlobal() or grid.isSequence() or grid.isLocalPolynomial() or grid.isWavelet() or grid.isFourier())) {
+        if (type == type_internal_differentiation and !(grid.isGlobal() or grid.isSequence() or grid.isLocalPolynomial() or grid.isWavelet() or grid.isFourier())) {
             // Avoid testing grids where derivatives have not been implemented.
             R.error = 0.0;
         } else {
