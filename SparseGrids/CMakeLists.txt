@@ -71,11 +71,12 @@ add_executable(Tasmanian_gridtest gridtest_main.cpp
                                   gridtestUnitTests.hpp
                                   gridtestUnitTests.cpp
                                   gridtestTestInterfaceC.cpp)
-                                  
+
 add_executable(Tasmanian_benchmarksgrid  Benchmarks/benchCommon.hpp
                                          gridtestCLICommon.hpp
                                          Benchmarks/benchMakeGrid.hpp
                                          Benchmarks/benchLoadNeeded.hpp
+                                         Benchmarks/benchDifferentiate.hpp
                                          Benchmarks/benchEvaluate.hpp
                                          Benchmarks/bench_main.cpp)
 

@@ -11,6 +11,7 @@ enum BenchFuction{
     bench_loadneeded,
     bench_evaluate,
     bench_evaluate_mixed,
+    bench_differentiate,
     bench_iweights
 };
 
@@ -18,6 +19,7 @@ BenchFuction getTest(std::string const &s){
     std::map<std::string, BenchFuction> str_to_test = {
         {"evaluate", bench_evaluate},
         {"evaluate-mixed", bench_evaluate_mixed},
+        {"differentiate", bench_differentiate},
         {"loadneeded", bench_loadneeded},
         {"makegrid", bench_make},
         {"iweights", bench_iweights}
@@ -200,7 +202,9 @@ void loadGenericModel(TasmanianSparseGrid &grid){
 
 struct DryRun{};
 struct NoDryRun{};
-template<typename use_dry_run = NoDryRun>
+struct NormalizedTime{};
+struct RawTime{};
+template<typename use_dry_run = NoDryRun, typename normalize = NormalizedTime>
 int testMethod(int iteratons, std::function<void(int)> test){
     if (std::is_same<use_dry_run, DryRun>::value)
         test(iteratons-1);
@@ -210,7 +214,11 @@ int testMethod(int iteratons, std::function<void(int)> test){
     auto time_end = std::chrono::system_clock::now();
 
     long long elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(time_end - time_start).count();
-    return int( 0.5 + double(elapsed) / double(iteratons) );
+    if (std::is_same<normalize, NormalizedTime>::value){
+        return static_cast<int>( 0.5 + double(elapsed) / double(iteratons) );
+    }else{
+        return static_cast<int>(elapsed);
+    }
 }
 
 #endif
