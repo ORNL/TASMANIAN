@@ -374,28 +374,16 @@ void GridWavelet::evalDiffBasis(const int p[], const double x[], double jacobian
         value_cache[i] = rule1D.eval<0>(p[i], x[i]);
         jacobian[i] = rule1D.eval<1>(p[i], x[i]);
     }
-
-    // Note that excessive branching is done to mirror the logic in evalBasis() and evalIntegral().
-    int back_idx = num_dimensions-2;
     double t = 1.0;
     for(int i=1; i<num_dimensions; i++){
         t *= value_cache[i-1];
         jacobian[i] *= t;
-        if (t == 0.0) {
-            back_idx = i-1;
-            break;
-        }
     }
     t = 1.0;
-    for(int i=back_idx; i>=0; i--){
+    for(int i=num_dimensions-2; i>=0; i--){
         t *= value_cache[i+1];
         jacobian[i] *= t;
-        if (t == 0.0) {
-            back_idx = i;
-            break;
-        }
     }
-    std::fill_n(jacobian, back_idx, 0.0);
 }
 
 void GridWavelet::buildInterpolationMatrix() const{

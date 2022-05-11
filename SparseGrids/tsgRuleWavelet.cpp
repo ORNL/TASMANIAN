@@ -354,7 +354,8 @@ inline double RuleWavelet::eval_cubic(int point, double x) const{
             point = 13 - point;
         }
         point -= 5;
-        return (mode == 0 ? 1.0 : sgn) * interpolate<mode>(&data[2][point*num_data_points],x);
+        const double *phi = &data[2][point*num_data_points];
+        return (mode == 0 ? interpolate<mode>(phi, x) : sgn * interpolate<mode>(phi, x));
     }else if(l == 3){
         if (point > 12){
             // i.e. 13, 14, 15, 16
@@ -364,7 +365,8 @@ inline double RuleWavelet::eval_cubic(int point, double x) const{
             point = 25 - point;
         }
         point -= 9;
-        return (mode == 0 ? 1.0 : sgn) * interpolate<mode>(&data[3][point*num_data_points],x);
+        const double *phi = &data[3][point*num_data_points];
+        return (mode == 0 ? interpolate<mode>(phi, x) : sgn * interpolate<mode>(phi, x));
     }
     // Standard lifted wavelets.
     int subindex = (point - 1) % (1 << l);
@@ -470,23 +472,34 @@ inline double RuleWavelet::linear_central_wavelet(double x, bool right) const {
     // If `right` is true, then we return the right derivatives/values (if they exist); else, we return the left ones.
     if (std::abs(x + 0.25) > 0.75) return 0.0;
 
-    // The ordering is important.
-    if ((right and x < -0.5) or (!right and x <= -0.5)) {
-        if (mode == 0) return -0.5 * x - 0.5;
-        else return -0.5;
-    } else if ((right and x < -0.25) or (!right and x <= -0.25)) {
-        if (mode == 0) return 4.0 * x + 1.75;
-        else return 4.0;
-    } else if ((right and x < 0.0) or (!right and x <= 0.0)) {
-        if (mode == 0) return -4.0 * x - 0.25;
-        else return -4.0;
-    } else if ((right and x < 0.5) or (!right and x <= 0.5)) {
-        if (mode == 0) return 0.5 * x - 0.25;
-        else return 0.5;
+    if (mode == 0) {
+        if ( x < -0.5) {
+            return -0.5 * x - 0.5;
+        } else if (x < -0.25) {
+            return 4.0 * x + 1.75;;
+        } else if (x < 0.0) {
+            return -4.0 * x - 0.25;
+        } else if (x < 0.5) {
+            return 0.5 * x - 0.25;
+        } else {
+            return 0.0;
+        }
     } else {
-        // Case: (right and x == 0.5)
-        return 0.0;
+        // The ordering is important.
+        if (x < -0.5 or (x == -0.5 and not right)) {
+            return -0.5;
+        } else if (x < -0.25 or (x == -0.25 and not right)) {
+            return 4.0;
+        } else if (x < 0.0 or (x == 0.0 and not right)) {
+            return -4.0;
+        } else if (x < 0.5 or (x == 0.5 and not right)) {
+            return 0.5;
+        } else {
+            // Case: (right and x == 0.5)
+            return 0.0;
+        }
     }
+
 }
 
 inline int RuleWavelet::find_index(double x) const{
