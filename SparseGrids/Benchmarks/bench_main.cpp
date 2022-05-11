@@ -1,6 +1,7 @@
 #include "benchMakeGrid.hpp"
 #include "benchLoadNeeded.hpp"
 #include "benchEvaluate.hpp"
+#include "benchDifferentiate.hpp"
 #include "benchInterpolationWeights.hpp"
 
 void printHelp(BenchFuction test);
@@ -24,14 +25,26 @@ int main(int argc, const char** argv){
     }
 
     bool pass = true; // check if the rest of the inputs are OK
-    if (test == bench_make)
-        pass = benchmark_makegrid(args);
-    if (test == bench_loadneeded)
-        pass = benchmark_loadneeded(args);
-    if (test == bench_evaluate || test == bench_evaluate_mixed)
-        pass = benchmark_evaluate(args, (test == bench_evaluate_mixed));
-    if (test == bench_iweights)
-        pass = benchmark_iweights(args);
+    switch(test){
+        case bench_make:
+            pass = benchmark_makegrid(args);
+            break;
+        case bench_loadneeded:
+            pass = benchmark_loadneeded(args);
+            break;
+        case bench_evaluate:
+        case bench_evaluate_mixed:
+            pass = benchmark_evaluate(args, (test == bench_evaluate_mixed));
+            break;
+        case bench_differentiate:
+            pass = benchmark_differentiate(args);
+            break;
+        case bench_iweights:
+            pass = benchmark_iweights(args);
+            break;
+        default:
+            throw std::runtime_error("bench_main.cpp: invalid test type in switch statement!");
+    }
 
     if (!pass) // if problem with inputs
         printHelp(test);
@@ -42,7 +55,7 @@ int main(int argc, const char** argv){
 void printHelp(BenchFuction test){
     if (test == bench_none){
         cout << "\nusage: ./benchmark <function> <parameters>\n\n";
-        cout << "functions: makegrid, loadneeded, evaluate(-mixed), iweights\n";
+        cout << "functions: makegrid, loadneeded, evaluate(-mixed), differentiate, iweights\n";
         cout << "\n see: ./benchmark <function> help\n";
     }else if (test == bench_make){
         cout << "\nusage: ./benchmark makegrid <grid> <dims> <depth> <type> <rule> <iters> <jumps> <aniso>\n\n";
@@ -84,6 +97,19 @@ void printHelp(BenchFuction test){
         cout << "jumps : how many times to double <outs>\n";
         cout << "acc   : acceleration type, e.g., gpu-cuda, cpu-blas, none, etc.\n";
         cout << "gpu   : cuda device ID; ignored for cpu acceleration\n";
+        cout << "extra : (optional) sparse/dense flavor and/or list of anisotropic weights and level limits\n";
+        cout << "      : anisotropic weights come first (if used by the grid), then level limits\n";
+    }else if (test == bench_differentiate){
+        cout << "\nusage: ./benchmark differentiate <grid> <dims> <outs> <depth> <type> <rule> <order> <iters> <jumps>\n\n";
+        cout << "grid  : global, sequence, localp, wavelet, fourier\n";
+        cout << "dims  : number of dimensions\n";
+        cout << "outs  : number of outputs\n";
+        cout << "depth : grid density\n";
+        cout << "type  : level, iptotal, etc.; ignored if not used by the grid\n";
+        cout << "rule  : rleja, clenshaw-curtis, etc.; ignored for wavelet and fourier grids\n";
+        cout << "order : -1, 0, 1, 2; ignored if not used by the grid\n";
+        cout << "iters : number of times to repeat the function call\n";
+        cout << "jumps : how many times to double <outs>\n";
         cout << "extra : (optional) sparse/dense flavor and/or list of anisotropic weights and level limits\n";
         cout << "      : anisotropic weights come first (if used by the grid), then level limits\n";
     }else if (test == bench_iweights){
