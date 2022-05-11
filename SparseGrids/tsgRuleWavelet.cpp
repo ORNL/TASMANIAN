@@ -451,18 +451,27 @@ inline double RuleWavelet::linear_boundary_wavelet(double x, bool right) const{
     // If `right` is true, then we return the right derivatives/values (if they exist); else, we return the left ones.
     if (std::abs(x + 0.5) > 0.5) return 0.0;
 
-    if ((right and x < -0.75) or (!right and x <= -0.75)) {
-        if (mode == 0) return 0.75 * (7.0 * x + 6.0);
-        else return 0.75 * 7.0;
-    } else if ((right and x < -0.5) or (!right and x <= -0.5)) {
-        if (mode == 0) return -0.25 * (11.0 * x + 6.0);
-        else return -0.25 * 11.0;
-    } else if ((right and x < 0) or (!right and x <= 0)) {
-        if (mode == 0) return 0.25 * x;
-        else return 0.25;
+    if (mode == 0) {
+        if (x < -0.75) {
+            return 0.75 * (7.0 * x + 6.0);
+        } else if ((right and x < -0.5) or (!right and x <= -0.5)) {
+             return -0.25 * (11.0 * x + 6.0);
+        } else if ((right and x < 0) or (!right and x <= 0)) {
+            return 0.25 * x;
+        } else {
+            return 0.0;
+        }
     } else {
-        // Case: (right and x == 0.0)
-        return 0.0;
+        if (x < -0.75 or (x == -0.75 and not right)) {
+            return 0.75 * 7.0;
+        } else if (x < -0.5 or (x == -0.5 and not right)) {
+            return -0.25 * 11.0;
+        } else if (x < 0 or (x == 0 and not right)) {
+            return 0.25;
+        } else {
+            // Case: (right and x == 0.0)
+            return 0.0;
+        }
     }
 }
 

@@ -333,7 +333,7 @@ void GridWavelet::integrate(double q[], double *conformal_correction) const{
 }
 
 void GridWavelet::differentiate(const double x[], double jacobian[]) const{
-    std::fill(jacobian, jacobian + num_outputs * num_dimensions, 0.0);
+    std::fill_n(jacobian, num_outputs * num_dimensions, 0.0);
 
     int num_points = points.getNumIndexes();
     std::vector<double> basis_jacobian(num_dimensions);
@@ -369,7 +369,7 @@ double GridWavelet::evalIntegral(const int p[]) const{
 void GridWavelet::evalDiffBasis(const int p[], const double x[], double jacobian[]) const {
     // Evaluates the derivative of the wavelet basis given at point p at the coordinates given by x.
     // The derivative function of a symmetric function will be antisymmetric across the origin for every x != 0.0.
-    std::vector<double> value_cache(num_dimensions), derivative_cache(num_dimensions);
+    std::vector<double> value_cache(num_dimensions);
     for(int i=0; i<num_dimensions; i++) {
         value_cache[i] = rule1D.eval<0>(p[i], x[i]);
         jacobian[i] = rule1D.eval<1>(p[i], x[i]);
