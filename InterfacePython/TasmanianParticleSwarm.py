@@ -29,8 +29,7 @@
 # RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING
 # FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 
-from random import uniform
-from ctypes import c_int, c_bool, c_double, c_void_p, POINTER, cdll, cast, CFUNCTYPE
+from ctypes import c_char_p, c_int, c_bool, c_double, c_void_p, POINTER, cdll, cast, CFUNCTYPE
 from numpy.ctypeslib import as_ctypes, ndpointer
 import numpy as np
 import sys
@@ -68,8 +67,8 @@ pLibDTSG.tsgParticleSwarmState_SetBestParticlePositions.argtypes = [c_void_p, np
 
 pLibDTSG.tsgParticleSwarmState_ClearBestParticles.argtypes = [c_void_p]
 pLibDTSG.tsgParticleSwarmState_ClearCache.argtypes = [c_void_p]
-pLibDTSG.tsgParticleSwarmState_InitializeParticlesInsideBox.argtypes = [c_void_p, np_double_arr, np_double_arr, type_dream_random]
-pLibDTSG.tsgParticleSwarm.argtypes = [type_optim_obj_fn, c_int, type_optim_dom_fn, c_void_p, c_double, c_double, c_double, type_dream_random]
+pLibDTSG.tsgParticleSwarmState_InitializeParticlesInsideBox.argtypes = [c_void_p, np_double_arr, np_double_arr, c_char_p, c_int, type_dream_random]
+pLibDTSG.tsgParticleSwarm.argtypes = [type_optim_obj_fn, c_int, type_optim_dom_fn, c_void_p, c_double, c_double, c_double, c_char_p, c_int, type_dream_random]
 
 class ParticleSwarmState:
     '''
@@ -203,7 +202,7 @@ class ParticleSwarmState:
         '''
         pLibDTSG.tsgParticleSwarmState_ClearCache(c_void_p(self.pStatePntr))
 
-    def initializeParticlesInsideBox(self, lfBoxLower, lfBoxUpper, random01 = DREAM.RandomGenerator(callableRNG = lambda : uniform(0.0, 1.0))):
+    def initializeParticlesInsideBox(self, lfBoxLower, lfBoxUpper, random01 = DREAM.RandomGenerator(sType = "default")):
         '''
         Initialize the particle swarm state with randomized particles (determined by gen_random01) inside a box bounded by the
         parameters box_lower and box_upper. The i-th entry in these parameters respectively represent the lower and upper
@@ -212,18 +211,18 @@ class ParticleSwarmState:
 
         lfBoxLower : a one-dimensional NumPy array with lfBoxLower.shape[0] = .getNumDimensions()
         lfBoxUpper : a one-dimensional NumPy array with lfBoxLower.shape[0] = .getNumDimensions()
-        random01   : a random number generator that produces floats in [0,1]
+        random01   : a DREAM.RandomGenerator instance that produces floats in [0,1]
         '''
         iNumDims = self.getNumDimensions()
         if (lfBoxLower.shape[0] != iNumDims):
             raise InputError("lfBoxLower", "lfBoxLower.shape[0] should match the number of dimensions")
         if (lfBoxUpper.shape[0] != iNumDims):
             raise InputError("lfBoxUpper", "lfBoxUpper.shape[0] should match the number of dimensions")
-        pLibDTSG.tsgParticleSwarmState_InitializeParticlesInsideBox(c_void_p(self.pStatePntr), lfBoxLower, lfBoxUpper,
-                                                                    type_dream_random(random01.pCallable))
+        pLibDTSG.tsgParticleSwarmState_InitializeParticlesInsideBox(c_void_p(self.pStatePntr), lfBoxLower, lfBoxUpper, c_char_p(random01.sType),
+                                                                    c_int(random01.iSeed), type_dream_random(random01.pCallable))
 
 def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmState, fInertiaWeight, fCognitiveCoeff,
-                  fSocialCoeff, random01 = DREAM.RandomGenerator(callableRNG = lambda : uniform(0.0, 1.0))):
+                  fSocialCoeff, random01 = DREAM.RandomGenerator(sType = "default")):
     '''
     Wrapper around TasOptimization::ParticleSwarm().
 
@@ -242,7 +241,7 @@ def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmSta
     fInertiaWeight      : a double that controls the speed of the particles; should be in (0,1).
     fCognitiveCoeff     : a double that controls how much a particle favors its own trajectory; usually in [1,3].
     fSocialCoeff        : a double that controls how much a particle favors the swarm's trajectories; usually in [1,3].
-    random01            : a random number generator that produces floats in [0,1]
+    random01            : a DREAM.RandomGenerator instance that produces floats in [0,1]
 
     NOTE: np.frombuffer() is used below in order to avoid copying the data owned by the C pointers into the generated NumPy arrays.
     '''
@@ -261,4 +260,5 @@ def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmSta
 
     pLibDTSG.tsgParticleSwarm(type_optim_obj_fn(cpp_obj_fn), c_int(iNumIterations), type_optim_dom_fn(cpp_dom_fn),
                               c_void_p(oParticleSwarmState.pStatePntr), c_double(fInertiaWeight), c_double(fCognitiveCoeff),
-                              c_double(fSocialCoeff), type_dream_random(random01.pCallable))
+                              c_double(fSocialCoeff), c_char_p(random01.sType), c_int(random01.iSeed),
+                              type_dream_random(random01.pCallable))

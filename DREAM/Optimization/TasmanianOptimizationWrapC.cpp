@@ -88,14 +88,48 @@ extern "C" {
         reinterpret_cast<ParticleSwarmState*>(state)->clearCache();
     }
     void tsgParticleSwarmState_InitializeParticlesInsideBox(void* state, const double box_lower[], const double box_upper[],
-                                                            const tsg_dream_random get_random01) {
-        reinterpret_cast<ParticleSwarmState*>(state)->initializeParticlesInsideBox(box_lower, box_upper, get_random01);
+                                                            const char* random_type, const int random_seed, tsg_dream_random random_callback) {
+
+        // Create the U[0,1] random number generator.
+        std::minstd_rand park_miller((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed);
+        std::uniform_real_distribution<double> unif(0.0, 1.0);
+        srand((unsigned int) ((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed));
+        std::string rtype(random_type);
+        auto randgen = [&]()->
+                       std::function<double(void)>{
+            if (rtype == "default") {
+                return [&]()->double{ return TasDREAM::tsgCoreUniform01(); };
+            } else if (rtype == "minstd_rand") {
+                return [&]()->double{ return unif(park_miller); };
+            } else {
+                return [&]()->double{ return random_callback(); };
+            }
+        }();
+
+        reinterpret_cast<ParticleSwarmState*>(state)->initializeParticlesInsideBox(box_lower, box_upper, randgen);
     }
 
     // Particle Swarm Algorithm.
     void tsgParticleSwarm(const tsg_optim_obj_fn f_ptr, const int num_iterations, const tsg_optim_dom_fn inside_ptr, void *state,
                           const double inertia_weight, const double cognitive_coeff, const double social_coeff,
-                          const tsg_dream_random get_random01_ptr) {
+                          const char* random_type, const int random_seed, tsg_dream_random random_callback) {
+
+        // Create the U[0,1] random number generator.
+        std::minstd_rand park_miller((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed);
+        std::uniform_real_distribution<double> unif(0.0, 1.0);
+        srand((unsigned int) ((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed));
+        std::string rtype(random_type);
+        auto randgen = [&]()->
+                       std::function<double(void)>{
+            if (rtype == "default") {
+                return [&]()->double{ return TasDREAM::tsgCoreUniform01(); };
+            } else if (rtype == "minstd_rand") {
+                return [&]()->double{ return unif(park_miller); };
+            } else {
+                return [&]()->double{ return random_callback(); };
+            }
+        }();
+
         auto f_cpp = [&](const std::vector<double> &x_batch, std::vector<double> &fval_batch)->void {
             int num_batch = fval_batch.size();
             int num_dims = x_batch.size() / num_batch;
@@ -106,7 +140,7 @@ extern "C" {
             return (*inside_ptr)(num_dims, x.data());
         };
         ParticleSwarm(f_cpp, num_iterations, inside_cpp, *(reinterpret_cast<ParticleSwarmState*>(state)), inertia_weight,
-                      cognitive_coeff, social_coeff, *get_random01_ptr);
+                      cognitive_coeff, social_coeff, randgen);
     }
 
 }
