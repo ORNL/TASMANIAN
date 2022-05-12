@@ -295,35 +295,53 @@ double RuleWavelet::getWeight(int point) const{
     return 0.0;
 }
 
+template<int mode>
 double RuleWavelet::eval(int point, double x) const{
-    // Evaluates a wavelet designated by point at coordinate x.
+    // Evaluates or differentiates a wavelet designated by point at coordinate x.
     if(order == 1){
         // Level 0
         if (point < 3){
-            double w = 1.0 - std::abs(x - getNode(point));
-            return (w < 0.0) ? 0.0 : w;
+            double node = getNode(point);
+            if (mode == 0) {
+                double w = 1.0 - std::abs(x - node);
+                return (w < 0.0) ? 0.0 : w;
+            }else{
+                // Preserve the symmetry of derivatives as much as possible.
+                if (point == 0) return (x < 0.0) ? 1.0 : -1.0;
+                else if (point == 1) return (x < 0.0) ? -1.0 : 0.0;
+                else return (x < 0.0) ? 0.0 : 1.0;
+            }
         }
         // Level 1+
-        return eval_linear(point, x);
+        return eval_linear<mode>(point, x);
     }
     else if(order == 3){
-        return eval_cubic(point, x);
+        return eval_cubic<mode>(point, x);
     }
     return 0.;
 }
+template double RuleWavelet::eval<0>(int point, double x) const;
+template double RuleWavelet::eval<1>(int point, double x) const;
 
+template<int mode>
 inline double RuleWavelet::eval_cubic(int point, double x) const{
+    // Helps stabilize numerical errors.
+    if (point == 0 and x == 0.0 and mode == 1) return 0.0;
+
     // Evaluates a third order wavelet at a given point x.
+    double sgn = 1.0;
     if (point < 5){ // Scaling functions
         if (point == 2){ // Reflect across y-axis
             point = 1;
+            sgn = -1.0;
             x = -x;
         }else if(point == 4){
             point = 3;
+            sgn = -1.0;
             x = -x;
         }
         const double *phi = &(data[1][((point+1)/2) * num_data_points]);
-        return interpolate(phi, x);
+        return (mode == 0 ? interpolate<mode>(phi, x) : sgn * interpolate<mode>(phi, x));
     }
     int l = Maths::intlog2(point - 1);
 
@@ -332,34 +350,43 @@ inline double RuleWavelet::eval_cubic(int point, double x) const{
             // i.e. 7 or 8
             // These wavelets are reflections across the y-axis of 6 & 5, respectively
             x = -x;
+            sgn = -1.0;
             point = 13 - point;
         }
         point -= 5;
-        return interpolate(&data[2][point*num_data_points],x);
+        const double *phi = &data[2][point*num_data_points];
+        return (mode == 0 ? interpolate<mode>(phi, x) : sgn * interpolate<mode>(phi, x));
     }else if(l == 3){
         if (point > 12){
             // i.e. 13, 14, 15, 16
             // These wavelets are reflections of 12, 11, 10, 9, respectively
             x = -x;
+            sgn = -1.0;
             point = 25 - point;
         }
         point -= 9;
-        return interpolate(&data[3][point*num_data_points],x);
+        const double *phi = &data[3][point*num_data_points];
+        return (mode == 0 ? interpolate<mode>(phi, x) : sgn * interpolate<mode>(phi, x));
     }
     // Standard lifted wavelets.
     int subindex = (point - 1) % (1 << l);
     double scale = pow(2,l-4);
-    // Left Boundary
+    double value;
     if (subindex < 5){
-        return interpolate(&data[4][subindex*num_data_points],scale * (x + 1.) - 1.);
+        // Left boundary wavelet.
+        value = interpolate<mode>(&data[4][subindex*num_data_points], scale * (x + 1.) - 1.);
+    } else if ((1 << l) - 1 - subindex < 5){
+        // Right boundary wavelet.
+        value = interpolate<mode>(&data[4][((1 << l) - subindex - 1)*num_data_points], scale * (1. - x) - 1.);
+    } else {
+        // Central wavelets.
+        double shift = 0.125 * (double (subindex - 5));
+        value = interpolate<mode>(&data[4][5*num_data_points], scale * (x + 1.) -1. - shift);
     }
-    // Right Boundary
-    if ((1 << l) - 1 - subindex < 5){
-        return interpolate(&data[4][((1 << l) - subindex - 1)*num_data_points],scale * (1. - x) - 1.);
-    }
-    // Center
-    double shift = 0.125 * (double (subindex - 5));
-    return interpolate(&data[4][5*num_data_points], scale * (x + 1.) -1. - shift);
+    // Adjust for the chain rule multiplier.
+    if (mode == 1) value *= ((1 << l) - 1 - subindex < 5) ? -scale : scale;
+
+    return value;
 }
 
 void RuleWavelet::getShiftScale(int point, double &scale, double &shift) const{
@@ -390,52 +417,98 @@ double RuleWavelet::getSupport(int point) const{
     }
 }
 
+template<int mode>
 inline double RuleWavelet::eval_linear(int point, double x) const{
-    // Given a wavelet designated by point and a value x, evaluates the wavelet at x.
+    // Given a wavelet designated by point and a value x, evaluates the wavelet (or its derivative) at x.
+    // If x <= 0 (resp. x > 0), we take only right (resp. left) derivatives.
 
     // Standard Lifted Wavelets
     int l = Maths::intlog2(point - 1);
     int subindex = (point - 1) % (1 << l);
     double scale = std::pow(2,l-2);
 
-    // Left Boundary
+    double value;
     if (subindex == 0){
-        return linear_boundary_wavelet(scale * (x + 1.) - 1.);
+        // Left boundary wavelet.
+        value = linear_boundary_wavelet<mode>(scale * (x + 1.) - 1., x <= 0.0);
+    } else if (subindex == (1 << l) - 1) {
+        // Right boundary wavelet.
+        value = linear_boundary_wavelet<mode>(scale * (1. - x) - 1., x > 0.0);
+    } else {
+        // Central wavelets
+        double shift = 0.5 * (double (subindex - 1));
+        value = linear_central_wavelet<mode>(scale * (x + 1) - 1. - shift, x <= 0.0);
     }
-    // Right Boundary
-    else if (subindex == (1 << l) - 1){
-        return linear_boundary_wavelet(scale * (1. - x) - 1.);
-    }
-    double shift = 0.5 * (double (subindex - 1));
-    return linear_central_wavelet(scale * (x + 1) - 1. - shift);
+    // Adjust for the chain rule multiplier.
+    if (mode == 1) value *= (subindex == (1 << l) - 1) ? -scale : scale;
+
+    return value;
 }
 
-inline double RuleWavelet::linear_boundary_wavelet(double x) const{
-    // Evaluates the first order boundary wavelet with support on [-1, 0].
+template<int mode>
+inline double RuleWavelet::linear_boundary_wavelet(double x, bool right) const{
+    // Evaluates or differentiates the first order boundary wavelet with support on [-1, 0].
+    // If `right` is true, then we return the right derivatives/values (if they exist); else, we return the left ones.
     if (std::abs(x + 0.5) > 0.5) return 0.0;
 
-    if ((x <= -0.75)){
-        return 0.75 * (7.0 * x + 6.0);
-    }else if (x <= -0.5){
-        return -0.25 * (11.0 * x + 6.0);
-    }else{
-        return 0.25 * x;
+    if (mode == 0) {
+        if (x < -0.75) {
+            return 0.75 * (7.0 * x + 6.0);
+        } else if ((right and x < -0.5) or (!right and x <= -0.5)) {
+             return -0.25 * (11.0 * x + 6.0);
+        } else if ((right and x < 0) or (!right and x <= 0)) {
+            return 0.25 * x;
+        } else {
+            return 0.0;
+        }
+    } else {
+        if (x < -0.75 or (x == -0.75 and not right)) {
+            return 0.75 * 7.0;
+        } else if (x < -0.5 or (x == -0.5 and not right)) {
+            return -0.25 * 11.0;
+        } else if (x < 0 or (x == 0 and not right)) {
+            return 0.25;
+        } else {
+            // Case: (right and x == 0.0)
+            return 0.0;
+        }
     }
 }
 
-inline double RuleWavelet::linear_central_wavelet(double x) const {
-    // Evaluates the first order central wavelet with support on [-1, .5].
+template<int mode>
+inline double RuleWavelet::linear_central_wavelet(double x, bool right) const {
+    // Evaluates or differentiates (right derivative only) the first order central wavelet with support on [-1, .5].
+    // If `right` is true, then we return the right derivatives/values (if they exist); else, we return the left ones.
     if (std::abs(x + 0.25) > 0.75) return 0.0;
 
-    if ((x <= -0.5)){
-        return -0.5 * x - 0.5;
-    }else if (x >= 0.0){
-        return 0.5 * x - 0.25;
-    }else if (x <= -0.25){
-        return 4.0 * x + 1.75;
-    }else{
-        return -4.0 * x - 0.25;
+    if (mode == 0) {
+        if ( x < -0.5) {
+            return -0.5 * x - 0.5;
+        } else if (x < -0.25) {
+            return 4.0 * x + 1.75;;
+        } else if (x < 0.0) {
+            return -4.0 * x - 0.25;
+        } else if (x < 0.5) {
+            return 0.5 * x - 0.25;
+        } else {
+            return 0.0;
+        }
+    } else {
+        // The ordering is important.
+        if (x < -0.5 or (x == -0.5 and not right)) {
+            return -0.5;
+        } else if (x < -0.25 or (x == -0.25 and not right)) {
+            return 4.0;
+        } else if (x < 0.0 or (x == 0.0 and not right)) {
+            return -4.0;
+        } else if (x < 0.5 or (x == 0.5 and not right)) {
+            return 0.5;
+        } else {
+            // Case: (right and x == 0.5)
+            return 0.0;
+        }
     }
+
 }
 
 inline int RuleWavelet::find_index(double x) const{
@@ -459,6 +532,7 @@ inline int RuleWavelet::find_index(double x) const{
     return low;
 }
 
+template<int mode>
 inline double RuleWavelet::interpolate(const double *y, double x) const{
     // For a given x value and dataset y, calculates the value of the interpolating
     // polynomial of given order going through the nearby points.
@@ -488,10 +562,23 @@ inline double RuleWavelet::interpolate(const double *y, double x) const{
 
     double const *c = &(cachexs[4*start]);
 
-    return   c[0] * ps[0] * dx1 * dx2 * dx3
-           + c[1] * ps[1] * dx0 * dx2 * dx3
-           + c[2] * ps[2] * dx0 * dx1 * dx3
-           + c[3] * ps[3] * dx0 * dx1 * dx2;
+    if (mode == 0) {
+        return    c[0] * ps[0] * dx1 * dx2 * dx3
+                + c[1] * ps[1] * dx0 * dx2 * dx3
+                + c[2] * ps[2] * dx0 * dx1 * dx3
+                + c[3] * ps[3] * dx0 * dx1 * dx2;
+    } else {
+        double dx01 = dx0 * dx1;
+        double dx02 = dx0 * dx2;
+        double dx03 = dx0 * dx3;
+        double dx12 = dx1 * dx2;
+        double dx13 = dx1 * dx3;
+        double dx23 = dx2 * dx3;
+        return    c[0] * ps[0] * (dx23 + dx13 + dx12)
+                + c[1] * ps[1] * (dx23 + dx03 + dx02)
+                + c[2] * ps[2] * (dx13 + dx03 + dx01)
+                + c[3] * ps[3] * (dx12 + dx02 + dx01);
+    }
 }
 
 } // namespace TasGrid

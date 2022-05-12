@@ -54,7 +54,11 @@ public:
     void updateOrder(int new_order); // Sets the order of the underlying wavelet rule. Involves recalculating approximations if order==3.
 
     double getWeight(int point) const; // get the quadrature weight associated with the point
-    double eval(int point, double x) const; // returns the value of point at location x (there is assumed 1-1 correspondence between points and functions)
+
+    // mode 0: returns the value of point at location x;
+    // mode 1: returns the right derivative (or left derivative if not available) of point at location x;
+    // (there is assumed 1-1 correspondence between points and functions)
+    template<int mode> double eval(int point, double x) const;
 
     int getLevel(int point) const; // returns the hierarchical level of a point
     void getChildren(int point, int &first, int &second) const; // Given a point, return the children (if any)
@@ -64,17 +68,17 @@ public:
 
     double getSupport(int point) const; // return the support of the point, for reporting purposes (not used in eval)
 protected:
-    inline double eval_linear(int pt, double x) const;
-    inline double eval_cubic(int pt, double x) const;
-    inline double linear_boundary_wavelet(double x) const;
-    inline double linear_central_wavelet(double x) const;
+    template<int mode> inline double eval_linear(int pt, double x) const;
+    template<int mode> inline double eval_cubic(int pt, double x) const;
+    template<int mode> inline double linear_boundary_wavelet(double x, bool right) const;
+    template<int mode> inline double linear_central_wavelet(double x, bool right) const;
     int order;
     int iteration_depth;
     int num_data_points;
     static void cubic_cascade(double *y, int starting_level, int iteration_depth);
 
     inline int find_index(double x) const;
-    inline double interpolate(const double *y, double x) const;
+    template<int mode> inline double interpolate(const double y[], double x) const;
 
     std::vector<std::vector<double>> data;
     std::vector<double> cachexs;

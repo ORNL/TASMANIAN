@@ -60,11 +60,13 @@ public:
 
     void getQuadratureWeights(double weights[]) const override;
     void getInterpolationWeights(const double x[], double weights[]) const override;
+    void getDifferentiationWeights(const double x[], double weights[]) const;
 
     void loadNeededValues(const double *vals) override;
 
     void evaluate(const double x[], double y[]) const override;
     void integrate(double q[], double *conformal_correction) const override;
+    void differentiate(const double x[], double jacobian[]) const;
 
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 
@@ -103,6 +105,7 @@ protected:
     void recomputeCoefficients();
     void solveTransposed(double w[]) const;
     double evalIntegral(const int p[]) const;
+    void evalDiffBasis(const int p[], const double x[], double jacobian[]) const;
 
     std::vector<double> getNormalization() const;
     std::vector<int> getMultiIndex(const double x[]);
