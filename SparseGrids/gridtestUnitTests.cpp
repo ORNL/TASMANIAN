@@ -235,6 +235,12 @@ bool GridUnitTester::testAPIconsistency(){
     grid.integrate(ay);
     pass = pass && doesMatch(vy, ay);
     vy.clear();
+
+    auto dy = grid.differentiate(x);
+    grid.differentiate(x, vy);
+    grid.differentiate(x.data(), ay);
+    pass = pass && doesMatch(vy, ay);
+    pass = pass && doesMatch(vy, dy);
     delete[] ay;
 
     std::vector<double> vf, vx = {0.333, 0.44, -0.1333, 0.2223};

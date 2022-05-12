@@ -109,7 +109,16 @@ public:
     }
 
 protected:
+    /*!
+     * \brief Stores the values of the Lagrange polynomias for each dimension and each level
+     *
+     * cache[i] corresponds to the i-th dimension.
+     * The i-th vector has the values of the Lagrange polynomials going level by level,
+     * so the value of the Lagrange polynomial for dimension i at level l with local offset j
+     * will be cache[i][ offsets[l] + j ]
+     */
     std::vector<std::vector<T>> cache;
+    //! \brief Stores the offsets for each level within each dimension
     std::vector<int> offsets;
 };
 
@@ -185,7 +194,9 @@ public:
     }
 
 protected:
+    //! \brief See CacheLagrange::cache
     std::vector<std::vector<T>> cache;
+    //! \brief See CacheLagrange::offsets
     std::vector<int> offsets;
 };
 

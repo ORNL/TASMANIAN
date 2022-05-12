@@ -32,6 +32,7 @@
 #define __TASMANIAN_IOHELPERS_HPP
 
 #include "tsgEnumerates.hpp"
+#include <functional> // put here because it causes a conflict with some versinos of CUDA (keep out of tsgAcceleratedStructures.hpp)
 
 /*!
  * \internal

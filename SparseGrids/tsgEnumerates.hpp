@@ -46,7 +46,6 @@
 #include <cmath>
 #include <numeric>
 #include <stdexcept>
-#include <functional>
 #include <algorithm>
 #include <type_traits>
 #include <utility>

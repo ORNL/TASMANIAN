@@ -1033,9 +1033,18 @@ public:
     /*!
      * \brief Computes the derivative (if available) of the surrogate model at an input point.
      *
+     * \param x is the point of interest where the Jacobian should be evaluated.
      * \param jacobian will be resized to getNumOutputs() * getNumDimensions() and overwritten with the Jacobian matrix.
      */
     void differentiate(std::vector<double> const &x, std::vector<double> &jacobian) const;
+    /*!
+     * \brief Same as TasmanianSparseGrid::differentiate() but returns the \b jacobian
+     */
+    std::vector<double> differentiate(std::vector<double> const &x) const{
+        std::vector<double> jacobian;
+        differentiate(x, jacobian);
+        return jacobian;
+    }
     /*!
      * \brief Overload that uses a raw-array.
      *

@@ -34,7 +34,8 @@ if (NOT DOXYGEN_INTERNAL_DOCS)
         TasGrid::TasSparse::WaveletBasisMatrix TasGrid::GpuEngine TasGrid::GpuVector TasGrid::AccelerationDomainTransform
         TasGrid::AccelerationContext TasGrid::TableGaussPatterson TasGrid::InternalSyclQueue
         TasBLAS TasGrid::TasmanianDenseSolver TasGrid::TasmanianTridiagonalSolver TasGrid::Utils
-        TasGrid::NodeData TasGrid::TensorData TasGrid::CacheLagrange TasGrid::MultiIndexManipulations::ProperWeights
+        TasGrid::NodeData TasGrid::TensorData TasGrid::CacheLagrange TasGrid::CacheLagrangeDerivative
+        TasGrid::MultiIndexManipulations::ProperWeights
         TasGrid::HierarchyManipulations::SplitDirections
         TasGrid::Utils::Wrapper2D TasGrid::SimpleConstructData TasGrid::DynamicConstructorDataGlobal
         TasGrid::Optimizer::CurrentNodes TasGrid::Optimizer::HasDerivative TasGrid::Optimizer::OptimizerResult
