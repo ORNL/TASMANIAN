@@ -187,6 +187,7 @@ public:
                               const double social_coeff, const std::function<double(void)> get_random01);
 
 protected:
+    #ifndef __TASMANIAN_DOXYGEN_SKIP_INTERNAL
     //! \brief Returns a reference to the particle positions.
     inline std::vector<double> &getParticlePositionsRef() {return particle_positions;}
     //! \brief Returns a reference to the particle velocities.
@@ -201,6 +202,7 @@ protected:
     inline std::vector<bool> &getCacheParticleInsideRef() {return cache_particle_inside;}
     //! \brief Returns a reference to a boolean hash map of the domain of the previously best known loaded particles.
     inline std::vector<bool> &getCacheBestParticleInsideRef() {return cache_best_particle_inside;}
+    #endif
 
 private:
     bool positions_initialized, velocities_initialized, best_positions_initialized, cache_initialized;
