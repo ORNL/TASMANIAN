@@ -1038,6 +1038,14 @@ public:
      */
     void differentiate(std::vector<double> const &x, std::vector<double> &jacobian) const;
     /*!
+     * \brief Same as TasmanianSparseGrid::differentiate() but returns the \b jacobian
+     */
+    std::vector<double> differentiate(std::vector<double> const &x) const{
+        std::vector<double> jacobian;
+        differentiate(x, jacobian);
+        return jacobian;
+    }
+    /*!
      * \brief Overload that uses a raw-array.
      *
      * Equivalent to differentiate() but \b jacobian must have sufficient size to write the result.
