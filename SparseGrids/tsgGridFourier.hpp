@@ -67,11 +67,11 @@ public:
 
     void getInterpolationWeights(const double x[], double weights[]) const override;
     void getQuadratureWeights(double weights[]) const override;
-    void getDifferentiationWeights(const double x[], double weights[]) const;
+    void getDifferentiationWeights(const double x[], double weights[]) const override;
 
     void evaluate(const double x[], double y[]) const override;
     void integrate(double q[], double *conformal_correction) const override;
-    void differentiate(const double x[], double jacobian[]) const;
+    void differentiate(const double x[], double jacobian[]) const override;
 
     void evaluateBatch(const double x[], int num_x, double y[]) const override;
 

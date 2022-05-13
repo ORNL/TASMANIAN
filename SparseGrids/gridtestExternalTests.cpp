@@ -288,47 +288,42 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         };
         R.error = err;
     }else if (type == type_internal_interpolation or type == type_internal_differentiation){
-        if (type == type_internal_differentiation and !(grid.isGlobal() or grid.isSequence() or grid.isLocalPolynomial() or grid.isWavelet() or grid.isFourier())) {
-            // Avoid testing grids where derivatives have not been implemented.
-            R.error = 0.0;
+        // load needed points
+        loadValues(f, grid);
+
+        std::vector<double> test_x = genRandom(num_mc, num_dimensions);
+        int num_entries = (type == type_internal_interpolation) ? num_outputs : num_outputs * num_dimensions;
+        std::vector<double> result_tasm(num_mc * num_entries);
+        std::vector<double> result_true(num_mc * num_entries);
+        if (type == type_internal_interpolation) {
+            #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
+            for(int i=0; i<num_mc; i++){
+                grid.evaluate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_entries]));
+                f->eval(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
+            }
         } else {
-            // load needed points
-            loadValues(f, grid);
-
-            std::vector<double> test_x = genRandom(num_mc, num_dimensions);
-            int num_entries = (type == type_internal_interpolation) ? num_outputs : num_outputs * num_dimensions;
-            std::vector<double> result_tasm(num_mc * num_entries);
-            std::vector<double> result_true(num_mc * num_entries);
-            if (type == type_internal_interpolation) {
-                #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
-                for(int i=0; i<num_mc; i++){
-                    grid.evaluate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_entries]));
-                    f->eval(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
-                }
-            } else {
-                #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
-                for(int i=0; i<num_mc; i++){
-                    grid.differentiate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_entries]));
-                    f->getDerivative(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
-                }
+            #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
+            for(int i=0; i<num_mc; i++){
+                grid.differentiate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_entries]));
+                f->getDerivative(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
             }
-
-            double rel_err = 0.0; // relative error
-            for(int k=0; k<num_entries; k++){
-                double nrm = 0.0; // norm, needed to compute relative error
-                double err = 0.0; // absolute error
-                for(int i=0; i<num_mc; i++){
-                    nrm = std::max(nrm, std::fabs(result_true[i * num_entries + k]));
-                    err = std::max(err, std::fabs(result_true[i * num_entries + k] - result_tasm[i * num_entries + k]));
-                }
-                rel_err = std::max(rel_err, std::fabs(nrm) <= Maths::num_tol ? err : err / nrm);
-            }
-
-            if (type == type_internal_differentiation)
-                rel_err = std::max(rel_err, unitDerivativeTests(f, grid));
-
-            R.error = rel_err;
         }
+
+        double rel_err = 0.0; // relative error
+        for(int k=0; k<num_entries; k++){
+            double nrm = 0.0; // norm, needed to compute relative error
+            double err = 0.0; // absolute error
+            for(int i=0; i<num_mc; i++){
+                nrm = std::max(nrm, std::fabs(result_true[i * num_entries + k]));
+                err = std::max(err, std::fabs(result_true[i * num_entries + k] - result_tasm[i * num_entries + k]));
+            }
+            rel_err = std::max(rel_err, std::fabs(nrm) <= Maths::num_tol ? err : err / nrm);
+        }
+
+        if (type == type_internal_differentiation)
+            rel_err = std::max(rel_err, unitDerivativeTests(f, grid));
+
+        R.error = rel_err;
     }
     R.num_points = grid.getNumPoints();
     return R;
