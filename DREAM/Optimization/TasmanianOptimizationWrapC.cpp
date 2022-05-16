@@ -93,11 +93,11 @@ extern "C" {
         // Create the U[0,1] random number generator.
         std::minstd_rand park_miller((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed);
         std::uniform_real_distribution<double> unif(0.0, 1.0);
-        srand((unsigned int) ((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed));
         std::string rtype(random_type);
         auto randgen = [&]()->
                        std::function<double(void)>{
             if (rtype == "default") {
+                srand((unsigned int) ((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed));
                 return [&]()->double{ return TasDREAM::tsgCoreUniform01(); };
             } else if (rtype == "minstd_rand") {
                 return [&]()->double{ return unif(park_miller); };
@@ -117,11 +117,11 @@ extern "C" {
         // Create the U[0,1] random number generator.
         std::minstd_rand park_miller((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed);
         std::uniform_real_distribution<double> unif(0.0, 1.0);
-        srand((unsigned int) ((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed));
         std::string rtype(random_type);
         auto randgen = [&]()->
                        std::function<double(void)>{
             if (rtype == "default") {
+                srand((unsigned int) ((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed));
                 return [&]()->double{ return TasDREAM::tsgCoreUniform01(); };
             } else if (rtype == "minstd_rand") {
                 return [&]()->double{ return unif(park_miller); };
