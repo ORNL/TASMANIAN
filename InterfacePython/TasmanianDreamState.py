@@ -138,7 +138,7 @@ class DreamState:
         Returns the saved pdf in a one dimensional numpy.ndarray
         '''
         iNumHistory = self.getNumHistory()
-        aResult = np.empty((NumHistory,), np.float64)
+        aResult = np.empty((iNumHistory,), np.float64)
         pLibDTSG.tsgDreamStateGetHistoryPDF(self.pStatePntr, np.ctypeslib.as_ctypes(aResult))
         return aResult
 

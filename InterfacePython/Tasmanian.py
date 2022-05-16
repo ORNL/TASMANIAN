@@ -41,7 +41,7 @@ from TasmanianSG import *
 SparseGrid = TasmanianSparseGrid
 
 import TasmanianDREAM as DREAM
-import TasmanianOPT as OPT
+import TasmanianOPT as Optimization
 
 from TasmanianAddons import *
 

@@ -101,13 +101,16 @@ public:
         getBestPosition(best_position.data());
         return best_position;
     }
-    //! \brief Return the state vector.
-    inline void getStateVector(bool sv[]) const {
-        sv[0] = positions_initialized;
-        sv[1] = velocities_initialized;
-        sv[2] = best_positions_initialized;
-        sv[3] = cache_initialized;
-    }
+
+    //! \brief Returns true if the particle positions have been initialized.
+    inline bool isPositionInitialized() const {return positions_initialized;}
+    //! \brief Returns true if the particle velocities have been initialized.
+    inline bool isVelocityInitialized() const {return velocities_initialized;}
+    //! \brief Returns true if the best particle positions have been initialized.
+    inline bool isBestPositionInitialized() const {return best_positions_initialized;}
+    //! \brief Returns true if the cache has been initialized.
+    inline bool isCacheInitialized() const {return cache_initialized;}
+    //! \brief Return the complete state vector.
     inline std::vector<bool> getStateVector() const {
         return {positions_initialized, velocities_initialized, best_positions_initialized, cache_initialized};
     }

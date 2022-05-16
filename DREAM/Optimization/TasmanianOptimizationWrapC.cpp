@@ -40,7 +40,7 @@
 
 // C Function Pointer Aliases
 using tsg_dream_random = double (*)();
-using tsg_optim_dom_fn = bool   (*)(const int, const double[]);
+using tsg_optim_dom_fn = int    (*)(const int, const double[]);
 using tsg_optim_obj_fn = void   (*)(const int, const int, const double[], double[]);
 
 namespace TasOptimization{
@@ -72,6 +72,20 @@ extern "C" {
     void tsgParticleSwarmState_GetBestPosition(void* state, double bp[]) {
         reinterpret_cast<ParticleSwarmState*>(state)->getBestPosition(bp);
     }
+
+    int tsgParticleSwarmState_IsPositionInitialized(void* state) {
+        return reinterpret_cast<ParticleSwarmState*>(state)->isPositionInitialized();
+    }
+    int tsgParticleSwarmState_IsVelocityInitialized(void* state) {
+        return reinterpret_cast<ParticleSwarmState*>(state)->isVelocityInitialized();
+    }
+    int tsgParticleSwarmState_IsBestPositionInitialized(void* state) {
+        return reinterpret_cast<ParticleSwarmState*>(state)->isBestPositionInitialized();
+    }
+    int tsgParticleSwarmState_IsCacheInitialized(void* state) {
+        return reinterpret_cast<ParticleSwarmState*>(state)->isCacheInitialized();
+    }
+
     void tsgParticleSwarmState_SetParticlePositions(void* state, const double pp[]) {
         reinterpret_cast<ParticleSwarmState*>(state)->setParticlePositions(pp);
     }
@@ -87,9 +101,9 @@ extern "C" {
     void tsgParticleSwarmState_ClearCache(void* state) {
         reinterpret_cast<ParticleSwarmState*>(state)->clearCache();
     }
+
     void tsgParticleSwarmState_InitializeParticlesInsideBox(void* state, const double box_lower[], const double box_upper[],
                                                             const char* random_type, const int random_seed, tsg_dream_random random_callback) {
-
         // Create the U[0,1] random number generator.
         std::minstd_rand park_miller((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed);
         std::uniform_real_distribution<double> unif(0.0, 1.0);
@@ -105,7 +119,6 @@ extern "C" {
                 return [&]()->double{ return random_callback(); };
             }
         }();
-
         reinterpret_cast<ParticleSwarmState*>(state)->initializeParticlesInsideBox(box_lower, box_upper, randgen);
     }
 
@@ -113,7 +126,6 @@ extern "C" {
     void tsgParticleSwarm(const tsg_optim_obj_fn f_ptr, const int num_iterations, const tsg_optim_dom_fn inside_ptr, void *state,
                           const double inertia_weight, const double cognitive_coeff, const double social_coeff,
                           const char* random_type, const int random_seed, tsg_dream_random random_callback) {
-
         // Create the U[0,1] random number generator.
         std::minstd_rand park_miller((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed);
         std::uniform_real_distribution<double> unif(0.0, 1.0);
@@ -129,7 +141,6 @@ extern "C" {
                 return [&]()->double{ return random_callback(); };
             }
         }();
-
         auto f_cpp = [&](const std::vector<double> &x_batch, std::vector<double> &fval_batch)->void {
             int num_batch = fval_batch.size();
             int num_dims = x_batch.size() / num_batch;

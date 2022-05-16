@@ -29,7 +29,7 @@
 # RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING
 # FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 
-from ctypes import c_char_p, c_int, c_bool, c_double, c_void_p, POINTER, cdll, cast, CFUNCTYPE
+from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, cdll, cast, CFUNCTYPE
 from numpy.ctypeslib import as_ctypes, ndpointer
 import numpy as np
 import sys
@@ -42,7 +42,7 @@ import TasmanianDREAM as DREAM
 c_double_p        = POINTER(c_double)
 np_double_arr     = ndpointer(c_double, flags="C_CONTIGUOUS")
 type_optim_obj_fn = CFUNCTYPE(None, c_int, c_int, c_double_p, c_double_p)
-type_optim_dom_fn = CFUNCTYPE(c_bool, c_int, c_double_p)
+type_optim_dom_fn = CFUNCTYPE(c_int, c_int, c_double_p)
 type_dream_random = CFUNCTYPE(c_double)
 
 pLibDTSG = cdll.LoadLibrary(__path_libdream__)
@@ -60,6 +60,15 @@ pLibDTSG.tsgParticleSwarmState_GetParticlePositions.argtypes = [c_void_p, np_dou
 pLibDTSG.tsgParticleSwarmState_GetParticleVelocities.argtypes = [c_void_p, np_double_arr]
 pLibDTSG.tsgParticleSwarmState_GetBestParticlePositions.argtypes = [c_void_p, np_double_arr]
 pLibDTSG.tsgParticleSwarmState_GetBestPosition.argtypes = [c_void_p, np_double_arr]
+
+pLibDTSG.tsgParticleSwarmState_IsPositionInitialized.restype = c_int
+pLibDTSG.tsgParticleSwarmState_IsPositionInitialized.argtype = [c_void_p]
+pLibDTSG.tsgParticleSwarmState_IsVelocityInitialized.restype = c_int
+pLibDTSG.tsgParticleSwarmState_IsVelocityInitialized.argtype = [c_void_p]
+pLibDTSG.tsgParticleSwarmState_IsBestPositionInitialized.restype = c_int
+pLibDTSG.tsgParticleSwarmState_IsBestPositionInitialized.argtype = [c_void_p]
+pLibDTSG.tsgParticleSwarmState_IsCacheInitialized.restype = c_int
+pLibDTSG.tsgParticleSwarmState_IsCacheInitialized.argtype = [c_void_p]
 
 pLibDTSG.tsgParticleSwarmState_SetParticlePositions.argtypes = [c_void_p, np_double_arr]
 pLibDTSG.tsgParticleSwarmState_SetParticleVelocities.argtypes = [c_void_p, np_double_arr]
@@ -104,7 +113,8 @@ class ParticleSwarmState:
 
     def getParticlePositions(self):
         '''
-        Return the particle positions as a NumPy array.
+        Return the particle positions as a 2D NumPy array. The shape of this array is (self.getNumParticles(), self.getNumDimensions())
+        and the i-th row if this array corresponds to the position of the i-th particle.
         '''
         iNumDims = self.getNumDimensions()
         iNumPart = self.getNumParticles()
@@ -114,7 +124,8 @@ class ParticleSwarmState:
 
     def getParticleVelocities(self):
         '''
-        Return the particle velocities as a NumPy array.
+        Return the particle velocities as a 2D NumPy array. The shape of this array is (self.getNumParticles(), self.getNumDimensions())
+        and the i-th row if this array corresponds to the velocity of the i-th particle.
         '''
         iNumDims = self.getNumDimensions()
         iNumPart = self.getNumParticles()
@@ -124,7 +135,9 @@ class ParticleSwarmState:
 
     def getBestParticlePositions(self):
         '''
-        Return the best particle positions as a NumPy array.
+        Return the best particle positions as a 2D NumPy array.  The shape of this array is (self.getNumParticles()+1 , self.getNumDimensions())
+        and the i-th row if this array corresponds to the best position of the i-th particle for the first .getNumParticles()
+        particles. The last row corresponds to the best particle position of the swarm.
         '''
         iNumDims = self.getNumDimensions()
         iNumPart = self.getNumParticles()
@@ -134,20 +147,44 @@ class ParticleSwarmState:
 
     def getBestPosition(self):
         '''
-        Return the best particle position as a NumPy array.
+        Return the best particle position of the swarm as a 1D NumPy array. The size of the array is self.getNumDimensions().
         '''
         iNumDims = self.getNumDimensions()
         aResult = np.zeros((iNumDims,), np.float64)
         pLibDTSG.tsgParticleSwarmState_GetBestPosition(self.pStatePntr, aResult)
         return aResult
 
+    def isPositionInitialized(self):
+        '''
+        Returns True if the particle positions have been initialized and False otherwise.
+        '''
+        return bool(pLibDTSG.tsgParticleSwarmState_IsPositionInitialized(self.pStatePntr))
+
+    def isVelocityInitialized(self):
+        '''
+        Returns True if the particle velocities have been initialized and False otherwise.
+        '''
+        return bool(pLibDTSG.tsgParticleSwarmState_IsVelocityInitialized(self.pStatePntr))
+
+    def isBestPositionInitialized(self):
+        '''
+        Returns True if the best particle positions have been initialized and False otherwise.
+        '''
+        return bool(pLibDTSG.tsgParticleSwarmState_IsBestPositionInitialized(self.pStatePntr))
+
+    def isCacheInitialized(self):
+        '''
+        Returns True if the cache has been initialized and False otherwise.
+        '''
+        return bool(pLibDTSG.tsgParticleSwarmState_IsCacheInitialized(self.pStatePntr))
+
     def setParticlePositions(self, llfNewPPosns):
         '''
         Set new particle positions from a NumPy array.
 
         llfNewPPosns : a two-dimensional numpy.ndarray with
-            .shape[0] = .getNumParticles()
-            .shape[1] = .getNumDimensions()
+            llfNewPPosns.shape[0] = self.getNumParticles()
+            llfNewPPosns.shape[1] = self.getNumDimensions()
         '''
         iNumPart = self.getNumParticles()
         iNumDims = self.getNumDimensions()
@@ -162,8 +199,8 @@ class ParticleSwarmState:
         Set new particle velocities from a NumPy array.
 
         llfNewPVelcs : a two-dimensional numpy.ndarray with
-            .shape[0] = .getNumParticles()
-            .shape[1] = .getNumDimensions()
+            llfNewPVelcs.shape[0] = self.getNumParticles()
+            llfNewPVelcs.shape[1] = self.getNumDimensions()
         '''
         iNumPart = self.getNumParticles()
         iNumDims = self.getNumDimensions()
@@ -178,8 +215,8 @@ class ParticleSwarmState:
         Set new best particle positions from a NumPy array.
 
         llfNewBPPosns : a two-dimensional numpy.ndarray with
-            .shape[0] = .getNumParticles() + 1
-            .shape[1] = .getNumDimensions()
+            llfNewPVelcs.shape[0] = self.getNumParticles() + 1
+            llfNewPVelcs.shape[1] = self.getNumDimensions()
         '''
         iNumPart = self.getNumParticles()
         iNumDims = self.getNumDimensions()
@@ -234,29 +271,23 @@ def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmSta
                           and produce no outputs; when it is called, it should write the result of applying the objective function
                           to every row of x_batch to fval_batch; it is expected that x_batch.shape[1] = .getNumDimensions().
     iNumIterations      : a positive integer representing the number iterations the algorithm is run.
-    pInside             : a Python lambda representing the function domain; it should take in one 2D NumPy array (x) and produce an
-                          integer (isInside); when called, it should return True if x is in the domain and False otherwise;
+    pInside             : a Python lambda representing the function domain; it should take in one 2D NumPy array (x) and produce a
+                          boolean (isInside); when called, it should return True if x is in the domain and False otherwise;
                           it is expected that x.shape[0] = .getNumDimensions().
     oParticleSwarmState : an instance of the Python ParticleSwarmState class; it will contain the results of applying the algorithm.
     fInertiaWeight      : a double that controls the speed of the particles; should be in (0,1).
     fCognitiveCoeff     : a double that controls how much a particle favors its own trajectory; usually in [1,3].
     fSocialCoeff        : a double that controls how much a particle favors the swarm's trajectories; usually in [1,3].
     random01            : a DREAM.RandomGenerator instance that produces floats in [0,1]
-
-    NOTE: np.frombuffer() is used below in order to avoid copying the data owned by the C pointers into the generated NumPy arrays.
     '''
     def cpp_obj_fn(num_dim, num_batch, x_batch_ptr, fval_ptr):
-        py_x_batch_ptr = cast(x_batch_ptr, POINTER(c_double * num_batch * num_dim))
-        np_x_batch = np.frombuffer(py_x_batch_ptr.contents)
-        np_x_batch.resize((num_batch, num_dim))
-        py_fval_ptr = cast(fval_ptr, POINTER(c_double * num_batch))
-        np_fval = np.frombuffer(py_fval_ptr.contents)
-        pObjectiveFunction(np_x_batch, np_fval)
+        aX = np.ctypeslib.as_array(x_batch_ptr, (num_batch, num_dim))
+        aY = np.ctypeslib.as_array(fval_ptr, (num_batch,))
+        pObjectiveFunction(aX, aY)
 
     def cpp_dom_fn(num_dim, x_ptr):
-        py_x_ptr = cast(x_ptr, POINTER(c_double * num_dim))
-        np_x = np.frombuffer(py_x_ptr.contents)
-        return pInside(np_x)
+        aX = np.ctypeslib.as_array(x_ptr, (num_dim,))
+        return pInside(aX)
 
     pLibDTSG.tsgParticleSwarm(type_optim_obj_fn(cpp_obj_fn), c_int(iNumIterations), type_optim_dom_fn(cpp_dom_fn),
                               oParticleSwarmState.pStatePntr, c_double(fInertiaWeight), c_double(fCognitiveCoeff),
