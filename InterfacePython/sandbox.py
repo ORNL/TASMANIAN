@@ -21,37 +21,3 @@ import math
 ###############################################################################
 
 print("Add code to this file to test, debug, or develop features")
-
-pss = Tasmanian.Optimization.ParticleSwarmState(2, 10)
-print([pss.isPositionInitialized(),
-       pss.isVelocityInitialized(),
-       pss.isBestPositionInitialized(),
-       pss.isCacheInitialized()])
-
-pss.initializeParticlesInsideBox(np.array([-1.0, -2.0]),
-                                 np.array([1.0, 2.0]))
-
-print([pss.isPositionInitialized(),
-       pss.isVelocityInitialized(),
-       pss.isBestPositionInitialized(),
-       pss.isCacheInitialized()])
-
-print(pss.getParticlePositions())
-
-def obj_fn(x_batch, y):
-    rows, _ = x_batch.shape
-    for i in range(rows):
-        y[i] = sum(abs(x_batch[i,:]))
-
-def inside_fn(x):
-    return True
-
-Tasmanian.Optimization.ParticleSwarm(obj_fn, 1000, inside_fn, pss, 0.5, 2.0, 2.0)
-
-print(pss.getParticlePositions())
-
-print([pss.isPositionInitialized(),
-       pss.isVelocityInitialized(),
-       pss.isBestPositionInitialized(),
-       pss.isCacheInitialized()])
-
