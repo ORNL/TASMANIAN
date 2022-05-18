@@ -54,13 +54,13 @@ namespace TasOptimization {
  * \brief Stores the information about a particle swarm.
  *
  * \par class ParticleSwarmState
- * An object of this class represents the components of a particle swarm and all parts of the swarm can be read through member
- * methods. Methods are also provided to initialize the swarm and set a subset of its parts.
+ * An object of this class represents the components of a particle swarm and all key parts of the swarm can be read through member
+ * methods. Methods are also provided to initialize the swarm and modify a subset of its parts.
  *
  * \par Constructors and Copy/Move assignment
- * All constructors require information about number of dimensions and particles. Methods are also available to retrieve these two
+ * All constructors require information about number of dimensions and particles. Methods are available to retrieve these two
  * numbers. No default constructor is available for this class, but copy/move constructors and assignment operator= overloads are
- * available. Finally, the number of dimensions and particles cannot be modified.
+ * available. The number of dimensions and particles \b cannot be modified.
  * - ParticleSwarmState()
  * - getNumDimensions()
  * - getNumParticles()
@@ -69,7 +69,7 @@ namespace TasOptimization {
  * Each particle of the swarm is associated with a (possibly empty) position and velocity vector. When an optimization method is
  * applied to the swarm, each particle is also associated with a 'best' position in terms of the objective function given to the
  * optimization method. Methods are also available to determine if the positions, best positions, and velocities are
- * non-empty (initialized).
+ * empty (uninitialized) or non-empty (initialized).
  * - getParticlePositions(), setParticlePositions()
  * - getParticleVelocities(), setParticleVelocities()
  * - getBestParticlePositions(), setBestParticlePositions()
@@ -84,7 +84,7 @@ namespace TasOptimization {
  * \par Clearing the Cache
  * When an optimization method is applied to the swarm, certain data related to the objective function are stored in cache variables
  * inside this class. If an optimization method needs to be applied to the swarm with a different objective function than the one used
- * to generate the cache, the cache should first be cleared out.
+ * to generate the cache, the cache should first be reset.
  * - clearCache()
  * - isCacheInitialized()
  */
@@ -97,11 +97,13 @@ public:
     //! \brief Constructor for a particle swarm state with the number of dimensions and the number of particles inferred from
     //! a set of input particle positions \b pp and a set of input particle velocities \b pv.
     ParticleSwarmState(const int num_dimensions, std::vector<double> &&pp, std::vector<double> &&pv);
+    //! \brief Copy constructor.
+    ParticleSwarmState(const ParticleSwarmState &source) = default;
     //! \brief Move constructor.
     ParticleSwarmState(ParticleSwarmState &&source) = default;
+    //! \brief Destructor.
+    ~ParticleSwarmState() = default;
 
-    //! \brief Copy assignment.
-    ParticleSwarmState& operator=(ParticleSwarmState const &source);
     //! \brief Move assignment.
     ParticleSwarmState& operator=(ParticleSwarmState &&source) = default;
 
@@ -191,7 +193,7 @@ public:
         std::fill(cache_best_particle_inside.begin(), cache_best_particle_inside.end(), false);
     }
 
-    /*! \brief Randomly initializes all of the particle positions and velocities.
+    /*! \brief Randomly initializes all of the particle positions and velocities inside of a box.
      *
      * The i-th component of each particle's position is uniformly sampled from the interval [\b box_lower[i], \b box_upper[i]].
      * The i-th velocity of each particle's velocity is uniformly sampled from the interval [-R, R] where R =
@@ -204,7 +206,7 @@ public:
                                       const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
 
 
-    /*! \brief Applies the particle swarm algorithm to a particle swarm state.
+    /*! \brief Applies the classic particle swarm algorithm to a particle swarm state.
      * \ingroup OptimizationAlgorithm Particle Swarm Algorithm
      *
      * Runs \b num_iterations of the particle swarm algorithm to a particle swarm \b state to minimize the function \b f over the
