@@ -39,8 +39,8 @@ from TasmanianConfig import TasmanianInputError as InputError
 
 import TasmanianDREAM as DREAM
 
-type_optim_obj_fn = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), POINTER(c_double))
-type_optim_dom_fn = CFUNCTYPE(c_int, c_int, POINTER(c_double))
+type_optim_obj_fn = CFUNCTYPE(None, c_int, c_int, POINTER(c_double), POINTER(c_double), POINTER(c_int))
+type_optim_dom_fn = CFUNCTYPE(c_int, c_int, POINTER(c_double), POINTER(c_int))
 type_dream_random = CFUNCTYPE(c_double)
 
 pLibDTSG = cdll.LoadLibrary(__path_libdream__)
@@ -75,7 +75,8 @@ pLibDTSG.tsgParticleSwarmState_SetBestParticlePositions.argtypes = [c_void_p, PO
 pLibDTSG.tsgParticleSwarmState_ClearBestParticles.argtypes = [c_void_p]
 pLibDTSG.tsgParticleSwarmState_ClearCache.argtypes = [c_void_p]
 pLibDTSG.tsgParticleSwarmState_InitializeParticlesInsideBox.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double), c_char_p, c_int, type_dream_random]
-pLibDTSG.tsgParticleSwarm.argtypes = [type_optim_obj_fn, c_int, type_optim_dom_fn, c_void_p, c_double, c_double, c_double, c_char_p, c_int, type_dream_random]
+pLibDTSG.tsgParticleSwarm.argtypes = [type_optim_obj_fn, c_int, type_optim_dom_fn, c_void_p, c_double, c_double, c_double, c_char_p, c_int,
+                                      type_dream_random, POINTER(c_int)]
 
 class ParticleSwarmState:
     '''
@@ -268,9 +269,9 @@ def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmSta
     pObjectiveFunction over a domain specified by pInside. The parameters fInertiaWeight, fCognitiveCoeff, and fSocialCoeff
     control the evolution of the algorithm. The parameter random01 controls the distribution of the particles.
 
-    pObjectiveFunction  : a Python lambda representing the objective function; it should take in two 2D NumPy arrays (x_batch, fval_batch)
-                          and produce no outputs; when it is called, it should write the result of applying the objective function
-                          to every row of x_batch to fval_batch; it is expected that x_batch.shape[1] = .getNumDimensions().
+    pObjectiveFunction  : a Python lambda representing the objective function; it should take in one 2D NumPy array (x_batch)
+                          and produce a 1D NumPy array, sized (iNumBatch,), whose i-th entry should be the result of evaluating
+                          the objective function to x_batch[i,:]; it is expected that x_batch.shape[1] = .getNumDimensions().
     iNumIterations      : a positive integer representing the number iterations the algorithm is run.
     pInside             : a Python lambda representing the function domain; it should take in one 2D NumPy array (x) and produce a
                           Boolean (isInside); when called, it should return True if x is in the domain and False otherwise;
@@ -281,16 +282,33 @@ def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmSta
     fSocialCoeff        : a double that controls how much a particle favors the swarm's trajectories; usually in [1,3].
     random01            : a DREAM.RandomGenerator instance that produces floats in [0,1]
     '''
-    def cpp_obj_fn(num_dim, num_batch, x_batch_ptr, fval_ptr):
+    def cpp_obj_fn(num_dim, num_batch, x_batch_ptr, fval_ptr, err_arr):
+        err_arr[0] = 1
         aX = np.ctypeslib.as_array(x_batch_ptr, (num_batch, num_dim))
-        aY = np.ctypeslib.as_array(fval_ptr, (num_batch,))
-        pObjectiveFunction(aX, aY)
+        aResult = pObjectiveFunction(aX)
+        if aResult.shape != (num_batch, ):
+            print("ERROR: incorrect output from the objective function given to ParticleSwarm(), should be a NumPy array with shape (iNumBatch,)")
+            return
+        aFVal = np.ctypeslib.as_array(fval_ptr, (num_batch,))
+        aFVal[0:num_batch] = aResult[0:num_batch]
+        err_arr[0] = 0
 
-    def cpp_dom_fn(num_dim, x_ptr):
+    def cpp_dom_fn(num_dim, x_ptr, err_arr):
+        err_arr[0] = 1
         aX = np.ctypeslib.as_array(x_ptr, (num_dim,))
-        return pInside(aX)
+        iResult = pInside(aX)
+        if not isinstance(iResult, bool):
+            print("ERROR: incorrect output from the domain function given to ParticleSwarm(), should be a Boolean")
+            return False
+        err_arr[0] = 0
+        return iResult
 
+    pErrorCode = (c_int * 1)()
     pLibDTSG.tsgParticleSwarm(type_optim_obj_fn(cpp_obj_fn), c_int(iNumIterations), type_optim_dom_fn(cpp_dom_fn),
                               oParticleSwarmState.pStatePntr, c_double(fInertiaWeight), c_double(fCognitiveCoeff),
                               c_double(fSocialCoeff), c_char_p(random01.sType), c_int(random01.iSeed),
-                              type_dream_random(random01.pCallable))
+                              type_dream_random(random01.pCallable), pErrorCode)
+
+    if pErrorCode[0] != 0:
+        raise InputError("ParticleSwarm", "An error occurred during the call to Tasmanian.")
+
