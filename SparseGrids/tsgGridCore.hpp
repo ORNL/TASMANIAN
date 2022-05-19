@@ -86,12 +86,14 @@ public:
 
     virtual void getQuadratureWeights(double weights[]) const = 0;
     virtual void getInterpolationWeights(const double x[], double weights[]) const = 0;
+    virtual void getDifferentiationWeights(const double x[], double weights[]) const = 0;
 
     virtual void loadNeededValues(const double *vals) = 0;
     const double* getLoadedValues() const{ return (points.empty()) ? nullptr : values.getValues(0); }
 
     virtual void evaluate(const double x[], double y[]) const = 0;
     virtual void integrate(double q[], double *conformal_correction) const = 0;
+    virtual void differentiate(const double x[], double jacobian[]) const = 0;
 
     virtual void evaluateBatch(const double x[], int num_x, double y[]) const = 0;
 
