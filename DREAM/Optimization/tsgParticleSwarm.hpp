@@ -66,23 +66,40 @@ namespace TasOptimization {
  * - getNumParticles()
  *
  * \par Set and Get Particle Positions and Velocities
- * Each particle of the swarm is associated with a (possibly empty) position and velocity vector. When an optimization method is
- * applied to the swarm, each particle is also associated with a 'best' position in terms of the objective function given to the
- * optimization method. Methods are also available to determine if the positions, best positions, and velocities are
- * empty (uninitialized) or non-empty (initialized).
+ * Each particle of the swarm is associated with a (possibly empty) position and velocity vector. Methods are also available to
+ * determine if the positions and velocities are empty (uninitialized) or non-empty (initialized).
  * - getParticlePositions(), setParticlePositions()
  * - getParticleVelocities(), setParticleVelocities()
- * - getBestParticlePositions(), setBestParticlePositions()
- * - getBestPosition()
+ * - isPositionInitialized(), isVelocityInitialized()
+ *
+ * \par Set and Get Best Particle Positions
+ * When an optimization method is applied to the swarm, each particle will also be assigned a 'best' particle position, which is
+ * a past or present position of the particle that yields the best objective value. The 'best' position of the swarm is the
+ * best position among all of the 'best' particle positions, i.e., it is the position with the best objective value observed
+ * throughout the history of all particle positions.
+ * - getBestParticlePositions(), getBestPosition(), setBestParticlePositions()
  * - clearBestParticles()
- * - isPositionInitialized(), isVelocityInitialized(), isBestPositionInitialized()
+ * - isBestPositionInitialized()
  *
  * \par Initializing a Random Swarm
  * Helper methods are available for initializing random particle positions and velocities.
  * - initializeParticlesInsideBox()
  *
+ * \par Particle Swarm Algorithm
+ * If all of particles of the swarm are initialized with velocities and positions, then the particle swarm
+ * optimization algorithm can be used on the swarm with the goal of minimizing a particular objective function. The best
+ * point, with respect to the given objective function, can be obtained from the swarm using the getBestPosition() method.
+ * - ParticleSwarm()
+ *
+ * \par
+ * More information about the particle swarm algorithm can be found in the following paper:
+ *
+ * \par
+ * > M. R. Bonyadi and Z. Michalewicz, "Particle Swarm Optimization for Single Objective Continuous Space Problems: A Review," in
+ * > <em>Evolutionary Computation</em>, vol. 25, no. 1, pp. 1-54, March 2017, doi: 10.1162/EVCO_r_00180.
+ *
  * \par Clearing the Cache
- * When an optimization method is applied to the swarm, certain data related to the objective function are stored in cache variables
+ * After an optimization method is applied to the swarm, certain data related to the objective function are stored in cache variables
  * inside this class. If an optimization method needs to be applied to the swarm with a different objective function than the one used
  * to generate the cache, the cache should first be reset.
  * - clearCache()
@@ -101,8 +118,6 @@ public:
     ParticleSwarmState(const ParticleSwarmState &source) = default;
     //! \brief Move constructor.
     ParticleSwarmState(ParticleSwarmState &&source) = default;
-    //! \brief Destructor.
-    ~ParticleSwarmState() = default;
 
     //! \brief Move assignment.
     ParticleSwarmState& operator=(ParticleSwarmState &&source) = default;
@@ -117,11 +132,11 @@ public:
     //! \brief Return the particle velocities.
     inline void getParticleVelocities(double pv[]) const {std::copy_n(particle_velocities.begin(), num_particles * num_dimensions, pv);}
     inline std::vector<double> getParticleVelocities() const {return particle_velocities;}
-    //! \brief Return the previously best known particle positions. The last \b num_dimensions entries of this vector contain the
+    //! \brief Return the best known particle positions. The last \b num_dimensions entries of this vector contain the
     //!        best particle position of the entire swarm.
     inline void getBestParticlePositions(double bpp[]) const {std::copy_n(best_particle_positions.begin(), (num_particles + 1) * num_dimensions, bpp);}
     inline std::vector<double> getBestParticlePositions() const {return best_particle_positions;}
-    //! \brief Return the previously best known position in the swarm.
+    //! \brief Return the best known position in the swarm.
     inline void getBestPosition(double bp[]) const {std::copy_n(best_particle_positions.begin() + num_particles * num_dimensions, num_dimensions, bp);}
     inline std::vector<double> getBestPosition() const {
         std::vector<double> best_position(num_dimensions);
