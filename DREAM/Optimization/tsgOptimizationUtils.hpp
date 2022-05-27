@@ -71,6 +71,9 @@ inline void checkVarSize(const std::string method_name, const std::string var_na
     }
 }
 
+// Functions used in optimization.
+using GenericBatchedFunction = std::function<void(const std::vector<double> &x_batch, std::vector<double> &y_batch)>;
+
 /*! \ingroup OptimizationUtil
  * \brief Generic non-batched objective function signature.
  *
@@ -83,9 +86,9 @@ using ObjectiveFunctionSingle = std::function<double(const std::vector<double> &
  *
  * Batched version of TasOptimization::ObjectiveFunctionSingle.
  * Accepts multiple points \b x_batch and writes their corresponding values into
- * \b fval_batch. It is expected that the size of \b x_batch is a multiple of the size of \b fval_batch.
+ * \b fval_batch. It is expected that the size of \b x_batch is a multiple of the size of the output.
  */
-using ObjectiveFunction = std::function<void(const std::vector<double> &x_batch, std::vector<double> &fval_batch)>;
+using ObjectiveFunction = GenericBatchedFunction;
 
 /*! \ingroup OptimizationUtil
  * \brief Creates a TasOptimization::ObjectiveFunction object from a TasOptimization::ObjectiveFunctionSingle object.
@@ -104,6 +107,71 @@ inline ObjectiveFunction makeObjectiveFunction(const int num_dimensions, const O
         }
     };
 }
+
+/*! \ingroup OptimizationUtil
+ * \brief Generic non-batched gradient function signature.
+ *
+ * Accepts a single input \b x and returns the gradient at the point \b x.
+ */
+using GradientFunctionSingle = std::function<std::vector<double>(const std::vector<double> &x_batch)>;
+
+/*! \ingroup OptimizationUtil
+ * \brief Generic non-batched gradient function signature.
+ *
+ * Batched version of TasOptimization::GradientFunctionSingle.
+ * Accepts multiple points \b x_batch and writes their corresponding gradients into
+ * \b grad_batch. It is expected that the size of the output is a multiple of the size of \b x_batch.
+ */
+using GradientFunction = GenericBatchedFunction;
+
+/*! \ingroup OptimizationUtil
+ * \brief Creates a TasOptimization::GradientFunction object from a TasOptimization::GradientFunctionSingle object.
+ *
+ * Given a TasOptimization::GradientFunctionSingle \b grad_single, the size of the domain of the function \b num_dimensions,
+ * and the size of the codomain of the function \b num_outputs, returns a TasOptimization::GradientFunction that evaluates
+ * a batch of points \f$ x_1,\ldots,x_k \f$ to \f$ {\rm grad\_single}(x_1),\ldots, {\rm grad\_single}(x_k) \f$.
+ */
+inline GradientFunction makeGradientFunction(const int num_dimensions, const int num_outputs, const GradientFunctionSingle grad_single) {
+    return [=](const std::vector<double> &x_values, std::vector<double> &grad_values)->void {
+        int num_points = x_values.size() / num_dimensions;
+        std::vector<double> x(num_dimensions), jacobian(num_dimensions * num_outputs);
+        for (int i=0; i<num_points; i++) {
+            std::copy_n(x_values.begin() + i * num_dimensions, num_dimensions, x.begin());
+            jacobian = grad_single(x);
+            std::copy_n(jacobian.begin(), num_dimensions * num_outputs, grad_values.begin() + i * num_dimensions * num_outputs);
+        }
+    };
+}
+
+/*! \ingroup OptimizationUtil
+ * \brief Generic non-batched projection function signature.
+ *
+ * Accepts a single input \b x and returns the projection of \b x onto a user-specified domain.
+ */
+using ProjectionFunctionSingle = GradientFunctionSingle; // Same function prototype.
+
+/*! \ingroup OptimizationUtil
+ * \brief Generic non-batched projection function signature.
+ *
+ * Batched version of TasOptimization::ProjectionFunctionSingle.
+ * Accepts multiple points \b x_batch and writes their corresponding projections into
+ * \b grad_batch. It is expected that the size of the output is equal the size of \b x_batch.
+ */
+using ProjectionFunction = GenericBatchedFunction;
+
+/*! \ingroup OptimizationUtil
+ * \brief Creates a TasOptimization::ProjectionFunction object from a TasOptimization::ProjectionFunctionSingle object.
+ *
+ * Given a TasOptimization::GradientFunctionSingle \b grad_single, the size of the domain of the function \b num_dimensions,
+ * returns a TasOptimization::GradientFunction that evaluates a batch of points \f$ x_1,\ldots,x_k \f$ to \f$
+ * {\rm proj\_single}(x_1),\ldots, {\rm proj\_single}(x_k) \f$.
+ */
+inline ProjectionFunction makeProjectionFunction(const int num_dimensions, const ProjectionFunctionSingle proj_single) {
+    // Since ProjectionFunctionSingle and ProjectionFunction are the same GradientFunctionSingle and GradientFunction, we can
+    // just call the existing batch making function for gradients.
+    return makeGradientFunction(num_dimensions, 1, proj_single);
+}
+
 
 } // End namespace
 
