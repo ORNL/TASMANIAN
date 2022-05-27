@@ -624,9 +624,9 @@ bool TasgridWrapper::getDifferentiate(){
     int num_out = grid.getNumOutputs();
     int num_points = x.getNumStrips();
     std::vector<double> result(num_points * num_in * num_out);
-    std::vector<double> xVec = x.release();
+    std::vector<double> x_vec = x.release();
     for (int i=0; i<num_points; i++)
-        grid.differentiate(&(xVec[i*num_in]), &(result[i*num_in*num_out]));
+        grid.differentiate(&(x_vec[i*num_in]), &(result[i*num_in*num_out]));
 
     writeMatrix(outfilename, num_points, num_out * num_in, result.data());
     printMatrix(num_points, num_out * num_in, result.data());
