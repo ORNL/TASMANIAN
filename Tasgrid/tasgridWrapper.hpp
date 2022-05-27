@@ -56,6 +56,7 @@ enum TypeCommand{
 
     command_evaluate,
     command_integrate,
+    command_differentiate,
 
     command_getanisocoeff,
     command_refine_surp,
@@ -156,6 +157,7 @@ protected:
     bool getInterWeights();
     bool getEvaluate();
     bool getIntegrate();
+    bool getDifferentiate();
     bool getAnisoCoeff();
 
     bool refineGrid();

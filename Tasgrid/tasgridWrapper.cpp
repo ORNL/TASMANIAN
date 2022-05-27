@@ -60,6 +60,7 @@ TypeCommand TasgridWrapper::hasCommand(std::string const &s){
             {"-loadvalues", command_loadvalues}, {"-l",  command_loadvalues},
             {"-evaluate",   command_evaluate},   {"-e",  command_evaluate},
             {"-integrate",  command_integrate},  {"-i",  command_integrate},
+            {"-differentiate",  command_differentiate},  {"-d",  command_differentiate},
             {"-evalhierarchyd", command_evalhierarchical_dense},  {"-ehd", command_evalhierarchical_dense},
             {"-evalhierarchys", command_evalhierarchical_sparse}, {"-ehs", command_evalhierarchical_sparse},
             {"-gethsupport", command_gethsupport}, {"-ghsup", command_gethsupport},
@@ -252,7 +253,8 @@ bool TasgridWrapper::checkSane() const{
         if (valsfilename.empty()){ cerr << "ERROR: must specify valid -valsfile" << endl; pass = false; }
         return pass;
     }else if ((command == command_getinterweights) || (command == command_evaluate)
-              || (command == command_evalhierarchical_dense) || (command == command_evalhierarchical_sparse)){
+              || (command == command_evalhierarchical_dense) || (command == command_evalhierarchical_sparse)
+              || (command == command_differentiate)){
         if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
         if (xfilename.empty()){ cerr << "ERROR: must specify valid -pointsfile" << endl; pass = false; }
         if (outfilename.empty() && (printCout == false)){
@@ -597,6 +599,37 @@ bool TasgridWrapper::getIntegrate(){
 
     writeMatrix(outfilename, 1, num_out, q.data());
     printMatrix(1, num_out, q.data());
+
+    return true;
+}
+bool TasgridWrapper::getDifferentiate(){
+    if (grid.getNumLoaded() == 0){
+        cerr << "ERROR: no values loaded in the grid, cannot evaluate!" << endl;
+        return false;
+    }
+    if (grid.getNumOutputs() == 0){
+        cerr << "ERROR: no outputs set for the grid, nothing to evaluate!" << endl;
+        return false;
+    }
+    auto x = readMatrix(xfilename);
+    if (x.getStride() != (size_t) grid.getNumDimensions()){
+        cerr << "ERROR: grid is set for " << grid.getNumDimensions() << " dimensions, but " << xfilename << " specifies " << x.getStride() << endl;
+        return false;
+    }
+    if (x.empty()){
+        cerr << "ERROR: no points specified in " << xfilename << endl;
+        return false;
+    }
+    int num_in = grid.getNumDimensions();
+    int num_out = grid.getNumOutputs();
+    int num_points = x.getNumStrips();
+    std::vector<double> result(num_points * num_in * num_out);
+    std::vector<double> xVec = x.release();
+    for (int i=0; i<num_points; i++)
+        grid.differentiate(&(xVec[i*num_in]), &(result[i*num_in*num_out]));
+
+    writeMatrix(outfilename, num_points, num_out * num_in, result.data());
+    printMatrix(num_points, num_out * num_in, result.data());
 
     return true;
 }
@@ -1066,6 +1099,11 @@ bool TasgridWrapper::executeCommand(){
     }else if (command == command_integrate){
         if (!getIntegrate()){
             cerr << "ERROR: could not integrate the grid" << endl;
+            return false;
+        }
+    }else if (command == command_differentiate){
+        if (!getDifferentiate()){
+            cerr << "ERROR: could not differentiate the grid" << endl;
             return false;
         }
     }else if (command == command_getanisocoeff){
