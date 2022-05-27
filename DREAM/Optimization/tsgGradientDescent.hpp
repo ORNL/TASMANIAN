@@ -46,29 +46,18 @@ class GradientDescentState {
     GradientDescentState(GradientDescentState &&source) = default;
     GradientDescentState& operator=(GradientDescentState &&source) = default;
 
-    inline int getNumLineSearchIterations() const {return num_line_search_iterations;}
     inline int getNumDimensions() const {return num_dimensions;}
     inline double getStepsize() const {return stepsize;}
-
     inline void getCandidate(double x[]) const {std::copy_n(candidate.begin(), num_dimensions, x);}
     inline std::vector<double> getCandidate() const {return candidate;}
-
     inline void getLineSearchCoeffs(double c[]) const {std::copy_n(line_search_coeffs.begin(), 2, c);}
     inline std::vector<double> getLineSearchCoeffs() const {return line_search_coeffs;}
 
-    inline void setNumLineSearchIterations(const int lsi) {num_line_search_iterations = lsi;}
     inline void setStepsize(const double ss) {stepsize = ss;}
-
     inline void setCandidate(const double x[]) {std::copy_n(x, num_dimensions, candidate.begin());}
     inline void setCandidate(const std::vector<double> &x) {
         checkVarSize("GradientDescentState::setCandidate", "candidate point", x.size(), num_dimensions);
         candidate = x;
-    }
-
-    inline void setLineSearchCoeffs(const double c[]) {std::copy_n(c, 2, line_search_coeffs.begin());}
-    inline void setLineSearchCoeffs(const std::vector<double> &c) {
-        checkVarSize("GradientDescentState::setLineSearchCoeffs", "line search coefficients", c.size(), 2);
-        line_search_coeffs = c;
     }
 
     friend void GradientDescent(const ObjectiveFunction f, const GradientFunction grad, const ProjectionFunction proj,
@@ -78,7 +67,7 @@ class GradientDescentState {
     inline std::vector<double> &getCandidateRef() {return candidate;}
 
   private:
-    int num_dimensions, num_line_search_iterations;
+    int num_dimensions;
     double stepsize;
     std::vector<double> candidate, line_search_coeffs;
 };

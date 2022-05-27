@@ -40,7 +40,7 @@
 namespace TasOptimization {
 
 GradientDescentState::GradientDescentState(const std::vector<double> x, const double ss, std::vector<double> lsc) :
-        num_dimensions((int) x.size()), num_line_search_iterations(0), stepsize(ss), candidate(x) {
+        num_dimensions((int) x.size()), stepsize(ss), candidate(x) {
     if (line_search_coeffs.size() != 0 and line_search_coeffs.size() != 2)
         throw std::runtime_error("ERROR: in GradientDescent(), expects line_search_coeffs.size() == 2 if non-empty");
     line_search_coeffs = lsc;
@@ -49,9 +49,9 @@ GradientDescentState::GradientDescentState(const std::vector<double> x, const do
 void GradientDescent(const ObjectiveFunction f, const GradientFunction g, const ProjectionFunction proj, const int num_iterations,
                      GradientDescentState &state) {
 
-    int num_dimensions = state.getNumDimensions();
+    int num_dimensions = state.num_dimensions;
+    std::vector<double> line_search_coeffs = state.line_search_coeffs;
     std::vector<double> candidate = state.getCandidateRef();
-    std::vector<double> line_search_coeffs = state.getLineSearchCoeffs();
 
     if (line_search_coeffs.empty()) {
         // Constant stepsize scheme (does not have convergence guarantees).
@@ -69,41 +69,38 @@ void GradientDescent(const ObjectiveFunction f, const GradientFunction g, const 
         // Based on the paper:
         //     Nesterov, Y. (2013). Gradient methods for minimizing composite functions. Mathematical programming, 140(1), 125-161.
         std::vector<double> current_gradient(num_dimensions), current_fval(1), next_candidate(num_dimensions), next_fval(1);
-        double next_stepsize(state.stepsize), lhs, rhs;
-        int ls_iters = state.getNumLineSearchIterations();
-        for (int i=0; i<num_iterations; i++) {
-            // Optimistic stepsize update (see γ_d in the referenced paper above).
-            next_stepsize *= line_search_coeffs[1];
-            // Offset.
-            next_stepsize *= line_search_coeffs[0];
-            ls_iters--;
+        double stepsize(state.stepsize), current_iteration(0), lhs(0), rhs(0);
+        while(current_iteration < num_iterations) {
             // Find the next stepsize/candidate point by making sure it satisfies the well-known descent inequality (see
             // γ_u in the referenced paper above).
             f(candidate, current_fval);
             g(candidate, current_gradient);
             do {
-                ls_iters++;
+                if (current_iteration >= num_iterations) return;
                 lhs = 0;
                 rhs = 0;
-                next_stepsize /= line_search_coeffs[0];
                 for (int j=0; j<num_dimensions; j++)
-                    next_candidate[j] = candidate[j] - current_gradient[j] * next_stepsize;
+                    next_candidate[j] = candidate[j] - current_gradient[j] * stepsize;
                 proj(next_candidate, next_candidate);
                 f(next_candidate, next_fval);
                 lhs += next_fval[0] - current_fval[0];
                 for (int j=0; j<num_dimensions; j++) {
                     double delta = next_candidate[j] - candidate[j];
-                    rhs += delta * delta / (2.0 * next_stepsize);
+                    rhs += delta * delta / (2.0 * stepsize);
                     lhs -= current_gradient[j] * delta;
                 }
+                stepsize /= line_search_coeffs[0];
+                state.setStepsize(stepsize);
+                current_iteration++;
             } while (lhs > rhs + TasGrid::Maths::num_tol);
-            // Update the key iterates manually.
+            // Update the key iterates manually for the next loop.
             std::swap(candidate, next_candidate);
             std::swap(current_fval, next_fval);
+            state.setCandidate(candidate);
+            // Optimistic stepsize update (see γ_d in the referenced paper above).
+            stepsize *= line_search_coeffs[1] * line_search_coeffs[0];
+            state.setStepsize(stepsize);
         }
-        state.setNumLineSearchIterations(ls_iters);
-        state.setStepsize(next_stepsize);
-        state.setCandidate(candidate);
     }
 
 }

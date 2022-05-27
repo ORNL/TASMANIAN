@@ -588,14 +588,13 @@ void testDebug(){
     for (int i=0; i<2; i++) std::cout << x[i] << " ";
     std::cout << ", f(x) = " << fval[0] << std::endl;
 
-    for (int k=1; k<=10; k++) {
+    for (int k=1; k<=20; k++) {
         TasOptimization::GradientDescent(f, g, proj, 1, gds);
         x = gds.getCandidate();
         f(x, fval);
-        std::cout << "k = " << k << ",\t\tk_ls = " << gds.getNumLineSearchIterations() << std::scientific << ",\tstepsize = "
-                  << gds.getStepsize() << ",\tx =";
+        std::cout << "k = " << k << std::scientific << std::setprecision(3) << ",\tstepsize = " << gds.getStepsize() << ",\tx =";
         for (int i=0; i<2; i++) std::cout << " " << x[i];
-        std::cout << ",\t\tf(x) = " << fval[0] << std::endl;
+        std::cout << ",\tf(x) = " << fval[0] << std::endl;
     }
 
 }
