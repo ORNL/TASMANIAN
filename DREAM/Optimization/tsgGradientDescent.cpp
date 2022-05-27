@@ -40,7 +40,7 @@
 namespace TasOptimization {
 
 GradientDescentState::GradientDescentState(const std::vector<double> x, const double ss, std::vector<double> lsc) :
-        num_dimensions((int) x.size()), stepsize(ss), candidate(x) {
+        num_dimensions((int) x.size()), num_line_search_iterations(0), stepsize(ss), candidate(x) {
     if (line_search_coeffs.size() != 0 and line_search_coeffs.size() != 2)
         throw std::runtime_error("ERROR: in GradientDescent(), expects line_search_coeffs.size() == 2 if non-empty");
     line_search_coeffs = lsc;
@@ -54,46 +54,56 @@ void GradientDescent(const ObjectiveFunction f, const GradientFunction g, const 
     std::vector<double> line_search_coeffs = state.getLineSearchCoeffs();
 
     if (line_search_coeffs.empty()) {
-        // Constant stepsize scheme (no convergence guarantees).
-        std::vector<double> gradient;
+        // Constant stepsize scheme (does not have convergence guarantees).
+        std::vector<double> gradient(num_dimensions);
         for (int i=0; i<num_iterations; i++) {
             g(candidate, gradient);
             for (int j=0; j<num_dimensions; j++)
-                candidate[i] -= gradient[i] * state.stepsize;
+                candidate[j] -= gradient[j] * state.stepsize;
             proj(candidate, candidate);
         }
+        state.setCandidate(candidate);
     } else {
-        // Variable stepsize scheme (convergence guarantee).
+        // Variable stepsize scheme (has convergence guarantees).
         //
         // Based on the paper:
         //     Nesterov, Y. (2013). Gradient methods for minimizing composite functions. Mathematical programming, 140(1), 125-161.
-        std::vector<double> gradient, current_fval(1), next_candidate(num_dimensions), next_fval(1);
-        double next_stepsize = state.stepsize;
-        f(candidate, current_fval);
+        std::vector<double> current_gradient(num_dimensions), current_fval(1), next_candidate(num_dimensions), next_fval(1);
+        double next_stepsize(state.stepsize), lhs, rhs;
+        int ls_iters = state.getNumLineSearchIterations();
         for (int i=0; i<num_iterations; i++) {
-            // Find the next stepsize/candidate point by making sure it satisfies the well-known descent inequality.
-            g(candidate, gradient);
-            double lhs = 0;
-            double rhs = 0;
-            next_stepsize *= line_search_coeffs[0]; // this is to avoid repeating the code for the first line search iteration
+            // Optimistic stepsize update (see γ_d in the referenced paper above).
+            next_stepsize *= line_search_coeffs[1];
+            // Offset.
+            next_stepsize *= line_search_coeffs[0];
+            ls_iters--;
+            // Find the next stepsize/candidate point by making sure it satisfies the well-known descent inequality (see
+            // γ_u in the referenced paper above).
+            f(candidate, current_fval);
+            g(candidate, current_gradient);
             do {
+                ls_iters++;
+                lhs = 0;
+                rhs = 0;
                 next_stepsize /= line_search_coeffs[0];
                 for (int j=0; j<num_dimensions; j++)
-                    next_candidate[j] = candidate[j] - gradient[j] * next_stepsize;
+                    next_candidate[j] = candidate[j] - current_gradient[j] * next_stepsize;
                 proj(next_candidate, next_candidate);
                 f(next_candidate, next_fval);
-                lhs += next_fval[0] - next_fval[1];
+                lhs += next_fval[0] - current_fval[0];
                 for (int j=0; j<num_dimensions; j++) {
                     double delta = next_candidate[j] - candidate[j];
                     rhs += delta * delta / (2.0 * next_stepsize);
-                    lhs -= gradient[j] * delta;
+                    lhs -= current_gradient[j] * delta;
                 }
-            } while (lhs > rhs);
+            } while (lhs > rhs + TasGrid::Maths::num_tol);
             // Update the key iterates manually.
             std::swap(candidate, next_candidate);
             std::swap(current_fval, next_fval);
-            next_stepsize *= line_search_coeffs[1];
         }
+        state.setNumLineSearchIterations(ls_iters);
+        state.setStepsize(next_stepsize);
+        state.setCandidate(candidate);
     }
 
 }

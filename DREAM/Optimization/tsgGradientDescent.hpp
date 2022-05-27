@@ -46,6 +46,7 @@ class GradientDescentState {
     GradientDescentState(GradientDescentState &&source) = default;
     GradientDescentState& operator=(GradientDescentState &&source) = default;
 
+    inline int getNumLineSearchIterations() const {return num_line_search_iterations;}
     inline int getNumDimensions() const {return num_dimensions;}
     inline double getStepsize() const {return stepsize;}
 
@@ -54,6 +55,9 @@ class GradientDescentState {
 
     inline void getLineSearchCoeffs(double c[]) const {std::copy_n(line_search_coeffs.begin(), 2, c);}
     inline std::vector<double> getLineSearchCoeffs() const {return line_search_coeffs;}
+
+    inline void setNumLineSearchIterations(const int lsi) {num_line_search_iterations = lsi;}
+    inline void setStepsize(const double ss) {stepsize = ss;}
 
     inline void setCandidate(const double x[]) {std::copy_n(x, num_dimensions, candidate.begin());}
     inline void setCandidate(const std::vector<double> &x) {
@@ -74,7 +78,7 @@ class GradientDescentState {
     inline std::vector<double> &getCandidateRef() {return candidate;}
 
   private:
-    int num_dimensions;
+    int num_dimensions, num_line_search_iterations;
     double stepsize;
     std::vector<double> candidate, line_search_coeffs;
 };

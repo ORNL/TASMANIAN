@@ -566,6 +566,38 @@ bool DreamExternalTester::performTests(TypeDREAMTest test){
 void testDebug(){
     cout << "Debug Test" << endl;
     cout << "Put here testing code and call this with ./dreamtest debug" << endl;
+
+    TasOptimization::ObjectiveFunction f = [](const std::vector<double> &x_batch, std::vector<double> &fval_batch)->void {
+        for (size_t i=0; i<fval_batch.size(); i++)
+            fval_batch[i] = 5.0 * (x_batch[2*i] * x_batch[2*i] + x_batch[2*i+1] * x_batch[2*i+1]);
+    };
+    TasOptimization::GradientFunction g = [](const std::vector<double> &x_batch, std::vector<double> &grad_batch)->void {
+        for (size_t i=0; i<grad_batch.size(); i++) grad_batch[i] = 10.0 * x_batch[i];
+    };
+    TasOptimization::ProjectionFunction proj =  [](const std::vector<double> &x_batch, std::vector<double> &proj_batch)->void {
+        for (size_t i=0; i<proj_batch.size(); i++) proj_batch[i] = std::max(-3.0, std::min(3.0, x_batch[i]));
+    };
+
+    std::vector<double> fval(1);
+    std::vector<double> x = {1.0, 3.0};
+    auto gds = TasOptimization::GradientDescentState(x, 0.01, {1.25, 1.25});
+
+    x = gds.getCandidate();
+    f(x, fval);
+    std::cout << "k = 0, x = ";
+    for (int i=0; i<2; i++) std::cout << x[i] << " ";
+    std::cout << ", f(x) = " << fval[0] << std::endl;
+
+    for (int k=1; k<=10; k++) {
+        TasOptimization::GradientDescent(f, g, proj, 1, gds);
+        x = gds.getCandidate();
+        f(x, fval);
+        std::cout << "k = " << k << ",\t\tk_ls = " << gds.getNumLineSearchIterations() << std::scientific << ",\tstepsize = "
+                  << gds.getStepsize() << ",\tx =";
+        for (int i=0; i<2; i++) std::cout << " " << x[i];
+        std::cout << ",\t\tf(x) = " << fval[0] << std::endl;
+    }
+
 }
 
 #endif
