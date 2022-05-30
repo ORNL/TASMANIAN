@@ -41,7 +41,7 @@ namespace TasOptimization {
 class GradientDescentState {
   public:
     GradientDescentState() = delete;
-    GradientDescentState(const std::vector<double> x, const double ss, std::vector<double> lsc = {});
+    GradientDescentState(const std::vector<double> &x, const double stepsize);
     GradientDescentState(const GradientDescentState &source) = default;
     GradientDescentState(GradientDescentState &&source) = default;
     GradientDescentState& operator=(GradientDescentState &&source) = default;
@@ -50,8 +50,6 @@ class GradientDescentState {
     inline double getStepsize() const {return stepsize;}
     inline void getCandidate(double x[]) const {std::copy_n(candidate.begin(), num_dimensions, x);}
     inline std::vector<double> getCandidate() const {return candidate;}
-    inline void getLineSearchCoeffs(double c[]) const {std::copy_n(line_search_coeffs.begin(), 2, c);}
-    inline std::vector<double> getLineSearchCoeffs() const {return line_search_coeffs;}
 
     inline void setStepsize(const double ss) {stepsize = ss;}
     inline void setCandidate(const double x[]) {std::copy_n(x, num_dimensions, candidate.begin());}
@@ -60,8 +58,8 @@ class GradientDescentState {
         candidate = x;
     }
 
-    friend void GradientDescent(const ObjectiveFunction f, const GradientFunction grad, const ProjectionFunction proj,
-                                const int num_iterations, GradientDescentState &state);
+    friend void GradientDescent(const ObjectiveFunction &f, const GradientFunction &grad, const ProjectionFunction &proj,
+                                const int num_iterations, GradientDescentState &state, const std::vector<double> &line_search_coeffs);
 
   protected:
     inline std::vector<double> &getCandidateRef() {return candidate;}
@@ -69,12 +67,12 @@ class GradientDescentState {
   private:
     int num_dimensions;
     double stepsize;
-    std::vector<double> candidate, line_search_coeffs;
+    std::vector<double> candidate;
 };
 
 // Forward declarations.
-void GradientDescent(const ObjectiveFunction f, const GradientFunction grad, const ProjectionFunction proj,
-                     const int num_iterations, GradientDescentState &state);
+void GradientDescent(const ObjectiveFunction &f, const GradientFunction &grad, const ProjectionFunction &proj,
+                     const int num_iterations, GradientDescentState &state,  const std::vector<double> &line_search_coeffs = {});
 
 }
 

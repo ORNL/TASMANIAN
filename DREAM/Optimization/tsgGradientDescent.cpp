@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2022, Miroslav Stoyanov & Weiwei Kong
  *
@@ -39,18 +38,16 @@
 
 namespace TasOptimization {
 
-GradientDescentState::GradientDescentState(const std::vector<double> x, const double ss, std::vector<double> lsc) :
-        num_dimensions((int) x.size()), stepsize(ss), candidate(x) {
+GradientDescentState::GradientDescentState(const std::vector<double> &x, const double stepsize) :
+        num_dimensions((int) x.size()), stepsize(stepsize), candidate(x) {};
+
+void GradientDescent(const ObjectiveFunction &f, const GradientFunction &g, const ProjectionFunction &proj, const int num_iterations,
+                     GradientDescentState &state, const std::vector<double> &line_search_coeffs) {
+
     if (line_search_coeffs.size() != 0 and line_search_coeffs.size() != 2)
         throw std::runtime_error("ERROR: in GradientDescent(), expects line_search_coeffs.size() == 2 if non-empty");
-    line_search_coeffs = lsc;
-};
-
-void GradientDescent(const ObjectiveFunction f, const GradientFunction g, const ProjectionFunction proj, const int num_iterations,
-                     GradientDescentState &state) {
 
     int num_dimensions = state.num_dimensions;
-    std::vector<double> line_search_coeffs = state.line_search_coeffs;
     std::vector<double> candidate = state.getCandidateRef();
 
     if (line_search_coeffs.empty()) {
