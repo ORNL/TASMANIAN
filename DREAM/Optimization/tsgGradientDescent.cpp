@@ -48,7 +48,7 @@ void GradientDescent(const ObjectiveFunction &f, const GradientFunction &g, cons
         throw std::runtime_error("ERROR: in GradientDescent(), expects line_search_coeffs.size() == 2 if non-empty");
 
     int num_dimensions = state.num_dimensions;
-    std::vector<double> candidate = state.getCandidateRef();
+    std::vector<double> &candidate = state.getCandidateRef();
 
     if (line_search_coeffs.empty()) {
         // Constant stepsize scheme (does not have convergence guarantees).
