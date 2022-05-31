@@ -580,7 +580,7 @@ void testDebug(){
 
     std::vector<double> fval(1);
     std::vector<double> x = {1.0, 3.0};
-    auto gds = TasOptimization::GradientDescentState(x, 0.01, {1.25, 1.25});
+    auto gds = TasOptimization::GradientDescentState(x, 0.01);
 
     x = gds.getCandidate();
     f(x, fval);
@@ -589,7 +589,7 @@ void testDebug(){
     std::cout << ", f(x) = " << fval[0] << std::endl;
 
     for (int k=1; k<=20; k++) {
-        TasOptimization::GradientDescent(f, g, proj, 1, gds);
+        TasOptimization::GradientDescent(f, g, proj, 1, gds, {1.25, 1.25});
         x = gds.getCandidate();
         f(x, fval);
         std::cout << "k = " << k << std::scientific << std::setprecision(3) << ",\tstepsize = " << gds.getStepsize() << ",\tx =";

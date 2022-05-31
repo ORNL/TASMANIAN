@@ -104,6 +104,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  DREAM/tsgDreamLikelihoodCore.hpp
                  DREAM/tsgDreamLikelyGaussian.hpp
                  DREAM/Optimization/tsgParticleSwarm.hpp
+                 DREAM/Optimization/tsgGradientDescent.hpp
                  DREAM/Optimization/tsgOptimizationUtils.hpp
                  Addons/tsgExoticQuadrature.hpp
                  Addons/tsgConstructSurrogate.hpp

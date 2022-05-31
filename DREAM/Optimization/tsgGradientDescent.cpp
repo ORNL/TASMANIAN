@@ -62,9 +62,6 @@ void GradientDescent(const ObjectiveFunction &f, const GradientFunction &g, cons
         state.setCandidate(candidate);
     } else {
         // Variable stepsize scheme (has convergence guarantees).
-        //
-        // Based on the paper:
-        //     Nesterov, Y. (2013). Gradient methods for minimizing composite functions. Mathematical programming, 140(1), 125-161.
         std::vector<double> current_gradient(num_dimensions), current_fval(1), next_candidate(num_dimensions), next_fval(1);
         double stepsize(state.stepsize), current_iteration(0), lhs(0), rhs(0);
         while(current_iteration < num_iterations) {
