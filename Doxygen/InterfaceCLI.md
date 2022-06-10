@@ -51,6 +51,7 @@ Prints information about the usage of **tasgrid**.  In addition, writing **help*
   ./tasgrid -setconformal       ->  setConformalTransformASIN()
   ./tasgrid -getquadrature      ->  getQuadratureWeights()/getPoints()
   ./tasgrid -getinterweights    ->  getInterpolationWeights()
+  ./tasgrid -getdiffweights     ->  getDifferentiationWeights()
   ./tasgrid -getpoints          ->  getPoints()
   ./tasgrid -getneededpoints    ->  getNeededPoints()
   ./tasgrid -loadvalues         ->  loadNeededPoints()
@@ -58,6 +59,7 @@ Prints information about the usage of **tasgrid**.  In addition, writing **help*
   ./tasgrid -evalhierarchyd     ->  evaluateHierarchicalFunctions()
   ./tasgrid -evalhierarchys     ->  evaluateSparseHierarchicalFunctions()
   ./tasgrid -integrate          ->  integrate()
+  ./tasgrid -differentiate      ->  differentiate()
   ./tasgrid -getanisotropy      ->  estimateAnisotropicCoefficients()
   ./tasgrid -refineaniso        ->  setAnisotropicRefinement()
   ./tasgrid -refinesurp         ->  setSurplusRefinement()
@@ -75,7 +77,7 @@ Additional notes:
 * The domain types for all grids are set during the *make* command, domains cannot be changed with the **tasgrid** executable since domain changes always change the nodes and effectively generates a new grid.
 * Make quadrature creates a grid with zero outputs and type that is based on the one dimensional rule, e.g., the **-makeupdate** grid will automatically detect sequence or global grids.
 * The **-getquadrature** command will generate larger matrix, where the first column is the weights and the rest correspond to the points.
-* The **-getinterweights** command can work with multiple points at a time, the call will use OpenMP (if available).
+* The **-getinterweights** and **-getdiffweights** commands can work with multiple points at a time, the call will use OpenMP (if available).
 * The **-refine** command will call anisotropic refinement on Global, Sequence, and Fourier grids, and surplus refinement for Local Polynomial and Wavelet grids.
 * The coefficients and hierarchical functions for Fourier grids work with complex numbers, meaning that each pair of consecutive numbers correspond to one complex number (real and complex parts). This the matrices have twice as many columns. Note that this also applies to the coefficients as inputs and outputs (which is different from the C++ API).
 * The **-evaluate** command accepts **-gpuid** options, which allows to select a CUDA device to use for acceleration. If the option is omitted, GPU acceleration will not be used.

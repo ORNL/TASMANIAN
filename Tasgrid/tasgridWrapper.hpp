@@ -48,6 +48,8 @@ enum TypeCommand{
 
     command_getquadrature,
     command_getinterweights,
+    command_getdiffweights,
+
     command_getpoints,
     command_getneeded,
     command_getrefcoeff,
@@ -155,6 +157,7 @@ protected:
     bool loadValues();
 
     bool getInterWeights();
+    bool getDiffWeights();
     bool getEvaluate();
     bool getIntegrate();
     bool getDifferentiate();

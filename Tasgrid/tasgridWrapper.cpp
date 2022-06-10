@@ -55,6 +55,7 @@ TypeCommand TasgridWrapper::hasCommand(std::string const &s){
             {"-setconformal",    command_setconformal},    {"-sc",   command_setconformal},
             {"-getquadrature",   command_getquadrature},   {"-gq",   command_getquadrature},
             {"-getinterweights", command_getinterweights}, {"-gi",   command_getinterweights},
+            {"-getdiffweights", command_getdiffweights}, {"-gd",   command_getdiffweights},
             {"-getpoints",  command_getpoints},  {"-gp", command_getpoints},
             {"-getneeded",  command_getneeded},  {"-gn", command_getneeded},
             {"-loadvalues", command_loadvalues}, {"-l",  command_loadvalues},
@@ -546,6 +547,29 @@ bool TasgridWrapper::getInterWeights(){
 
     return true;
 }
+bool TasgridWrapper::getDiffWeights(){
+    auto x = readMatrix(xfilename);
+    if (x.getStride() != (size_t) grid.getNumDimensions()){
+        cerr << "ERROR: grid is set for " << grid.getNumDimensions() << " dimensions, but " << xfilename << " specifies " << x.getStride() << endl;
+        return false;
+    }
+    if (x.empty()){
+        cerr << "ERROR: no points specified in " << xfilename << endl;
+        return false;
+    }
+    int num_w = x.getNumStrips();
+    int num_p = grid.getNumPoints() * grid.getNumDimensions();
+    Data2D<double> result(num_p, num_w);
+
+    #pragma omp parallel for
+    for(int i=0; i<num_w; i++)
+        grid.getDifferentiationWeights(x.getStrip(i), result.getStrip(i));
+
+    writeMatrix(outfilename, num_w, (int) num_p, result.getStrip(0));
+    printMatrix(num_w, (int) num_p, result.getStrip(0));
+
+    return true;
+}
 bool TasgridWrapper::getEvaluate(){
     if (grid.getNumLoaded() == 0){
         cerr << "ERROR: no values loaded in the grid, cannot evaluate!" << endl;
@@ -625,6 +649,7 @@ bool TasgridWrapper::getDifferentiate(){
     int num_points = x.getNumStrips();
     std::vector<double> result(num_points * num_in * num_out);
     std::vector<double> x_vec = x.release();
+    #pragma omp parallel for
     for (int i=0; i<num_points; i++)
         grid.differentiate(&(x_vec[i*num_in]), &(result[i*num_in*num_out]));
 
@@ -1089,6 +1114,11 @@ bool TasgridWrapper::executeCommand(){
     }else if (command == command_getinterweights){
         if (!getInterWeights()){
             cerr << "ERROR: could not generate interpolation weights" << endl;
+            return false;
+        }
+    }else if (command == command_getdiffweights){
+        if (!getDiffWeights()){
+            cerr << "ERROR: could not generate differentiation weights" << endl;
             return false;
         }
     }else if (command == command_evaluate){
