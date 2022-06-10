@@ -40,8 +40,8 @@
 
 // C Function Pointer Aliases
 using tsg_dream_random = double (*)();
-using tsg_optim_dom_fn = int    (*)(const int, const double[]);
-using tsg_optim_obj_fn = void   (*)(const int, const int, const double[], double[]);
+using tsg_optim_dom_fn = int    (*)(const int, const double[], const int[]);
+using tsg_optim_obj_fn = void   (*)(const int, const int, const double[], double[], const int[]);
 
 namespace TasOptimization{
 
@@ -125,7 +125,8 @@ extern "C" {
     // Particle Swarm Algorithm.
     void tsgParticleSwarm(const tsg_optim_obj_fn f_ptr, const int num_iterations, const tsg_optim_dom_fn inside_ptr, void *state,
                           const double inertia_weight, const double cognitive_coeff, const double social_coeff,
-                          const char* random_type, const int random_seed, tsg_dream_random random_callback) {
+                          const char* random_type, const int random_seed, tsg_dream_random random_callback, int *err) {
+        *err = 1;
         // Create the U[0,1] random number generator.
         std::minstd_rand park_miller((random_seed == -1) ? static_cast<long unsigned>(std::time(nullptr)) : random_seed);
         std::uniform_real_distribution<double> unif(0.0, 1.0);
@@ -142,16 +143,24 @@ extern "C" {
             }
         }();
         auto f_cpp = [&](const std::vector<double> &x_batch, std::vector<double> &fval_batch)->void {
+            int err_code = 0;
             int num_batch = fval_batch.size();
             int num_dims = x_batch.size() / num_batch;
-            (*f_ptr)(num_dims, num_batch, x_batch.data(), fval_batch.data());
+            (*f_ptr)(num_dims, num_batch, x_batch.data(), fval_batch.data(), &err_code);
+            if (err_code != 0) throw std::runtime_error("The Python objective function callback returned an error in tsgParticleSwarm()");
         };
         auto inside_cpp = [&](const std::vector<double> &x)->bool {
+            int err_code = 0;
             int num_dims = x.size();
-            return (*inside_ptr)(num_dims, x.data());
+            bool inside = (*inside_ptr)(num_dims, x.data(), &err_code);
+            if (err_code != 0) throw std::runtime_error("The Python domain function callback returned an error in tsgParticleSwarm()");
+            return inside;
         };
-        ParticleSwarm(f_cpp, num_iterations, inside_cpp, *(reinterpret_cast<ParticleSwarmState*>(state)), inertia_weight,
-                      cognitive_coeff, social_coeff, randgen);
+        try {
+            ParticleSwarm(f_cpp, num_iterations, inside_cpp, *(reinterpret_cast<ParticleSwarmState*>(state)), inertia_weight,
+                          cognitive_coeff, social_coeff, randgen);
+            *err = 0; // Success
+        } catch (std::runtime_error &) {}
     }
 
 }
