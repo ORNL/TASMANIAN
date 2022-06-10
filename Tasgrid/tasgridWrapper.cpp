@@ -565,8 +565,8 @@ bool TasgridWrapper::getDiffWeights(){
     for(int i=0; i<num_w; i++)
         grid.getDifferentiationWeights(x.getStrip(i), result.getStrip(i));
 
-    writeMatrix(outfilename, num_w, (int) num_p, result.getStrip(0));
-    printMatrix(num_w, (int) num_p, result.getStrip(0));
+    writeMatrix(outfilename, num_w, num_p, result.data());
+    printMatrix(num_w, num_p, result.data());
 
     return true;
 }
@@ -644,14 +644,13 @@ bool TasgridWrapper::getDifferentiate(){
         cerr << "ERROR: no points specified in " << xfilename << endl;
         return false;
     }
+    int num_points = x.getNumStrips();
     int num_in = grid.getNumDimensions();
     int num_out = grid.getNumOutputs();
-    int num_points = x.getNumStrips();
-    std::vector<double> result(num_points * num_in * num_out);
-    std::vector<double> x_vec = x.release();
+    Data2D<double> result(num_in * num_out, num_points);
     #pragma omp parallel for
     for (int i=0; i<num_points; i++)
-        grid.differentiate(&(x_vec[i*num_in]), &(result[i*num_in*num_out]));
+        grid.differentiate(x.getStrip(i), result.getStrip(i));
 
     writeMatrix(outfilename, num_points, num_out * num_in, result.data());
     printMatrix(num_points, num_out * num_in, result.data());

@@ -16,12 +16,16 @@ function [weights] = tsgGetDifferentiationWeights(lGrid, mX)
 %
 % OUTPUT:
 %
-% weights: an array of size [num_x, number_of_points]
-%          the values associated with the derivative at those points
+% weights: if num_x == 1, this is the [num_points, dimensions] sized array/matrix
+%          of derivative weights for the point mX;
+%          if num_x > 2, this is a cell array of size [num_x] whose i-th
+%          entry is a [num_points, dimensions] sized array/vector of derivative
+%          weights for mX(i,:);
 %
 %  The Jacobian of f(mX(i,:)) is approximated by:
 %
-%    f(points)' * weights(:, (i-1)*dimensions+1:i*dimensions)
+%    f(points)' * weights,    if num_x == 1
+%    f(points)' * weights{i}, if num_x >= 2
 %
 %  where points is obtained from the tsgGetPoints() function.
 %
@@ -52,7 +56,20 @@ else
         fprintf(1,['Warning: Command had non-empty output:\n']);
         disp(cmdout);
     end
-    [weights] = tsgReadMatrix(sFileO);
+    raw_result = tsgReadMatrix(sFileO);
+    num_x = size(mX, 1);
+    num_dims = size(mX, 2);
+    num_points = size(raw_result, 1);
+    % NOTE: C++ TASMANIAN arrays are stored row-major, but MATLAB assumes 1D vectors are column-major.
+    if (num_x == 1)
+        result = reshape(raw_result, [num_dims, num_points])';
+        [weights] = tsgReadMatrix(sFileO);
+    else
+        weights = cell(num_x, 1);
+        for i=1:num_x
+            weights{i} = raw_result(:,(num_dims*(i-1)+1):num_dims*i);
+        end
+    end
 end
 
 tsgCleanTempFiles(lGrid, lClean);
