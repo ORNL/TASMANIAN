@@ -59,15 +59,14 @@ else
     raw_result = tsgReadMatrix(sFileO);
     num_x = size(mX, 1);
     num_dims = size(mX, 2);
-    num_points = size(raw_result, 1);
+    num_points = size(raw_result, 2) / num_dims;
     % NOTE: C++ TASMANIAN arrays are stored row-major, but MATLAB assumes 1D vectors are column-major.
     if (num_x == 1)
-        result = reshape(raw_result, [num_dims, num_points])';
-        [weights] = tsgReadMatrix(sFileO);
+        weights = reshape(raw_result, [num_dims, num_points])';
     else
         weights = cell(num_x, 1);
         for i=1:num_x
-            weights{i} = raw_result(:,(num_dims*(i-1)+1):num_dims*i);
+            weights{i} = reshape(raw_result(i,:), [num_dims, num_points])';
         end
     end
 end
