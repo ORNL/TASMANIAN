@@ -60,6 +60,16 @@ namespace TasOptimization {
 /*! \internal
  * \ingroup OptimizationUtil
  *
+ * Stores information about the run of an optimization algorithm.
+ */
+struct OptimizationStatus {
+    int num_iterations;
+    double stationarity_residual;
+};
+
+/*! \internal
+ * \ingroup OptimizationUtil
+ *
  * Checks if a variable size \b var_name associated with \b var_name inside \b method_name matches an expected size \b exp_size.
  * If it does not match, a runtime error is thrown.
  * \endinternal
@@ -122,8 +132,30 @@ using GradientFunctionSingle = std::function<std::vector<double>(const std::vect
  */
 using ProjectionFunctionSingle = GradientFunctionSingle; // Same function prototype.
 
-// Identity projection function.
+/*! \ingroup OptimizationUtil
+ * \brief Generic identity projection function.
+ */
 inline std::vector<double> identity(const std::vector<double> &x) {return x;};
+
+/*! \ingroup OptimizationUtil
+ * Computes the minimization stationarity residual for a point \b x evaluated from a gradient descent step at \b x0 with stepsize
+ * \b lambda. More specifically, this residual is an upper bound for the quantity:
+ *
+ * \f[
+ * -\inf_{\|d\| = 1}f'(x;d)\text{ where }f'(x;d)=\lim_{t\downarrow0}\frac{f(x+td)-f(x)}{t}.
+ * \f] 
+ *
+ * Here, the gradient of x (resp. x0) is g_at_x (resp. g_at_x0).
+ */
+inline double compute_stationarity_residual(const std::vector<double> &x, const std::vector<double> &x0, const std::vector<double> &g_at_x,
+                                            const std::vector<double> &g_at_x0, const double lambda) {
+    double residual = 0.0;
+    for (size_t i=0; i<x.size(); i++) {
+        double subdiff = (x0[i] - x[i]) / lambda + g_at_x[i] - g_at_x0[i];
+        residual += subdiff * subdiff;
+    }
+    return residual;
+}
 
 } // End namespace
 

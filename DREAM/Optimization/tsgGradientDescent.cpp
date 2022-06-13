@@ -41,63 +41,84 @@ namespace TasOptimization {
 GradientDescentState::GradientDescentState(const std::vector<double> &x0, const double lambda0) :
         num_dimensions((int) x0.size()), adaptive_stepsize(lambda0), x(x0) {};
 
-void GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const ProjectionFunctionSingle &proj,
-                     const int num_iterations, GradientDescentState &state, const std::vector<double> &line_search_coeffs) {
+OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const ProjectionFunctionSingle &proj,
+                                   GradientDescentState &state, const std::vector<double> &line_search_coeffs, const int num_iterations,
+                                   const double tolerance) {
 
     if (line_search_coeffs.size() != 2)
         throw std::runtime_error("ERROR: in GradientDescent(), expects line_search_coeffs.size() == 2");
 
+    OptimizationStatus status;
+    status.num_iterations = 0;
+    status.stationarity_residual = std::numeric_limits<double>::max();
+
     int num_dimensions = state.num_dimensions;
     std::vector<double> &x = state.getXRef();
-    std::vector<double> current_gradient(num_dimensions), next_x(num_dimensions);
-    double stepsize(state.adaptive_stepsize), current_iteration(0), lhs(0), rhs(0), current_fval(0), next_fval(0);
-    while(current_iteration < num_iterations) {
-        // Find the next stepsize/candidate point by making sure it satisfies the well-known descent inequality (see
-        // γ_u in the referenced paper above).
-        current_fval = f(x);
-        current_gradient = g(x);
+    std::vector<double> x_prev(x), g_at_x_prev(g(x_prev)), g_at_x(num_dimensions), next_x(num_dimensions);
+    double f_at_x_prev(f(x_prev)), f_at_x(0);
+
+    while(status.num_iterations < num_iterations) {
+        // Find the next stepsize/candidate point by making sure it satisfies the well-known descent inequality (see γ_u in the
+        // reference paper associated with this function).
+        double lhs = 0;
+        double rhs = 0;
         do {
-            if (current_iteration >= num_iterations) return;
-            lhs = 0;
-            rhs = 0;
+            if (status.num_iterations >= num_iterations)
+                break;
             for (int j=0; j<num_dimensions; j++)
-                next_x[j] = x[j] - current_gradient[j] * stepsize;
-            next_x = proj(next_x);
-            next_fval = f(next_x);
-            lhs += next_fval - current_fval;
+                x[j] = x_prev[j] - g_at_x_prev[j] * state.adaptive_stepsize;
+            x = proj(x);
+            f_at_x = f(x);
+            lhs += f_at_x - f_at_x_prev;
             for (int j=0; j<num_dimensions; j++) {
-                double delta = next_x[j] - x[j];
-                rhs += delta * delta / (2.0 * stepsize);
-                lhs -= current_gradient[j] * delta;
+                double delta = x[j] - x_prev[j];
+                rhs += delta * delta / (2.0 * state.adaptive_stepsize);
+                lhs -= g_at_x_prev[j] * delta;
             }
-            stepsize /= line_search_coeffs[0];
-            state.setStepsize(stepsize);
-            current_iteration++;
+            state.adaptive_stepsize /= line_search_coeffs[0];
+            status.num_iterations++;
         } while (lhs > rhs + TasGrid::Maths::num_tol);
+        state.adaptive_stepsize *= line_search_coeffs[0]; // offset the do-while loop.
+        // Check for approximate stationarity.
+        g_at_x = g(x);
+        status.stationarity_residual = compute_stationarity_residual(x, x_prev, g_at_x, g_at_x_prev, state.adaptive_stepsize);
+        if (status.stationarity_residual <= tolerance)
+            break;
         // Update the key iterates manually for the next loop.
-        std::swap(x, next_x);
-        std::swap(current_fval, next_fval);
-        state.setX(x);
+        std::swap(x_prev, x);
+        std::swap(f_at_x_prev, f_at_x);
+        std::swap(g_at_x_prev, g_at_x);
         // Optimistic stepsize update (see γ_d in the referenced paper above).
-        stepsize *= line_search_coeffs[1] * line_search_coeffs[0];
-        state.setStepsize(stepsize);
+        state.adaptive_stepsize *= line_search_coeffs[1];
     }
+    return status;
     
 }
 
-void GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const int num_iterations,
-                     GradientDescentState &state, const std::vector<double> &line_search_coeffs) {
+OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, GradientDescentState &state,
+                                   const std::vector<double> &line_search_coeffs,  const int num_iterations, const double tolerance) {
     // Wrapper to the proximal version with projection function == identity function.
-    GradientDescent(f, g, identity, num_iterations, state, line_search_coeffs);
+    return GradientDescent(f, g, identity, state, line_search_coeffs, num_iterations, tolerance);
 };
 
-void GradientDescent(const GradientFunctionSingle &g, std::vector<double> &x, const double stepsize, const int num_iterations) {
-    std::vector<double> gradient(x.size());
+OptimizationStatus GradientDescent(const GradientFunctionSingle &g, std::vector<double> &x, const double stepsize, const int num_iterations,
+                                   const double tolerance) {
+    OptimizationStatus status;
+    status.num_iterations = 0;
+    status.stationarity_residual = std::numeric_limits<double>::max();
+    std::vector<double> x_prev(x), g_at_x_prev(g(x_prev)), g_at_x(x.size());
     for (int i=0; i<num_iterations; i++) {
-        gradient = g(x);
         for (size_t j=0; j<x.size(); j++)
-            x[j] -= gradient[j] * stepsize;
+            x[j] -= g_at_x_prev[j] * stepsize;
+        g_at_x = g(x);
+        status.num_iterations++;
+        status.stationarity_residual = compute_stationarity_residual(x, x_prev, g_at_x, g_at_x_prev, stepsize);
+        if (status.stationarity_residual <= tolerance)
+            break;
+        std::swap(x, x_prev);
+        std::swap(g_at_x, g_at_x_prev);
     }
+    return status;
 }
 
 }

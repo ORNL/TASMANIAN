@@ -121,18 +121,22 @@ class GradientDescentState {
      *
      * Runs \b num_iterations of the adaptive gradient descent algorithm to a gradient descent \b state to minimize the function
      * \b f over the domain implied by a given projection function. This method is guaranteed to converge to a stationary point
-     * if the gradient of \b f is Lipschitz continuous on its domain. Requires two line search coefficients.
+     * if the gradient of \b f is Lipschitz continuous on its domain. Requires two line search coefficients. Outputs a
+     * TasmanianOptimization::OptimizationStatus structure that contains information about the last iterate.
      *
      * \param f Objective function to be minimized
      * \param g Gradient of the objective function
      * \param proj Projection function that orthogonally projects points into the domain of the objective function
-     * \param num_iterations Number of iterations to perform
      * \param state Holds the state of the gradient descent algorithm, see TasOptimization::GradientDescentState
      * \param line_search_coeffs Vector of floats which may be empty or of size=2; the first (resp. second) entry controls quickly
-     *        the stepsize is decreased (resp. increased) and both entries must be greater than 1.
+     *        the stepsize is decreased (resp. increased) and both entries must be greater than 1
+     * \param num_iterations Number of iterations to perform
+     * \param tolerance Stationarity tolerance; the algorithm terminates early if the stationarity residual computed by
+     *        TasmanianOptimization::compute_stationarity_residual() is less than or equal to \b tolerance
      */
-    friend void GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const ProjectionFunctionSingle &proj,
-                                const int num_iterations, GradientDescentState &state, const std::vector<double> &line_search_coeffs);
+    friend OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const ProjectionFunctionSingle &proj,
+                                              GradientDescentState &state, const std::vector<double> &line_search_coeffs, const int num_iterations,
+                                              const double tolerance);
 
     /*! \brief Applies the adaptive NON-PROXIMAL gradient descent algorithm to a gradient descent state (does not require a
      *         projection function as input).
@@ -140,17 +144,20 @@ class GradientDescentState {
      *
      * Runs \b num_iterations of the adaptive gradient descent algorithm to a gradient descent \b state to minimize the function
      * \b f over an unconstrained domain.  This method is guaranteed to converge to a stationary point if the gradient of \b f is
-     * Lipschitz continuous everywhere. Requires two line search coefficients.
+     * Lipschitz continuous everywhere. Requires two line search coefficients. Outputs a TasmanianOptimization::OptimizationStatus
+     * structure that contains information about the last iterate.
      *
      * \param f Objective function to be minimized
      * \param g Gradient of the objective function
-     * \param num_iterations Number of iterations to perform
      * \param state Holds the state of the gradient descent algorithm, see TasOptimization::GradientDescentState
      * \param line_search_coeffs Vector of floats which are of size=2;  the first (resp. second) entry controls quickly the
-     *        stepsize is decreased (resp. increased) and both entries must be greater than 1.
+     *        stepsize is decreased (resp. increased) and both entries must be greater than 1
+     * \param num_iterations Number of iterations to perform
+     * \param tolerance Stationarity tolerance; the algorithm terminates early if the stationarity residual computed by
+     *        TasmanianOptimization::compute_stationarity_residual() is less than or equal to \b tolerance
      */
-    friend void GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const int num_iterations,
-                                GradientDescentState &state, const std::vector<double> &line_search_coeffs);
+    friend OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, GradientDescentState &state,
+                                              const std::vector<double> &line_search_coeffs, const int num_iterations, const double tolerance);
 
   protected:
     #ifndef __TASMANIAN_DOXYGEN_SKIP_INTERNAL
@@ -168,14 +175,25 @@ class GradientDescentState {
  * \ingroup OptimizationAlgorithm Constant Stepsize Non-Proximal Gradient Descent Algorithm
  *
  * Runs \b num_iterations of the constant stepsize gradient descent algorithm to a gradient descent \b state to minimize a function
- * with gradient \b g over an unconstrained domain.
+ * with gradient \b g over an unconstrained domain. Outputs a TasmanianOptimization::OptimizationStatus structure that contains
+ * information about the last iterate.
  *
  * \param g Gradient of the objective function
  * \param x Initial point to start the algorithm; the final point of the algorithm will also be written here.
  * \param stepsize Stepsize of the algorithm.
  * \param num_iterations Number of iterations to perform
+ * \param tolerance Stationarity tolerance; the algorithm terminates early if the stationarity residual computed by
+ *        TasmanianOptimization::compute_stationarity_residual() is less than or equal to \b tolerance
  */
-void GradientDescent(const GradientFunctionSingle &g, std::vector<double> &x, const double stepsize, const int num_iterations);
+OptimizationStatus GradientDescent(const GradientFunctionSingle &g, std::vector<double> &x, const double stepsize, const int num_iterations,
+                                   const double tolerance);
+
+// Forward declarations.
+OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const ProjectionFunctionSingle &proj,
+                                   GradientDescentState &state, const std::vector<double> &line_search_coeffs, const int num_iterations,
+                                   const double tolerance);
+OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, GradientDescentState &state,
+                                   const std::vector<double> &line_search_coeffs, const int num_iterations, const double tolerance);
 
 }
 
