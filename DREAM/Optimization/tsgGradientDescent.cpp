@@ -38,65 +38,66 @@
 
 namespace TasOptimization {
 
-GradientDescentState::GradientDescentState(const std::vector<double> &x, const double stepsize) :
-        num_dimensions((int) x.size()), stepsize(stepsize), candidate(x) {};
+GradientDescentState::GradientDescentState(const std::vector<double> &x0, const double lambda0) :
+        num_dimensions((int) x0.size()), adaptive_stepsize(lambda0), x(x0) {};
 
-void GradientDescent(const ObjectiveFunction &f, const GradientFunction &g, const ProjectionFunction &proj, const int num_iterations,
-                     GradientDescentState &state, const std::vector<double> &line_search_coeffs) {
+void GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const ProjectionFunctionSingle &proj,
+                     const int num_iterations, GradientDescentState &state, const std::vector<double> &line_search_coeffs) {
 
-    if (line_search_coeffs.size() != 0 and line_search_coeffs.size() != 2)
-        throw std::runtime_error("ERROR: in GradientDescent(), expects line_search_coeffs.size() == 2 if non-empty");
+    if (line_search_coeffs.size() != 2)
+        throw std::runtime_error("ERROR: in GradientDescent(), expects line_search_coeffs.size() == 2");
 
     int num_dimensions = state.num_dimensions;
-    std::vector<double> &candidate = state.getCandidateRef();
-
-    if (line_search_coeffs.empty()) {
-        // Constant stepsize scheme (does not have convergence guarantees).
-        std::vector<double> gradient(num_dimensions);
-        for (int i=0; i<num_iterations; i++) {
-            g(candidate, gradient);
+    std::vector<double> &x = state.getXRef();
+    std::vector<double> current_gradient(num_dimensions), next_x(num_dimensions);
+    double stepsize(state.adaptive_stepsize), current_iteration(0), lhs(0), rhs(0), current_fval(0), next_fval(0);
+    while(current_iteration < num_iterations) {
+        // Find the next stepsize/candidate point by making sure it satisfies the well-known descent inequality (see
+        // γ_u in the referenced paper above).
+        current_fval = f(x);
+        current_gradient = g(x);
+        do {
+            if (current_iteration >= num_iterations) return;
+            lhs = 0;
+            rhs = 0;
             for (int j=0; j<num_dimensions; j++)
-                candidate[j] -= gradient[j] * state.stepsize;
-            proj(candidate, candidate);
-        }
-        state.setCandidate(candidate);
-    } else {
-        // Variable stepsize scheme (has convergence guarantees).
-        std::vector<double> current_gradient(num_dimensions), current_fval(1), next_candidate(num_dimensions), next_fval(1);
-        double stepsize(state.stepsize), current_iteration(0), lhs(0), rhs(0);
-        while(current_iteration < num_iterations) {
-            // Find the next stepsize/candidate point by making sure it satisfies the well-known descent inequality (see
-            // γ_u in the referenced paper above).
-            f(candidate, current_fval);
-            g(candidate, current_gradient);
-            do {
-                if (current_iteration >= num_iterations) return;
-                lhs = 0;
-                rhs = 0;
-                for (int j=0; j<num_dimensions; j++)
-                    next_candidate[j] = candidate[j] - current_gradient[j] * stepsize;
-                proj(next_candidate, next_candidate);
-                f(next_candidate, next_fval);
-                lhs += next_fval[0] - current_fval[0];
-                for (int j=0; j<num_dimensions; j++) {
-                    double delta = next_candidate[j] - candidate[j];
-                    rhs += delta * delta / (2.0 * stepsize);
-                    lhs -= current_gradient[j] * delta;
-                }
-                stepsize /= line_search_coeffs[0];
-                state.setStepsize(stepsize);
-                current_iteration++;
-            } while (lhs > rhs + TasGrid::Maths::num_tol);
-            // Update the key iterates manually for the next loop.
-            std::swap(candidate, next_candidate);
-            std::swap(current_fval, next_fval);
-            state.setCandidate(candidate);
-            // Optimistic stepsize update (see γ_d in the referenced paper above).
-            stepsize *= line_search_coeffs[1] * line_search_coeffs[0];
+                next_x[j] = x[j] - current_gradient[j] * stepsize;
+            next_x = proj(next_x);
+            next_fval = f(next_x);
+            lhs += next_fval - current_fval;
+            for (int j=0; j<num_dimensions; j++) {
+                double delta = next_x[j] - x[j];
+                rhs += delta * delta / (2.0 * stepsize);
+                lhs -= current_gradient[j] * delta;
+            }
+            stepsize /= line_search_coeffs[0];
             state.setStepsize(stepsize);
-        }
+            current_iteration++;
+        } while (lhs > rhs + TasGrid::Maths::num_tol);
+        // Update the key iterates manually for the next loop.
+        std::swap(x, next_x);
+        std::swap(current_fval, next_fval);
+        state.setX(x);
+        // Optimistic stepsize update (see γ_d in the referenced paper above).
+        stepsize *= line_search_coeffs[1] * line_search_coeffs[0];
+        state.setStepsize(stepsize);
     }
+    
+}
 
+void GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const int num_iterations,
+                     GradientDescentState &state, const std::vector<double> &line_search_coeffs) {
+    // Wrapper to the proximal version with projection function == identity function.
+    GradientDescent(f, g, identity, num_iterations, state, line_search_coeffs);
+};
+
+void GradientDescent(const GradientFunctionSingle &g, std::vector<double> &x, const double stepsize, const int num_iterations) {
+    std::vector<double> gradient(x.size());
+    for (int i=0; i<num_iterations; i++) {
+        gradient = g(x);
+        for (size_t j=0; j<x.size(); j++)
+            x[j] -= gradient[j] * stepsize;
+    }
 }
 
 }

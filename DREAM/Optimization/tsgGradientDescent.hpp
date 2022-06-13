@@ -85,10 +85,10 @@ namespace TasOptimization {
  */
 class GradientDescentState {
   public:
-    //! \brief The default constructor is allowed.
+    //! \brief The default constructor is NOT allowed.
     GradientDescentState() = delete;
     //! \brief Constructor for a gradient descent state with the initial candidate and stepsize.
-    GradientDescentState(const std::vector<double> &x, const double stepsize);
+    GradientDescentState(const std::vector<double> &x0, const double lambda0);
     //! \brief Copy constructor.
     GradientDescentState(const GradientDescentState &source) = default;
     //! \brief Move constructor.
@@ -100,54 +100,82 @@ class GradientDescentState {
     //! \brief Return the number of dimensions.
     inline int getNumDimensions() const {return num_dimensions;}
     //! \brief Return the stepsize.
-    inline double getStepsize() const {return stepsize;}
+    inline double getAdaptiveStepsize() const {return adaptive_stepsize;}
     //! \brief Return the current candidate point.
-    inline void getCandidate(double x[]) const {std::copy_n(candidate.begin(), num_dimensions, x);}
-    inline std::vector<double> getCandidate() const {return candidate;}
+    inline void getX(double x_out[]) const {std::copy_n(x.begin(), num_dimensions, x_out);}
+    //! \brief Overload for when the output is a vector.
+    inline std::vector<double> getX() const {return x;}
 
     //! \brief Set the stepsize.
-    inline void setStepsize(const double ss) {stepsize = ss;}
+    inline void setStepsize(const double lambda0) {adaptive_stepsize = lambda0;}
     //! \brief Set the current candidate point.
-    inline void setCandidate(const double x[]) {std::copy_n(x, num_dimensions, candidate.begin());}
-    inline void setCandidate(const std::vector<double> &x) {
-        checkVarSize("GradientDescentState::setCandidate", "candidate point", x.size(), num_dimensions);
-        candidate = x;
+    inline void setX(const double x_new[]) {std::copy_n(x_new, num_dimensions, x.begin());}
+    //! \brief Overload for when the input is a vector.
+    inline void setX(const std::vector<double> &x_new) {
+        checkVarSize("GradientDescentState::setCandidate", "candidate point", x_new.size(), num_dimensions);
+        x = x_new;
     }
 
-    /*! \brief Applies the classic (proximal) gradient descent algorithm to a gradient descent state.
-     * \ingroup OptimizationAlgorithm Gradient Descent Algorithm
+    /*! \brief Applies the adaptive PROXIMAL gradient descent algorithm to a gradient descent state.
+     * \ingroup OptimizationAlgorithm Adaptive Proximal Gradient Descent Algorithm
      *
-     * Runs \b num_iterations of the gradient algorithm to a gradient descent \b state to minimize the function \b f over the
-     * a domain implied by a given projection function. The parameters of the algorithm are (optional) line search coefficients.
+     * Runs \b num_iterations of the adaptive gradient descent algorithm to a gradient descent \b state to minimize the function
+     * \b f over the domain implied by a given projection function. This method is guaranteed to converge to a stationary point
+     * if the gradient of \b f is Lipschitz continuous on its domain. Requires two line search coefficients.
      *
      * \param f Objective function to be minimized
      * \param g Gradient of the objective function
      * \param proj Projection function that orthogonally projects points into the domain of the objective function
-     * \param num_iterations number of iterations to perform
-     * \param state holds the state of the gradient descent algorithm, see TasOptimization::GradientDescentState
-     * \param line_search_coeffs vector of floats which may be empty or of size=2; if it is empty, then a constant stepsize scheme
-     *        is used; if it is non-empty, then an adaptive stepsize scheme is used that adapts to the local curvature of the
-     *        function; in this case, the first (resp. second) entry controls quickly the stepsize is decreased (resp. increased)
-     *        and both entries must be greater than 1
+     * \param num_iterations Number of iterations to perform
+     * \param state Holds the state of the gradient descent algorithm, see TasOptimization::GradientDescentState
+     * \param line_search_coeffs Vector of floats which may be empty or of size=2; the first (resp. second) entry controls quickly
+     *        the stepsize is decreased (resp. increased) and both entries must be greater than 1.
      */
-    friend void GradientDescent(const ObjectiveFunction &f, const GradientFunction &g, const ProjectionFunction &proj,
+    friend void GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const ProjectionFunctionSingle &proj,
                                 const int num_iterations, GradientDescentState &state, const std::vector<double> &line_search_coeffs);
+
+    /*! \brief Applies the adaptive NON-PROXIMAL gradient descent algorithm to a gradient descent state (does not require a
+     *         projection function as input).
+     * \ingroup OptimizationAlgorithm Adaptive Non-Proximal Gradient Descent Algorithm
+     *
+     * Runs \b num_iterations of the adaptive gradient descent algorithm to a gradient descent \b state to minimize the function
+     * \b f over an unconstrained domain.  This method is guaranteed to converge to a stationary point if the gradient of \b f is
+     * Lipschitz continuous everywhere. Requires two line search coefficients.
+     *
+     * \param f Objective function to be minimized
+     * \param g Gradient of the objective function
+     * \param num_iterations Number of iterations to perform
+     * \param state Holds the state of the gradient descent algorithm, see TasOptimization::GradientDescentState
+     * \param line_search_coeffs Vector of floats which are of size=2;  the first (resp. second) entry controls quickly the
+     *        stepsize is decreased (resp. increased) and both entries must be greater than 1.
+     */
+    friend void GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const int num_iterations,
+                                GradientDescentState &state, const std::vector<double> &line_search_coeffs);
 
   protected:
     #ifndef __TASMANIAN_DOXYGEN_SKIP_INTERNAL
-    //! \brief Returns a reference to the current candidate point.
-    inline std::vector<double> &getCandidateRef() {return candidate;}
+    //! \brief Returns a reference to the current point.
+    inline std::vector<double> &getXRef() {return x;}
     #endif
 
   private:
     int num_dimensions;
-    double stepsize;
-    std::vector<double> candidate;
+    double adaptive_stepsize;
+    std::vector<double> x;
 };
 
-// Forward declarations.
-void GradientDescent(const ObjectiveFunction &f, const GradientFunction &g, const ProjectionFunction &proj,
-                     const int num_iterations, GradientDescentState &state,  const std::vector<double> &line_search_coeffs = {});
+/*! \brief Applies the constant-stepsize gradient descent algorithm for functions with unbounded domains.
+ * \ingroup OptimizationAlgorithm Constant Stepsize Non-Proximal Gradient Descent Algorithm
+ *
+ * Runs \b num_iterations of the constant stepsize gradient descent algorithm to a gradient descent \b state to minimize a function
+ * with gradient \b g over an unconstrained domain.
+ *
+ * \param g Gradient of the objective function
+ * \param x Initial point to start the algorithm; the final point of the algorithm will also be written here.
+ * \param stepsize Stepsize of the algorithm.
+ * \param num_iterations Number of iterations to perform
+ */
+void GradientDescent(const GradientFunctionSingle &g, std::vector<double> &x, const double stepsize, const int num_iterations);
 
 }
 
