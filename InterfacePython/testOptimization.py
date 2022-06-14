@@ -86,7 +86,7 @@ class TestTasClass(unittest.TestCase):
 
     def checkParticleSwarm(self):
         iNumDimensions = 2
-        iNumParticles = 20
+        iNumParticles = 50
         state = Opt.ParticleSwarmState(iNumDimensions, iNumParticles)
         state.initializeParticlesInsideBox(np.array([-3.0, -2.0]), np.array([3.0, 2.0]))
         # Six-hump-camel function.

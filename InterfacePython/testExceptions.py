@@ -1,6 +1,7 @@
 import unittest
 import Tasmanian
 DREAM = Tasmanian.DREAM
+Opt = Tasmanian.Optimization
 import numpy as np
 
 import testCommon
@@ -286,10 +287,30 @@ class TestTasClass(unittest.TestCase):
                     DREAM.DifferentialUpdate(0), typeForm = 'alpha')""", "typeForm"],
                 ]
 
+    def getOptimizationTests(self):
+        # see getSparseGridTests() for comments about the format
+        return [["pss.setParticlePositions(np.array([[1, 2, 3]]))", "llfNewPPosns"],
+                ["pss.setParticlePositions(np.array([[1, 2], [2, 1]]))", "llfNewPPosns"],
+                ["pss.setParticleVelocities(np.array([[1, 2, 3]]))", "llfNewPVelcs"],
+                ["pss.setParticleVelocities(np.array([[1, 2], [2, 1]]))", "llfNewPVelcs"],
+                ["pss.setBestParticlePositions(np.array([[1, 2, 3]]))", "llfNewBPPosns"],
+                ["pss.initializeParticlesInsideBox(np.array([-1.0, -2.0, -3.0]), np.array([2.0, 1.0]))", "lfBoxLower"],
+                ["pss.initializeParticlesInsideBox(np.array([-1.0, -2.0]), np.array([2.0, 1.0, 3.0]))", "lfBoxUpper"],
+                ["pss.initializeParticlesInsideBox(np.array([-1.0, -2.0]), np.array([1.0, 3.0]));" +
+                 "f = lambda x_batch : np.append(np.apply_along_axis(np.sum, 1, x_batch), np.array([0.5]), axis=0);" +
+                 "inside = lambda x : True;" +
+                 "Opt.ParticleSwarm(f, 1, inside, pss, 0.5, 2, 2)", "ParticleSwarm"],
+                ["pss.initializeParticlesInsideBox(np.array([-1.0, -2.0]), np.array([1.0, 3.0]));" +
+                 "f = lambda x_batch : np.apply_along_axis(np.sum, 1, x_batch);" +
+                 "inside = lambda x : 0.01;" +
+                 "Opt.ParticleSwarm(f, 1, inside, pss, 0.5, 2, 2)", "ParticleSwarm"],
+                ]    
+
     def testListedExceptions(self, llTests):
         grid = Tasmanian.SparseGrid()
         state = DREAM.State(10, 2)
         state.setState(DREAM.genGaussianSamples([-1.0, -1.0], [1.0, 1.0], 10, DREAM.RandomGenerator("minstd_rand", 42)))
+        pss = Opt.ParticleSwarmState(2, 3)
 
         for lTest in llTests:
             try:
@@ -302,3 +323,4 @@ class TestTasClass(unittest.TestCase):
         self.testListedExceptions(self.getSparseGridTests())
         self.testListedExceptions(self.getCustomTabulatedTests())
         self.testListedExceptions(self.getDreamTests())
+        self.testListedExceptions(self.getOptimizationTests())

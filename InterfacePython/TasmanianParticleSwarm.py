@@ -301,8 +301,8 @@ def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmSta
         aX = np.ctypeslib.as_array(x_ptr, (num_dim,))
         iResult = pInside(aX)
         if not isinstance(iResult, bool):
-            print("ERROR: incorrect output from the domain function given to ParticleSwarm(), should be a Boolean but received ",
-                  type(iResult).__name__)
+            print("ERROR: incorrect output from the domain function given to ParticleSwarm(), should be a 'bool' but received '" +
+                  type(iResult).__name__ + "'")
             return False
         err_arr[0] = 0
         return iResult
