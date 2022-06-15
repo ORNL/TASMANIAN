@@ -188,9 +188,9 @@ protected:
 
     // Overloads.
     template<typename T>
-    inline void writeMatrix(std::string const &filename, Data2D<T> mat) { writeMatrix(filename, mat.getNumStrips(), mat.getStride(), mat.data()); }
+    inline void writeMatrix(std::string const &filename, Data2D<T> &mat) { writeMatrix(filename, mat.getNumStrips(), mat.getStride(), mat.data()); }
     template<typename T>
-    inline void printMatrix(Data2D<T> mat, bool isComplex = false) { printMatrix(mat.getNumStrips(), mat.getStride(), mat.data(), isComplex); }
+    inline void printMatrix(const Data2D<T> &mat, bool isComplex = false) { printMatrix(mat.getNumStrips(), mat.getStride(), mat.data(), isComplex); }
 
   private:
     TasmanianSparseGrid grid;
