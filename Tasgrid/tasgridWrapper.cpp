@@ -557,16 +557,14 @@ bool TasgridWrapper::getDiffWeights(){
         cerr << "ERROR: no points specified in " << xfilename << endl;
         return false;
     }
-    int num_w = x.getNumStrips();
-    int num_p = grid.getNumPoints() * grid.getNumDimensions();
-    Data2D<double> result(num_p, num_w);
+    Data2D<double> result(grid.getNumPoints() * grid.getNumDimensions(), x.getNumStrips());
 
     #pragma omp parallel for
-    for(int i=0; i<num_w; i++)
+    for(int i=0; i<x.getNumStrips(); i++)
         grid.getDifferentiationWeights(x.getStrip(i), result.getStrip(i));
 
-    writeMatrix(outfilename, num_w, num_p, result.data());
-    printMatrix(num_w, num_p, result.data());
+    writeMatrix(outfilename, result);
+    printMatrix(result);
 
     return true;
 }
@@ -644,16 +642,13 @@ bool TasgridWrapper::getDifferentiate(){
         cerr << "ERROR: no points specified in " << xfilename << endl;
         return false;
     }
-    int num_points = x.getNumStrips();
-    int num_in = grid.getNumDimensions();
-    int num_out = grid.getNumOutputs();
-    Data2D<double> result(num_in * num_out, num_points);
+    Data2D<double> result(grid.getNumDimensions() * grid.getNumOutputs(), x.getNumStrips());
     #pragma omp parallel for
-    for (int i=0; i<num_points; i++)
+    for (int i=0; i<x.getNumStrips(); i++)
         grid.differentiate(x.getStrip(i), result.getStrip(i));
 
-    writeMatrix(outfilename, num_points, num_out * num_in, result.data());
-    printMatrix(num_points, num_out * num_in, result.data());
+    writeMatrix(outfilename, result);
+    printMatrix(result);
 
     return true;
 }
