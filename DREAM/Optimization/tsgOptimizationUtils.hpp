@@ -60,11 +60,11 @@ namespace TasOptimization {
 /*! \internal
  * \ingroup OptimizationUtil
  *
- * Stores information about the run of an optimization algorithm.
+ * Stores information about the run of an optimization algorithm. The \b residual field is algorithm dependent.
  */
 struct OptimizationStatus {
-    int num_iterations;
-    double stationarity_residual;
+    int performed_iterations;
+    double residual;
 };
 
 /*! \internal
@@ -147,14 +147,14 @@ inline std::vector<double> identity(const std::vector<double> &x) {return x;};
  *
  * Here, the gradient of x (resp. x0) is g_at_x (resp. g_at_x0).
  */
-inline double compute_stationarity_residual(const std::vector<double> &x, const std::vector<double> &x0, const std::vector<double> &g_at_x,
-                                            const std::vector<double> &g_at_x0, const double lambda) {
+inline double compute_stationarity_residual(const std::vector<double> &x, const std::vector<double> &x0, const std::vector<double> &gx,
+                                            const std::vector<double> &gx0, const double lambda) {
     double residual = 0.0;
     for (size_t i=0; i<x.size(); i++) {
-        double subdiff = (x0[i] - x[i]) / lambda + g_at_x[i] - g_at_x0[i];
+        double subdiff = (x0[i] - x[i]) / lambda + gx[i] - gx0[i];
         residual += subdiff * subdiff;
     }
-    return residual;
+    return std::sqrt(residual);
 }
 
 } // End namespace

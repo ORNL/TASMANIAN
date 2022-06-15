@@ -41,82 +41,86 @@ namespace TasOptimization {
 GradientDescentState::GradientDescentState(const std::vector<double> &x0, const double lambda0) :
         num_dimensions((int) x0.size()), adaptive_stepsize(lambda0), x(x0) {};
 
-OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const ProjectionFunctionSingle &proj,
-                                   GradientDescentState &state, const std::vector<double> &line_search_coeffs, const int num_iterations,
-                                   const double tolerance) {
-
-    if (line_search_coeffs.size() != 2)
-        throw std::runtime_error("ERROR: in GradientDescent(), expects line_search_coeffs.size() == 2");
+OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const GradientFunctionSingle &grad,
+                                   const ProjectionFunctionSingle &proj, const double increase_coeff,
+                                   const double decrease_coeff, const int num_iterations, const double tolerance,
+                                   GradientDescentState &state) {
 
     OptimizationStatus status;
-    status.num_iterations = 0;
-    status.stationarity_residual = std::numeric_limits<double>::max();
+    status.performed_iterations = 0;
+    status.residual = std::numeric_limits<double>::max();
 
     int num_dimensions = state.num_dimensions;
     std::vector<double> &x = state.getXRef();
-    std::vector<double> x_prev(x), g_at_x_prev(g(x_prev)), g_at_x(num_dimensions), next_x(num_dimensions);
-    double f_at_x_prev(f(x_prev)), f_at_x(0);
+    std::vector<double> x0(x), gx0(grad(x0)), gx(num_dimensions), xStep(num_dimensions);
+    double fx0(func(x0)), fxStep(0);
 
-    while(status.num_iterations < num_iterations) {
+    while(status.performed_iterations < num_iterations) {
         // Find the next stepsize/candidate point by making sure it satisfies the well-known descent inequality (see γ_u in the
         // reference paper associated with this function).
         double lhs = 0;
         double rhs = 0;
         do {
-            if (status.num_iterations >= num_iterations)
+            if (status.performed_iterations >= num_iterations)
                 break;
             for (int j=0; j<num_dimensions; j++)
-                x[j] = x_prev[j] - g_at_x_prev[j] * state.adaptive_stepsize;
-            x = proj(x);
-            f_at_x = f(x);
-            lhs += f_at_x - f_at_x_prev;
+                xStep[j] = x0[j] - gx0[j] * state.adaptive_stepsize;
+            xStep = proj(xStep);
+            fxStep = func(xStep);
+            lhs += fxStep - fx0;
             for (int j=0; j<num_dimensions; j++) {
-                double delta = x[j] - x_prev[j];
+                double delta = xStep[j] - x0[j];
                 rhs += delta * delta / (2.0 * state.adaptive_stepsize);
-                lhs -= g_at_x_prev[j] * delta;
+                lhs -= gx0[j] * delta;
             }
-            state.adaptive_stepsize /= line_search_coeffs[0];
-            status.num_iterations++;
+            state.adaptive_stepsize /= decrease_coeff;
+            status.performed_iterations++;
         } while (lhs > rhs + TasGrid::Maths::num_tol);
-        state.adaptive_stepsize *= line_search_coeffs[0]; // offset the do-while loop.
+        std::swap(xStep, x);
+        state.adaptive_stepsize *= decrease_coeff; // offset the do-while loop.
         // Check for approximate stationarity.
-        g_at_x = g(x);
-        status.stationarity_residual = compute_stationarity_residual(x, x_prev, g_at_x, g_at_x_prev, state.adaptive_stepsize);
-        if (status.stationarity_residual <= tolerance)
+        gx = grad(x);
+        status.residual = compute_stationarity_residual(x, x0, gx, gx0, state.adaptive_stepsize);
+        if (status.residual <= tolerance)
             break;
         // Update the key iterates manually for the next loop.
-        std::swap(x_prev, x);
-        std::swap(f_at_x_prev, f_at_x);
-        std::swap(g_at_x_prev, g_at_x);
+        std::swap(x0, x);
+        std::swap(fx0, fxStep);
+        std::swap(gx0, gx);
         // Optimistic stepsize update (see γ_d in the referenced paper above).
-        state.adaptive_stepsize *= line_search_coeffs[1];
+        state.adaptive_stepsize *= increase_coeff;
     }
     return status;
     
 }
 
-OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, GradientDescentState &state,
-                                   const std::vector<double> &line_search_coeffs,  const int num_iterations, const double tolerance) {
+OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const GradientFunctionSingle &grad,
+                                   const double increase_coeff, const double decrease_coeff, const int num_iterations,
+                                   const double tolerance, GradientDescentState &state) {
     // Wrapper to the proximal version with projection function == identity function.
-    return GradientDescent(f, g, identity, state, line_search_coeffs, num_iterations, tolerance);
+    return GradientDescent(func, grad, identity, increase_coeff, decrease_coeff, num_iterations, tolerance, state);
 };
 
-OptimizationStatus GradientDescent(const GradientFunctionSingle &g, std::vector<double> &x, const double stepsize, const int num_iterations,
-                                   const double tolerance) {
+OptimizationStatus GradientDescent(const GradientFunctionSingle &grad, const double stepsize, const int num_iterations,
+                                   const double tolerance, std::vector<double> &state) {
     OptimizationStatus status;
-    status.num_iterations = 0;
-    status.stationarity_residual = std::numeric_limits<double>::max();
-    std::vector<double> x_prev(x), g_at_x_prev(g(x_prev)), g_at_x(x.size());
+    status.performed_iterations = 0;
+    status.residual = std::numeric_limits<double>::max();
+    std::vector<double> x0(state), gx0(grad(x0)), gx(state.size());
     for (int i=0; i<num_iterations; i++) {
-        for (size_t j=0; j<x.size(); j++)
-            x[j] -= g_at_x_prev[j] * stepsize;
-        g_at_x = g(x);
-        status.num_iterations++;
-        status.stationarity_residual = compute_stationarity_residual(x, x_prev, g_at_x, g_at_x_prev, stepsize);
-        if (status.stationarity_residual <= tolerance)
+        for (size_t j=0; j<state.size(); j++)
+            state[j] -= gx0[j] * stepsize;
+        status.performed_iterations++;
+        gx = grad(state);
+        // Computes the stationarity residual as |grad(x)|.
+        status.residual = 0.0;
+        for (size_t j=0; j<state.size(); j++)
+            status.residual += gx[j] * gx[j];
+        status.residual = std::sqrt(status.residual);
+        if (status.residual <= tolerance)
             break;
-        std::swap(x, x_prev);
-        std::swap(g_at_x, g_at_x_prev);
+        std::swap(state, x0);
+        std::swap(gx, gx0);
     }
     return status;
 }

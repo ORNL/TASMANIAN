@@ -596,11 +596,11 @@ void testDebug(){
 
     TasOptimization::OptimizationStatus status;
     for (int k=1; k<=2; k++) {
-        status = TasOptimization::GradientDescent(f, g, proj, gds, {1.25, 1.25}, 10000, 1E-9);
+        status = TasOptimization::GradientDescent(f, g, proj, 1.25, 1.25, 100, 1E-6, gds);
         x = gds.getX();
         std::cout << "k = " << k << std::scientific << std::setprecision(3) << ",\tstepsize = " << gds.getAdaptiveStepsize() << ",\tx =";
         for (int i=0; i<2; i++) std::cout << " " << x[i];
-        std::cout << ",\tf(x) = " << f(x) << "\titer =" << status.num_iterations << "\tresid = " << status.stationarity_residual << std::endl;
+        std::cout << ",\tf(x) = " << f(x) << "\titer =" << status.performed_iterations << "\tresid = " << status.residual << std::endl;
     }
 
 }
