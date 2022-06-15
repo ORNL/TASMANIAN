@@ -31,6 +31,7 @@
 
 import unittest
 import Tasmanian
+DREAM = Tasmanian.DREAM
 Opt = Tasmanian.Optimization
 import os
 import numpy as np
@@ -61,23 +62,24 @@ class TestTasClass(unittest.TestCase):
         self.assertFalse(state.isBestPositionInitialized())
         self.assertFalse(state.isCacheInitialized())
         # Loading/Unloading tests.
-        pp = np.random.rand(iNumParticles, iNumDimensions)
+        pp = np.arange(iNumParticles * iNumDimensions, dtype=np.float64).reshape(iNumParticles, iNumDimensions)
         state.setParticlePositions(pp)
         self.assertTrue(state.isPositionInitialized())
-        self.assertTrue(np.array_equal(pp, state.getParticlePositions()))
-        pv = np.random.rand(iNumParticles, iNumDimensions)
+        np.testing.assert_array_equal(pp, state.getParticlePositions())
+        pv =  np.arange(iNumParticles * iNumDimensions, dtype=np.float64).reshape(iNumParticles, iNumDimensions)
         state.setParticleVelocities(pv)
-        self.assertTrue(np.array_equal(pv, state.getParticleVelocities()))
-        bpp = np.random.rand(iNumParticles+1, iNumDimensions)
+        np.testing.assert_array_equal(pv, state.getParticleVelocities())
+        bpp =  np.arange((iNumParticles+1) * iNumDimensions, dtype=np.float64).reshape(iNumParticles+1, iNumDimensions)
         state.setBestParticlePositions(bpp)
         self.assertTrue(state.isBestPositionInitialized())
-        self.assertTrue(np.array_equal(bpp, state.getBestParticlePositions()))
+        np.testing.assert_array_equal(bpp, state.getBestParticlePositions())
         state.clearBestParticles()
         self.assertFalse(state.isBestPositionInitialized())
-        self.assertTrue(np.array_equal(np.zeros([iNumParticles + 1, iNumDimensions]), state.getBestParticlePositions()))
+        np.testing.assert_array_equal(np.zeros([iNumParticles + 1, iNumDimensions]), state.getBestParticlePositions())
         # Generation tests.
         state = Opt.ParticleSwarmState(iNumDimensions, iNumParticles)
-        state.initializeParticlesInsideBox(np.array([-1.0, 1.0]), np.array([2.0, 3.0]))
+        state.initializeParticlesInsideBox(np.array([-1.0, 1.0]), np.array([2.0, 3.0]),
+                                           random01=DREAM.RandomGenerator(sType="default", iSeed=777))
         self.assertTrue(state.isPositionInitialized())
         self.assertTrue(state.isVelocityInitialized())
         pp = state.getParticlePositions()
@@ -88,13 +90,15 @@ class TestTasClass(unittest.TestCase):
         iNumDimensions = 2
         iNumParticles = 50
         state = Opt.ParticleSwarmState(iNumDimensions, iNumParticles)
-        state.initializeParticlesInsideBox(np.array([-3.0, -2.0]), np.array([3.0, 2.0]))
+        state.initializeParticlesInsideBox(np.array([-3.0, -2.0]), np.array([3.0, 2.0]),
+                                           random01=DREAM.RandomGenerator(sType="default", iSeed=777))
         # Six-hump-camel function.
         shc = lambda x : (4 - 2.1*x[0]*x[0] + x[0]*x[0]*x[0]*x[0]/3)*x[0]*x[0] + x[0]*x[1] + (-4.0 + 4.0*x[1]*x[1])*x[1]*x[1]
         f = lambda x_batch : np.apply_along_axis(shc, 1, x_batch)
         inside = lambda x : bool((-3 <= x[0]) and (x[0] <= 3) and (-2 <= x[1]) and (x[1] <= 2))
         # Main call + tests.
-        Opt.ParticleSwarm(f, 1, inside, state, 0.5, 2, 2)
+        Opt.ParticleSwarm(f, 1, inside, state, 0.5, 2, 2,
+                          random01=DREAM.RandomGenerator(sType="default", iSeed=777))
         self.assertTrue(state.isCacheInitialized())
         state.clearCache()
         self.assertFalse(state.isCacheInitialized())
@@ -103,7 +107,7 @@ class TestTasClass(unittest.TestCase):
         self.assertTrue(np.allclose(np.array([-0.08984201368301331, +0.7126564032704135]), state.getBestPosition()) or
                         np.allclose(np.array([+0.08984201368301331, -0.7126564032704135]), state.getBestPosition()) )
 
-    def performOptTests(self): 
+    def performOptTests(self):
         self.checkParticleSwarmState()
         self.checkParticleSwarm()
 
