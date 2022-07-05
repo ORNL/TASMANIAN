@@ -158,7 +158,10 @@ public:
     }
 
     //! \brief Set the particle positions.
-    void setParticlePositions(const double pp[]) {std::copy_n(pp, num_dimensions * num_particles, particle_positions.begin());}
+    void setParticlePositions(const double pp[]) {
+        std::copy_n(pp, num_dimensions * num_particles, particle_positions.begin());
+        positions_initialized = true;
+    }
     void setParticlePositions(const std::vector<double> &pp) {
         checkVarSize("ParticleSwarmState::setParticlePositions", "particle position", pp.size(), num_dimensions * num_particles);
         particle_positions = pp;
@@ -170,7 +173,10 @@ public:
         positions_initialized = true;
     }
     //! \brief Set the particle velocities.
-    void setParticleVelocities(const double pv[]) {std::copy_n(pv, num_dimensions * num_particles, particle_velocities.begin());}
+    void setParticleVelocities(const double pv[]) {
+        std::copy_n(pv, num_dimensions * num_particles, particle_velocities.begin());
+        velocities_initialized = true;
+    }
     void setParticleVelocities(const std::vector<double> &pv) {
         checkVarSize("ParticleSwarmState::setParticleVelocities", "particle velocities", pv.size(), num_dimensions * num_particles);
         particle_velocities = pv;
@@ -182,7 +188,10 @@ public:
         velocities_initialized = true;
     }
     //! \brief Set the previously best known particle velocities.
-    void setBestParticlePositions(const double bpp[]) {std::copy_n(bpp, num_dimensions * (num_particles + 1), best_particle_positions.begin());}
+    void setBestParticlePositions(const double bpp[]) {
+        std::copy_n(bpp, num_dimensions * (num_particles + 1), best_particle_positions.begin());
+        best_positions_initialized = true;
+    }
     void setBestParticlePositions(const std::vector<double> &bpp) {
         checkVarSize("ParticleSwarmState::setBestParticlePositions", "best particle positions", bpp.size(), num_dimensions * (num_particles + 1));
         best_particle_positions = bpp;

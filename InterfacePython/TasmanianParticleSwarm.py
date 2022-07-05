@@ -193,6 +193,7 @@ class ParticleSwarmState:
             raise InputError("llfNewPPosns", "llfNewPPosns.shape[1] should match the number of dimensions")
         llfNewPPosns.resize((iNumDims * iNumPart,))
         pLibDTSG.tsgParticleSwarmState_SetParticlePositions(self.pStatePntr, as_ctypes(llfNewPPosns))
+        llfNewPPosns.resize((iNumPart, iNumDims))
 
     def setParticleVelocities(self, llfNewPVelcs):
         '''
@@ -210,6 +211,7 @@ class ParticleSwarmState:
             raise InputError("llfNewPVelcs", "llfNewPVelcs.shape[1] should match the number of dimensions")
         llfNewPVelcs.resize((iNumDims * iNumPart,))
         pLibDTSG.tsgParticleSwarmState_SetParticleVelocities(self.pStatePntr, as_ctypes(llfNewPVelcs))
+        llfNewPVelcs.resize((iNumPart, iNumDims))
 
     def setBestParticlePositions(self, llfNewBPPosns):
         '''
@@ -227,6 +229,7 @@ class ParticleSwarmState:
             raise InputError("llfNewBPPosns", "llfNewBPPosns.shape[1] should match the number of dimensions")
         llfNewBPPosns.resize(((iNumPart + 1) * iNumDims,))
         pLibDTSG.tsgParticleSwarmState_SetBestParticlePositions(self.pStatePntr, as_ctypes(llfNewBPPosns))
+        llfNewBPPosns.resize((iNumPart + 1, iNumDims))
 
     def clearBestParticles(self):
         '''
@@ -273,14 +276,14 @@ def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmSta
                           and produce a 1D NumPy array, sized (iNumBatch,), whose i-th entry should be the result of evaluating
                           the objective function to x_batch[i,:]; it is expected that x_batch.shape[1] = .getNumDimensions().
     iNumIterations      : a positive integer representing the number iterations the algorithm is run.
-    pInside             : a Python lambda representing the function domain; it should take in one 2D NumPy array (x) and produce a
+    pInside             : a Python lambda representing the function domain; it should take in a 1D NumPy array (x) and produce a
                           Boolean (isInside); when called, it should return True if x is in the domain and False otherwise;
                           it is expected that x.shape[0] = .getNumDimensions().
     oParticleSwarmState : an instance of the Python ParticleSwarmState class; it will contain the results of applying the algorithm.
     fInertiaWeight      : a double that controls the speed of the particles; should be in (0,1).
     fCognitiveCoeff     : a double that controls how much a particle favors its own trajectory; usually in [1,3].
     fSocialCoeff        : a double that controls how much a particle favors the swarm's trajectories; usually in [1,3].
-    random01            : a DREAM.RandomGenerator instance that produces floats in [0,1]
+    random01            : (optional) a DREAM.RandomGenerator instance that produces floats in [0,1]
     '''
     def cpp_obj_fn(num_dim, num_batch, x_batch_ptr, fval_ptr, err_arr):
         err_arr[0] = 1
@@ -298,7 +301,8 @@ def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmSta
         aX = np.ctypeslib.as_array(x_ptr, (num_dim,))
         iResult = pInside(aX)
         if not isinstance(iResult, bool):
-            print("ERROR: incorrect output from the domain function given to ParticleSwarm(), should be a Boolean")
+            print("ERROR: incorrect output from the domain function given to ParticleSwarm(), should be a 'bool' but received '" +
+                  type(iResult).__name__ + "'")
             return False
         err_arr[0] = 0
         return iResult
