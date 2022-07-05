@@ -7,6 +7,7 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgCopyGrid.m
                                   tsgDeleteGridByName.m
                                   tsgDeleteGrid.m
+                                  tsgDifferentiate.m
                                   tsgEstimateAnisotropicCoefficients.m
                                   tsgEvaluateHierarchy.m
                                   tsgEvaluate.m
@@ -14,6 +15,7 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgGetHCoefficients.m
                                   tsgGetHSupport.m
                                   tsgGetInterpolationWeights.m
+                                  tsgGetDifferentiationWeights.m
                                   tsgGetNeededIndexes.m
                                   tsgGetNeededPoints.m
                                   tsgGetPointsIndexes.m

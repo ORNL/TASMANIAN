@@ -48,6 +48,8 @@ enum TypeCommand{
 
     command_getquadrature,
     command_getinterweights,
+    command_getdiffweights,
+
     command_getpoints,
     command_getneeded,
     command_getrefcoeff,
@@ -56,6 +58,7 @@ enum TypeCommand{
 
     command_evaluate,
     command_integrate,
+    command_differentiate,
 
     command_getanisocoeff,
     command_refine_surp,
@@ -154,8 +157,10 @@ protected:
     bool loadValues();
 
     bool getInterWeights();
+    bool getDiffWeights();
     bool getEvaluate();
     bool getIntegrate();
+    bool getDifferentiate();
     bool getAnisoCoeff();
 
     bool refineGrid();
@@ -181,7 +186,13 @@ protected:
     void writeMatrix(std::string const &filename, int rows, int cols, const double mat[]) const;
     void printMatrix(int rows, int cols, const double mat[], bool isComplex = false) const;
 
-private:
+    // Overloads.
+    template<typename T>
+    inline void writeMatrix(std::string const &filename, const Data2D<T> &mat) { writeMatrix(filename, mat.getNumStrips(), mat.getStride(), mat.data()); }
+    template<typename T>
+    inline void printMatrix(const Data2D<T> &mat, bool isComplex = false) { printMatrix(mat.getNumStrips(), mat.getStride(), mat.data(), isComplex); }
+
+  private:
     TasmanianSparseGrid grid;
     CustomTabulated ct;
 

@@ -451,6 +451,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << " -setconformal\t"     << "\t-sc"     << "\t\tset conformal domain transform\n";
         cout << " -getquadrature\t"    << "\t-gq"     << "\t\toutput quadrature weights and points\n";
         cout << " -getinterweights"    << "\t-gi"     << "\t\toutput the interpolation weights\n";
+        cout << " -getdiffweights"    << "\t-gd"     << "\t\toutput the differentiation weights\n";
         cout << " -getpoints\t"    << "\t-gp"     << "\t\toutput the points\n";
         cout << " -getneededpoints"    << "\t-gn"     << "\t\toutputs the points needing values to build an interpolant\n";
         cout << " -loadvalues\t"       << "\t-l"      << "\t\tload the values of the interpolated function\n";
@@ -459,6 +460,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << " -evalhierarchys"     << "\t-ehs"      << "\t\tevaluates the hierarchical basis (sparse output)\n";
         cout << " -gethsupport\t"       << "\t-ghsup"     << "\t\tget the hierarchical support\n";
         cout << " -integrate\t"    << "\t-i"      << "\t\toutput the integral\n";
+        cout << " -differentiate\t"    << "\t-d"      << "\t\tdifferentiates the interpolant\n";
         cout << " -getanisotropy\t"    << "\t-ga"     << "\t\testimates the anisotropic coefficients\n";
         cout << " -refineaniso\t"      << "\t-ra"     << "\t\trefines the grid\n";
         cout << " -refinesurp\t"       << "\t-rs"     << "\t\trefines the grid\n";
@@ -713,6 +715,17 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -print\t\t"    << "\tno\t"      << "\t<none>"       << "\t\tprint to standard output\n\n";
             cout << "Note: -outputfile or -print output the interpolation weight for each point in the xfile, see equation (1.2) in the manual\n";
             cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
+        }else if (com == command_getdiffweights){
+            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
+            cout << " -getdiffweights"  << "\t-gd"     << "\t\toutput the differentiation weights\n\n";
+            cout << "Accepted options:"  << endl;
+            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
+            cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
+            cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
+            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
+            cout << " -print\t\t"    << "\tno\t"      << "\t<none>"       << "\t\tprint to standard output\n\n";
+            cout << "Note: -outputfile or -print output the differentiation weight for each point in the xfile\n";
+            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
         }else if (com == command_getpoints){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -getpoints\t"      << "\t-gp"     << "\t\toutput the points\n\n";
@@ -792,6 +805,17 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
             cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
             cout << "Note: -outputfile or -print output the integral if the loaded function, see equation (1.3) in the manual\n";
+            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
+        }else if (com == command_differentiate){
+            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
+            cout << " -differentiate\t"       << "\t-d"      << "\t\tdifferentiates the interpolant\n\n";
+            cout << "Accepted options:"  << endl;
+            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
+            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
+            cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
+            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
+            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
+            cout << "Note: -outputfile or -print derivative (Jacobian matrix) of the interpolant at the points specified in the xfile\n";
             cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
         }else if (com == command_getanisocoeff){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";

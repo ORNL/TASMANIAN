@@ -997,6 +997,60 @@ tsgDeleteGrid(lGrid);
 
 disp(['Utility functions:        PASS']);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                     tsgDifferentiate()                           %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[lGrid, p] = tsgMakeGlobal('_tsgcoretests_diff', 2, 3, 'leja', 'iptotal', 3);
+num_p = length(p);
+f = @(x) [x(1), x(1)*x(2)*x(2), x(2)*x(2)];
+Df = @(x) [1, 0; x(2)*x(2), 2*x(1)*x(2); 0, 2*x(2)];
+vals = zeros(num_p, 3);
+for i=1:num_p
+    vals(i,:) = f(p(i,:));
+end
+tsgLoadValues(lGrid, vals);
+% Single point.
+p0 = 2 * rand(1, 2) - 1.0;
+tsgDf0 = tsgDifferentiate(lGrid, p0);
+if (norm(tsgDf0 - Df(p0)) > 1E-10)
+    error(['Mismatch in tsgDifferentiate: single point case']);
+end
+% Multiple points
+pk = 2 * rand(5, 2) - 1.0;
+tsgDfk =  tsgDifferentiate(lGrid, pk);
+for i=1:5
+    if (norm(tsgDfk{i} - Df(pk(i,:))) > 1E-10)
+        error(['Mismatch in tsgDifferentiate: multi point case']);
+    end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                     tsgGetDifferentiationWeights()               %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[lGrid, p] = tsgMakeGlobal('_tsgcoretests_diffw', 2, 3, 'leja', 'iptotal', 3);
+num_p = length(p);
+f = @(x) [x(1), x(1)*x(2)*x(2), x(2)*x(2)];
+Df = @(x) [1, 0; x(2)*x(2), 2*x(1)*x(2); 0, 2*x(2)];
+vals = zeros(num_p, 3);
+for i=1:num_p
+    vals(i,:) = f(p(i,:));
+end
+tsgLoadValues(lGrid, vals);
+% Single point.
+p0 = 2 * rand(1, 2) - 1.0;
+tsgW0 = tsgGetDifferentiationWeights(lGrid, p0);
+if (norm(vals' * tsgW0 - Df(p0)) > 1E-10)
+    error(['Mismatch in tsgGetDifferentiationWeights: single point case']);
+end
+% Multiple points
+pk = 2 * rand(5, 2) - 1.0;
+tsgWk =  tsgGetDifferentiationWeights(lGrid, pk);
+for i=1:5
+    if (norm(vals' * tsgWk{i} - Df(pk(i,:))) > 1E-10)
+        error(['Mismatch in tsgGetDifferentiationWeights: multi point case']);
+    end
+end
+disp(['Differentiation:          PASS']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp(['']);
