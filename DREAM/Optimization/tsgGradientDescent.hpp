@@ -88,7 +88,9 @@ class GradientDescentState {
     //! \brief The default constructor is NOT allowed.
     GradientDescentState() = delete;
     //! \brief Constructor for a gradient descent state with the initial candidate and stepsize.
-    GradientDescentState(const std::vector<double> &x0, const double lambda0);
+    GradientDescentState(const std::vector<double> &x0, const double lambda0) :
+      num_dimensions((int) x0.size()), adaptive_stepsize(lambda0), x(x0) {};
+
     //! \brief Copy constructor.
     GradientDescentState(const GradientDescentState &source) = default;
     //! \brief Move constructor.
@@ -96,6 +98,8 @@ class GradientDescentState {
 
     //! \brief Move assignment.
     GradientDescentState& operator=(GradientDescentState &&source) = default;
+    //! \brief Copy assignment.
+    GradientDescentState& operator=(GradientDescentState &source) = default;
 
     //! \brief Return the number of dimensions.
     inline int getNumDimensions() const {return num_dimensions;}

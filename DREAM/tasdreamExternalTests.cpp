@@ -573,21 +573,19 @@ void testDebug(){
             result += 5.0 * (x[2*i] * x[2*i] + x[2*i+1] * x[2*i+1]);
         return result;
     };
-    TasOptimization::GradientFunctionSingle g = [](const std::vector<double> &x)->std::vector<double> {
+    TasOptimization::GradientFunctionSingle g = [](const std::vector<double> &x, std::vector<double> &y)->void {
         std::vector<double> result(x.size());
         for (size_t i=0; i<x.size(); i++)
-            result[i] = 10.0 * x[i];
-        return result;
+            y[i] = 10.0 * x[i];
     };
-    TasOptimization::ProjectionFunctionSingle proj =  [](const std::vector<double> &x)->std::vector<double> {
+    TasOptimization::ProjectionFunctionSingle proj =  [](const std::vector<double> &x, std::vector<double> &y)->void {
         std::vector<double> result(x.size());
         for (size_t i=0; i<x.size(); i++)
-            result[i] = std::max(-3.0, std::min(3.0, x[i]));
-        return result;
+            y[i] = std::max(-3.0, std::min(3.0, x[i]));
     };
 
     std::vector<double> x = {1.0, 3.0};
-    auto gds = TasOptimization::GradientDescentState(x, 0.01);
+    auto gds = TasOptimization::GradientDescentState(x, 0.05);
 
     x = gds.getX();
     std::cout << "k = 0, x = ";
@@ -595,8 +593,8 @@ void testDebug(){
     std::cout << ", f(x) = " << f(x) << std::endl;
 
     TasOptimization::OptimizationStatus status;
-    for (int k=1; k<=2; k++) {
-        status = TasOptimization::GradientDescent(f, g, proj, 1.25, 1.25, 100, 1E-6, gds);
+    for (int k=1; k<=3; k++) {
+        status = TasOptimization::GradientDescent(f, g, proj, 1.25, 1.25, 20, 1E-6, gds);
         x = gds.getX();
         std::cout << "k = " << k << std::scientific << std::setprecision(3) << ",\tstepsize = " << gds.getAdaptiveStepsize() << ",\tx =";
         for (int i=0; i<2; i++) std::cout << " " << x[i];

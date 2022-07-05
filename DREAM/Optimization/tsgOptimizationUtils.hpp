@@ -123,19 +123,19 @@ inline ObjectiveFunction makeObjectiveFunction(const int num_dimensions, const O
  *
  * Accepts a single input \b x and returns the gradient at the point \b x.
  */
-using GradientFunctionSingle = std::function<std::vector<double>(const std::vector<double> &x_batch)>;
+using GradientFunctionSingle = GenericBatchedFunction;
 
 /*! \ingroup OptimizationUtil
  * \brief Generic non-batched projection function signature.
  *
  * Accepts a single input \b x and returns the projection of \b x onto a user-specified domain.
  */
-using ProjectionFunctionSingle = GradientFunctionSingle; // Same function prototype.
+using ProjectionFunctionSingle = GenericBatchedFunction;
 
 /*! \ingroup OptimizationUtil
  * \brief Generic identity projection function.
  */
-inline std::vector<double> identity(const std::vector<double> &x) {return x;};
+inline void identity(const std::vector<double> &x, std::vector<double> &y) {y=x;};
 
 /*! \ingroup OptimizationUtil
  * Computes the minimization stationarity residual for a point \b x evaluated from a gradient descent step at \b x0 with stepsize

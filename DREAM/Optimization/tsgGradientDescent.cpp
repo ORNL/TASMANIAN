@@ -38,9 +38,6 @@
 
 namespace TasOptimization {
 
-GradientDescentState::GradientDescentState(const std::vector<double> &x0, const double lambda0) :
-        num_dimensions((int) x0.size()), adaptive_stepsize(lambda0), x(x0) {};
-
 OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const GradientFunctionSingle &grad,
                                    const ProjectionFunctionSingle &proj, const double increase_coeff,
                                    const double decrease_coeff, const int num_iterations, const double tolerance,
@@ -52,20 +49,24 @@ OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const Gr
 
     int num_dimensions = state.num_dimensions;
     std::vector<double> &x = state.getXRef();
-    std::vector<double> x0(x), gx0(grad(x0)), gx(num_dimensions), xStep(num_dimensions);
-    double fx0(func(x0)), fxStep(0);
+    std::vector<double> x0(x), gx0(num_dimensions), gx(num_dimensions), z0(num_dimensions), xStep(num_dimensions);
+    double fx(func(x)), fx0, fxStep;
+    grad(x, gx);
 
     while(status.performed_iterations < num_iterations) {
+        // Iteration swaps must be performed first (instead of last) to avoid reverting x to x0 after work has been completed.
+        std::swap(x0, x);
+        std::swap(fx0, fx);
+        std::swap(gx0, gx);
         // Find the next stepsize/candidate point by making sure it satisfies the well-known descent inequality (see γ_u in the
         // reference paper associated with this function).
         double lhs = 0;
         double rhs = 0;
         do {
-            if (status.performed_iterations >= num_iterations)
-                break;
+            if (status.performed_iterations >= num_iterations) break;
             for (int j=0; j<num_dimensions; j++)
-                xStep[j] = x0[j] - gx0[j] * state.adaptive_stepsize;
-            xStep = proj(xStep);
+                z0[j] = x0[j] - gx0[j] * state.adaptive_stepsize;
+            proj(z0, xStep);
             fxStep = func(xStep);
             lhs += fxStep - fx0;
             for (int j=0; j<num_dimensions; j++) {
@@ -77,16 +78,12 @@ OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const Gr
             status.performed_iterations++;
         } while (lhs > rhs + TasGrid::Maths::num_tol);
         std::swap(xStep, x);
+        std::swap(fxStep, fx);
         state.adaptive_stepsize *= decrease_coeff; // offset the do-while loop.
         // Check for approximate stationarity.
-        gx = grad(x);
+        grad(x, gx);
         status.residual = compute_stationarity_residual(x, x0, gx, gx0, state.adaptive_stepsize);
-        if (status.residual <= tolerance)
-            break;
-        // Update the key iterates manually for the next loop.
-        std::swap(x0, x);
-        std::swap(fx0, fxStep);
-        std::swap(gx0, gx);
+        if (status.residual <= tolerance) break;
         // Optimistic stepsize update (see γ_d in the referenced paper above).
         state.adaptive_stepsize *= increase_coeff;
     }
@@ -106,21 +103,22 @@ OptimizationStatus GradientDescent(const GradientFunctionSingle &grad, const dou
     OptimizationStatus status;
     status.performed_iterations = 0;
     status.residual = std::numeric_limits<double>::max();
-    std::vector<double> x0(state), gx0(grad(x0)), gx(state.size());
+    std::vector<double> x0(state), gx0(state.size()), gx(state.size());
+    grad(state, gx);
+
     for (int i=0; i<num_iterations; i++) {
+        std::swap(state, x0);
+        std::swap(gx, gx0);
         for (size_t j=0; j<state.size(); j++)
             state[j] -= gx0[j] * stepsize;
         status.performed_iterations++;
-        gx = grad(state);
-        // Computes the stationarity residual as |grad(x)|.
+        grad(state, gx);
+        // Computes the stationarity residual as ||grad(x)||_2.
         status.residual = 0.0;
         for (size_t j=0; j<state.size(); j++)
             status.residual += gx[j] * gx[j];
         status.residual = std::sqrt(status.residual);
-        if (status.residual <= tolerance)
-            break;
-        std::swap(state, x0);
-        std::swap(gx, gx0);
+        if (status.residual <= tolerance) break;
     }
     return status;
 }
