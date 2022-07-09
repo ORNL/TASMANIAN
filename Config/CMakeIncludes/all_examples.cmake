@@ -8,6 +8,7 @@ add_executable(Tasmanian_example_sparse_grids SparseGrids/Examples/example_spars
                                               SparseGrids/Examples/example_sparse_grids_08.cpp
                                               SparseGrids/Examples/example_sparse_grids_09.cpp
                                               SparseGrids/Examples/example_sparse_grids_10.cpp
+                                              SparseGrids/Examples/example_sparse_grids_11.cpp
                                               SparseGrids/Examples/example_sparse_grids.cpp)
 
 set_target_properties(Tasmanian_example_sparse_grids PROPERTIES OUTPUT_NAME "example_sparse_grids")

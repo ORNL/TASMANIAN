@@ -38,6 +38,7 @@ add_executable(example_sparse_grids  example_sparse_grids_01.cpp
                                      example_sparse_grids_08.cpp
                                      example_sparse_grids_09.cpp
                                      example_sparse_grids_10.cpp
+                                     example_sparse_grids_11.cpp
                                      example_sparse_grids.cpp)
 
 add_executable(example_dream         example_dream_01.cpp

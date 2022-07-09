@@ -1,5 +1,3 @@
-#!@Tasmanian_string_python_hashbang@
-
 ##############################################################################################################################################################################
 # Copyright (c) 2017, Miroslav Stoyanov
 #
@@ -30,38 +28,60 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-# The sys.path.append() command is necessary only if Tasmanian is
-# not included in the system PYTHONPATH
-# If PYTHONPATH is set (e.g., source TasmanianENVsetup.sh) you can jump
-# straight to import Tasmanian
-import sys
-@Tasmanian_python_example_import@
+import numpy as np
+from random import uniform
 import Tasmanian
 
-import example_sparse_grids_01
-import example_sparse_grids_02
-import example_sparse_grids_03
-import example_sparse_grids_04
-import example_sparse_grids_05
-import example_sparse_grids_06
-import example_sparse_grids_07
-import example_sparse_grids_08
-import example_sparse_grids_09
-import example_sparse_grids_10
-import example_sparse_grids_11
+def example_11():
 
-if __name__ == "__main__":
-    example_sparse_grids_01.example_01()
-    example_sparse_grids_02.example_02()
-    example_sparse_grids_03.example_03()
-    example_sparse_grids_04.example_04()
-    if len(sys.argv) < 2:
-        # if running a long test
-        example_sparse_grids_05.example_05()
-        example_sparse_grids_06.example_06()
-        example_sparse_grids_07.example_07()
-        example_sparse_grids_08.example_08()
-        example_sparse_grids_09.example_09()
-        example_sparse_grids_10.example_10()
-        example_sparse_grids_11.example_11()
+    print("\n---------------------------------------------------------------------------------------------------\n")
+    print("Example 11: Using unstructured data\n")
+
+    iNumInputs = 2 # using two inputs for testing
+
+    # test the error on a uniform dense grid with 10K points
+    iTestGridSize = 100
+    dx = np.linspace(-1.0, 1.0, iTestGridSize) # sample on a uniform grid
+    aMeshX, aMeshY = np.meshgrid(dx, dx)
+    aTestPoints = np.column_stack([aMeshX.reshape((iTestGridSize**2, 1)),
+                                   aMeshY.reshape((iTestGridSize**2, 1))])
+
+    def get_error(grid, model, aTestPoints):
+        aGridResult = grid.evaluateBatch(aTestPoints)
+        aModelResult = np.empty((aTestPoints.shape[0], 1), np.float64)
+        for i in range(aTestPoints.shape[0]):
+            aModelResult[i,:] = model(aTestPoints[i,:])
+        return np.max(np.abs(aModelResult[:,0] - aGridResult[:,0]))
+
+    def model(aX):
+        return np.ones((1,)) * np.exp( - aX[0]**2 - aX[1]**2 )
+
+    grid = Tasmanian.makeGlobalGrid(iNumInputs, 1, 4, "level", "clenshaw-curtis")
+
+    # generate random data
+    iNumData = 2000
+    inputs = np.zeros((iNumData, iNumInputs))
+    outputs = np.zeros((iNumData, 1))
+
+    for i in range(iNumData):
+        inputs[i,0] = uniform(-1.0, 1.0)
+        inputs[i,1] = uniform(-1.0, 1.0)
+        outputs[i,:] = model(inputs[i,:])
+
+    if (not grid.isAccelerationAvailable("cpu-blas") and
+        not grid.isAccelerationAvailable("gpu-cuda") and
+        not grid.isAccelerationAvailable("gpu-magma")):
+        print("Skipping example 11, BLAS, CUDA, or MAGMA acceleration required.")
+        return
+
+    Tasmanian.loadUnstructuredDataL2(inputs, outputs, 1.E-4, grid)
+
+    print("Using construction from unstructured (random) data")
+    print("    approximatino error = {0:1.6E}".format(get_error(grid, model, aTestPoints)))
+    print("  note: compared to the C++ code, this example does not fix the random seed")
+    print("        the error will be slightly different every time you run the example")
     print("")
+
+
+if (__name__ == "__main__"):
+    example_11()
