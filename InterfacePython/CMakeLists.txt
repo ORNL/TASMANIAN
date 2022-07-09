@@ -90,7 +90,7 @@ set(Tasmanian_python_test_files TasmanianSG.py TasmanianAddons.py Tasmanian.py
                                 example_sparse_grids_01.py example_sparse_grids_02.py example_sparse_grids_03.py
                                 example_sparse_grids_04.py example_sparse_grids_05.py example_sparse_grids_06.py
                                 example_sparse_grids_07.py example_sparse_grids_08.py example_sparse_grids_09.py
-                                example_sparse_grids_10.py
+                                example_sparse_grids_10.py example_sparse_grids_11.py
                                 example_dream_01.py example_dream_02.py example_dream_03.py example_dream_04.py example_dream_05.py)
 
 foreach(Tasmanian_python_testing_file ${Tasmanian_python_test_files})

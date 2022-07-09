@@ -129,6 +129,7 @@ doxygen_add_docs(Tasmanian_doxygen
                  SparseGrids/Examples/example_sparse_grids_08.cpp
                  SparseGrids/Examples/example_sparse_grids_09.cpp
                  SparseGrids/Examples/example_sparse_grids_10.cpp
+                 SparseGrids/Examples/example_sparse_grids_11.cpp
                  DREAM/Examples/example_dream.cpp
                  DREAM/Examples/example_dream_01.cpp
                  DREAM/Examples/example_dream_02.cpp
