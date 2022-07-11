@@ -584,17 +584,17 @@ void testDebug(){
             y[i] = std::max(-3.0, std::min(3.0, x[i]));
     };
 
-    std::vector<double> x = {1.0, 3.0};
-    auto gds = TasOptimization::GradientDescentState(x, 0.05);
+    std::vector<double> x = {1.0, -20.0};
+    auto gds = TasOptimization::GradientDescentState(x, 0.001);
 
-    x = gds.getX();
+    x = gds;
     std::cout << "k = 0, x = ";
     for (int i=0; i<2; i++) std::cout << x[i] << " ";
     std::cout << ", f(x) = " << f(x) << std::endl;
 
     TasOptimization::OptimizationStatus status;
-    for (int k=1; k<=3; k++) {
-        status = TasOptimization::GradientDescent(f, g, proj, 1.25, 1.25, 20, 1E-6, gds);
+    for (int k=1; k<=6; k++) {
+        status = TasOptimization::GradientDescent(f, g, proj, 1.5, 1.25, 7, 1E-6, gds);
         x = gds.getX();
         std::cout << "k = " << k << std::scientific << std::setprecision(3) << ",\tstepsize = " << gds.getAdaptiveStepsize() << ",\tx =";
         for (int i=0; i<2; i++) std::cout << " " << x[i];

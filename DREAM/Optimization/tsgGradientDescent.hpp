@@ -87,9 +87,9 @@ class GradientDescentState {
   public:
     //! \brief The default constructor is NOT allowed.
     GradientDescentState() = delete;
-    //! \brief Constructor for a gradient descent state with the initial candidate and stepsize.
-    GradientDescentState(const std::vector<double> &x0, const double lambda0) :
-      num_dimensions((int) x0.size()), adaptive_stepsize(lambda0), x(x0) {};
+    //! \brief Constructor for a gradient descent state with the initial candidate \b x and stepsize \b lambda0.
+    GradientDescentState(const std::vector<double> &x0, const double initial_stepsize) :
+        adaptive_stepsize(initial_stepsize), x(x0) {};
 
     //! \brief Copy constructor.
     GradientDescentState(const GradientDescentState &source) = default;
@@ -101,29 +101,32 @@ class GradientDescentState {
     //! \brief Copy assignment.
     GradientDescentState& operator=(GradientDescentState &source) = default;
 
+    //! \brief Implicit conversion to the current candidate \b x by reference.
+    inline operator std::vector<double>&() {return x;};
+
     //! \brief Return the number of dimensions.
-    inline int getNumDimensions() const {return num_dimensions;}
+    inline size_t getNumDimensions() const {return x.size();}
     //! \brief Return the stepsize.
     inline double getAdaptiveStepsize() const {return adaptive_stepsize;}
     //! \brief Return the current candidate point.
-    inline void getX(double x_out[]) const {std::copy_n(x.begin(), num_dimensions, x_out);}
+    inline void getX(double x_out[]) const {std::copy_n(x.begin(), x.size(), x_out);}
     //! \brief Overload for when the output is a vector.
     inline std::vector<double> getX() const {return x;}
 
     //! \brief Set the stepsize.
-    inline void setStepsize(const double lambda0) {adaptive_stepsize = lambda0;}
+    inline void setStepsize(const double new_stepsize) {adaptive_stepsize = new_stepsize;}
     //! \brief Set the current candidate point.
-    inline void setX(const double x_new[]) {std::copy_n(x_new, num_dimensions, x.begin());}
+    inline void setX(const double x_new[]) {std::copy_n(x_new, x.size(), x.begin());}
     //! \brief Overload for when the input is a vector.
     inline void setX(const std::vector<double> &x_new) {
-        checkVarSize("GradientDescentState::setCandidate", "candidate point", x_new.size(), num_dimensions);
+        checkVarSize("GradientDescentState::setCandidate", "candidate point", x_new.size(), x.size());
         x = x_new;
     }
 
     /*! \brief Applies the adaptive PROXIMAL gradient descent algorithm to a gradient descent state.
      * \ingroup OptimizationAlgorithm Adaptive Proximal Gradient Descent Algorithm
      *
-     * Runs \b num_iterations of the adaptive gradient descent algorithm to a gradient descent \b state to minimize the function
+     * Runs at most \b max_iterations of the adaptive gradient descent algorithm to a gradient descent \b state to minimize the function
      * \b f over the domain implied by a given projection function. This method is guaranteed to converge to a stationary point
      * if the gradient of \b f is Lipschitz continuous on its domain. Requires two line search coefficients. Outputs a
      * TasmanianOptimization::OptimizationStatus structure that contains information about the last iterate.
@@ -133,21 +136,21 @@ class GradientDescentState {
      * \param proj Projection function that orthogonally projects points into the domain of the objective function
      * \param increase_coeff Controls how quickly the stepsize is increased; should be greater than 1
      * \param decrease_coeff Controls how quickly the stepsize is decreased; should be greater than 1
-     * \param num_iterations Number of iterations to perform
+     * \param max_iterations Maximum number of iterations to perform
      * \param tolerance Stationarity tolerance; the algorithm terminates early if the stationarity residual computed by
      *        TasmanianOptimization::compute_stationarity_residual() is less than or equal to \b tolerance
      * \param state Holds the state of the gradient descent algorithm; see TasOptimization::GradientDescentState
      */
     friend OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g,
                                               const ProjectionFunctionSingle &proj, const double increase_coeff,
-                                              const double decrease_coeff, const int num_iterations, const double tolerance,
+                                              const double decrease_coeff, const int max_iterations, const double tolerance,
                                               GradientDescentState &state);
 
     /*! \brief Applies the adaptive NON-PROXIMAL gradient descent algorithm to a gradient descent state (does not require a
      *         projection function as input).
      * \ingroup OptimizationAlgorithm Adaptive Non-Proximal Gradient Descent Algorithm
      *
-     * Runs \b num_iterations of the adaptive gradient descent algorithm to a gradient descent \b state to minimize the function
+     * Runs at most \b max_iterations of the adaptive gradient descent algorithm to a gradient descent \b state to minimize the function
      * \b f over an unconstrained domain.  This method is guaranteed to converge to a stationary point if the gradient of \b f is
      * Lipschitz continuous everywhere. Requires two line search coefficients. Outputs a TasmanianOptimization::OptimizationStatus
      * structure that contains information about the last iterate.
@@ -156,23 +159,16 @@ class GradientDescentState {
      * \param g Gradient of the objective function
      * \param increase_coeff Controls how quickly the stepsize is increased; should be greater than 1
      * \param decrease_coeff Controls how quickly the stepsize is decreased; should be greater than 1
-     * \param num_iterations Number of iterations to perform
+     * \param max_iterations Maximum number of iterations to perform
      * \param tolerance Stationarity tolerance; the algorithm terminates early if the stationarity residual computed by
      *        TasmanianOptimization::compute_stationarity_residual() is less than or equal to \b tolerance
      * \param state Holds the state of the gradient descent algorithm, see TasOptimization::GradientDescentState
      */
     friend OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g,
-                                              const double increase_coeff, const double decrease_coeff, const int num_iterations,
+                                              const double increase_coeff, const double decrease_coeff, const int max_iterations,
                                               const double tolerance, GradientDescentState &state);
 
-  protected:
-    #ifndef __TASMANIAN_DOXYGEN_SKIP_INTERNAL
-    //! \brief Returns a reference to the current point.
-    inline std::vector<double> &getXRef() {return x;}
-    #endif
-
   private:
-    int num_dimensions;
     double adaptive_stepsize;
     std::vector<double> x;
 };
@@ -180,27 +176,27 @@ class GradientDescentState {
 /*! \brief Applies the constant-stepsize gradient descent algorithm for functions with unbounded domains.
  * \ingroup OptimizationAlgorithm Constant Stepsize Non-Proximal Gradient Descent Algorithm
  *
- * Runs \b num_iterations of the constant stepsize gradient descent algorithm to a gradient descent \b state to minimize a function
- * with gradient \b g over an unconstrained domain. Outputs a TasmanianOptimization::OptimizationStatus structure that contains
+ * Runs at most \b max_iterations of the constant stepsize gradient descent algorithm to a gradient descent \b state to minimize a
+ * function with gradient \b g over an unconstrained domain. Outputs a TasmanianOptimization::OptimizationStatus structure that contains
  * information about the last iterate.
  *
  * \param g Gradient of the objective function
  * \param x Initial point to start the algorithm; the final point of the algorithm will also be written here.
  * \param stepsize Stepsize of the algorithm.
- * \param num_iterations Number of iterations to perform
+ * \param max_iterations Maximum number of iterations to perform
  * \param tolerance Stationarity tolerance; the algorithm terminates early if the stationarity residual computed by
  *        TasmanianOptimization::compute_stationarity_residual() is less than or equal to \b tolerance
  */
-OptimizationStatus GradientDescent(const GradientFunctionSingle &grad, const double stepsize, const int num_iterations,
+OptimizationStatus GradientDescent(const GradientFunctionSingle &grad, const double stepsize, const int max_iterations,
                                    const double tolerance, std::vector<double> &state);
 
 // Forward declarations.
 OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g,
                                    const ProjectionFunctionSingle &proj, const double increase_coeff,
-                                   const double decrease_coeff, const int num_iterations, const double tolerance,
+                                   const double decrease_coeff, const int max_iterations, const double tolerance,
                                    GradientDescentState &state);
 OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const double increase_coeff,
-                                   const double decrease_coeff, const int num_iterations, const double tolerance,
+                                   const double decrease_coeff, const int max_iterations, const double tolerance,
                                    GradientDescentState &state);
 
 }

@@ -82,7 +82,6 @@ inline void checkVarSize(const std::string method_name, const std::string var_na
 }
 
 // Functions used in optimization.
-using GenericBatchedFunction = std::function<void(const std::vector<double> &x_batch, std::vector<double> &y_batch)>;
 
 /*! \ingroup OptimizationUtil
  * \brief Generic non-batched objective function signature.
@@ -98,7 +97,7 @@ using ObjectiveFunctionSingle = std::function<double(const std::vector<double> &
  * Accepts multiple points \b x_batch and writes their corresponding values into
  * \b fval_batch. It is expected that the size of \b x_batch is a multiple of the size of the output.
  */
-using ObjectiveFunction = GenericBatchedFunction;
+using ObjectiveFunction = std::function<void(const std::vector<double> &x_batch, std::vector<double> &fval_batch)>;
 
 /*! \ingroup OptimizationUtil
  * \brief Creates a TasOptimization::ObjectiveFunction object from a TasOptimization::ObjectiveFunctionSingle object.
@@ -121,16 +120,16 @@ inline ObjectiveFunction makeObjectiveFunction(const int num_dimensions, const O
 /*! \ingroup OptimizationUtil
  * \brief Generic non-batched gradient function signature.
  *
- * Accepts a single input \b x and returns the gradient at the point \b x.
+ * Accepts a single input \b x_single and returns the gradient \b grad of \b x_single.
  */
-using GradientFunctionSingle = GenericBatchedFunction;
+using GradientFunctionSingle = std::function<void(const std::vector<double> &x_single, std::vector<double> &grad)>;
 
 /*! \ingroup OptimizationUtil
  * \brief Generic non-batched projection function signature.
  *
- * Accepts a single input \b x and returns the projection of \b x onto a user-specified domain.
+ * Accepts a single input \b x_single and returns the projection \b proj of \b x_single onto a user-specified domain.
  */
-using ProjectionFunctionSingle = GenericBatchedFunction;
+using ProjectionFunctionSingle = std::function<void(const std::vector<double> &x_single, std::vector<double> &proj)>;
 
 /*! \ingroup OptimizationUtil
  * \brief Generic identity projection function.
@@ -142,10 +141,11 @@ inline void identity(const std::vector<double> &x, std::vector<double> &y) {y=x;
  * \b lambda. More specifically, this residual is an upper bound for the quantity:
  *
  * \f[
- * -\inf_{\|d\| = 1}f'(x;d)\text{ where }f'(x;d)=\lim_{t\downarrow0}\frac{f(x+td)-f(x)}{t}.
+ * -\inf_{\|d\| = 1, d\in T_C(x)}f'(x;d)\text{ where }f'(x;d)=\lim_{t\downarrow0}\frac{f(x+td)-f(x)}{t},
  * \f] 
  *
- * Here, the gradient of x (resp. x0) is g_at_x (resp. g_at_x0).
+ * the set \f$C\f$ is the domain of \f$f\f$, and \f$T_C(x)\f$ is the tangent cone of \f$C\f$ at \f$x\f$. Here, the gradient of x
+ * (resp. x0) is gx (resp. gx0).
  */
 inline double compute_stationarity_residual(const std::vector<double> &x, const std::vector<double> &x0, const std::vector<double> &gx,
                                             const std::vector<double> &gx0, const double lambda) {
