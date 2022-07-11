@@ -36,6 +36,7 @@
 
 #include "tsgOptimizationUtils.hpp"
 #include "tsgParticleSwarm.hpp"
+#include "tsgGradientDescent.hpp"
 
 /*!
  * \internal

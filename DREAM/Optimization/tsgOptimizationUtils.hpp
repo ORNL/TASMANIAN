@@ -60,6 +60,16 @@ namespace TasOptimization {
 /*! \internal
  * \ingroup OptimizationUtil
  *
+ * Stores information about the run of an optimization algorithm. The \b residual field is algorithm dependent.
+ */
+struct OptimizationStatus {
+    int performed_iterations;
+    double residual;
+};
+
+/*! \internal
+ * \ingroup OptimizationUtil
+ *
  * Checks if a variable size \b var_name associated with \b var_name inside \b method_name matches an expected size \b exp_size.
  * If it does not match, a runtime error is thrown.
  * \endinternal
@@ -70,6 +80,8 @@ inline void checkVarSize(const std::string method_name, const std::string var_na
                                  "() is not equal to its expected value of (" + std::to_string(exp_size) + ")");
     }
 }
+
+// Functions used in optimization.
 
 /*! \ingroup OptimizationUtil
  * \brief Generic non-batched objective function signature.
@@ -103,6 +115,46 @@ inline ObjectiveFunction makeObjectiveFunction(const int num_dimensions, const O
             fval_values[i] = f_single(x);
         }
     };
+}
+
+/*! \ingroup OptimizationUtil
+ * \brief Generic non-batched gradient function signature.
+ *
+ * Accepts a single input \b x_single and returns the gradient \b grad of \b x_single.
+ */
+using GradientFunctionSingle = std::function<void(const std::vector<double> &x_single, std::vector<double> &grad)>;
+
+/*! \ingroup OptimizationUtil
+ * \brief Generic non-batched projection function signature.
+ *
+ * Accepts a single input \b x_single and returns the projection \b proj of \b x_single onto a user-specified domain.
+ */
+using ProjectionFunctionSingle = std::function<void(const std::vector<double> &x_single, std::vector<double> &proj)>;
+
+/*! \ingroup OptimizationUtil
+ * \brief Generic identity projection function.
+ */
+inline void identity(const std::vector<double> &x, std::vector<double> &y) {y=x;};
+
+/*! \ingroup OptimizationUtil
+ * Computes the minimization stationarity residual for a point \b x evaluated from a gradient descent step at \b x0 with stepsize
+ * \b lambda. More specifically, this residual is an upper bound for the quantity:
+ *
+ * \f[
+ * -\inf_{\|d\| = 1, d\in T_C(x)}f'(x;d)\text{ where }f'(x;d)=\lim_{t\downarrow0}\frac{f(x+td)-f(x)}{t},
+ * \f]
+ *
+ * the set \f$C\f$ is the domain of \f$f\f$, and \f$T_C(x)\f$ is the tangent cone of \f$C\f$ at \f$x\f$. Here, the gradient of x
+ * (resp. x0) is gx (resp. gx0).
+ */
+inline double compute_stationarity_residual(const std::vector<double> &x, const std::vector<double> &x0, const std::vector<double> &gx,
+                                            const std::vector<double> &gx0, const double lambda) {
+    double residual = 0.0;
+    for (size_t i=0; i<x.size(); i++) {
+        double subdiff = (x0[i] - x[i]) / lambda + gx[i] - gx0[i];
+        residual += subdiff * subdiff;
+    }
+    return std::sqrt(residual);
 }
 
 } // End namespace
