@@ -95,7 +95,7 @@ using ObjectiveFunctionSingle = std::function<double(const std::vector<double> &
  *
  * Batched version of TasOptimization::ObjectiveFunctionSingle.
  * Accepts multiple points \b x_batch and writes their corresponding values into
- * \b fval_batch. It is expected that the size of \b x_batch is a multiple of the size of the output.
+ * \b fval_batch. It is expected that the size of \b x_batch is a multiple of the size of \b fval_batch.
  */
 using ObjectiveFunction = std::function<void(const std::vector<double> &x_batch, std::vector<double> &fval_batch)>;
 
@@ -142,7 +142,7 @@ inline void identity(const std::vector<double> &x, std::vector<double> &y) {y=x;
  *
  * \f[
  * -\inf_{\|d\| = 1, d\in T_C(x)}f'(x;d)\text{ where }f'(x;d)=\lim_{t\downarrow0}\frac{f(x+td)-f(x)}{t},
- * \f] 
+ * \f]
  *
  * the set \f$C\f$ is the domain of \f$f\f$, and \f$T_C(x)\f$ is the tangent cone of \f$C\f$ at \f$x\f$. Here, the gradient of x
  * (resp. x0) is gx (resp. gx0).
