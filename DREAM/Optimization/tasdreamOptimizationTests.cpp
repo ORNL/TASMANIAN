@@ -237,16 +237,16 @@ bool testGradientDescent(bool verbose) {
     // Constant stepsize gradient descent.
     std::vector<double> x0(num_dimensions, 0);
     GradientDescentState state(x0, 0);
-    GradientDescent(grad, 1/L, 300, 1E-6, state);
+    GradientDescent(grad, 1.0/L, 300, 1E-6, state);
     std::vector<double> x_gd = state.getX();
     for (int i=0; i<num_dimensions; i++) pass = pass and (std::abs(x_gd[i] - x_optimal[i]) <= 1E-6);
     state.setX(x0);
-    for (int t=0; t<300; t++) GradientDescent(grad, 1/L, 1, 1E-6, state);
+    for (int t=0; t<300; t++) GradientDescent(grad, 1.0/L, 1, 1E-6, state);
     x_gd = state.getX();
     for (int i=0; i<num_dimensions; i++) pass = pass and (std::abs(x_gd[i] - x_optimal[i]) <= 1E-6);
 
     // Variable stepsize gradient descent.
-    state.setAdaptiveStepsize(10/L);
+    state.setAdaptiveStepsize(10.0/L);
     state.setX(x0);
     GradientDescent(func, grad, 1.5, 1.25, 300, 1E-6, state);
     x_gd = state.getX();
@@ -261,7 +261,7 @@ bool testGradientDescent(bool verbose) {
         for (size_t i=0; i<proj.size(); i++) proj[i] = std::min(std::max(x[i], -0.5), 0.5);
     };
     for (int i=0; i<(num_dimensions-1)/2; i++) x_optimal[i] = 0.5 - 0.1 * i;
-    state.setAdaptiveStepsize(10/L);
+    state.setAdaptiveStepsize(10.0/L);
     state.setX(x0);
     GradientDescent(func, grad, proj, 1.5, 1.25, 300, 1E-6, state);
     x_gd = state.getX();
