@@ -62,7 +62,9 @@ OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const Gr
         // reference paper associated with this function).
         double lhs(0), rhs(0);
         do {
-            if (status.performed_iterations >= max_iterations) break;
+            if (status.performed_iterations >= max_iterations) return status;
+            lhs = 0;
+            rhs = 0;
             for (size_t j=0; j<num_dimensions; j++)
                 z0[j] = x0[j] - gx0[j] * state.adaptive_stepsize;
             proj(z0, xStep);
@@ -99,17 +101,15 @@ OptimizationStatus GradientDescent(const GradientFunctionSingle &grad, const dou
     OptimizationStatus status{0, tolerance + 1.0}; // {performed_iterations, residual}
     size_t num_dimensions = state.getNumDimensions();
     std::vector<double> &x = state;
-    std::vector<double> x0(x), gx0(num_dimensions), gx(num_dimensions);
-    grad(state, gx);
+    std::vector<double> gx(num_dimensions);
+    grad(x, gx);
 
     while (status.residual > tolerance and status.performed_iterations < max_iterations) {
-        std::swap(x, x0);
-        std::swap(gx, gx0);
         for (size_t j=0; j<num_dimensions; j++)
-            x[j] -= gx0[j] * stepsize;
+            x[j] -= gx[j] * stepsize;
         status.performed_iterations++;
         // Compute residual := ||grad(x)||_2.
-        grad(state, gx);
+        grad(x, gx);
         status.residual = 0.0;
         for (size_t j=0; j<num_dimensions; j++)
             status.residual += gx[j] * gx[j];
