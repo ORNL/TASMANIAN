@@ -30,4 +30,4 @@
 # FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 
 from TasmanianParticleSwarm import ParticleSwarmState, ParticleSwarm
-from TasmanianGradientDescent import GradientDescentState, GradientDescent
+from TasmanianGradientDescent import GradientDescentState, AdaptiveProjectedGradientDescent, AdaptiveGradientDescent, GradientDescent

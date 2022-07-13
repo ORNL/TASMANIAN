@@ -41,17 +41,17 @@
 
 // C Function Pointer Aliases
 using tsg_dream_random         = double (*)();
-using tsg_optim_dom_fn         = int    (*)(const int, const double[], const int[]);
-using tsg_optim_obj_fn         = void   (*)(const int, const int, const double[], double[], const int[]);
-using tsg_optim_obj_fn_single  = double (*)(const int, const double[], const int[]);
-using tsg_optim_grad_fn_single = void   (*)(const int, const double[], double[], const int[]);
-using tsg_optim_proj_fn_single = void   (*)(const int, const double[], double[], const int[]);
+using tsg_optim_dom_fn         = int    (*)(const int, const double[], int[]);
+using tsg_optim_obj_fn         = void   (*)(const int, const int, const double[], double[], int[]);
+using tsg_optim_obj_fn_single  = double (*)(const int, const double[], int[]);
+using tsg_optim_grad_fn_single = void   (*)(const int, const double[], double[], int[]);
+using tsg_optim_proj_fn_single = void   (*)(const int, const double[], double[], int[]);
 
 namespace TasOptimization{
 
 // Helper methods to generate some C++ functions from C functions.
 ObjectiveFunctionSingle convert_C_obj_fn_single(tsg_optim_obj_fn_single func_ptr, std::string err_msg) {
-    return [&](const std::vector<double> &x_single)->double {
+    return [=](const std::vector<double> &x_single)->double {
         int err_code = 0;
         int num_dims = x_single.size();
         double result = (*func_ptr)(num_dims, x_single.data(), &err_code);
@@ -60,7 +60,7 @@ ObjectiveFunctionSingle convert_C_obj_fn_single(tsg_optim_obj_fn_single func_ptr
     };
 }
 GradientFunctionSingle convert_C_grad_fn_single(tsg_optim_grad_fn_single grad_ptr, std::string err_msg) {
-    return [&](const std::vector<double> &x_single, std::vector<double> &grad)->void {
+    return [=](const std::vector<double> &x_single, std::vector<double> &grad)->void {
         int err_code = 0;
         int num_dims = x_single.size();
         (*grad_ptr)(num_dims, x_single.data(), grad.data(), &err_code);
@@ -68,7 +68,7 @@ GradientFunctionSingle convert_C_grad_fn_single(tsg_optim_grad_fn_single grad_pt
     };
 }
 ProjectionFunctionSingle convert_C_proj_fn_single(tsg_optim_proj_fn_single proj_ptr, std::string err_msg) {
-    return [&](const std::vector<double> &x_single, std::vector<double> &proj)->void {
+    return [=](const std::vector<double> &x_single, std::vector<double> &proj)->void {
         int err_code = 0;
         int num_dims = x_single.size();
         (*proj_ptr)(num_dims, x_single.data(), proj.data(), &err_code);
@@ -173,14 +173,14 @@ extern "C" {
                 return [&]()->double{ return random_callback(); };
             }
         }();
-        auto f_cpp = [&](const std::vector<double> &x_batch, std::vector<double> &fval_batch)->void {
+        auto f_cpp = [=](const std::vector<double> &x_batch, std::vector<double> &fval_batch)->void {
             int err_code = 0;
             int num_batch = fval_batch.size();
             int num_dims = x_batch.size() / num_batch;
             (*f_ptr)(num_dims, num_batch, x_batch.data(), fval_batch.data(), &err_code);
             if (err_code != 0) throw std::runtime_error("The Python objective function callback returned an error in tsgParticleSwarm()");
         };
-        auto inside_cpp = [&](const std::vector<double> &x)->bool {
+        auto inside_cpp = [=](const std::vector<double> &x)->bool {
             int err_code = 0;
             int num_dims = x.size();
             bool inside = (*inside_ptr)(num_dims, x.data(), &err_code);

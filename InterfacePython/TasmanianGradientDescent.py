@@ -45,11 +45,13 @@ type_optim_proj_fn_single = CFUNCTYPE(None, c_int, POINTER(c_double), POINTER(c_
 class optimization_status(Structure):
     pass
 optimization_status._fields_ = [("performed_iterations", c_int), ("residual", c_double)]
+def clean_status(input_status):
+    return dict((field, getattr(input_status, field)) for field, _ in input_status._fields_)
 
 pLibDTSG = cdll.LoadLibrary(__path_libdream__)
 
 pLibDTSG.tsgGradientDescentState_Construct.restype = c_void_p
-pLibDTSG.tsgGradientDescentState_Construct.argtypes = [POINTER(c_double), c_double]
+pLibDTSG.tsgGradientDescentState_Construct.argtypes = [c_int, POINTER(c_double), c_double]
 
 pLibDTSG.tsgGradientDescentState_Destruct.argtypes = [c_void_p]
 
@@ -80,7 +82,9 @@ class GradientDescentState:
         fInitialStepsize : initial adaptive stepsize.
         '''
         self.TasmanianGradientDescentState = True
-        self.pStatePntr = c_void_p(pLibDTSG.tsgGradientDescentState_Construct(as_ctypes(aX0), fInitialStepsize))
+        if (len(aX0.shape) != 1):
+            raise InputError("aX0", "aX0 should be one-dimensional")
+        self.pStatePntr = c_void_p(pLibDTSG.tsgGradientDescentState_Construct(aX0.shape[0], as_ctypes(aX0), fInitialStepsize))
 
     def __del__(self):
         '''
@@ -116,13 +120,15 @@ class GradientDescentState:
         aXNew : a one-dimensional NumPy array representing the new candidate point.
         '''
         iNumDims = self.getNumDimensions()
+        if (len(aXNew.shape) != 1):
+            raise InputError("aXNew", "aXNew should be one-dimensional")
         if (aXNew.shape[0] != iNumDims):
             raise InputError("aXNew", "aXNew.shape[0] should match the number of dimensions")
         pLibDTSG.tsgGradientDescentState_SetX(self.pStatePntr, as_ctypes(aXNew))
 
 # Helper methods for converting Python lambdas to C lambdas.
 def convert_py_obj_fn_single(pObjectiveFunction, sCallerName):
-    def cpp_obj_fn(fval, num_dim, x_single_ptr, err_arr):
+    def cpp_obj_fn(num_dim, x_single_ptr, err_arr):
         err_arr[0] = 1
         aX = np.ctypeslib.as_array(x_single_ptr, (num_dim, ))
         aResult = pObjectiveFunction(aX)
@@ -137,13 +143,13 @@ def convert_py_obj_fn_single(pObjectiveFunction, sCallerName):
 def convert_py_grad_fn_single(pGradientFunction, sCallerName):
     def cpp_grad_fn(num_dim, x_single_ptr, grad_ptr, err_arr):
         err_arr[0] = 1
-        aX = np.ctypeslib.as_array(x_single_ptr, (num_dim, ))
-        aResult = pGradientFunction(aX, aResult)
+        aX = np.ctypeslib.as_array(x_single_ptr, (num_dim,))
+        aResult = pGradientFunction(aX)
         if aResult.shape != (num_dim, ):
             print("ERROR: incorrect output from the gradient function given to " + sCallerName +
                   "(), should be a NumPy array with shape (iNumDims,)")
             return
-        aGrad =  np.ctypeslib.as_array(grad_ptr, (num_dim,))
+        aGrad = np.ctypeslib.as_array(grad_ptr, (num_dim,))
         aGrad[0:num_dim] = aResult[0:num_dim]
         err_arr[0] = 0
     return cpp_grad_fn
@@ -152,7 +158,7 @@ def convert_py_proj_fn_single(pProjectionFunction, sCallerName):
     def cpp_proj_fn(num_dim, x_single_ptr, proj_ptr, err_arr):
         err_arr[0] = 1
         aX = np.ctypeslib.as_array(x_single_ptr, (num_dim, ))
-        aResult = pProjectionFunction(aX, aResult)
+        aResult = pProjectionFunction(aX)
         if aResult.shape != (num_dim, ):
             print("ERROR: incorrect output from the projection function given to " + sCallerName +
                   "(), should be a NumPy array with shape (iNumDims,)")
@@ -163,8 +169,8 @@ def convert_py_proj_fn_single(pProjectionFunction, sCallerName):
     return cpp_proj_fn
 
 # Main algorithms.
-def GradientDescent(pObjectiveFunction, pGradientFunction, pProjectionFunction, fIncreaseCoeff, fDecreaseCoeff, iMaxIterations,
-                    fTolerance, oGradientDescentState):
+def AdaptiveProjectedGradientDescent(pObjectiveFunction, pGradientFunction, pProjectionFunction, fIncreaseCoeff, fDecreaseCoeff,
+                                     iMaxIterations, fTolerance, oGradientDescentState):
     '''
     Wrapper around TasOptimization::GradientDescent().
 
@@ -199,9 +205,10 @@ def GradientDescent(pObjectiveFunction, pGradientFunction, pProjectionFunction, 
                                                     c_int(iMaxIterations), c_double(fTolerance), oGradientDescentState.pStatePntr, pErrorCode)
     if pErrorCode[0] != 0:
         raise InputError("GradientDescent", "An error occurred during the call to Tasmanian.")
-    return oStatus
+    return clean_status(oStatus)
 
-def GradientDescent(pObjectiveFunction, pGradientFunction, fIncreaseCoeff, fDecreaseCoeff, iMaxIterations, fTolerance, oGradientDescentState):
+def AdaptiveGradientDescent(pObjectiveFunction, pGradientFunction, fIncreaseCoeff, fDecreaseCoeff, iMaxIterations, fTolerance,
+                            oGradientDescentState):
     '''
     Wrapper around TasOptimization::GradientDescent().
 
@@ -232,7 +239,7 @@ def GradientDescent(pObjectiveFunction, pGradientFunction, fIncreaseCoeff, fDecr
                                                 c_double(fTolerance), oGradientDescentState.pStatePntr, pErrorCode)
     if pErrorCode[0] != 0:
         raise InputError("GradientDescent", "An error occurred during the call to Tasmanian.")
-    return oStatus
+    return clean_status(oStatus)
 
 def GradientDescent(pGradientFunction, fStepsize, iMaxIterations, fTolerance, oGradientDescentState):
     '''
@@ -259,5 +266,5 @@ def GradientDescent(pGradientFunction, fStepsize, iMaxIterations, fTolerance, oG
                                                 c_double(fTolerance), oGradientDescentState.pStatePntr, pErrorCode)
     if pErrorCode[0] != 0:
         raise InputError("GradientDescent", "An error occurred during the call to Tasmanian.")
-    return oStatus
+    return clean_status(oStatus)
 
