@@ -216,9 +216,9 @@ extern "C" {
 
     // Adaptive Stepsize Projected Gradient Descent Algorithm.
     OptimizationStatus tsgGradientDescent_AdaptProj(const tsg_optim_obj_fn_single func_ptr, const tsg_optim_grad_fn_single grad_ptr,
-                                                         const tsg_optim_proj_fn_single proj_ptr, const double increase_coeff,
-                                                         const double decrease_coeff, const int max_iterations, const double tolerance,
-                                                         void* state, int* err) {
+                                                    const tsg_optim_proj_fn_single proj_ptr, const double increase_coeff,
+                                                    const double decrease_coeff, const int max_iterations, const double tolerance,
+                                                    void* state, int* err) {
 
         *err = 1;
         // Convert C functions to safe C++ functions.
