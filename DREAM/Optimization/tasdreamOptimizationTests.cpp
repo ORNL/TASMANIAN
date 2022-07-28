@@ -182,17 +182,118 @@ bool testParticleSwarm(bool verbose) {
     return pass;
 }
 
+// Unit tests for TasOptimization::GradientDescentState.
+bool testGradientDescentState(bool verbose) {
+    bool pass = true;
+
+    // Check contructor.
+    size_t num_dimensions = 5;
+    std::vector<double> dummy_x(num_dimensions, 1);
+    GradientDescentState state = GradientDescentState(dummy_x, 0.1);
+    pass = pass and (num_dimensions == state.getNumDimensions());
+    pass = pass and (state.getAdaptiveStepsize() == 0.1);
+    pass = pass and (state.getX().size() == num_dimensions);
+
+    // Check getters and coverters.
+    std::vector<double> compare_x = state.getX();
+    for (size_t i=0; i<compare_x.size(); i++) pass = pass and (compare_x[i] == dummy_x[i]);
+    std::fill(compare_x.begin(), compare_x.end(), 0);
+    state.getX(compare_x.data());
+    for (size_t i=0; i<compare_x.size(); i++) pass = pass and (compare_x[i] == dummy_x[i]);
+    std::fill(compare_x.begin(), compare_x.end(), 0);
+    compare_x = state;
+    for (size_t i=0; i<compare_x.size(); i++) pass = pass and (compare_x[i] == dummy_x[i]);
+
+    // Check setters.
+    std::vector<double> new_x(num_dimensions, 2);
+    state.setX(new_x);
+    compare_x = state;
+    for (size_t i=0; i<compare_x.size(); i++) pass = pass and (new_x[i] == compare_x[i]);
+    std::fill(compare_x.begin(), compare_x.end(), 0);
+    state.setX(new_x.data());
+    compare_x = state;
+    for (size_t i=0; i<compare_x.size(); i++) pass = pass and (new_x[i] == compare_x[i]);
+    std::fill(compare_x.begin(), compare_x.end(), 0);
+    state.setAdaptiveStepsize(0.2);
+    pass = pass and (state.getAdaptiveStepsize() == 0.2);
+
+    // Reporting.
+    if (not pass or verbose) reportPassFail(pass, "Gradient Descent", "State Unit Tests");
+    return pass;
+}
+
+// Unit tests for TasOptimization::GradientDescent on a difficult convex problem.
+bool testGradientDescent(bool verbose) {
+    bool pass = true;
+
+    // Nesterov's "worst function in the world".
+    ObjectiveFunctionSingle func;
+    GradientFunctionSingle grad;
+    double L = 10;
+    int num_dimensions = 11;
+    std::vector<double> x_optimal(num_dimensions);
+    makeNesterovTestFunction(L, (num_dimensions-1)/2, func, grad, x_optimal);
+
+    // Constant stepsize gradient descent.
+    std::vector<double> x0(num_dimensions, 0);
+    GradientDescentState state(x0, 0);
+    GradientDescent(grad, 1.0/L, 300, 1E-6, state);
+    std::vector<double> x_gd = state.getX();
+    for (int i=0; i<num_dimensions; i++) pass = pass and (std::abs(x_gd[i] - x_optimal[i]) <= 1E-6);
+    state.setX(x0);
+    for (int t=0; t<300; t++) GradientDescent(grad, 1.0/L, 1, 1E-6, state);
+    x_gd = state.getX();
+    for (int i=0; i<num_dimensions; i++) pass = pass and (std::abs(x_gd[i] - x_optimal[i]) <= 1E-6);
+
+    // Variable stepsize gradient descent.
+    state.setAdaptiveStepsize(10.0/L);
+    state.setX(x0);
+    GradientDescent(func, grad, 1.5, 1.25, 300, 1E-6, state);
+    x_gd = state.getX();
+    for (int i=0; i<num_dimensions; i++) pass = pass and (std::abs(x_gd[i] - x_optimal[i]) <= 1E-6);
+    state.setX(x0);
+    for (int t=0; t<300; t++) GradientDescent(func, grad, 1.5, 1.25, 1, 1E-6, state);
+    x_gd = state.getX();
+    for (int i=0; i<num_dimensions; i++) pass = pass and (std::abs(x_gd[i] - x_optimal[i]) <= 1E-6);
+
+    // Proximal/Projected gradient descent (optimum now lies on the boundary).
+    ProjectionFunctionSingle proj = [](const std::vector<double> &x, std::vector<double> &proj) {
+        for (size_t i=0; i<proj.size(); i++) proj[i] = std::min(std::max(x[i], -0.5), 0.5);
+    };
+    for (int i=0; i<(num_dimensions-1)/2; i++) x_optimal[i] = 0.5 - 0.1 * i;
+    state.setAdaptiveStepsize(10.0/L);
+    state.setX(x0);
+    GradientDescent(func, grad, proj, 1.5, 1.25, 300, 1E-6, state);
+    x_gd = state.getX();
+    for (int i=0; i<num_dimensions; i++) pass = pass and (std::abs(x_gd[i] - x_optimal[i]) <= 1E-6);
+    for (int t=0; t<300; t++) GradientDescent(func, grad, proj, 1.5, 1.25, 1, 1E-6, state);
+    x_gd = state.getX();
+    for (int i=0; i<num_dimensions; i++) pass = pass and (std::abs(x_gd[i] - x_optimal[i]) <= 1E-6);
+
+    // Reporting.
+    if (not pass or verbose) reportPassFail(pass, "Gradient Descent", "Algorithm Unit Tests");
+    return pass;
+}
+
+
 } // end namespace
 
 bool DreamExternalTester::testOptimization(){
     bool pass = true;
 
-    // Tests various optimization states and algorithms.
+    // Test Particle Swarm State and Algorithm.
     bool pass_particle_swarm = true;
     pass_particle_swarm = pass_particle_swarm and TasOptimization::testParticleSwarmState(verbose);
     pass_particle_swarm = pass_particle_swarm and TasOptimization::testParticleSwarm(verbose);
     reportPassFail(pass_particle_swarm, "Optimization", "Particle Swarm");
     pass = pass and pass_particle_swarm;
+
+    // Test Gradient Descent State and Algorithm.
+    bool pass_gradient_descent = true;
+    pass_gradient_descent = pass_gradient_descent and TasOptimization::testGradientDescentState(verbose);
+    pass_gradient_descent = pass_gradient_descent and TasOptimization::testGradientDescent(verbose);
+    reportPassFail(pass_gradient_descent, "Optimization", "Gradient Descent");
+    pass = pass and pass_gradient_descent;
 
     // Reporting.
     return pass;

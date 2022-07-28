@@ -114,7 +114,7 @@ class GradientDescentState {
     inline std::vector<double> getX() const {return x;}
 
     //! \brief Set the stepsize.
-    inline void setStepsize(const double new_stepsize) {adaptive_stepsize = new_stepsize;}
+    inline void setAdaptiveStepsize(const double new_stepsize) {adaptive_stepsize = new_stepsize;}
     //! \brief Set the current candidate point.
     inline void setX(const double x_new[]) {std::copy_n(x_new, x.size(), x.begin());}
     //! \brief Overload for when the input is a vector.
@@ -188,16 +188,16 @@ class GradientDescentState {
  *        TasmanianOptimization::compute_stationarity_residual() is less than or equal to \b tolerance
  */
 OptimizationStatus GradientDescent(const GradientFunctionSingle &grad, const double stepsize, const int max_iterations,
-                                   const double tolerance, std::vector<double> &state);
+                                   const double tolerance, GradientDescentState &state);
 
 // Forward declarations.
-OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g,
+OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const GradientFunctionSingle &grad,
                                    const ProjectionFunctionSingle &proj, const double increase_coeff,
                                    const double decrease_coeff, const int max_iterations, const double tolerance,
                                    GradientDescentState &state);
-OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g, const double increase_coeff,
-                                   const double decrease_coeff, const int max_iterations, const double tolerance,
-                                   GradientDescentState &state);
+OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const GradientFunctionSingle &grad,
+                                   const double increase_coeff,  const double decrease_coeff, const int max_iterations,
+                                   const double tolerance, GradientDescentState &state);
 
 }
 
