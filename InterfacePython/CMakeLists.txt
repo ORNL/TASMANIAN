@@ -76,6 +76,7 @@ endif()
 set(Tasmanian_python_example_import "sys.path.append(\"${CMAKE_CURRENT_BINARY_DIR}\")\n")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_dream.in.py" "${CMAKE_CURRENT_BINARY_DIR}/example_dream.py") # also uses Tasmanian_string_python_hashbang
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_optimization.in.py" "${CMAKE_CURRENT_BINARY_DIR}/example_optimization.py") # also uses Tasmanian_string_python_hashbang
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/sandbox.py" "${CMAKE_CURRENT_BINARY_DIR}/sandbox.py") # only uses Tasmanian_string_python_hashbang
 
@@ -91,7 +92,9 @@ set(Tasmanian_python_test_files TasmanianSG.py TasmanianAddons.py Tasmanian.py
                                 example_sparse_grids_04.py example_sparse_grids_05.py example_sparse_grids_06.py
                                 example_sparse_grids_07.py example_sparse_grids_08.py example_sparse_grids_09.py
                                 example_sparse_grids_10.py example_sparse_grids_11.py
-                                example_dream_01.py example_dream_02.py example_dream_03.py example_dream_04.py example_dream_05.py)
+                                example_dream_01.py example_dream_02.py example_dream_03.py example_dream_04.py example_dream_05.py
+                                example_optimization_01.py example_optimization_02.py
+                                )
 
 foreach(Tasmanian_python_testing_file ${Tasmanian_python_test_files})
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${Tasmanian_python_testing_file}"
@@ -126,6 +129,7 @@ if (SKBUILD)
 endif()
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_sparse_grids.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py") # also uses Tasmanian_string_python_hashbang
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_dream.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_dream.py") # also uses Tasmanian_string_python_hashbang
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_optimization.in.py" "${CMAKE_CURRENT_BINARY_DIR}/configured/example_optimization.py") # also uses Tasmanian_string_python_hashbang
 
 
 ########################################################################
@@ -205,5 +209,6 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/configured/example_sparse_grids.py"
               "${CMAKE_CURRENT_BINARY_DIR}/configured/example_dream.py"
+              "${CMAKE_CURRENT_BINARY_DIR}/configured/example_optimization.py"
         DESTINATION "share/Tasmanian/examples/"
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
