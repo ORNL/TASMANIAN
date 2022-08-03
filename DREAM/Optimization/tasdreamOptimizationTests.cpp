@@ -288,8 +288,8 @@ bool testGradientDescent(bool verbose) {
     for (int i=0; i<num_dimensions; i++) pass = pass and (std::abs(x_gd[i] - x_optimal[i]) <= 1E-6);
 
     // Proximal/Projected gradient descent (optimum now lies on the boundary).
-    ProjectionFunctionSingle proj = [](const std::vector<double> &x, std::vector<double> &proj) {
-        for (size_t i=0; i<proj.size(); i++) proj[i] = std::min(std::max(x[i], -0.5), 0.5);
+    ProjectionFunctionSingle proj = [](const std::vector<double> &x, std::vector<double> &p) {
+        for (size_t i=0; i<p.size(); i++) p[i] = std::min(std::max(x[i], -0.5), 0.5);
     };
     for (int i=0; i<(num_dimensions-1)/2; i++) x_optimal[i] = 0.5 - 0.1 * i;
     state.setAdaptiveStepsize(10.0/L);
