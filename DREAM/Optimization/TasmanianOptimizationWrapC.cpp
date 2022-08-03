@@ -35,15 +35,46 @@
 #define __TASMANIAN_OPTIMIZATION_WRAPC_CPP
 
 #include "tsgParticleSwarm.hpp"
+#include "tsgGradientDescent.hpp"
 
 // --------------------------- C Interface for use with Python ctypes and potentially other C codes --------------------------- //
 
 // C Function Pointer Aliases
-using tsg_dream_random = double (*)();
-using tsg_optim_dom_fn = int    (*)(const int, const double[], const int[]);
-using tsg_optim_obj_fn = void   (*)(const int, const int, const double[], double[], const int[]);
+using tsg_dream_random         = double (*)();
+using tsg_optim_dom_fn         = int    (*)(const int, const double[], int[]);
+using tsg_optim_obj_fn         = void   (*)(const int, const int, const double[], double[], int[]);
+using tsg_optim_obj_fn_single  = double (*)(const int, const double[], int[]);
+using tsg_optim_grad_fn_single = void   (*)(const int, const double[], double[], int[]);
+using tsg_optim_proj_fn_single = void   (*)(const int, const double[], double[], int[]);
 
 namespace TasOptimization{
+
+// Helper methods to generate some C++ functions from C functions.
+ObjectiveFunctionSingle convert_C_obj_fn_single(tsg_optim_obj_fn_single func_ptr, std::string err_msg) {
+    return [=](const std::vector<double> &x_single)->double {
+        int err_code = 0;
+        int num_dims = x_single.size();
+        double result = (*func_ptr)(num_dims, x_single.data(), &err_code);
+        if (err_code != 0) throw std::runtime_error(err_msg);
+        return result;
+    };
+}
+GradientFunctionSingle convert_C_grad_fn_single(tsg_optim_grad_fn_single grad_ptr, std::string err_msg) {
+    return [=](const std::vector<double> &x_single, std::vector<double> &grad)->void {
+        int err_code = 0;
+        int num_dims = x_single.size();
+        (*grad_ptr)(num_dims, x_single.data(), grad.data(), &err_code);
+        if (err_code != 0) throw std::runtime_error(err_msg);
+    };
+}
+ProjectionFunctionSingle convert_C_proj_fn_single(tsg_optim_proj_fn_single proj_ptr, std::string err_msg) {
+    return [=](const std::vector<double> &x_single, std::vector<double> &proj)->void {
+        int err_code = 0;
+        int num_dims = x_single.size();
+        (*proj_ptr)(num_dims, x_single.data(), proj.data(), &err_code);
+        if (err_code != 0) throw std::runtime_error(err_msg);
+    };
+}
 
 extern "C" {
 
@@ -142,14 +173,14 @@ extern "C" {
                 return [&]()->double{ return random_callback(); };
             }
         }();
-        auto f_cpp = [&](const std::vector<double> &x_batch, std::vector<double> &fval_batch)->void {
+        auto f_cpp = [=](const std::vector<double> &x_batch, std::vector<double> &fval_batch)->void {
             int err_code = 0;
             int num_batch = fval_batch.size();
             int num_dims = x_batch.size() / num_batch;
             (*f_ptr)(num_dims, num_batch, x_batch.data(), fval_batch.data(), &err_code);
             if (err_code != 0) throw std::runtime_error("The Python objective function callback returned an error in tsgParticleSwarm()");
         };
-        auto inside_cpp = [&](const std::vector<double> &x)->bool {
+        auto inside_cpp = [=](const std::vector<double> &x)->bool {
             int err_code = 0;
             int num_dims = x.size();
             bool inside = (*inside_ptr)(num_dims, x.data(), &err_code);
@@ -161,6 +192,85 @@ extern "C" {
                           cognitive_coeff, social_coeff, randgen);
             *err = 0; // Success
         } catch (std::runtime_error &) {}
+    }
+
+    // Gradient Descent State.
+    void* tsgGradientDescentState_Construct(const int num_dimensions, const double x0[], const double initial_stepsize) {
+        return (void*) new GradientDescentState(std::vector<double>(x0, x0 + num_dimensions), initial_stepsize);
+    }
+    void tsgGradientDescentState_Destruct(void* state) {
+        delete reinterpret_cast<GradientDescentState*>(state);
+    }
+    int tsgGradientDescentState_GetNumDimensions(void* state) {
+        return reinterpret_cast<GradientDescentState*>(state)->getNumDimensions();
+    }
+    double tsgGradientDescentState_GetAdaptiveStepsize(void* state) {
+        return reinterpret_cast<GradientDescentState*>(state)->getAdaptiveStepsize();
+    }
+    void tsgGradientDescentState_GetX(void* state, double x_out[]) {
+        reinterpret_cast<GradientDescentState*>(state)->getX(x_out);
+    }
+    void tsgGradientDescentState_SetX(void* state, double x_new[]) {
+        reinterpret_cast<GradientDescentState*>(state)->setX(x_new);
+    }
+
+    // Adaptive Stepsize Projected Gradient Descent Algorithm.
+    OptimizationStatus tsgGradientDescent_AdaptProj(const tsg_optim_obj_fn_single func_ptr, const tsg_optim_grad_fn_single grad_ptr,
+                                                    const tsg_optim_proj_fn_single proj_ptr, const double increase_coeff,
+                                                    const double decrease_coeff, const int max_iterations, const double tolerance,
+                                                    void* state, int* err) {
+
+        *err = 1;
+        // Convert C functions to safe C++ functions.
+        ObjectiveFunctionSingle func_cpp = convert_C_obj_fn_single(func_ptr, "The Python objective function callback returned an error in tsgGradientDescent()");
+        GradientFunctionSingle grad_cpp = convert_C_grad_fn_single(grad_ptr, "The Python gradient function callback returned an error in tsgGradientDescent()");
+        ProjectionFunctionSingle proj_cpp = convert_C_proj_fn_single(proj_ptr, "The Python projection function callback returned an error in tsgGradientDescent()");
+
+        // Main call and error handling.
+        OptimizationStatus status;
+        try {
+            status = GradientDescent(func_cpp, grad_cpp, proj_cpp, increase_coeff, decrease_coeff, max_iterations, tolerance,
+                                     *(reinterpret_cast<GradientDescentState*>(state)));
+            *err = 0; // Success
+        } catch (std::runtime_error &) {}
+        return status;
+    }
+
+    // Adaptive Stepsize (Unconstrained) Gradient Descent Algorithm.
+    OptimizationStatus tsgGradientDescent_Adapt(const tsg_optim_obj_fn_single func_ptr, const tsg_optim_grad_fn_single grad_ptr,
+                                                const double increase_coeff, const double decrease_coeff, const int max_iterations,
+                                                const double tolerance, void* state, int* err) {
+
+        *err = 1;
+        // Convert C functions to safe C++ functions.
+        ObjectiveFunctionSingle func_cpp = convert_C_obj_fn_single(func_ptr, "The Python objective function callback returned an error in tsgGradientDescent()");
+        GradientFunctionSingle grad_cpp = convert_C_grad_fn_single(grad_ptr, "The Python gradient function callback returned an error in tsgGradientDescent()");
+
+        // Main call and error handling.
+        OptimizationStatus status;
+        try {
+            status = GradientDescent(func_cpp, grad_cpp, increase_coeff, decrease_coeff, max_iterations, tolerance,
+                                     *(reinterpret_cast<GradientDescentState*>(state)));
+            *err = 0; // Success
+        } catch (std::runtime_error &) {}
+        return status;
+    }
+
+    // Constant Stepsize (Unconstrained) Gradient Descent Algorithm.
+    OptimizationStatus tsgGradientDescent_Const(const tsg_optim_grad_fn_single grad_ptr, const double stepsize, const int max_iterations,
+                                                const double tolerance, void* state, int* err) {
+
+        *err = 1;
+        // Convert C functions to safe C++ functions.
+        GradientFunctionSingle grad_cpp = convert_C_grad_fn_single(grad_ptr, "The Python gradient function callback returned an error in tsgGradientDescent()");
+
+        // Main call and error handling.
+        OptimizationStatus status;
+        try {
+            status = GradientDescent(grad_cpp, stepsize, max_iterations, tolerance, *(reinterpret_cast<GradientDescentState*>(state)));
+            *err = 0; // Success
+        } catch (std::runtime_error &) {}
+        return status;
     }
 
 }
