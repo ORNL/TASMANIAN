@@ -157,38 +157,6 @@ inline double compute_stationarity_residual(const std::vector<double> &x, const 
     return std::sqrt(residual);
 }
 
-/*! \ingroup OptimizationUtil
- * Nesterov's "worst function in the world" for convex optimization. This function is difficult for nearly all first-order
- * iterative optimization methods starting from x0=0. This generator writes the function and gradient to \b func and \b grad, and
- * the minimum is written to \b minimum. It is expected that 1 <= k <= (number of dimensions - 1) / 2 and the initial point
- * of an iterative algorithm is the zero vector.
- */
-inline void makeNesterovTestFunction(const double L, const int k, ObjectiveFunctionSingle &func, GradientFunctionSingle &grad,
-                                     std::vector<double> &minimum) {
-    func = [=](const std::vector<double> &x)->double {
-        double result = (L / 4.0) * ((1.0 / 2.0) * (x[0] * x[0] + x[k-1] * x[k-1]) - x[0]);
-        double delta;
-        for (int i=0; i<k-1; i++) {
-            delta = x[i] - x[i+1];
-            result += (L / 8.0) * (delta * delta);
-        }
-        return result;
-    };
-    grad = [=](const std::vector<double> &x, std::vector<double> &gx)->void {
-        std::fill(gx.begin(), gx.end(), 0);
-        gx[0] = (L / 4.0) * (x[0] - 1.0);
-        gx[k-1] = (L / 4.0) * x[k-1];
-        for (int i=0; i<k-1; i++) {
-            gx[i] += (L / 4.0) * (x[i] - x[i+1]);
-            gx[i+1] -= (L / 4.0) * (x[i] - x[i+1]);
-        }
-    };
-    std::fill(minimum.begin() + k, minimum.end(), 0);
-    for (int i=0; i<k; i++) {
-        minimum[i] = 1.0 - ((double) i + 1.0) / (k + 1.0);
-    }
-}
-
 
 } // End namespace
 
