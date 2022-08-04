@@ -61,6 +61,9 @@ pLibDTSG.tsgGradientDescentState_GetAdaptiveStepsize.restype = c_double
 pLibDTSG.tsgGradientDescentState_GetAdaptiveStepsize.argtypes = [c_void_p]
 pLibDTSG.tsgGradientDescentState_GetX.argtypes = [c_void_p, POINTER(c_double)]
 
+pLibDTSG.tsgGradientDescentState_SetAdaptiveStepsize.argtypes = [c_void_p, c_double]
+pLibDTSG.tsgGradientDescentState_SetX.argtypes = [c_void_p, POINTER(c_double)]
+
 pLibDTSG.tsgGradientDescent_AdaptProj.argtypes = [type_optim_obj_fn_single, type_optim_grad_fn_single, type_optim_proj_fn_single,
                                                   c_double, c_double, c_int, c_double, c_void_p, POINTER(c_int)]
 pLibDTSG.tsgGradientDescent_AdaptProj.restype = optimization_status
@@ -112,6 +115,14 @@ class GradientDescentState:
         aResult = np.zeros((iNumDims,), np.float64)
         pLibDTSG.tsgGradientDescentState_GetX(self.pStatePntr, as_ctypes(aResult))
         return aResult
+
+    def setAdaptiveStepsize(self, fNewStepsize):
+        '''
+        Set new adaptive stepsize
+
+        fNewStepsize : a double representing the new adaptive stepsize.
+        '''
+        pLibDTSG.tsgGradientDescentState_SetAdaptiveStepsize(self.pStatePntr, fNewStepsize)
 
     def setX(self, aXNew):
         '''
