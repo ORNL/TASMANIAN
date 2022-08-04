@@ -299,12 +299,12 @@ class TestTasClass(unittest.TestCase):
                 ["pss.initializeParticlesInsideBox(np.array([-1.0, -2.0]), np.array([1.0, 3.0]));" +
                  "f = lambda x_batch : np.append(np.apply_along_axis(np.sum, 1, x_batch), np.array([0.5]), axis=0);" +
                  "inside = lambda x : True;" +
-                 "Opt.ParticleSwarm(f, 1, inside, pss, 0.5, 2, 2)", "ParticleSwarm"],
+                 "Opt.ParticleSwarm(f, inside, 0.5, 2, 2, 1, pss)", "ParticleSwarm"],
                 ["pss.initializeParticlesInsideBox(np.array([-1.0, -2.0]), np.array([1.0, 3.0]));" +
                  "f = lambda x_batch : np.apply_along_axis(np.sum, 1, x_batch);" +
                  "inside = lambda x : 0.01;" +
-                 "Opt.ParticleSwarm(f, 1, inside, pss, 0.5, 2, 2)", "ParticleSwarm"],
-                ]    
+                 "Opt.ParticleSwarm(f, inside, 0.5, 2, 2, 1, pss)", "ParticleSwarm"],
+                ]
 
     def testListedExceptions(self, llTests):
         grid = Tasmanian.SparseGrid()
