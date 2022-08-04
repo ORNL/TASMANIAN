@@ -28,12 +28,47 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-import Tasmanian
-import numpy
+from Tasmanian import Optimization as Opt, DREAM
+import numpy as np
 
 def example_01():
     print("\n---------------------------------------------------------------------------------------------------\n")
-    print("EXAMPLE 1: ")
+    print("EXAMPLE 1: use the Particle Swarm algorithm to minimize the six-hump camel function")
+
+    # Create an empty particle swarm state.
+    iNumDimensions = 2
+    iNumParticles = 50
+    state = Opt.ParticleSwarmState(iNumDimensions, iNumParticles)
+
+    # Load the state with uniformly initialized particles in the domain [-3.0, 3.0] x [-2.0, 2.0].
+    state.initializeParticlesInsideBox(np.array([-3.0, -2.0]), np.array([3.0, 2.0]),
+                                       random01=DREAM.RandomGenerator(sType="default", iSeed=777))
+
+    # Define the batched objective function `func` and a function `inside` that returns True if its input is inside the domain.
+    # NOTE: `shc` is the unbatched six-hump camel function.
+    shc = lambda x : (4 - 2.1*x[0]*x[0] + x[0]*x[0]*x[0]*x[0]/3)*x[0]*x[0] + x[0]*x[1] + (-4.0 + 4.0*x[1]*x[1])*x[1]*x[1]
+    func = lambda x_batch : np.apply_along_axis(shc, 1, x_batch)
+    inside = lambda x : bool((-3 <= x[0]) and (x[0] <= 3) and (-2 <= x[1]) and (x[1] <= 2))
+
+    # Run the Particle Swarm algorithm and check the output.
+    iNumIterations = 200;
+    Opt.ParticleSwarm(func, inside, 0.5, 2, 2, iNumIterations, state, random01=DREAM.RandomGenerator(sType="default", iSeed=777))
+
+    aLocal1 = np.array([-0.08984201368301331, +0.7126564032704135])
+    aLocal2 = np.array([+0.08984201368301331, -0.7126564032704135])
+    aSolution = state.getBestPosition()
+
+    sResult = ""
+    sErrors = ""
+    for i in range(iNumDimensions):
+        sResult = "{0:1s}{1:13.5f}".format(sResult, aSolution[i])
+        sErrors = "{0:1s}{1:13.5e}".format(sErrors, min(np.abs(aSolution[i] - aLocal1[i]),
+                                                        np.abs(aSolution[i] - aLocal2[i])))
+    print("Using the Particle Swarm algorithm on the exact objective function, the computed solution is:")
+    print(" computed: {0:1s}".format(sResult))
+    print("    error: {0:1s}".format(sErrors))
+
+
 
 if __name__ == "__main__":
     example_01()
