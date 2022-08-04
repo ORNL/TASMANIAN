@@ -21,6 +21,7 @@ import testUnstructuredData
 import testMisc
 import testAddons
 import testDream
+import testOptimization
 
 grid = TasmanianSG.TasmanianSparseGrid()
 
@@ -75,6 +76,11 @@ class TestTasmanian(unittest.TestCase):
         print("\nTesting DREAM wrappers")
         tester = testDream.TestTasClass()
         tester.performDreamTests()
+
+    def testOptimization(self):
+        print("\nTesting Optimization Functions")
+        tester = testOptimization.TestTasClass()
+        tester.performOptTests()
 
 if __name__ == '__main__':
     unittest.main()

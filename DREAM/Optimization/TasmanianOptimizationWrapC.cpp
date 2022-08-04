@@ -210,6 +210,9 @@ extern "C" {
     void tsgGradientDescentState_GetX(void* state, double x_out[]) {
         reinterpret_cast<GradientDescentState*>(state)->getX(x_out);
     }
+    void tsgGradientDescentState_SetAdaptiveStepsize(void* state, const double new_stepsize) {
+        reinterpret_cast<GradientDescentState*>(state)->setAdaptiveStepsize(new_stepsize);
+    }
     void tsgGradientDescentState_SetX(void* state, double x_new[]) {
         reinterpret_cast<GradientDescentState*>(state)->setX(x_new);
     }

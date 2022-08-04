@@ -107,9 +107,50 @@ class TestTasClass(unittest.TestCase):
         self.assertTrue(np.allclose(np.array([-0.08984201368301331, +0.7126564032704135]), state.getBestPosition()) or
                         np.allclose(np.array([+0.08984201368301331, -0.7126564032704135]), state.getBestPosition()) )
 
+    def checkGradientDescentState(self):
+        x0 = np.array([0.0, 1.0])
+        stepsize = 2.0;
+        # Initialization tests.
+        state = Opt.GradientDescentState(x0, stepsize)
+        self.assertEqual(len(x0), state.getNumDimensions())
+        np.testing.assert_array_equal(x0, state.getX())
+        self.assertEqual(stepsize, state.getAdaptiveStepsize())
+        # Loading/Unloading tests.
+        x1 = np.array([3.0, 4.0])
+        state.setX(x1)
+        np.testing.assert_array_equal(x1, state.getX())
+        state.setAdaptiveStepsize(5.0)
+        self.assertEqual(5.0, state.getAdaptiveStepsize())
+
+    def checkGradientDescent(self):
+        func = lambda x : 2.0 * x[0] * x[0] + x[1] * x[1] / 2.0
+        grad = lambda x : np.array([4.0 * x[0], x[1]])
+        lambda0 = 3.0
+        xBar = np.array([0.0, 0.0])
+        xBarConstr = np.array([-0.5, 0.5])
+        tol = 1E-6
+        iter_limit = 100
+        # Main call + tests.
+        state = Opt.GradientDescentState(np.array([-1.0, 1.0]), lambda0)
+        result = Opt.GradientDescent(grad, 1/4.0, iter_limit, tol, state)
+        self.assertLessEqual(result['performed_iterations'], iter_limit)
+        self.assertTrue(np.allclose(xBar, state.getX(), atol=tol * 10))
+        self.assertEqual(lambda0, state.getAdaptiveStepsize())
+        state = Opt.GradientDescentState(np.array([-1.0, 1.0]), lambda0)
+        result = Opt.AdaptiveGradientDescent(func, grad, 1.25, 1.25, iter_limit, tol, state)
+        self.assertLessEqual(result['performed_iterations'], iter_limit)
+        self.assertTrue(np.allclose(xBar, state.getX(), atol=tol * 10))
+        proj = lambda x : np.array([min(max(-3.0, x[0]), -0.5), min(max(0.5, x[1]), 3.0)])
+        state = Opt.GradientDescentState(np.array([-2.0, 2.0]), lambda0)
+        result = Opt.AdaptiveProjectedGradientDescent(func, grad, proj, 1.25, 1.25, iter_limit, tol, state)
+        self.assertLessEqual(result['performed_iterations'], iter_limit)
+        self.assertTrue(np.allclose(xBarConstr, state.getX(), atol=tol))
+
     def performOptTests(self):
         self.checkParticleSwarmState()
         self.checkParticleSwarm()
+        self.checkGradientDescentState()
+        self.checkGradientDescent()
 
 if __name__ == "__main__":
     tester = TestTasClass()
