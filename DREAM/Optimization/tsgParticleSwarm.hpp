@@ -238,19 +238,19 @@ public:
      * uniform [0,1] random number generator used by the algorithm is \b get_random01.
      *
      * \param f Objective function to be minimized
-     * \param num_iterations number of iterations to perform
      * \param inside indicates whether a given point is inside or outside of the domain of interest
-     * \param state holds the state of the particles, e.g., positions and velocities, see TasOptimization::ParticleSwarmState
      * \param inertia_weight inertial weight for the particle swarm algorithm
      * \param cognitive_coeff cognitive coefficient for the particle swarm algorithm
      * \param social_coeff social coefficient for the particle swarm algorithm
+     * \param num_iterations number of iterations to perform
+     * \param state holds the state of the particles, e.g., positions and velocities, see TasOptimization::ParticleSwarmState
      * \param get_random01 random number generator, defaults to rand()
      *
      * \throws std::runtime_error if either the positions or the velocities of the \b state have not been initialized
      */
-    friend void ParticleSwarm(const ObjectiveFunction f, const int num_iterations, const TasDREAM::DreamDomain inside,
-                              ParticleSwarmState &state, const double inertia_weight, const double cognitive_coeff,
-                              const double social_coeff, const std::function<double(void)> get_random01);
+    friend void ParticleSwarm(const ObjectiveFunction f, const TasDREAM::DreamDomain inside, const double inertia_weight,
+                              const double cognitive_coeff, const double social_coeff, const int num_iterations,
+                              ParticleSwarmState &state, const std::function<double(void)> get_random01);
 
 protected:
     #ifndef __TASMANIAN_DOXYGEN_SKIP_INTERNAL
@@ -278,9 +278,9 @@ private:
 };
 
 // Forward declarations.
-void ParticleSwarm(const ObjectiveFunction f, const int num_iterations, const TasDREAM::DreamDomain inside, ParticleSwarmState &state,
-                   const double inertia_weight, const double cognitive_coeff, const double social_coeff,
-                   const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
+void ParticleSwarm(const ObjectiveFunction f, const TasDREAM::DreamDomain inside, const double inertia_weight,
+                   const double cognitive_coeff, const double social_coeff, const int num_iterations,
+                   ParticleSwarmState &state, const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
 
 }
 #endif

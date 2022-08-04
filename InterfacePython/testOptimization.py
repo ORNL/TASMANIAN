@@ -97,13 +97,12 @@ class TestTasClass(unittest.TestCase):
         f = lambda x_batch : np.apply_along_axis(shc, 1, x_batch)
         inside = lambda x : bool((-3 <= x[0]) and (x[0] <= 3) and (-2 <= x[1]) and (x[1] <= 2))
         # Main call + tests.
-        Opt.ParticleSwarm(f, 1, inside, state, 0.5, 2, 2,
-                          random01=DREAM.RandomGenerator(sType="default", iSeed=777))
+        Opt.ParticleSwarm(f, inside, 0.5, 2, 2, 1, state, random01=DREAM.RandomGenerator(sType="default", iSeed=777))
         self.assertTrue(state.isCacheInitialized())
         state.clearCache()
         self.assertFalse(state.isCacheInitialized())
         iNumIterations = 200
-        Opt.ParticleSwarm(f, iNumIterations, inside, state, 0.5, 2, 2)
+        Opt.ParticleSwarm(f, inside, 0.5, 2, 2, iNumIterations, state)
         self.assertTrue(np.allclose(np.array([-0.08984201368301331, +0.7126564032704135]), state.getBestPosition()) or
                         np.allclose(np.array([+0.08984201368301331, -0.7126564032704135]), state.getBestPosition()) )
 

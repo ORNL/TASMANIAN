@@ -116,7 +116,7 @@ bool testParticleSwarmSingle(ObjectiveFunction f, ParticleSwarmState state, TasD
     std::minstd_rand park_miller(42);
     std::uniform_real_distribution<double> unif(0.0, 1.0);
     auto get_rand = [&]()->double{ return unif(park_miller); };
-    ParticleSwarm(f, iterations, inside, state, 0.5, 2, 2, get_rand);
+    ParticleSwarm(f, inside, 0.5, 2, 2, iterations, state, get_rand);
 
     // Check optimality and state changes of the run.
     std::vector<double> best_swarm_point = state.getBestPosition();
@@ -127,7 +127,7 @@ bool testParticleSwarmSingle(ObjectiveFunction f, ParticleSwarmState state, TasD
     pass = pass and init_vector[3];
 
     // Make sure subsequent runs do not make any strange modifications.
-    ParticleSwarm(f, 1, inside, state, 0.5, 2, 2, get_rand);
+    ParticleSwarm(f, inside, 0.5, 2, 2, 1, state, get_rand);
     f(best_swarm_point, best_swarm_value_vec);
     pass = pass and std::fabs(best_swarm_value_vec[0] - optimal_val) <= TasGrid::Maths::num_tol;
     init_vector = state.getStateVector();

@@ -154,8 +154,8 @@ extern "C" {
     }
 
     // Particle Swarm Algorithm.
-    void tsgParticleSwarm(const tsg_optim_obj_fn f_ptr, const int num_iterations, const tsg_optim_dom_fn inside_ptr, void *state,
-                          const double inertia_weight, const double cognitive_coeff, const double social_coeff,
+    void tsgParticleSwarm(const tsg_optim_obj_fn f_ptr, const tsg_optim_dom_fn inside_ptr, const double inertia_weight,
+                          const double cognitive_coeff, const double social_coeff, const int num_iterations,  void *state,
                           const char* random_type, const int random_seed, tsg_dream_random random_callback, int *err) {
         *err = 1;
         // Create the U[0,1] random number generator.
@@ -188,8 +188,8 @@ extern "C" {
             return inside;
         };
         try {
-            ParticleSwarm(f_cpp, num_iterations, inside_cpp, *(reinterpret_cast<ParticleSwarmState*>(state)), inertia_weight,
-                          cognitive_coeff, social_coeff, randgen);
+            ParticleSwarm(f_cpp, inside_cpp, inertia_weight, cognitive_coeff, social_coeff, num_iterations,
+                          *(reinterpret_cast<ParticleSwarmState*>(state)), randgen);
             *err = 0; // Success
         } catch (std::runtime_error &) {}
     }

@@ -75,8 +75,8 @@ pLibDTSG.tsgParticleSwarmState_SetBestParticlePositions.argtypes = [c_void_p, PO
 pLibDTSG.tsgParticleSwarmState_ClearBestParticles.argtypes = [c_void_p]
 pLibDTSG.tsgParticleSwarmState_ClearCache.argtypes = [c_void_p]
 pLibDTSG.tsgParticleSwarmState_InitializeParticlesInsideBox.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double), c_char_p, c_int, type_dream_random]
-pLibDTSG.tsgParticleSwarm.argtypes = [type_optim_obj_fn, c_int, type_optim_dom_fn, c_void_p, c_double, c_double, c_double, c_char_p, c_int,
-                                      type_dream_random, POINTER(c_int)]
+pLibDTSG.tsgParticleSwarm.argtypes = [type_optim_obj_fn, type_optim_dom_fn, c_double, c_double, c_double, c_int, c_void_p,
+                                      c_char_p, c_int, type_dream_random, POINTER(c_int)]
 
 class ParticleSwarmState:
     '''
@@ -263,8 +263,8 @@ class ParticleSwarmState:
                                                                     c_char_p(random01.sType), c_int(random01.iSeed),
                                                                     type_dream_random(random01.pCallable))
 
-def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmState, fInertiaWeight, fCognitiveCoeff,
-                  fSocialCoeff, random01 = DREAM.RandomGenerator(sType = "default")):
+def ParticleSwarm(pObjectiveFunction, pInside, fInertiaWeight, fCognitiveCoeff, fSocialCoeff, iNumIterations, oParticleSwarmState,
+                  random01 = DREAM.RandomGenerator(sType = "default")):
     '''
     Wrapper around TasOptimization::ParticleSwarm().
 
@@ -275,14 +275,14 @@ def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmSta
     pObjectiveFunction  : a Python lambda representing the objective function; it should take in one 2D NumPy array (x_batch)
                           and produce a 1D NumPy array, sized (iNumBatch,), whose i-th entry should be the result of evaluating
                           the objective function to x_batch[i,:]; it is expected that x_batch.shape[1] = .getNumDimensions().
-    iNumIterations      : a positive integer representing the number iterations the algorithm is run.
     pInside             : a Python lambda representing the function domain; it should take in a 1D NumPy array (x) and produce a
                           Boolean (isInside); when called, it should return True if x is in the domain and False otherwise;
                           it is expected that x.shape[0] = .getNumDimensions().
-    oParticleSwarmState : an instance of the Python ParticleSwarmState class; it will contain the results of applying the algorithm.
     fInertiaWeight      : a double that controls the speed of the particles; should be in (0,1).
     fCognitiveCoeff     : a double that controls how much a particle favors its own trajectory; usually in [1,3].
     fSocialCoeff        : a double that controls how much a particle favors the swarm's trajectories; usually in [1,3].
+    iNumIterations      : a positive integer representing the number iterations the algorithm is run.
+    oParticleSwarmState : an instance of the Python ParticleSwarmState class; it will contain the results of applying the algorithm.
     random01            : (optional) a DREAM.RandomGenerator instance that produces floats in [0,1]
     '''
     def cpp_obj_fn(num_dim, num_batch, x_batch_ptr, fval_ptr, err_arr):
@@ -308,9 +308,9 @@ def ParticleSwarm(pObjectiveFunction, iNumIterations, pInside, oParticleSwarmSta
         return iResult
 
     pErrorCode = (c_int * 1)()
-    pLibDTSG.tsgParticleSwarm(type_optim_obj_fn(cpp_obj_fn), c_int(iNumIterations), type_optim_dom_fn(cpp_dom_fn),
-                              oParticleSwarmState.pStatePntr, c_double(fInertiaWeight), c_double(fCognitiveCoeff),
-                              c_double(fSocialCoeff), c_char_p(random01.sType), c_int(random01.iSeed),
+    pLibDTSG.tsgParticleSwarm(type_optim_obj_fn(cpp_obj_fn), type_optim_dom_fn(cpp_dom_fn), c_double(fInertiaWeight),
+                              c_double(fCognitiveCoeff), c_double(fSocialCoeff), c_int(iNumIterations),
+                              oParticleSwarmState.pStatePntr, c_char_p(random01.sType), c_int(random01.iSeed),
                               type_dream_random(random01.pCallable), pErrorCode)
 
     if pErrorCode[0] != 0:
