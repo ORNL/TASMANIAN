@@ -228,6 +228,7 @@ void tsgGetLoadedValuesStatic(void *grid, double *values){
 void tsgEvaluate(void *grid, const double *x, double *y){ ((TasmanianSparseGrid*) grid)->evaluate(x, y); }
 void tsgEvaluateFast(void *grid, const double *x, double *y){ ((TasmanianSparseGrid*) grid)->evaluateFast(x, y); }
 void tsgIntegrate(void *grid, double *q){ ((TasmanianSparseGrid*) grid)->integrate(q); }
+void tsgDifferentiate(void *grid, const double *x, double *y){ ((TasmanianSparseGrid*) grid)->differentiate(x, y); }
 
 void tsgEvaluateBatch(void *grid, const double *x, int num_x, double *y){ ((TasmanianSparseGrid*) grid)->evaluateBatch(x, num_x, y); }
 
