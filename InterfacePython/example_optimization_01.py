@@ -29,20 +29,21 @@
 ##############################################################################################################################################################################
 
 from Tasmanian import Optimization as Opt, DREAM
+import TasmanianSG as SG
 import numpy as np
 
 def example_01():
     print("\n---------------------------------------------------------------------------------------------------\n")
     print("EXAMPLE 1: use the Particle Swarm algorithm to minimize the six-hump camel function")
 
-    # Create an empty particle swarm state.
+    # Create an empty Particle Swarm state.
     iNumDimensions = 2
     iNumParticles = 50
+    randUnif = DREAM.RandomGenerator(sType="default", iSeed=777)
     state = Opt.ParticleSwarmState(iNumDimensions, iNumParticles)
 
     # Load the state with uniformly initialized particles in the domain [-3.0, 3.0] x [-2.0, 2.0].
-    state.initializeParticlesInsideBox(np.array([-3.0, -2.0]), np.array([3.0, 2.0]),
-                                       random01=DREAM.RandomGenerator(sType="default", iSeed=777))
+    state.initializeParticlesInsideBox(np.array([-3.0, -2.0]), np.array([3.0, 2.0]), random01=randUnif)
 
     # Define the batched objective function `func` and a function `inside` that returns True if its input is inside the domain.
     # NOTE: `shc` is the unbatched six-hump camel function.
@@ -50,9 +51,9 @@ def example_01():
     func = lambda x_batch : np.apply_along_axis(shc, 1, x_batch)
     inside = lambda x : bool((-3 <= x[0]) and (x[0] <= 3) and (-2 <= x[1]) and (x[1] <= 2))
 
-    # Run the Particle Swarm algorithm and check the output.
+    # Run the Particle Swarm (PS) algorithm and check the output.
     iNumIterations = 200;
-    Opt.ParticleSwarm(func, inside, 0.5, 2, 2, iNumIterations, state, random01=DREAM.RandomGenerator(sType="default", iSeed=777))
+    Opt.ParticleSwarm(func, inside, 0.5, 2, 2, iNumIterations, state, random01=randUnif)
 
     aLocal1 = np.array([-0.08984201368301331, +0.7126564032704135])
     aLocal2 = np.array([+0.08984201368301331, -0.7126564032704135])
@@ -64,11 +65,33 @@ def example_01():
         sResult = "{0:1s}{1:13.5f}".format(sResult, aSolution[i])
         sErrors = "{0:1s}{1:13.5e}".format(sErrors, min(np.abs(aSolution[i] - aLocal1[i]),
                                                         np.abs(aSolution[i] - aLocal2[i])))
-    print("Using the Particle Swarm algorithm on the exact objective function, the computed solution is:")
+    print("\nUsing the Particle Swarm algorithm on the EXACT objective function, the computed solution is:")
     print(" computed: {0:1s}".format(sResult))
     print("    error: {0:1s}".format(sErrors))
 
+    # Create a surrogate model for the six-hump camel function.
+    grid = SG.makeLocalPolynomialGrid(2, 1, 10, iOrder=1)
+    needed_points = grid.getNeededPoints()
+    needed_values = np.resize(func(needed_points), [grid.getNumNeeded(), 1])
+    grid.loadNeededValues(needed_values)
+    surrogate_func = lambda x_batch : np.squeeze(grid.evaluateBatch(x_batch))
 
+    # Run the PS algorithm on the surrogate and check the output.
+    state = Opt.ParticleSwarmState(iNumDimensions, iNumParticles)
+    state.initializeParticlesInsideBox(np.array([-3.0, -2.0]), np.array([3.0, 2.0]), random01=randUnif)
+    Opt.ParticleSwarm(surrogate_func, inside, 0.5, 2, 2, iNumIterations, state, random01=randUnif)
+
+    aSolution = state.getBestPosition()
+
+    sResult = ""
+    sErrors = ""
+    for i in range(iNumDimensions):
+        sResult = "{0:1s}{1:13.5f}".format(sResult, aSolution[i])
+        sErrors = "{0:1s}{1:13.5e}".format(sErrors, min(np.abs(aSolution[i] - aLocal1[i]),
+                                                        np.abs(aSolution[i] - aLocal2[i])))
+    print("\nUsing the Particle Swarm algorithm on the SURROGATE objective function, the computed solution is:")
+    print(" computed: {0:1s}".format(sResult))
+    print("    error: {0:1s}".format(sErrors))
 
 if __name__ == "__main__":
     example_01()
