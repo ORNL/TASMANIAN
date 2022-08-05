@@ -119,6 +119,7 @@ pLibTSG.tsgGetLoadedValuesStatic.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgEvaluate.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
 pLibTSG.tsgEvaluateFast.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
 pLibTSG.tsgIntegrate.argtypes = [c_void_p, POINTER(c_double)]
+pLibTSG.tsgDifferentiate.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
 pLibTSG.tsgEvaluateBatch.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_double)]
 pLibTSG.tsgBatchGetInterpolationWeights.argtypes = [c_void_p, POINTER(c_double), c_int]
 pLibTSG.tsgBatchGetInterpolationWeightsStatic.argtypes = [c_void_p, POINTER(c_double), c_int, POINTER(c_double)]
@@ -1289,6 +1290,23 @@ class TasmanianSparseGrid:
         aQ = np.empty([iNumOutputs], np.float64)
         pLibTSG.tsgIntegrate(self.pGrid, np.ctypeslib.as_ctypes(aQ))
         return aQ
+
+    def differentiate(self, lfX):
+        '''
+        returns the derivative (Jacobian or gradient vector) of the interpolant
+
+        lfX: a 1-D numpy.ndarray with length iNumDimensions which is the evaluation point
+
+        output: if iNumOutputs == 1, returns a 1-D numpy.ndarray of length iNumDimensions; if iNumOutputs >= 2, returns a 2-D
+            numpy.ndarray of dimension [iNumOutputs, iNumDimensions]
+        '''
+        if (self.getNumLoaded() == 0):
+            raise TasmanianInputError("differentiate", "ERROR: cannot call differentiate for a grid before any points are loaded, i.e., call loadNeededPoints first!")
+        iNumOutputs = self.getNumOutputs()
+        iNumDimensions = self.getNumDimensions()
+        aDx = np.empty([iNumDimensions * iNumOutputs], np.float64)
+        pLibTSG.tsgDifferentiate(self.pGrid, np.ctypeslib.as_ctypes(lfX), np.ctypeslib.as_ctypes(aDx))
+        return np.squeeze(np.resize(aDx, [iNumOutputs, iNumDimensions]))
 
     def isGlobal(self):
         '''

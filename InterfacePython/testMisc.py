@@ -129,6 +129,29 @@ class TestTasClass(unittest.TestCase):
                 TSGError.bShowOnExit = False
                 self.assertEqual(TSGError.sVariable, "plotPoints2D", "error raising exception for plotPoints2D() using test\n Error.sVariable = '{0:1s}'".format(TSGError.sVariable))
 
+    def checkDerivatives(self):
+        '''
+        Check the consistency of derivatives in terms of dimensions and ordering.
+        '''
+        func1 = lambda x : 2.0 * x[0] * x[0] + x[1] * x[1] / 2.0
+        grid1 = TasmanianSG.makeGlobalGrid(2, 1, 4, "iptotal", "gauss-legendre")
+        points1 = grid1.getNeededPoints()
+        values1 = np.resize(np.apply_along_axis(func1, 1, points1), [grid1.getNumNeeded(), 1])
+        grid1.loadNeededValues(values1)
+        grad1 = grid1.differentiate(np.array([3.0, 4.0]))
+        self.assertEqual(grad1.shape, (2,))
+        self.assertTrue(np.allclose(grad1, np.array([12.0, 4.0])))
+
+        func2 = lambda x : [2.0 * x[0] * x[0] + x[1] * x[1] / 2.0 + x[2] * x[2], x[0] * x[1] * x[2]]
+        grid2 = TasmanianSG.makeGlobalGrid(3, 2, 4, "iptotal", "gauss-legendre")
+        points2 = grid2.getNeededPoints()
+        values2 = np.resize(np.apply_along_axis(func2, 1, points2), [grid2.getNumNeeded(), 2])
+        grid2.loadNeededValues(values2)
+        grad2 = grid2.differentiate(np.array([1.0, 2.0, 3.0]))
+        self.assertEqual(grad2.shape, (2, 3))
+        self.assertTrue(np.allclose(grad2, np.array([[4.0, 2.0, 6.0], [6.0, 3.0, 2.0]])))
+
     def performMiscTests(self):
         self.checkPolynomialSpace()
         self.checkPlotting()
+        self.checkDerivatives()
