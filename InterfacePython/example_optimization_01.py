@@ -28,8 +28,7 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-from Tasmanian import Optimization as Opt, DREAM
-import TasmanianSG as SG
+from Tasmanian import Optimization as Opt, DREAM, makeLocalPolynomialGrid
 import numpy as np
 
 def example_01():
@@ -60,17 +59,19 @@ def example_01():
     aSolution = state.getBestPosition()
 
     sResult = ""
-    sErrors = ""
+    fL2Error = 0.0
     for i in range(iNumDimensions):
         sResult = "{0:1s}{1:13.5f}".format(sResult, aSolution[i])
-        sErrors = "{0:1s}{1:13.5e}".format(sErrors, min(np.abs(aSolution[i] - aLocal1[i]),
-                                                        np.abs(aSolution[i] - aLocal2[i])))
+        fL2Error += min((aSolution[i] - aLocal1[i]) ** 2,
+                        (aSolution[i] - aLocal2[i]) ** 2)
+    fL2Error = np.sqrt(fL2Error)
     print("\nUsing the Particle Swarm algorithm on the EXACT objective function, the computed solution is:")
     print(" computed: {0:1s}".format(sResult))
-    print("    error: {0:1s}".format(sErrors))
+    print(" L2 error: {0:14e}".format(fL2Error))
 
     # Create a surrogate model for the six-hump camel function.
-    grid = SG.makeLocalPolynomialGrid(2, 1, 10, iOrder=1)
+    grid = makeLocalPolynomialGrid(2, 1, 10, iOrder=1)
+    grid.setDomainTransform(np.array([[-3.0, 3.0], [-2.0, 2.0]])) # set the non-canonical domain
     needed_points = grid.getNeededPoints()
     needed_values = np.resize(func(needed_points), [grid.getNumNeeded(), 1])
     grid.loadNeededValues(needed_values)
@@ -84,14 +85,15 @@ def example_01():
     aSolution = state.getBestPosition()
 
     sResult = ""
-    sErrors = ""
+    fL2Error = 0.0
     for i in range(iNumDimensions):
         sResult = "{0:1s}{1:13.5f}".format(sResult, aSolution[i])
-        sErrors = "{0:1s}{1:13.5e}".format(sErrors, min(np.abs(aSolution[i] - aLocal1[i]),
-                                                        np.abs(aSolution[i] - aLocal2[i])))
+        fL2Error += min((aSolution[i] - aLocal1[i]) ** 2,
+                        (aSolution[i] - aLocal2[i]) ** 2)
+    fL2Error = np.sqrt(fL2Error)
     print("\nUsing the Particle Swarm algorithm on the SURROGATE objective function, the computed solution is:")
     print(" computed: {0:1s}".format(sResult))
-    print("    error: {0:1s}".format(sErrors))
+    print(" L2 error: {0:14e}".format(fL2Error))
 
 if __name__ == "__main__":
     example_01()

@@ -28,8 +28,7 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-from Tasmanian import Optimization as Opt, DREAM
-import TasmanianSG as SG
+from Tasmanian import Optimization as Opt, makeGlobalGrid
 import numpy as np
 
 def example_02():
@@ -53,18 +52,19 @@ def example_02():
     aSolution = state.getX()
 
     sResult = ""
-    sErrors = ""
+    fL2Error = 0.0
     for i in range(2):
         sResult = "{0:1s}{1:13.5f}".format(sResult, aSolution[i])
-        sErrors = "{0:1s}{1:13.5e}".format(sErrors, np.abs(aSolution[i] - aGlobal[i]))
+        fL2Error += (aSolution[i] - aGlobal[i]) ** 2
+    fL2Error = np.sqrt(fL2Error)
     print("\nUsing the Gradient Descent algorithm on the EXACT objective function, the computed solution is:")
     print(" iterations: {0:14}".format(dInfo['performed_iterations']))
     print("   computed: {0:1s}".format(sResult))
-    print("      error: {0:1s}".format(sErrors))
+    print("   L2 error: {0:14e}".format(fL2Error))
 
     # Create a surrogate model for the quadratic.
     # NOTE: local polynomial grids are not well suited for first-order methods like gradient descent.
-    grid = SG.makeGlobalGrid(2, 1, 2, "iptotal", "leja")
+    grid = makeGlobalGrid(2, 1, 2, "iptotal", "leja")
     needed_points = grid.getNeededPoints()
     needed_values = np.resize(np.apply_along_axis(func, 1, needed_points), [grid.getNumNeeded(), 1])
     grid.loadNeededValues(needed_values)
@@ -78,15 +78,15 @@ def example_02():
     aSolution = state.getX()
 
     sResult = ""
-    sErrors = ""
+    fL2Error = 0.0
     for i in range(2):
         sResult = "{0:1s}{1:13.5f}".format(sResult, aSolution[i])
-        sErrors = "{0:1s}{1:13.5e}".format(sErrors, np.abs(aSolution[i] - aGlobal[i]))
+        fL2Error += (aSolution[i] - aGlobal[i]) ** 2
+    fL2Error = np.sqrt(fL2Error)
     print("\nUsing the Gradient Descent algorithm on the SURROGATE objective function, the computed solution is:")
     print(" iterations: {0:14}".format(dInfo['performed_iterations']))
     print("   computed: {0:1s}".format(sResult))
-    print("      error: {0:1s}".format(sErrors))
-
+    print("   L2 error: {0:14e}".format(fL2Error))
 
     # Run the adaptive GD algorithm and check the output. Note that the adaptive stepsize in the state IS used here.
     state = Opt.GradientDescentState(x0, 1.0)
@@ -95,14 +95,15 @@ def example_02():
     aSolution = state.getX()
 
     sResult = ""
-    sErrors = ""
+    fL2Error = 0.0
     for i in range(2):
         sResult = "{0:1s}{1:13.5f}".format(sResult, aSolution[i])
-        sErrors = "{0:1s}{1:13.5e}".format(sErrors, np.abs(aSolution[i] - aGlobal[i]))
+        fL2Error += (aSolution[i] - aGlobal[i]) ** 2
+    fL2Error = np.sqrt(fL2Error)
     print("\nUsing the ADAPTIVE Gradient Descent algorithm on the EXACT objective function, the computed solution is:")
     print(" iterations: {0:14}".format(dInfo['performed_iterations']))
     print("   computed: {0:1s}".format(sResult))
-    print("      error: {0:1s}".format(sErrors))
+    print("   L2 error: {0:14e}".format(fL2Error))
 
     # Run the projected adaptive GD algorithm and check the output. The domain constraint is implicitly enforced by the
     # projection function `proj`.
@@ -115,15 +116,15 @@ def example_02():
     aSolution = state.getX()
 
     sResult = ""
-    sErrors = ""
+    fL2Error = 0.0
     for i in range(2):
         sResult = "{0:1s}{1:13.5f}".format(sResult, aSolution[i])
-        sErrors = "{0:1s}{1:13.5e}".format(sErrors, np.abs(aSolution[i] - aGlobal[i]))
-    print("\nUsing the ADAPTIVE Projected Gradient Descent algorithm on the EXACT objective function, the computed solution is:")
+        fL2Error += (aSolution[i] - aGlobal[i]) ** 2
+    fL2Error = np.sqrt(fL2Error)
+    print("\nUsing the ADAPTIVE PROJECTED Gradient Descent algorithm on the EXACT objective function, the computed solution is:")
     print(" iterations: {0:14}".format(dInfo['performed_iterations']))
     print("   computed: {0:1s}".format(sResult))
-    print("      error: {0:1s}".format(sErrors))
-
+    print("   L2 error: {0:14e}".format(fL2Error))
 
 
 if __name__ == "__main__":
