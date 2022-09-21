@@ -88,6 +88,12 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
         PATTERN "*.windows.*" EXCLUDE
         PATTERN "*.in.*" EXCLUDE
         PATTERN "Examples" EXCLUDE)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Optimization/"
+        DESTINATION include
+        FILES_MATCHING PATTERN "*.hpp"
+        PATTERN "*.windows.*" EXCLUDE
+        PATTERN "*.in.*" EXCLUDE
+        PATTERN "Examples" EXCLUDE)
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/Examples/"
         DESTINATION "share/Tasmanian/examples/"
         FILES_MATCHING PATTERN "*.cpp"

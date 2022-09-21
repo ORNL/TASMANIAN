@@ -60,6 +60,7 @@ target_include_directories(Tasmanian_dependencies INTERFACE $<INSTALL_INTERFACE:
 
 target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Config/>)
 target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/InterfaceTPL/>)
+target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/DREAM/Optimization>)
 target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/configured/>)
 
 # Tasmanian_EXTRA_LIBRARIES gives the user an option to force extra dependencies,
