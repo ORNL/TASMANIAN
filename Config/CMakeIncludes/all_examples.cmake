@@ -26,6 +26,7 @@ set_target_properties(Tasmanian_example_dream PROPERTIES OUTPUT_NAME "example_dr
 target_link_libraries(Tasmanian_example_dream  Tasmanian_master)
 
 add_executable(Tasmanian_example_optimization DREAM/Examples/example_optimization_01.cpp
+                                              DREAM/Examples/example_optimization_02.cpp
                                               DREAM/Examples/example_optimization.cpp)
 
 set_target_properties(Tasmanian_example_optimization PROPERTIES OUTPUT_NAME "example_optimization")

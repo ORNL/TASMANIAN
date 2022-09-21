@@ -21,6 +21,7 @@ using namespace std;
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 void optimizaiton_example_01();
+void optimizaiton_example_02();
 
 int main(int argc, const char**){
 /*
@@ -28,6 +29,7 @@ int main(int argc, const char**){
  * functions from the Tasmanian Optimization Module.
  */
     optimizaiton_example_01();
+    optimizaiton_example_02();
 
     if (argc > 1) return 0; // fast testing used to check if the library linked correctly
 
