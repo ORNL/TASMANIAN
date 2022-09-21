@@ -48,6 +48,9 @@ add_executable(example_dream         example_dream_01.cpp
                                      example_dream_05.cpp
                                      example_dream.cpp)
 
+add_executable(example_optimization  example_optimization_01.cpp
+                                     example_optimization.cpp)
+
 target_link_libraries(example_sparse_grids  Tasmanian::Tasmanian)
 target_link_libraries(example_dream         Tasmanian::Tasmanian)
 
