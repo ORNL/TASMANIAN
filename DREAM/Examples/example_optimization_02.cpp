@@ -17,13 +17,26 @@ using namespace std;
  * \ingroup TasmanianOPTExamples
  * \addtogroup TasmanianOPTExamples2 Tasmanian Optimization module, example 2
  *
- * Example 1:
+ * Example 2: Gradient Descent method
  */
 
-//! \brief Optimization Example 2:
-//! \ingroup TasmanianOPTExamples2
+/*!
+ * \ingroup TasmanianOPTExamples2
+ * \brief Optimization Example 2: Demonstrates the use of the Gradient Descent method
+ *
+ * The Gradient Descent method is both fast converging and very stable,
+ * provided that the objective function has a single relative minimum (e.g., convex),
+ * or the initial starting point is close to the global minimum.
+ * The method is a good complement to the Particle Swarm, where the more slowly
+ * converging particle method can identify the global extrema for a non-convex problem,
+ * and few gradient iterations can quickly zoom into the solution.
+ *
+ * This example uses a very simple quadratic function, the primary goal here is to
+ * demonstrate the syntax rather than compare, contrast or combine different optimization methods.
+ *
+ * \snippet DREAM/Examples/example_optimization_02.cpp OPT_Example_02 example
+ */
 
-//! \snippet DREAM/Examples/example_optimization_02.cpp OPT_Example_02 example
 void optimizaiton_example_02(){
 #ifndef __TASMANIAN_DOXYGEN_SKIP
 //! [OPT_Example_02 example]
@@ -51,6 +64,10 @@ void optimizaiton_example_02(){
      int num_dimensions = 2;
      double initial_stepsize = 0.0;
 
+     // the {0.0, 0.0} is a vector with initial state, e.g., initial guess
+     // coupling particle swarm and gradient descent can happen with
+     // auto gradient_state =
+     //              TasOptimization::GradientDescentState(particle_state.getBestPosition(), 0.0);
      TasOptimization::GradientDescentState state({0.0, 0.0}, initial_stepsize);
 
      int max_iterations = 200;
@@ -99,6 +116,10 @@ void optimizaiton_example_02(){
 
      // finding optimum inside a box
      // define the projection operator of a vector into a box
+     // restriction function is probably better name here, since the projection
+     // is not orthogonal
+     // Note: that such restriction is necessary when working with a sparse grid
+     //       since the surrogates are usually restricted to a hypercube box.
      auto projection = [](const std::vector<double> &x, std::vector<double> &p) {
           p[0] = std::min(std::max(x[0], 0.0), 0.5);
           p[1] = std::min(std::max(x[1], 0.0), 1.5);

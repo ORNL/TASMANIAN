@@ -17,11 +17,25 @@ using namespace std;
  * \ingroup TasmanianOPTExamples
  * \addtogroup TasmanianOPTExamples1 Tasmanian Optimization module, example 1
  *
- * Example 1:
+ * Example 1: Particle Swarm method
  */
 
-//! \brief Optimization Example 1:
-//! \ingroup TasmanianOPTExamples1
+/*!
+ * \ingroup TasmanianOPTExamples1
+ * \brief Optimization Example 1: Demonstrates the use of the Particle Swarm method.
+ *
+ * Find the minimum of the six-hump camel function
+ * \f$  f(x,y) = ( 4 - 2.1 x^2 + x^4 / 3) x^2 + x y + ( - 4 + 4 y^2) y^2 \f$
+ * the problem is challenging due to the multiple relative and global extrema.
+ * Classic gradient based methods often stagnate and fail when applied to this benchmark problem.
+ * In contrast, the Particle Swarm method uses multiple "particles" that move around the domain
+ * in search for an optimal position.
+ * The "swarm" shares global information and is fairly insensitive to local extrema.
+ * The algorithm shares many similarities with the DREAM sampling procedure
+ * and is a good fit for the Tasmanian framework.
+ * While the method is probabilistic, identifying a correct global minimum
+ * comes with a high probability of success.
+ */
 
 //! \snippet DREAM/Examples/example_optimization_01.cpp OPT_Example_01 example
 void optimizaiton_example_01(){
@@ -91,7 +105,7 @@ void optimizaiton_example_01(){
      state.initializeParticlesInsideBox({-3.0, -2.0}, {3.0, 2.0});
 
      TasOptimization::ParticleSwarm(
-                              [&](std::vector<double> const&x, std::vector<double> &y)->void{
+                              [&](std::vector<double> const &x, std::vector<double> &y)->void{
                                    grid.evaluateBatch(x, y);
                               },
                               TasDREAM::hypercube({-3.0, -2.0}, {3.0, 2.0}),
