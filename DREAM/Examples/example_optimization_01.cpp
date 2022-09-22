@@ -104,6 +104,10 @@ void optimizaiton_example_01(){
      state = TasOptimization::ParticleSwarmState(num_dimensions, num_particles);
      state.initializeParticlesInsideBox({-3.0, -2.0}, {3.0, 2.0});
 
+     // the values of the objective function for all particle positions are computed in batch
+     // thus, the problem is amenable to GPU acceleration
+     // Note: if GPU acceleration is not available, Tasmanian will automatically fallback to CPU
+     grid.enableAcceleration(TasGrid::accel_gpu_cuda);
      TasOptimization::ParticleSwarm(
                               [&](std::vector<double> const &x, std::vector<double> &y)->void{
                                    grid.evaluateBatch(x, y);
