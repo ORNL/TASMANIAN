@@ -54,6 +54,7 @@ add_executable(example_optimization  example_optimization_01.cpp
 
 target_link_libraries(example_sparse_grids  Tasmanian::Tasmanian)
 target_link_libraries(example_dream         Tasmanian::Tasmanian)
+target_link_libraries(example_optimization  Tasmanian::Tasmanian)
 
 # if the Fortran component was found
 # can also use "if (TARGET Tasmanian::Fortran)"
