@@ -13,6 +13,7 @@ add_subdirectory("@Tasmanian_final_install_path@/share/Tasmanian/examples" examp
 
 add_test(SparseGrids   "${CMAKE_CURRENT_BINARY_DIR}/examples_cxx/example_sparse_grids"  -fast)
 add_test(DREAM         "${CMAKE_CURRENT_BINARY_DIR}/examples_cxx/example_dream"         -fast)
+add_test(Optimization  "${CMAKE_CURRENT_BINARY_DIR}/examples_cxx/example_optimization"  -fast)
 if (Tasmanian_FORTRAN_FOUND)
     add_test(Fortran      "${CMAKE_CURRENT_BINARY_DIR}/examples_cxx/example_sparse_grids_fortran"     -fast)
 endif()
