@@ -12,7 +12,7 @@ endif
 CC = g++
 CXXFLAGS = -O3 -std=c++11 $(OPENMPFLAGS) -fPIC
 
-IADD = -I./include -I./SparseGrids/ -I./InterfaceTPL/ -I./DREAM/ -I./Addons/ -I./
+IADD = -I./include -I./SparseGrids/ -I./InterfaceTPL/ -I./DREAM/ -I./DREAM/Optimization/ -I./Addons/ -I./
 LADD = -L./
 
 # set the compile command
@@ -34,7 +34,8 @@ SparseGridsObj = \
 
 DREAMObj = \
           ./DREAM/tsgDreamState.o ./DREAM/tsgDreamLikelyGaussian.o ./DREAM/tsgDreamSampleWrapC.o \
-          ./DREAM/Optimization/tsgParticleSwarm.o ./DREAM/Optimization/TasmanianOptimizationWrapC.o
+          ./DREAM/Optimization/tsgParticleSwarm.o ./DREAM/Optimization/tsgGradientDescent.o \
+          ./DREAM/Optimization/TasmanianOptimizationWrapC.o
 
 AddonsObj = \
           ./Addons/tsgCLoadNeededValues.o ./Addons/tsgCConstructSurrogate.o ./Addons/tsgCLoadUnstructuredPoints.o ./Addons/tsgCExoticQuadrature.o
@@ -60,12 +61,16 @@ SGExampleObj = \
           ./SparseGrids/Examples/example_sparse_grids_04.o  ./SparseGrids/Examples/example_sparse_grids_05.o \
           ./SparseGrids/Examples/example_sparse_grids_06.o  ./SparseGrids/Examples/example_sparse_grids_07.o \
           ./SparseGrids/Examples/example_sparse_grids_08.o  ./SparseGrids/Examples/example_sparse_grids_09.o \
-          ./SparseGrids/Examples/example_sparse_grids_10.o
+          ./SparseGrids/Examples/example_sparse_grids_10.o  ./SparseGrids/Examples/example_sparse_grids_11.o
 
 DREAMExampleObj = \
           ./DREAM/Examples/example_dream.o     ./DREAM/Examples/example_dream_01.o \
           ./DREAM/Examples/example_dream_02.o  ./DREAM/Examples/example_dream_03.o \
           ./DREAM/Examples/example_dream_04.o  ./DREAM/Examples/example_dream_05.o
+
+OptExampleObj = \
+          ./DREAM/Examples/example_optimization.o     ./DREAM/Examples/example_optimization_01.o \
+          ./DREAM/Examples/example_optimization_02.o
 
 # all target
 .PHONY: all
@@ -112,6 +117,7 @@ libtasmaniancaddons.so: libtasmaniandream.so $(AddonsObj)
 libtasmaniandream.so: libtasmaniansparsegrid.so $(DREAMObj)
 	@echo " -- building the DREAM module"
 	cp ./DREAM/*.hpp ./include/
+	cp ./DREAM/Optimization/*.hpp ./include/
 	ar rcs libtasmaniandream.a $(DREAMObj)
 	$(COMPILE) -shared $(DREAMObj) -o libtasmaniandream.so ./libtasmaniansparsegrid.so
 
@@ -162,18 +168,23 @@ gridtest: $(GidtestObj)
 
 # examples
 .PHONY: examples
-examples: example_sparse_grids example_dream
+examples: example_sparse_grids example_dream example_optimization
 	cp ./InterfacePython/example_sparse_grids.in.py ./InterfacePython/example_sparse_grids.py
 	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python3'|g' ./InterfacePython/example_sparse_grids.py
 	sed -i -e 's|@Tasmanian_python_example_import@|'sys.path.append\(\"`pwd`\"\)'|g' ./InterfacePython/example_sparse_grids.py
 	cp ./InterfacePython/example_dream.in.py ./InterfacePython/example_dream.py
 	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python3'|g' ./InterfacePython/example_dream.py
 	sed -i -e 's|@Tasmanian_python_example_import@|'sys.path.append\(\"`pwd`\"\)'|g' ./InterfacePython/example_dream.py
+	cp ./InterfacePython/example_optimization.in.py ./InterfacePython/example_optimization.py
+	sed -i -e 's|@Tasmanian_string_python_hashbang@|'\/usr\/bin\/env\ python3'|g' ./InterfacePython/example_optimization.py
+	sed -i -e 's|@Tasmanian_python_example_import@|'sys.path.append\(\"`pwd`\"\)'|g' ./InterfacePython/example_optimization.py
 	@echo "Compiled the examples, run with the commands"
 	@echo "./example_sparse_grids"
 	@echo "./example_dream"
+	@echo "./example_optimization"
 	@echo "python3 ./InterfacePython/example_sparse_grids.py"
 	@echo "python3 ./InterfacePython/example_dream.py"
+	@echo "python3 ./InterfacePython/example_optimization.py"
 
 example_sparse_grids: $(SGExampleObj)
 	$(ECOMPILE) $(SGExampleObj) -o example_sparse_grids ./libtasmaniansparsegrid.a
@@ -181,21 +192,28 @@ example_sparse_grids: $(SGExampleObj)
 example_dream: $(DREAMExampleObj)
 	$(ECOMPILE) $(DREAMExampleObj) -o example_dream ./libtasmaniansparsegrid.a ./libtasmaniandream.a
 
+example_optimization: $(OptExampleObj)
+	$(ECOMPILE) $(OptExampleObj) -o example_optimization ./libtasmaniansparsegrid.a ./libtasmaniandream.a
+
 SparseGrids/Examples/example_sparse_grids%.o: SparseGrids/Examples/example_sparse_grids%.cpp
 	$(ECOMPILE) -c $< -o $@
 
 DREAM/Examples/example_dream%.o: DREAM/Examples/example_dream%.cpp
 	$(ECOMPILE) -c $< -o $@
 
+DREAM/Examples/example_optimization%.o: DREAM/Examples/example_optimization%.cpp
+	$(ECOMPILE) -c $< -o $@
 
 # examples testing
 .PHONY: test_examples
 test_examples: examples
 	./example_sparse_grids
 	./example_dream
+	./example_optimization
 ifdef HAS_PYTHON
 	python3 ./InterfacePython/example_sparse_grids.py
 	python3 ./InterfacePython/example_dream.py
+	python3 ./InterfacePython/example_optimization.py
 endif
 
 
@@ -232,10 +250,12 @@ clean:
 	rm -fr ./InterfacePython/*.pyc
 	rm -fr ./InterfacePython/example_sparse_grids.py
 	rm -fr ./InterfacePython/example_dream.py
+	rm -fr ./InterfacePython/example_optimization.py
 	rm -fr ./InterfacePython/testConfigureData.py
 	rm -fr InterfaceMATLAB/tsgGetPaths.m
 	rm -fr example_sparse_grids
 	rm -fr example_dream
+	rm -fr example_optimization
 	rm -fr include
 	rm -fr ./SparseGrids/*.o
 	rm -fr ./DREAM/*.o
