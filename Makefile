@@ -12,7 +12,7 @@ endif
 CC = g++
 CXXFLAGS = -O3 -std=c++11 $(OPENMPFLAGS) -fPIC
 
-IADD = -I./include -I./SparseGrids/ -I./InterfaceTPL/ -I./DREAM/ -I./Addons/ -I./
+IADD = -I./include -I./SparseGrids/ -I./InterfaceTPL/ -I./DREAM/ -I./DREAM/Optimization/ -I./Addons/ -I./
 LADD = -L./
 
 # set the compile command
@@ -34,7 +34,8 @@ SparseGridsObj = \
 
 DREAMObj = \
           ./DREAM/tsgDreamState.o ./DREAM/tsgDreamLikelyGaussian.o ./DREAM/tsgDreamSampleWrapC.o \
-          ./DREAM/Optimization/tsgParticleSwarm.o ./DREAM/Optimization/TasmanianOptimizationWrapC.o
+          ./DREAM/Optimization/tsgParticleSwarm.o ./DREAM/Optimization/tsgGradientDescent.o \
+          ./DREAM/Optimization/TasmanianOptimizationWrapC.o
 
 AddonsObj = \
           ./Addons/tsgCLoadNeededValues.o ./Addons/tsgCConstructSurrogate.o ./Addons/tsgCLoadUnstructuredPoints.o ./Addons/tsgCExoticQuadrature.o
@@ -112,6 +113,7 @@ libtasmaniancaddons.so: libtasmaniandream.so $(AddonsObj)
 libtasmaniandream.so: libtasmaniansparsegrid.so $(DREAMObj)
 	@echo " -- building the DREAM module"
 	cp ./DREAM/*.hpp ./include/
+	cp ./DREAM/Optimization/*.hpp ./include/
 	ar rcs libtasmaniandream.a $(DREAMObj)
 	$(COMPILE) -shared $(DREAMObj) -o libtasmaniandream.so ./libtasmaniansparsegrid.so
 
