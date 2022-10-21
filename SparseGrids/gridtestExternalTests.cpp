@@ -1966,6 +1966,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
                 pass = false;
 
         #ifdef Tasmanian_ENABLE_GPU
+        #ifndef Tasmanian_ENABLE_DPCPP
         if ((grid.getAccelerationType() == accel_gpu_cuda) && !(grid.isWavelet() && grid.getOrder() == 3)){
             if (!testDenseGPU<double, GridMethodEvalBatchGPU>(x, baseline_y, num_x, Maths::num_tol, grid, "GPU evaluate<double>"))
                 pass = false;
@@ -1973,6 +1974,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
             if (!testDenseGPU<float, GridMethodEvalBatchGPU>(x, baseline_y, num_x, 5.E-5, grid, "GPU evaluate<float>"))
                 pass = false;
         }
+        #endif
         #endif
 
         if (!testAccEval<double, GridMethodFast>(x, baseline_y, 16, Maths::num_tol, grid, "accelerated fast<double>"))
@@ -2026,6 +2028,9 @@ bool ExternalTester::testGpuCaching() const{
                     case 4: return makeWaveletGrid(2, 1, 2, 1);
                 }
             }();
+            #ifdef Tasmanian_ENABLE_DPCPP
+            if (t == 3) continue;
+            #endif
             if (grid.isFourier()) grid.setDomainTransform({-1.0, -1.0}, {1.0, 1.0});
 
             grid.setGPUID(gpu);
@@ -2063,6 +2068,9 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     // check back basis evaluations, x and result both sit on the GPU (using CUDA acceleration)
     TasGrid::TasmanianSparseGrid grid;
     int num_tests = 9;
+    #ifdef Tasmanian_ENABLE_DPCPP
+    num_tests = 0; // cancel the localp testing for SYCL
+    #endif
     int dims = 3;
     TasGrid::TypeOneDRule pwp_rule[9] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb,
                                          TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb,
