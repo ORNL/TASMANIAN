@@ -27,6 +27,12 @@ set_property(TARGET Tasmanian::tasgrid PROPERTY IMPORTED_LOCATION "@Tasmanian_fi
 add_library(Tasmanian::Tasmanian INTERFACE IMPORTED GLOBAL) # master target
 target_link_libraries(Tasmanian::Tasmanian INTERFACE Tasmanian_master)
 
+if (NOT CMAKE_VERSION VERSION_LESS 3.17)
+    if (@Tasmanian_ENABLE_CUDA@)
+        find_package(CUDAToolkit REQUIRED)
+    endif()
+endif()
+
 if (@BUILD_SHARED_LIBS@)
     set(Tasmanian_SHARED_FOUND "ON")
     add_library(Tasmanian::shared INTERFACE IMPORTED GLOBAL) # master target
