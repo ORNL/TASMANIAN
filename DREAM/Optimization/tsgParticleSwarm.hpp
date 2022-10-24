@@ -54,16 +54,21 @@ namespace TasOptimization {
  * \brief Stores the information about a particle swarm.
  *
  * \par class ParticleSwarmState
- * An object of this class represents the components of a particle swarm and all key parts of the swarm can be read through member
- * methods. Methods are also provided to initialize the swarm and modify a subset of its parts.
+ * A state class associated with the Particle Swarm State algorithm.
  *
  * \par Constructors and Copy/Move assignment
- * All constructors require information about number of dimensions and particles. Methods are available to retrieve these two
- * numbers. No default constructor is available for this class, but copy/move constructors and assignment operator= overloads are
- * available. The number of dimensions and particles \b cannot be modified.
+ * All constructors requires the number of dimensions and particles,
+ * those \b cannot be modified but can be retrieved by get methods.
+ * The class is movable and copyable by constructor or operator=.
  * - ParticleSwarmState()
  * - getNumDimensions()
  * - getNumParticles()
+ *
+ * \par Data layout
+ * The logical organization of the particle data follows conventions similar to the Sparse Grid module.
+ * Namely, the data is organized into strips of size \b num_dimensions and there is one strip
+ * for each particle. Each particle has several vectors: position, best-known position and velocity;
+ * as well as cached values for the objective functional at the position and best-position.
  *
  * \par Set and Get Particle Positions and Velocities
  * Each particle of the swarm is associated with a (possibly empty) position and velocity vector. Methods are also available to
@@ -73,17 +78,18 @@ namespace TasOptimization {
  * - isPositionInitialized(), isVelocityInitialized()
  *
  * \par Set and Get Best Particle Positions
- * When an optimization method is applied to the swarm, each particle will also be assigned a 'best' particle position, which is
- * a past or present position of the particle that yields the best objective value. The 'best' position of the swarm is the
- * best position among all of the 'best' particle positions, i.e., it is the position with the best objective value observed
- * throughout the history of all particle positions.
- * - getBestParticlePositions(), getBestPosition(), setBestParticlePositions()
+ * A \b best known position will be assigned to each particle during the execution of the algorithm.
+ * The \b best know position for the entire swarm is also available and it is the current "solution",
+ * i.e., the point with smallest observed functional.
+ * - getBestPosition()
+ * - getBestParticlePositions(), setBestParticlePositions()
  * - clearBestParticles()
  * - isBestPositionInitialized()
  *
  * \par Initializing a Random Swarm
  * Helper methods are available for initializing random particle positions and velocities.
  * - initializeParticlesInsideBox()
+ * - isBestPositionInitialized()
  *
  * \par Particle Swarm Algorithm
  * If all of particles of the swarm are initialized with velocities and positions, then the particle swarm
@@ -101,7 +107,7 @@ namespace TasOptimization {
  * \par Clearing the Cache
  * After an optimization method is applied to the swarm, certain data related to the objective function are stored in cache variables
  * inside this class. If an optimization method needs to be applied to the swarm with a different objective function than the one used
- * to generate the cache, the cache should first be reset.
+ * to generate the cache, the cache \b must be cleared.
  * - clearCache()
  * - isCacheInitialized()
  */
@@ -128,16 +134,24 @@ public:
     inline int getNumParticles() const {return num_particles;}
     //! \brief Return the particle positions.
     inline void getParticlePositions(double pp[]) const {std::copy_n(particle_positions.begin(), num_particles * num_dimensions, pp);}
+    //! \brief Return the particle positions, vector overload.
     inline std::vector<double> getParticlePositions() const {return particle_positions;}
     //! \brief Return the particle velocities.
     inline void getParticleVelocities(double pv[]) const {std::copy_n(particle_velocities.begin(), num_particles * num_dimensions, pv);}
+    //! \brief Return the particle velocities, vector overload.
     inline std::vector<double> getParticleVelocities() const {return particle_velocities;}
-    //! \brief Return the best known particle positions. The last \b num_dimensions entries of this vector contain the
-    //!        best particle position of the entire swarm.
+    /*!
+     * \brief Return the best known particle positions.
+     *
+     * The method actually returns positions with one more than the total number of particles,
+     * the last \b num_dimensions entries of this vector contain the best particle position of the entire swarm.
+     */
     inline void getBestParticlePositions(double bpp[]) const {std::copy_n(best_particle_positions.begin(), (num_particles + 1) * num_dimensions, bpp);}
+    //! \brief Return the best known particle positions, vector overload.
     inline std::vector<double> getBestParticlePositions() const {return best_particle_positions;}
-    //! \brief Return the best known position in the swarm.
+    //! \brief Loads the best known position in the swarm.
     inline void getBestPosition(double bp[]) const {std::copy_n(best_particle_positions.begin() + num_particles * num_dimensions, num_dimensions, bp);}
+    //! \brief Returns the best knows position in the swarm.
     inline std::vector<double> getBestPosition() const {
         std::vector<double> best_position(num_dimensions);
         getBestPosition(best_position.data());
@@ -157,16 +171,18 @@ public:
         return {positions_initialized, velocities_initialized, best_positions_initialized, cache_initialized};
     }
 
-    //! \brief Set the particle positions.
+    //! \brief Set the particle positions, raw-array variant.
     void setParticlePositions(const double pp[]) {
         std::copy_n(pp, num_dimensions * num_particles, particle_positions.begin());
         positions_initialized = true;
     }
+    //! \brief Set the particle positions, vector variant.
     void setParticlePositions(const std::vector<double> &pp) {
         checkVarSize("ParticleSwarmState::setParticlePositions", "particle position", pp.size(), num_dimensions * num_particles);
         particle_positions = pp;
         positions_initialized = true;
     }
+    //! \brief Set the particle positions, with a move.
     void setParticlePositions(std::vector<double> &&pp) {
         checkVarSize("ParticleSwarmState::setParticlePositions", "particle positions", pp.size(), num_dimensions * num_particles);
         particle_positions = std::move(pp);
@@ -177,11 +193,13 @@ public:
         std::copy_n(pv, num_dimensions * num_particles, particle_velocities.begin());
         velocities_initialized = true;
     }
+    //! \brief Sets the best position.
     void setParticleVelocities(const std::vector<double> &pv) {
         checkVarSize("ParticleSwarmState::setParticleVelocities", "particle velocities", pv.size(), num_dimensions * num_particles);
         particle_velocities = pv;
         velocities_initialized = true;
     }
+    //! \brief Sets the best position, with a move.
     void setParticleVelocities(std::vector<double> &&pv) {
         checkVarSize("ParticleSwarmState::setParticleVelocities", "particle velocities", pv.size(), num_dimensions * num_particles);
         particle_velocities = std::move(pv);
@@ -192,11 +210,13 @@ public:
         std::copy_n(bpp, num_dimensions * (num_particles + 1), best_particle_positions.begin());
         best_positions_initialized = true;
     }
+    //! \brief Sets the best position per particle.
     void setBestParticlePositions(const std::vector<double> &bpp) {
         checkVarSize("ParticleSwarmState::setBestParticlePositions", "best particle positions", bpp.size(), num_dimensions * (num_particles + 1));
         best_particle_positions = bpp;
         best_positions_initialized = true;
     }
+    //! \brief Sets the best position per particle, allows for a move.
     void setBestParticlePositions(std::vector<double> &&bpp) {
         checkVarSize("ParticleSwarmState::setBestParticlePositions", "best particle positions", bpp.size(), num_dimensions * (num_particles + 1));
         best_particle_positions = std::move(bpp);
@@ -226,28 +246,10 @@ public:
      */
     void initializeParticlesInsideBox(const double box_lower[], const double box_upper[],
                                       const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
+    //! \brief Randomly initializes all of the particles, vector API overload.
     void initializeParticlesInsideBox(const std::vector<double> &box_lower, const std::vector<double> &box_upper,
                                       const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);
 
-
-    /*! \brief Applies the classic particle swarm algorithm to a particle swarm state.
-     * \ingroup OptimizationAlgorithm Particle Swarm Algorithm
-     *
-     * Runs \b num_iterations of the particle swarm algorithm to a particle swarm \b state to minimize the function \b f over the
-     * domain \b inside. The parameters of the algorithm are \b inertia_weight , \b cognitive_coeff , and \b social_coeff. The
-     * uniform [0,1] random number generator used by the algorithm is \b get_random01.
-     *
-     * \param f Objective function to be minimized
-     * \param inside indicates whether a given point is inside or outside of the domain of interest
-     * \param inertia_weight inertial weight for the particle swarm algorithm
-     * \param cognitive_coeff cognitive coefficient for the particle swarm algorithm
-     * \param social_coeff social coefficient for the particle swarm algorithm
-     * \param num_iterations number of iterations to perform
-     * \param state holds the state of the particles, e.g., positions and velocities, see TasOptimization::ParticleSwarmState
-     * \param get_random01 random number generator, defaults to rand()
-     *
-     * \throws std::runtime_error if either the positions or the velocities of the \b state have not been initialized
-     */
     friend void ParticleSwarm(const ObjectiveFunction f, const TasDREAM::DreamDomain inside, const double inertia_weight,
                               const double cognitive_coeff, const double social_coeff, const int num_iterations,
                               ParticleSwarmState &state, const std::function<double(void)> get_random01);
@@ -278,6 +280,26 @@ private:
 };
 
 // Forward declarations.
+
+/*!
+ * \brief Applies the classic particle swarm algorithm to a particle swarm state.
+ * \ingroup OptimizationAlgorithm
+ *
+ * Runs \b num_iterations of the particle swarm algorithm to a particle swarm \b state to minimize the function \b f over the
+ * domain \b inside. The parameters of the algorithm are \b inertia_weight , \b cognitive_coeff , and \b social_coeff. The
+ * uniform [0,1] random number generator used by the algorithm is \b get_random01.
+ *
+ * \param f Objective function to be minimized
+ * \param inside indicates whether a given point is inside or outside of the domain of interest
+ * \param inertia_weight inertial weight for the particle swarm algorithm
+ * \param cognitive_coeff cognitive coefficient for the particle swarm algorithm
+ * \param social_coeff social coefficient for the particle swarm algorithm
+ * \param num_iterations number of iterations to perform
+ * \param state holds the state of the particles, e.g., positions and velocities, see TasOptimization::ParticleSwarmState
+ * \param get_random01 random number generator, defaults to rand()
+ *
+ * \throws std::runtime_error if either the positions or the velocities of the \b state have not been initialized
+ */
 void ParticleSwarm(const ObjectiveFunction f, const TasDREAM::DreamDomain inside, const double inertia_weight,
                    const double cognitive_coeff, const double social_coeff, const int num_iterations,
                    ParticleSwarmState &state, const std::function<double(void)> get_random01 = TasDREAM::tsgCoreUniform01);

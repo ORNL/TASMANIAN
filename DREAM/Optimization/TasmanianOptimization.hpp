@@ -52,31 +52,37 @@
  */
 
 /*!
- * \defgroup TasmanianOptimization Function Optimization
+ * \defgroup TasmanianOptimization Optimization
  *
- * \par Function Optimization
- * A collection of optimization algorithms for minimizing extended real-valued functions.
+ * \par Optimization
+ * A collection of optimization algorithms for minimizing multivariate real-valued functions.
+ * The algorithms can be applied to both surrogates constructed with sparse grids and
+ * user-provided lambdas.
  */
 
 /*!
  * \ingroup TasmanianOptimization
  * \addtogroup OptimizationState Optimization States
  *
- * States that are updated during the execution of an optimization algorithm.
+ * The Tasmanian framework uses \b states objects to encapsulate meta-data related to the optimization algorithms.
+ * Each algorithm is associated with a separate state class containing specific parameters.
  */
 
 /*!
  * \ingroup TasmanianOptimization
  * \addtogroup OptimizationAlgorithm Optimization Algorithms
  *
- * Algorithms that are used to minimize an extended real-valued function over a given domain.
+ * The optimization algorithms are written in functional programming applied to combinations
+ * of objective functionals and optimization states.
+ * The state and the algorithm are split so that different functionals can be used
+ * with a single state in a multi-fidelity paradigm.
+ * An example would be the use of a sparse grid surrogate for the first few steps
+ * of the process and switching to the full-model for the last few iterations.
  */
 
 /*!
  * \ingroup TasmanianOptimization
  * \brief Encapsulates the Tasmanian Optimization module.
- *
- * Optimization related classes and methods that sit under the TasOptimization namespace.
  */
 namespace TasOptimization {}
 

@@ -83,7 +83,7 @@ OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const Gr
         state.adaptive_stepsize *= decrease_coeff; // Offset the do-while loop.
         // Compute residual := ||(x0-x) / stepsize + gx - gx0||_2.
         grad(x, gx);
-        status.residual = compute_stationarity_residual(x, x0, gx, gx0, state.adaptive_stepsize);
+        status.residual = computeStationarityResidual(x, x0, gx, gx0, state.adaptive_stepsize);
     }
     return status;
 }
