@@ -52,22 +52,25 @@
  * \ingroup TasmanianOptimization
  * \addtogroup OptimizationUtil Miscellaneous utility functions and aliases
  *
- * Several type aliases and utility functions based on similar ones in the DREAM module.
+ * Several type aliases and utility functions similar to the he DREAM module.
  */
 
 namespace TasOptimization {
 
-/*! \internal
+/*!
  * \ingroup OptimizationUtil
  *
  * Stores information about the run of an optimization algorithm. The \b residual field is algorithm dependent.
  */
 struct OptimizationStatus {
+    //! \brief The number of iterations performed by the current optimization call.
     int performed_iterations;
+    //! \brief The current residual, e.g., the stationarity residual for the gradient descent.
     double residual;
 };
 
-/*! \internal
+/*!
+ * \internal
  * \ingroup OptimizationUtil
  *
  * Checks if a variable size \b var_name associated with \b var_name inside \b method_name matches an expected size \b exp_size.
@@ -86,7 +89,15 @@ inline void checkVarSize(const std::string method_name, const std::string var_na
 /*! \ingroup OptimizationUtil
  * \brief Generic non-batched objective function signature.
  *
- * Accepts a single input \b x and returns the evaluation of the function on the point \b x.
+ * Accepts a single input \b x and returns the value of the function at the point \b x.
+ *
+ * Example of a 2D quadratic function:
+ * \code
+ *  ObjectiveFunctionSingle f = [](const std::vector<double> &x)->
+ *      double {
+ *          return x[0] * x[0] + 2.0 * x[1] * x[1];
+ *      };
+ * \endcode
  */
 using ObjectiveFunctionSingle = std::function<double(const std::vector<double> &x)>;
 
@@ -94,8 +105,21 @@ using ObjectiveFunctionSingle = std::function<double(const std::vector<double> &
  * \brief Generic batched objective function signature.
  *
  * Batched version of TasOptimization::ObjectiveFunctionSingle.
- * Accepts multiple points \b x_batch and writes their corresponding values into
- * \b fval_batch. It is expected that the size of \b x_batch is a multiple of the size of \b fval_batch.
+ * Accepts multiple points \b x_batch and writes their corresponding values into \b fval_batch.
+ * Each point is stored consecutively in \b x_batch so the total size of \b x_batch is
+ * \b num_dimensions times \b num_batch. The size of \b fval_batch is \b num_batch.
+ * The Tasmanian optimization methods will always provide correct sizes for the input,
+ * no error checking is needed.
+ *
+ * Example of a 2D batch quadratic function:
+ * \code
+ *  ObjectiveFunction f = [](std::vector<double> const &x, std::vector<double> &y)->
+ *      void {
+ *          for(size_t i=0; i<y.size(); i++) {
+ *              y[i] = x[2*i] * x[2*i] + 2.0 * x[2*i+1] * x[2*i+1];
+ *          }
+ *      };
+ * \endcode
  */
 using ObjectiveFunction = std::function<void(const std::vector<double> &x_batch, std::vector<double> &fval_batch)>;
 
@@ -121,6 +145,16 @@ inline ObjectiveFunction makeObjectiveFunction(const int num_dimensions, const O
  * \brief Generic non-batched gradient function signature.
  *
  * Accepts a single input \b x_single and returns the gradient \b grad of \b x_single.
+ * Note that the gradient and \b x_single have the same size.
+ *
+ * Example of a 2D batch quadratic function:
+ * \code
+ *  GradientFunctionSingle g = [](std::vector<double> const &x, std::vector<double> &grad)->
+ *      void {
+ *          grad[0] = 2.0 * x[0];
+ *          grad[1] = 4.0 * x[0];
+ *      };
+ * \endcode
  */
 using GradientFunctionSingle = std::function<void(const std::vector<double> &x_single, std::vector<double> &grad)>;
 
@@ -128,26 +162,36 @@ using GradientFunctionSingle = std::function<void(const std::vector<double> &x_s
  * \brief Generic non-batched projection function signature.
  *
  * Accepts a single input \b x_single and returns the projection \b proj of \b x_single onto a user-specified domain.
+ *
+ * Example of 2D projection on the box of [-1, 1]
+ * \code
+ *  ProjectionFunctionSingle p = [](std::vector<double> const &x, std::vector<double> &p)->
+ *      void {
+ *          p[0] = std::min(std::max(x[0], -1.0), 1.0);
+            p[1] = std::min(std::max(x[1], -1.0), 1.0);
+ *      };
+ * \endcode
  */
 using ProjectionFunctionSingle = std::function<void(const std::vector<double> &x_single, std::vector<double> &proj)>;
 
-/*! \ingroup OptimizationUtil
+/*!
+ * \ingroup OptimizationUtil
  * \brief Generic identity projection function.
  */
-inline void identity(const std::vector<double> &x, std::vector<double> &y) {y=x;};
+inline void identity(const std::vector<double> &x, std::vector<double> &y) { std::copy(x.begin(), x.end(), y.begin()); }
 
-/*! \ingroup OptimizationUtil
+/*!
+ * \ingroup OptimizationUtil
  * Computes the minimization stationarity residual for a point \b x evaluated from a gradient descent step at \b x0 with stepsize
  * \b lambda. More specifically, this residual is an upper bound for the quantity:
  *
- * \f[
- * -\inf_{\|d\| = 1, d\in T_C(x)}f'(x;d)\text{ where }f'(x;d)=\lim_{t\downarrow0}\frac{f(x+td)-f(x)}{t},
- * \f]
+ * \f$ -\inf_{\|d\| = 1, d\in T_C(x)} f'(x;d) \f$
+ * where \f$ f'(x;d)=\lim_{t \to 0} \frac{ f(x+td)-f(x) }{ t }, \f$
  *
  * the set \f$C\f$ is the domain of \f$f\f$, and \f$T_C(x)\f$ is the tangent cone of \f$C\f$ at \f$x\f$. Here, the gradient of x
  * (resp. x0) is gx (resp. gx0).
  */
-inline double compute_stationarity_residual(const std::vector<double> &x, const std::vector<double> &x0, const std::vector<double> &gx,
+inline double computeStationarityResidual(const std::vector<double> &x, const std::vector<double> &x0, const std::vector<double> &gx,
                                             const std::vector<double> &gx0, const double lambda) {
     double residual = 0.0;
     for (size_t i=0; i<x.size(); i++) {
