@@ -40,19 +40,19 @@ Optional features:
 
 | Feature | Tested versions     | Recommended      |
 |----|----|----|
-| gcc     | 6 - 10              | any              |
-| clang   | 5 - 10              | any              |
+| gcc     | 7 - 11              | any              |
+| clang   | 6 - 14              | any              |
 | icc     | 18.1                | 18.1             |
 | xl      | 16.1                | 16.1             |
 | pgi     | 19.10 - 20.4        | 20.4             |
-| cmake   | 3.10 - 3.21         | 3.16             |
-| python  | 3.5 - 3.8           | any              |
+| cmake   | 3.10 - 3.22         | 3.22             |
+| python  | 3.7 - 3.10          | any              |
 | anaconda| 5.3                 | 5.3              |
 | OpenBlas| 0.2.18 - 3.08       | any              |
 | ATLAS   | 3.10                | 3.10             |
 | ESSL    | 6.2                 | 6.2              |
 | CUDA    | 8.0 - 11            | 11.3             |
-| ROCm    | 4.0 - 4.3           | 4.3              |
+| ROCm    | 4.0 - 5.2           | 4.3              |
 | libiomp | 5.0                 | 5.0              |
 | MAGMA   | 2.5.1 - 2.6.1       | 2.6.1            |
 | Doxygen | 1.8.13              | 1.8.13           |
@@ -395,6 +395,5 @@ Several known issues and work-around fixes:
 * XL Fortran needs to use the default halt level which is unnecessarily modified by CMake
     * overwrite the CMake flags using `-DCMAKE_Fortran_FLAGS=-qthreaded`
     * see [the github discussion for details](https://github.com/xsdk-project/xsdk-issues/issues/94#issuecomment-916890894)
-* in version 7.3 documentation has to be build with `make Tasmanian_doxygen` as it is not added to target `all`
 * Older versions of CUDA do not work with newer versions of some compilers, e.g., `gcc`
     * consult the CUDA manual for a list of acceptable compilers
