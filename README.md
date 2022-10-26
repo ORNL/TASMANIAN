@@ -6,6 +6,8 @@
 
 The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN is a collection of robust libraries for high dimensional integration and interpolation as well as parameter calibration. This documentation focuses on the libraries and the software API, refer to the PDF document on the project web-page for specifics about the mathematics of the implemented methods.
 
+[Downloads](https://github.com/ORNL/TASMANIAN/releases)
+
 Visit us at [https://github.com/ORNL/Tasmanian](https://github.com/ORNL/Tasmanian)
 
 [Documentation: Latest Stable](https://ornl.github.io/TASMANIAN/stable/)
