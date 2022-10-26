@@ -1,3 +1,16 @@
+Changelog for version 7.9
+--------------
+
+* new module: Tasmanian Optimization
+    * implements Gradient Descent and Particle Swarm methods
+    * included examples and documentation
+    * credit goes to William Kong
+* added differentiation method for all sparse grid types
+* improved libEnsemble-Tasmanian integration
+    * now includes the dynamic adaptive construction
+* migrated the tasmanian.ornl.gov page content to github
+* miscellaneous bug fixes and performance improvements
+
 Changelog for version 7.7
 --------------
 
