@@ -121,11 +121,11 @@ class GradientDescentState {
         x = x_new;
     }
 
-    friend OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g,
+    friend OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const GradientFunctionSingle &grad,
                                               const ProjectionFunctionSingle &proj, const double increase_coeff,
                                               const double decrease_coeff, const int max_iterations, const double tolerance,
                                               GradientDescentState &state);
-    friend OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &f, const GradientFunctionSingle &g,
+    friend OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const GradientFunctionSingle &grad,
                                               const double increase_coeff, const double decrease_coeff, const int max_iterations,
                                               const double tolerance, GradientDescentState &state);
 

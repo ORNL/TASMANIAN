@@ -56,6 +56,7 @@ set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${CMAKE_CURRENT_BINARY_DIR}/README.md")
 
 doxygen_add_docs(Tasmanian_doxygen
                  ${CMAKE_CURRENT_BINARY_DIR}/README.md
+                 Doxygen/Contributors.md
                  Doxygen/Installation.md
                  Doxygen/InterfacePython.md
                  Doxygen/InterfaceLibEnsemble.md

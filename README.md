@@ -6,8 +6,7 @@
 
 The Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN is a collection of robust libraries for high dimensional integration and interpolation as well as parameter calibration. This documentation focuses on the libraries and the software API, refer to the PDF document on the project web-page for specifics about the mathematics of the implemented methods.
 
-Visit us at: [https://tasmanian.ornl.gov/](https://tasmanian.ornl.gov/) and
-[https://github.com/ORNL/Tasmanian](https://github.com/ORNL/Tasmanian)
+Visit us at [https://github.com/ORNL/Tasmanian](https://github.com/ORNL/Tasmanian)
 
 [Documentation: Latest Stable](https://ornl.github.io/TASMANIAN/stable/)
 
@@ -46,11 +45,23 @@ from a posterior distribution comprised from a data-informed likelihood and an a
 The DREAM module of Tasmanian can use Tasmanian Sparse Grids approximation to either the model
 or the likelihood.
 
+### Math details
+
+The online documentation focuses on the API and usage of the Tasmanian software.
+More detailed description of the mathematical capabilities and some of the terminology
+can be found at the **Math Manual**
+
+[https://mkstoyanov.github.io/tasmanian_aux_files/docs/TasmanianMathManual.pdf](https://mkstoyanov.github.io/tasmanian_aux_files/docs/TasmanianMathManual.pdf)
 
 ### Please cite us
 If you use Tasmanian for your research, please cite the Manual and our work on global and locally adaptive grids.
 
-[http://tasmanian.ornl.gov/documents/Tasmanian.bib](http://tasmanian.ornl.gov/documents/Tasmanian.bib)
+[https://github.com/mkstoyanov/tasmanian_aux_files/blob/main/docs/Tasmanian.bib](https://github.com/mkstoyanov/tasmanian_aux_files/blob/main/docs/Tasmanian.bib)
+
+Download the .bib file:
+
+[https://mkstoyanov.github.io/tasmanian_aux_files/docs/Tasmanian.bib](https://mkstoyanov.github.io/tasmanian_aux_files/docs/Tasmanian.bib)
+
 
 ### Quick Install
 
