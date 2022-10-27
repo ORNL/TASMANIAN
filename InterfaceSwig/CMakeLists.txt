@@ -1,14 +1,10 @@
 if (Tasmanian_ENABLE_SWIG)
-  if (CMAKE_VERSION VERSION_LESS 3.18)
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/backport-cmake-318")
-  endif()
+    find_package(SWIG COMPONENTS fortran REQUIRED)
 
-  find_package(SWIG COMPONENTS fortran REQUIRED)
-
-  # SWIG is requested and available; make sure it's the Fortran fork.
-  cmake_policy(SET CMP0078 "NEW")
-  cmake_policy(SET CMP0086 "NEW")
-  include(UseSWIG)
+    # SWIG is requested and available; make sure it's the Fortran fork.
+    cmake_policy(SET CMP0078 "NEW")
+    cmake_policy(SET CMP0086 "NEW")
+    include(UseSWIG)
 endif()
 
 set(Tasmanian_GENERATE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated")

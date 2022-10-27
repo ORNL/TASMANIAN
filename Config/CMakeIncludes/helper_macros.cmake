@@ -101,7 +101,7 @@ endmacro()
 # will find the rpaths for each library in the BLAS_LIBRARIES list
 # and will append the rpath to a list called Tasmanian_rpath
 macro(Tasmanian_find_rpath)
-    cmake_parse_arguments(Tasmanian_findrpath "" "LIST" "LIBRARIES" ${ARGN})
+    cmake_parse_arguments(Tasmanian_findrpath "" "LIST" "LIBRARIES;TARGETS;INCLUDES" ${ARGN})
 
     foreach(_tsg_lib ${Tasmanian_findrpath_LIBRARIES})
         get_filename_component(_tsg_libpath ${_tsg_lib} DIRECTORY)
@@ -109,7 +109,26 @@ macro(Tasmanian_find_rpath)
         #message(STATUS "rpath for ${_tsg_lib} => ${_tsg_libpath}")
     endforeach()
 
-    foreach(_tsg_lib LIST LIBRARIES) # cleanup
+    foreach(_tsg_lib ${Tasmanian_findrpath_TARGETS})
+        get_property(_tsg_locatoin TARGET ${_tsg_lib} PROPERTY IMPORTED_LOCATION)
+        if (_tsg_locatoin)
+            get_filename_component(_tsg_libpath ${_tsg_locatoin} DIRECTORY)
+            list(APPEND Tasmanian_${Tasmanian_findrpath_LIST} ${_tsg_libpath})
+        endif()
+        unset(_tsg_locatoin)
+        #message(STATUS "rpath for ${_tsg_lib} => ${_tsg_libpath}")
+    endforeach()
+
+    foreach(_tsg_lib ${Tasmanian_findrpath_INCLUDES})
+        get_filename_component(_tsg_libpath ${${_tsg_lib}} DIRECTORY)
+        if (EXISTS "${_tsg_libpath}/lib")
+            list(APPEND Tasmanian_${Tasmanian_findrpath_LIST} "${_tsg_libpath}/lib")
+        endif()
+        unset(_tsg_locatoin)
+        #message(STATUS "rpath for ${_tsg_lib} => ${_tsg_libpath}/lib")
+    endforeach()
+
+    foreach(_tsg_lib LIST LIBRARIES TARGETS) # cleanup
         unset(Tasmanian_${_tsg_lib})
     endforeach()
     unset(_tsg_lib)

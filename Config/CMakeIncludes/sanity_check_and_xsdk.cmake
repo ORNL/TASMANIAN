@@ -18,7 +18,6 @@ if (SKBUILD)
     endif()
     if (NOT "$ENV{Tasmanian_ENABLE_HIP}" STREQUAL "")
         set(Tasmanian_ENABLE_HIP ON)
-        set(CMAKE_CXX_COMPILER "$ENV{Tasmanian_ENABLE_HIP}")
     endif()
     if (NOT "$ENV{Tasmanian_ENABLE_DPCPP}" STREQUAL "")
         set(Tasmanian_ENABLE_DPCPP ON)
@@ -49,7 +48,7 @@ if (Tasmanian_ENABLE_SWIG AND NOT Tasmanian_ENABLE_FORTRAN)
 endif()
 
 # OpenMP setup
-if ((Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED) AND NOT (Tasmanian_ENABLE_HIP OR Tasmanian_ENABLE_DPCPP))
+if ((Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED) AND NOT Tasmanian_ENABLE_DPCPP)
     if (Tasmanian_ENABLE_OPENMP)
         find_package(OpenMP REQUIRED) # OpenMP requested explicitly, require regardless of ENABLE_RECOMMENDED
     else()
@@ -104,23 +103,24 @@ endif()
 
 # Python setup, look for python
 if (Tasmanian_ENABLE_PYTHON OR (Tasmanian_ENABLE_RECOMMENDED AND BUILD_SHARED_LIBS))
-    find_package(PythonInterp)
+    find_package(Python 3.0 COMPONENTS Interpreter)
 
-    if (PYTHONINTERP_FOUND)
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/PythonImportTest.py"
-                        RESULT_VARIABLE Tasmanian_python_has_numpy OUTPUT_QUIET)
-    else()
-        set(Tasmanian_python_has_numpy "1") # 1 is error code if the script above fails
-    endif()
-
-    if (NOT "${Tasmanian_python_has_numpy}" STREQUAL "0")
-        if (NOT Tasmanian_ENABLE_PYTHON) # means we are using RECOMMENDED only
-            message(STATUS "Tasmanian could not find Python with numpy and ctypes modules, the python interface will not be installed and some tests will be omitted")
-        else()
-            message(FATAL_ERROR "-D Tasmanian_ENABLE_PYTHON is ON, but either find_package(PythonInterp) failed python executable could not 'import numpy, ctypes'\nuse -D PYTHON_EXECUTABLE:PATH to specify suitable python interpreter")
+    if (Python_FOUND)
+        # manually test for NumPy, the cmake native lookup for NumPy is not reliable when using non-native cmake in Ubuntu
+        # the search itself is designed to find the NumPy headers for compiling with C and not just the import numpy
+        execute_process(COMMAND "${Python_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/PythonImportTest.py"
+                        RESULT_VARIABLE Tasmanian_python_has_numpy)
+        if (NOT "${Tasmanian_python_has_numpy}" STREQUAL "0") # exit code 0 means all OK
+            if (Tasmanian_ENABLE_PYTHON)
+                message(FATAL_ERROR "CMake found Python, but simple 'import numpy' failed. Probably missing numpy module.")
+            endif()
+        else() # found python and numpy
+            set(Tasmanian_ENABLE_PYTHON ON)
         endif()
     else()
-        set(Tasmanian_ENABLE_PYTHON ON) # just in case we are using RECOMMENDED only
+        if (Tasmanian_ENABLE_PYTHON)
+            message(FATAL_ERROR "CMake could not find Python")
+        endif()
     endif()
 endif()
 
@@ -132,20 +132,30 @@ if ((Tasmanian_ENABLE_CUDA AND Tasmanian_ENABLE_HIP) OR
 endif()
 
 # using the Tasmanian find modules requires the path
-if (Tasmanian_ENABLE_CUDA OR Tasmanian_ENABLE_HIP OR Tasmanian_ENABLE_DPCPP OR Tasmanian_ENABLE_MAGMA)
+if (Tasmanian_ENABLE_DPCPP OR Tasmanian_ENABLE_MAGMA)
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Config/CMakeIncludes/")
 endif()
 
 # Tasmanian_ENABLE_CUDA support
 if (Tasmanian_ENABLE_CUDA)
     enable_language(CUDA)
-
-    find_package(TasmanianCudaMathLibs REQUIRED)
+    find_package(CUDAToolkit REQUIRED)
 endif()
 
 # AMD HIP support
 if (Tasmanian_ENABLE_HIP)
-    find_package(TasmanianRocm REQUIRED)
+    if (CMAKE_VERSION VERSION_LESS 3.21)
+        message(FATAL_ERROR "Tasmanian HIP/ROCm GPU backend requires CMake version 3.21 or newer")
+    endif()
+    list (APPEND CMAKE_PREFIX_PATH /opt/rocm/hip /opt/rocm)
+    enable_language(HIP)
+    set(Tasmanian_rocm_dependencies rocblas rocsparse rocsolver)
+    if (Tasmanian_ENABLE_MAGMA)
+        set(Tasmanian_rocm_dependencies "${Tasmanian_rocm_dependencies} hipblas hipsparse")
+    endif()
+    foreach(_tsg_roclib ${Tasmanian_rocm_dependencies})
+        find_package(${_tsg_roclib} REQUIRED)
+    endforeach()
 endif()
 
 # Intel DPC++ support

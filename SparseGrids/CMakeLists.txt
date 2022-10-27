@@ -51,10 +51,13 @@ set(Tasmanian_source_libsparsegrid
         tsgMathUtils.hpp
         tsgUtils.hpp)
 
-# source files specific to cuda, used for both static and shared libs
+# source files specific to cuda/hip, used for both static and shared libs
 set(Tasmanian_source_libsparsegrid_cuda
        ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgCudaWrappers.cpp
        tsgCudaKernels.cu)
+set(Tasmanian_source_libsparsegrid_hip
+       ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgHipWrappers.cpp
+       tsgHipKernels.hip.cpp)
 
 
 ########################################################################
@@ -88,9 +91,8 @@ if (Tasmanian_ENABLE_CUDA)
     add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid} ${Tasmanian_source_libsparsegrid_cuda})
     set_property(TARGET Tasmanian_libsparsegrid PROPERTY CUDA_STANDARD 11)
 elseif(Tasmanian_ENABLE_HIP)
-    add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid}
-                ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgHipWrappers.cpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/tsgHipKernels.hip.cpp)
+    set_source_files_properties(${Tasmanian_source_libsparsegrid_hip} PROPERTIES LANGUAGE HIP)
+    add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid} ${Tasmanian_source_libsparsegrid_hip})
 elseif(Tasmanian_ENABLE_DPCPP)
     add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid}
                 ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgDpcppWrappers.cpp
@@ -127,6 +129,9 @@ foreach(_tsgtarget gridtest benchmarksgrid)
     if (Tasmanian_ENABLE_OPENMP)
         # the OpenMP libraries are carried transitively from sparse grids library
         target_compile_options(Tasmanian_${_tsgtarget} PRIVATE ${OpenMP_CXX_FLAGS})
+    endif()
+    if (Tasmanian_ENABLE_HIP)
+        target_link_libraries(Tasmanian_${_tsgtarget} hip::host)
     endif()
 endforeach()
 unset(_tsgtarget)

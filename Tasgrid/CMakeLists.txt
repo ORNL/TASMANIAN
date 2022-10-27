@@ -23,6 +23,9 @@ if (Tasmanian_ENABLE_OPENMP)
     # the OpenMP libraries are carried transitively from sparse grids library
     target_compile_options(Tasmanian_tasgrid PRIVATE ${OpenMP_CXX_FLAGS})
 endif()
+if (Tasmanian_ENABLE_HIP)
+    target_link_libraries(Tasmanian_tasgrid hip::host)
+endif()
 
 ########################################################################
 # Windows specific support (DLL export/import directives and names)
