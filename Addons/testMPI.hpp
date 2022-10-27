@@ -189,7 +189,7 @@ void testMPIconstruct(){
         double err = 0.0;
         for(auto ia = resa.begin(), ib = resb.begin(); ia != resa.end(); ia++, ib++)
             err = std::max(err, std::abs(*ia - *ib));
-        constexpr double tolerance = 1.E-2;
+        constexpr double tolerance = 2.E-2;
         if (err >= tolerance) std::cout << "error = " << err << "  expected " << tolerance << std::endl;
         return (err < tolerance);
     };

@@ -20,7 +20,7 @@ jobs:
     continue-on-error: false
     strategy:
       matrix:
-        runner: [macos-11.0]
+        runner: [macos-11]
         compiler: [clang++, g++-9] # $(brew --prefix llvm)/bin/clang++ (clang-11)
         fortran_compiler: [gfortran-9]
         python: [python3]
