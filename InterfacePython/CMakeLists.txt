@@ -8,9 +8,9 @@
 ########################################################################
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-    set(Tasmanian_python_default_path "${CMAKE_INSTALL_PREFIX}/python${PYTHON_VERSION_MAJOR}${PYTHON_VERSION_MINOR}/site-packages")
+    set(Tasmanian_python_default_path "${CMAKE_INSTALL_PREFIX}/python${Python_VERSION_MAJOR}${Python_VERSION_MINOR}/site-packages")
 else()
-    set(Tasmanian_python_default_path "${CMAKE_INSTALL_PREFIX}/lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages")
+    set(Tasmanian_python_default_path "${CMAKE_INSTALL_PREFIX}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages")
 endif()
 
 if (NOT "${Tasmanian_python_install_path}" STREQUAL "${Tasmanian_python_default_path}")
@@ -135,16 +135,16 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/example_optimization.in.py" "${CMAKE
 ########################################################################
 # Testing
 ########################################################################
-add_test(NAME PythonIO           COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testBasicIO)
-add_test(NAME PythonAcceleration COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testAcceleratedEvaluate)
-add_test(NAME PythonExceptions   COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testBasicException)
-add_test(NAME PythonMakeUpdate   COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testAMakeUpdate)
-add_test(NAME PythonRefine       COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testBRefinement)
-add_test(NAME PythonLearning     COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testCUnsructuredData)
-add_test(NAME PythonMisc         COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testZMisc)
-add_test(NAME PythonAddons       COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testAddons)
-add_test(NAME PythonDream        COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testDream)
-add_test(NAME PythonOptimization COMMAND "${PYTHON_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testOptimization)
+add_test(NAME PythonIO           COMMAND Python::Interpreter "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testBasicIO)
+add_test(NAME PythonAcceleration COMMAND Python::Interpreter "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testAcceleratedEvaluate)
+add_test(NAME PythonExceptions   COMMAND Python::Interpreter "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testBasicException)
+add_test(NAME PythonMakeUpdate   COMMAND Python::Interpreter "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testAMakeUpdate)
+add_test(NAME PythonRefine       COMMAND Python::Interpreter "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testBRefinement)
+add_test(NAME PythonLearning     COMMAND Python::Interpreter "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testCUnsructuredData)
+add_test(NAME PythonMisc         COMMAND Python::Interpreter "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testZMisc)
+add_test(NAME PythonAddons       COMMAND Python::Interpreter "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testAddons)
+add_test(NAME PythonDream        COMMAND Python::Interpreter "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testDream)
+add_test(NAME PythonOptimization COMMAND Python::Interpreter "${CMAKE_CURRENT_BINARY_DIR}/testTSG.py" TestTasmanian.testOptimization)
 set_tests_properties(PythonIO PROPERTIES RUN_SERIAL ON) # IO and Refine read/write to potentially the same files
 set_tests_properties(PythonRefine PROPERTIES RUN_SERIAL ON)
 Tasmanian_set_test_properties(TESTS PythonIO PythonAcceleration PythonExceptions PythonMakeUpdate PythonRefine PythonLearning PythonMisc PythonAddons PythonDream)

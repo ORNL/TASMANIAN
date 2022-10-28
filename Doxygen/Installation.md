@@ -40,19 +40,19 @@ Optional features:
 
 | Feature | Tested versions     | Recommended      |
 |----|----|----|
-| gcc     | 7 - 11              | any              |
-| clang   | 6 - 14              | any              |
+| gcc     | 9 - 11              | any              |
+| clang   | 10 - 15             | any              |
 | icc     | 18.1                | 18.1             |
 | xl      | 16.1                | 16.1             |
 | pgi     | 19.10 - 20.4        | 20.4             |
-| cmake   | 3.10 - 3.22         | 3.22             |
-| python  | 3.7 - 3.10          | any              |
+| cmake   | 3.19 - 3.23         | 3.22             |
+| python  | 3.8 - 3.10          | any              |
 | anaconda| 5.3                 | 5.3              |
 | OpenBlas| 0.2.18 - 3.08       | any              |
 | ATLAS   | 3.10                | 3.10             |
 | ESSL    | 6.2                 | 6.2              |
-| CUDA    | 8.0 - 11            | 11.3             |
-| ROCm    | 4.0 - 5.2           | 4.3              |
+| CUDA    | 10.0 - 11           | 11.3             |
+| ROCm    | 5.2 -5.3            | 5.3              |
 | libiomp | 5.0                 | 5.0              |
 | MAGMA   | 2.5.1 - 2.6.1       | 2.6.1            |
 | Doxygen | 1.8.13              | 1.8.13           |
@@ -60,9 +60,8 @@ Optional features:
 
 ### Install using CMake: the preferred way
 
-The preferred way to install Tasmanian is to use the included CMake build script, which requires CMake version 3.10 or newer.
-Note that as of 7.3 Tasmanian CMake no longer builds both shared and static libraries, only one type of libraries
-will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` following the CMake and xSDK guidelines.
+The preferred way to install Tasmanian is to use the included CMake build script, which requires CMake version 3.19,
+ROCm capabilities require CMake 3.21.
 
 * The commands for an out-of-source CMake build:
 ```
@@ -131,10 +130,9 @@ will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` follo
 
 * Additional commands to guide the CMake `find_package()` modules:
 ```
-  -D PYTHON_EXECUTABLE:PATH            (specify the Python interpreter)
+  -D Python_EXECUTABLE:PATH            (specify the Python interpreter)
   -D CMAKE_CUDA_COMPILER:PATH          (specify the CUDA nvcc compiler)
   -D CMAKE_Fortran_COMPILER:PATH       (specify the Fortran compiler)
-  -D Tasmanian_ROCM_ROOT:PATH          (specify the path to the ROCm installation)
   -D MKLROOT:PATH                      (specify the path to the oneMKL installation)
   -D Tasmanian_MAGMA_ROOT:PATH         (specify the path to the MAGMA installation)
   -D MPI_CXX_COMPILER:PATH=<path>      (specify the MPI compiler wrapper)
@@ -142,9 +140,12 @@ will be build and `BUILD_SHARED_LIBS` is always defined defaulting to `ON` follo
   -D MPIEXEC_EXECUTABLE:PATH=<path>    (needed for MPI testing)
 ```
 
-* The ROCm and MAGMA options can be passed without the *Tasmanian_* prefix and if not specified explicitly those will be read from the OS environment.
+* The MAGMA option can be passed without the *Tasmanian_* prefix and if not specified explicitly those will be read from the OS environment.
 
-* The **ROCm** capabilities require that the CMake CXX compiler is set to *hipcc*.
+* The **ROCm** capabilities **NO LONGER** require that the CMake CXX compiler is set to *hipcc*.
+    * by default, Tasmanian will search for hip in `/opt/rocm /opt/rocm/hip` following the [ROCm documentation](https://rocmdocs.amd.com/en/latest/Installation_Guide/Using-CMake-with-AMD-ROCm.html)
+    * additional search paths can be added using `CMAKE_PREFIX_PATH`
+    * the CXX compiler, if not set automatically, should be set to ROCm clang, e.g., `/opt/rocm/llvm/bin/clang++`
 
 * The **OneAPI** capabilities require:
     * the CMake CXX compiler is set to *dpcpp*
@@ -176,13 +177,11 @@ The basic build engine is useful for quick testing and exploring Tasmanian, or
 if CMake is unavailable or unwanted.
 Acceleration options other than OpenMP are not supported in the basic mode.
 
-* Using GNU Make with `g++` and optionally `gfortran` and `/usr/bin/env python`
+* Using GNU Make with `g++` and optionally `/usr/bin/env python`
 ```
   make
   make test     (will fail if /usr/bin/env python is missing the numpy or ctypes modules)
   make matlab   (optional: sets matlab work folder to ./tsgMatlabWorkFolder/)
-  make python3  (optional: sets #!/usr/bin/env python3 in place of /usr/bin/env python)
-  make fortran  (deprecated: compile Fortran libraries)
   make examples
   make clean
 ```
@@ -214,8 +213,6 @@ export Tasmanian_ENABLE_BLAS=<blas-lapack-libs>    -D Tasmanian_ENABLE_BLAS=ON
                                                    -D LAPACK_LIBRARIES=<blas-lapack-libs>
 export Tasmanian_ENABLE_CUDA=<cuda-nvcc>           -D Tasmanian_ENABLE_CUDA=ON
                                                    -D CMAKE_CUDA_COMPILER=<cuda-nvcc>
-export Tasmanian_ENABLE_ROCM=<hipcc>               -D Tasmanian_ENABLE_HIP=ON
-                                                   -D CMAKE_CXX_COMPILER=<hipcc>
 export Tasmanian_ENABLE_DPCPP=<dpcpp>              -D Tasmanian_ENABLE_DPCPP=ON
                                                    -D CMAKE_CXX_COMPILER=<dpcpp>
 export Tasmanian_ENABLE_MAGMA=<magma-root>         -D Tasmanian_ENABLE_MAGMA=ON
@@ -258,7 +255,7 @@ Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 
 ### Install on MS Windows platform
 
-Tasmanian has been tested with MS Visual Studio 2017 and 2019.
+Tasmanian has been tested with MS Visual Studio 2019.
 
 * First use the CMake GUI to set the folders and options
 * Then use the command prompt (`cmd.exe`) to enter the build folder
@@ -270,28 +267,6 @@ Tasmanian has been tested with MS Visual Studio 2017 and 2019.
 ```
 * Both Debug and Release are supported config modes, but do not use them simultaneously,
   pick only one Release or Debug.
-
-### Install with the install script-wrapper around CMake
-
-*the install script is deprecated and will be removed in the future*
-
-Tasmanian also includes an `install` script that wraps around CMake and automatically calls the build commands.
-The script uses `Tasmanian_ENABLE_RECOMMENDED` option and allows for other options to be enabled/disabled
-with command line switches.
-
-* Basic usage of the `install` script
-```
-  ./install <install-path> <optional: matlab-work-folder> <extra switches>
-  ./install --help  (list all switches)
-```
-* Example call that enables MATLAB/Octave and CUDA
-```
-  ./install /home/me/Tasmanian /home/me/Tasmanian/WorkFolder -cuda=/usr/local/cuda-9.2/bin/nvcc
-```
-* Additional notes:
-    * the script must be called from the main source code folder
-    * using absolute paths is strongly recommended
-    * if the MATLAB work-folder is omitted, the MATLAB interface will be disabled
 
 ### Install folder structure
 
@@ -310,6 +285,7 @@ a location inside the user home folder to avoid potential system-wide conflicts.
   <install-path>/share/Tasmanian/examples/  (reference examples)
   <install-path>/share/Tasmanian/matlab/    (matlab scripts)
   <install-path>/share/Tasmanian/python/    (copy of <install-path>/lib/pythonX.Y)
+  <install-path>/share/Tasmanian/testing/   (a CMake script for post-install testing)
 ```
 
 Additional notes:
@@ -348,8 +324,6 @@ The imported targets will be named:
   Tasmanian::tasgrid    (imported executable pointing to the command line tool)
   Tasmanian::Fortran    (links to the C++ libraries and the Fortran wrappers)
 ```
-* `Tasmanian::Tasmanian` and `Tasmanian::Fortran` targets are no longer equivalent, as of version 7.1
-
 
 In addition, the following variables will be set:
 ```
@@ -373,9 +347,7 @@ and/or print useful log messages. For example:
 In the above example:
 * an error will be generated if Tasmanian was build with static libraries, no CUDA or no Python support
 * a status message will report whether Tasmanian was build with OpenMP support
-
-**Note** that as of version 7.3, Tasmanian no longer builds both static and shared libraries,
-only one type will be build at a time.
+* requesting incompatible components will always fail, e.g., CUDA with ROCM or SHARED and STATIC
 
 ### Known Issues
 

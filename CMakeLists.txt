@@ -1,6 +1,6 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.19)
 
-cmake_policy(VERSION 3.10)
+cmake_policy(VERSION 3.19)
 project(Tasmanian VERSION 7.10.0 LANGUAGES CXX)
 set(Tasmanian_version_comment " (development)") # e.g., " (release candidate)", " (development)", ""
 set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some headers and python modules (only human readable)
@@ -97,6 +97,10 @@ if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
     enable_testing() # Tasmanian is the main project, enable testing
 else()
     set(Tasmanian_export_name "Tasmanian-export" CACHE STRING "Specify the export variable name when merging Tasmanian into an external project")
+endif()
+
+if (Tasmanian_ENABLE_CUDA AND NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
+    set(CMAKE_CUDA_ARCHITECTURES "OFF" CACHE STRING "CUDA architectures to compile, e.g., -DCMAKE_CUDA_ARCHITECTURES=70;72")
 endif()
 
 
