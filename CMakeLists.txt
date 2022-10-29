@@ -85,6 +85,8 @@ option(Tasmanian_ENABLE_MPI         "Enable MPI support for Tasmanian (stable)" 
 option(Tasmanian_ENABLE_SWIG        "Regenerate Fortran 2003 bindings with SWIG"       OFF)
 option(Tasmanian_ENABLE_DOXYGEN     "Enable Doxygen documentation for Tasmanian (complete)" OFF)
 
+option(Tasmanian_ENABLE_FORTRAN90   "(deprecated) Enable the old Fortran 90 interface of Tasmanian" OFF)
+
 # treat those similar to options, but give values other than ON/OFF
 set(Tasmanian_MATLAB_WORK_FOLDER     ""  CACHE PATH   "Enable MATLAB interface and use the path for the MATLAB work folder (stable)")
 
@@ -146,11 +148,11 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Addons"      "${CMAKE_CURRENT_BINA
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Tasgrid/"    "${CMAKE_CURRENT_BINARY_DIR}/Tasgrid")
 
 if (Tasmanian_ENABLE_FORTRAN)
-    if (NOT Tasmanian_DISABLE_F90)
+    if (Tasmanian_ENABLE_FORTRAN90)
         add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/InterfaceFortran"  "${CMAKE_CURRENT_BINARY_DIR}/Fortran")
     endif()
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/InterfaceSwig"
-      "${CMAKE_CURRENT_BINARY_DIR}/Fortran03")
+                     "${CMAKE_CURRENT_BINARY_DIR}/Fortran03")
 endif()
 
 if (Tasmanian_ENABLE_PYTHON)

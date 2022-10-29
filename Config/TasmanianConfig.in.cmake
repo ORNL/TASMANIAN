@@ -71,7 +71,11 @@ endif()
 
 if (TARGET Tasmanian_libfortran03)
     add_library(Tasmanian::Fortran INTERFACE IMPORTED GLOBAL)
-    target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortran90 Tasmanian_libfortran03)
+    target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortran03)
+
+    if (@Tasmanian_ENABLE_FORTRAN90@)
+        target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortran90)
+    endif()
 
     if (TARGET Tasmanian_libfortranmpi03)
         target_link_libraries(Tasmanian::Fortran INTERFACE Tasmanian_libfortranmpi03)

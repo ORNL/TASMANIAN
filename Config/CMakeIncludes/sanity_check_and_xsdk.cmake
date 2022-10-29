@@ -47,6 +47,9 @@ endif()
 if (Tasmanian_ENABLE_SWIG AND NOT Tasmanian_ENABLE_FORTRAN)
     message(FATAL_ERROR "Tasmanian_ENABLE_SWIG=ON requires Tasmanian_ENABLE_FORTRAN=ON")
 endif()
+if (Tasmanian_ENABLE_FORTRAN90 AND NOT Tasmanian_ENABLE_FORTRAN)
+    message(FATAL_ERROR "Tasmanian_ENABLE_FORTRAN90=ON requires Tasmanian_ENABLE_FORTRAN=ON")
+endif()
 
 # OpenMP setup
 if ((Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED) AND NOT Tasmanian_ENABLE_DPCPP)
