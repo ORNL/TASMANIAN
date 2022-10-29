@@ -34,7 +34,7 @@ target_link_libraries(Tasmanian_example_optimization  Tasmanian_master)
 
 
 if (Tasmanian_ENABLE_FORTRAN)
-    if (NOT Tasmanian_DISABLE_F90)
+    if (Tasmanian_ENABLE_FORTRAN90)
         add_executable(Tasmanian_example_sparse_grids_f90 InterfaceFortran/Examples/example_sparse_grids.f90)
 
         set_target_properties(Tasmanian_example_sparse_grids_f90 PROPERTIES OUTPUT_NAME "example_sparse_grids_f90")

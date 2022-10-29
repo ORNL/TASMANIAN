@@ -10,10 +10,10 @@ from skbuild import setup  # This line replaces 'from setuptools import setup'
 # Add CMake as a build requirement if cmake is not installed or too old
 setup_requires = []
 try:
-    if LegacyVersion(get_cmake_version()) < LegacyVersion("3.10"):
-        setup_requires.append('cmake>=3.10')
+    if LegacyVersion(get_cmake_version()) < LegacyVersion("3.19"):
+        setup_requires.append('cmake>=3.19')
 except SKBuildError:
-    setup_requires.append('cmake>=3.10')
+    setup_requires.append('cmake>=3.19')
 setup_requires.append('numpy>=1.10')
 
 with open('README.md', 'r') as fh:
@@ -58,7 +58,7 @@ cmake_args=[
         '-DBUILD_SHARED_LIBS=ON',
         '-DTasmanian_ENABLE_RECOMMENDED:BOOL=ON',
         '-DTasmanian_ENABLE_PYTHON:BOOL=ON',
-        '-DPYTHON_EXECUTABLE:PATH={0:1s}'.format(sys.executable),
+        '-DPython_EXECUTABLE:PATH={0:1s}'.format(sys.executable),
         '-DTasmanian_python_pip_final:PATH={0:1s}/'.format(final_install_path),
         ]
 if isvirtual:
@@ -73,7 +73,7 @@ setup(
     version='7.10beta1',
     author='Miroslav Stoyanov',
     author_email='stoyanovmk@ornl.gov',
-    description='UQ library for sparse grids and Bayesian inference',
+    description='UQ library for sparse grids, optimization and Bayesian inference',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://tasmanian.ornl.gov',
