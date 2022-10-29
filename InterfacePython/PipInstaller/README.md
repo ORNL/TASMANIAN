@@ -34,7 +34,7 @@ The following Python modules are required:
     wheel          version compatible with scikit-build
     packaging      version containing packaging.version.LegacyVersion
     scikit-build   version >= 0.10.0
-    cmake          version >= 3.10 (see the top of CMakeLists.txt)
+    cmake          version >= 3.19 (see the top of CMakeLists.txt)
     numpy          version >= 1.10
 ```
 The `scikit-build` package is responsible for turning the CMake build system
