@@ -103,6 +103,9 @@ if (Tasmanian_ENABLE_CUDA AND NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
     set(CMAKE_CUDA_ARCHITECTURES "OFF" CACHE STRING "CUDA architectures to compile, e.g., -DCMAKE_CUDA_ARCHITECTURES=70;72")
 endif()
 
+if (Tasmanian_ENABLE_ROCM) # alias option
+    set(Tasmanian_ENABLE_HIP ON)
+endif()
 
 ########################################################################
 # Sanity check, xSDK compatibility, and find_package() calls are all

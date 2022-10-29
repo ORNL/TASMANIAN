@@ -132,6 +132,7 @@ ROCm capabilities require CMake 3.21.
 ```
   -D Python_EXECUTABLE:PATH            (specify the Python interpreter)
   -D CMAKE_CUDA_COMPILER:PATH          (specify the CUDA nvcc compiler)
+  -D Tasmanian_ENABLE_ROCM:PATH        (specify the search path for HIP)
   -D CMAKE_Fortran_COMPILER:PATH       (specify the Fortran compiler)
   -D MKLROOT:PATH                      (specify the path to the oneMKL installation)
   -D Tasmanian_MAGMA_ROOT:PATH         (specify the path to the MAGMA installation)
@@ -146,6 +147,7 @@ ROCm capabilities require CMake 3.21.
     * by default, Tasmanian will search for hip in `/opt/rocm /opt/rocm/hip` following the [ROCm documentation](https://rocmdocs.amd.com/en/latest/Installation_Guide/Using-CMake-with-AMD-ROCm.html)
     * additional search paths can be added using `CMAKE_PREFIX_PATH`
     * the CXX compiler, if not set automatically, should be set to ROCm clang, e.g., `/opt/rocm/llvm/bin/clang++`
+    * `Tasmanian_ENABLE_ROCM`, if defined, will be added to `CMAKE_PREFIX_PATH` to search for `roc::hip`
 
 * The **OneAPI** capabilities require:
     * the CMake CXX compiler is set to *dpcpp*
