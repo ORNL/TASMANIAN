@@ -6,7 +6,20 @@
 # Define source files
 # in order to avoid GLOB, list all source files for add_library()
 ########################################################################
-set(Tasmanian_source_libsparsegrid
+# source files specific to cuda/hip, used for both static and shared libs
+set(Tasmanian_source_libsparsegrid_cuda
+       ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgCudaWrappers.cpp
+       tsgCudaKernels.cu)
+set(Tasmanian_source_libsparsegrid_hip
+       ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgHipWrappers.cpp
+       tsgHipKernels.hip.cpp)
+
+set(Tasmanian_sparse_grid_null_backend ON)
+if (Tasmanian_ENABLE_CUDA OR Tasmanian_ENABLE_HIP OR Tasmanian_ENABLE_DPCPP)
+    set(Tasmanian_sparse_grid_null_backend OFF)
+endif()
+
+add_library(Tasmanian_libsparsegrid
         TasmanianSparseGrid.hpp
         TasmanianSparseGrid.cpp
         TasmanianSparseGridWrapC.cpp
@@ -49,15 +62,13 @@ set(Tasmanian_source_libsparsegrid
         tsgSequenceOptimizer.hpp
         tsgSequenceOptimizer.cpp
         tsgMathUtils.hpp
-        tsgUtils.hpp)
-
-# source files specific to cuda/hip, used for both static and shared libs
-set(Tasmanian_source_libsparsegrid_cuda
-       ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgCudaWrappers.cpp
-       tsgCudaKernels.cu)
-set(Tasmanian_source_libsparsegrid_hip
-       ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgHipWrappers.cpp
-       tsgHipKernels.hip.cpp)
+        tsgUtils.hpp
+        $<$<BOOL:${Tasmanian_sparse_grid_null_backend}>:${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgGpuNull.cpp>
+        $<$<BOOL:${Tasmanian_ENABLE_CUDA}>:${Tasmanian_source_libsparsegrid_cuda}>
+        $<$<BOOL:${Tasmanian_ENABLE_HIP}>:${Tasmanian_source_libsparsegrid_hip}>
+        $<$<BOOL:${Tasmanian_ENABLE_DPCPP}>:${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgDpcppWrappers.cpp>
+        $<$<BOOL:${Tasmanian_ENABLE_DPCPP}>:${CMAKE_CURRENT_SOURCE_DIR}/tsgDpcppKernels.cpp>
+        )
 
 
 ########################################################################
@@ -88,18 +99,9 @@ if (Tasmanian_ENABLE_CUDA)
     # must be labeled as "CUDA" source files and compiled with the nvcc compiler.
     # Beware that the nvcc compiler seems to struggle with some STL algorithms, transitive inclusion of <cuda.h> must be minimized.
     set_source_files_properties(${Tasmanian_source_libsparsegrid_cuda} PROPERTIES LANGUAGE CUDA)
-    add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid} ${Tasmanian_source_libsparsegrid_cuda})
     set_property(TARGET Tasmanian_libsparsegrid PROPERTY CUDA_STANDARD 11)
 elseif(Tasmanian_ENABLE_HIP)
     set_source_files_properties(${Tasmanian_source_libsparsegrid_hip} PROPERTIES LANGUAGE HIP)
-    add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid} ${Tasmanian_source_libsparsegrid_hip})
-elseif(Tasmanian_ENABLE_DPCPP)
-    add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid}
-                ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgDpcppWrappers.cpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/tsgDpcppKernels.cpp)
-else()
-    add_library(Tasmanian_libsparsegrid ${Tasmanian_source_libsparsegrid}
-                ${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgGpuNull.cpp)
 endif()
 
 target_link_libraries(Tasmanian_libsparsegrid  Tasmanian_dependencies)
