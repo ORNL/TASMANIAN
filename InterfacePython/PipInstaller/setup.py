@@ -2,7 +2,7 @@
 import sys, site
 
 # do standard skbuild setup
-from packaging.version import LegacyVersion
+from packaging import version
 from skbuild.exceptions import SKBuildError
 from skbuild.cmaker import get_cmake_version
 from skbuild import setup  # This line replaces 'from setuptools import setup'
@@ -10,7 +10,7 @@ from skbuild import setup  # This line replaces 'from setuptools import setup'
 # Add CMake as a build requirement if cmake is not installed or too old
 setup_requires = []
 try:
-    if LegacyVersion(get_cmake_version()) < LegacyVersion("3.19"):
+    if version.parse(get_cmake_version()) < version.parse("3.19"):
         setup_requires.append('cmake>=3.19')
 except SKBuildError:
     setup_requires.append('cmake>=3.19')
