@@ -132,7 +132,7 @@ ExternalTester::ExternalTester(int in_num_mc) : num_mc(in_num_mc), verbose(false
         if (AccelerationMeta::isAvailable(acc)) available_acc.push_back(acc);
     }
     #ifdef Tasmanian_ENABLE_DPCPP
-    test_queue.init_testing();
+    test_queue.init_testing(gpuid);
     #endif
     // Hardcoded test types.
     quad_only = {type_integration};
@@ -156,7 +156,12 @@ ExternalTester::~ExternalTester(){}
 void ExternalTester::resetRandomSeed(){ park_miller.seed(static_cast<long unsigned>(std::time(nullptr))); }
 
 void ExternalTester::setVerbose(bool new_verbose){ verbose = new_verbose; }
-void ExternalTester::setGPUID(int gpu_id){ gpuid = gpu_id; }
+void ExternalTester::setGPUID(int gpu_id){
+    gpuid = gpu_id;
+    #ifdef Tasmanian_ENABLE_DPCPP
+    test_queue.init_testing(gpuid);
+    #endif
+}
 
 
 const char* ExternalTester::findGaussPattersonTable(){
@@ -1940,7 +1945,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
 
     bool pass = true;
     std::vector<TypeAcceleration> acc = {accel_none, accel_cpu_blas, accel_gpu_cublas, accel_gpu_cuda, accel_gpu_magma};
-    int testGpuID = (gpuid == -1) ? 0 : gpuid;
+    int testGpuID = beginTestGPUID();
     size_t c = 0;
     while(c < acc.size()){
 
@@ -1966,7 +1971,6 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
                 pass = false;
 
         #ifdef Tasmanian_ENABLE_GPU
-        #ifndef Tasmanian_ENABLE_DPCPP
         if ((grid.getAccelerationType() == accel_gpu_cuda) && !(grid.isWavelet() && grid.getOrder() == 3)){
             if (!testDenseGPU<double, GridMethodEvalBatchGPU>(x, baseline_y, num_x, Maths::num_tol, grid, "GPU evaluate<double>"))
                 pass = false;
@@ -1974,7 +1978,6 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
             if (!testDenseGPU<float, GridMethodEvalBatchGPU>(x, baseline_y, num_x, 5.E-5, grid, "GPU evaluate<float>"))
                 pass = false;
         }
-        #endif
         #endif
 
         if (!testAccEval<double, GridMethodFast>(x, baseline_y, 16, Maths::num_tol, grid, "accelerated fast<double>"))
@@ -1990,13 +1993,9 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
         }
 
         if (c > 1){ // gpu test
-            if (gpuid == -1){ // gpuid is not set, then cycle trough all GPUs
-                testGpuID++;
-                if (testGpuID >= grid.getNumGPUs()){
-                    testGpuID = 0;
-                    c++;
-                }
-            }else{
+            testGpuID++;
+            if (testGpuID >= endTestGPUID()){
+                testGpuID = beginTestGPUID();
                 c++;
             }
         }else{
@@ -2013,8 +2012,8 @@ bool ExternalTester::testGpuCaching() const{
     int const num_samples = 30;
     std::vector<double> refx = genRandom(num_samples, 2); // using only 30 samples
 
-    int gpu_id_first = (gpuid == -1) ? 0 : gpuid;
-    int gpu_id_last  = (gpuid == -1) ? TasmanianSparseGrid::getNumGPUs() : gpuid + 1;
+    int gpu_id_first = beginTestGPUID();
+    int gpu_id_last  = endTestGPUID();
 
     for(int gpu = gpu_id_first; gpu < gpu_id_last; gpu++){ // test each active CUDA device
         for(int t=0; t<5; t++){ // test each grid type
@@ -2028,9 +2027,6 @@ bool ExternalTester::testGpuCaching() const{
                     case 4: return makeWaveletGrid(2, 1, 2, 1);
                 }
             }();
-            #ifdef Tasmanian_ENABLE_DPCPP
-            if (t == 3) continue;
-            #endif
             if (grid.isFourier()) grid.setDomainTransform({-1.0, -1.0}, {1.0, 1.0});
 
             grid.setGPUID(gpu);
@@ -2068,9 +2064,6 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     // check back basis evaluations, x and result both sit on the GPU (using CUDA acceleration)
     TasGrid::TasmanianSparseGrid grid;
     int num_tests = 9;
-    #ifdef Tasmanian_ENABLE_DPCPP
-    num_tests = 0; // cancel the localp testing for SYCL
-    #endif
     int dims = 3;
     TasGrid::TypeOneDRule pwp_rule[9] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb,
                                          TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb,
@@ -2079,8 +2072,8 @@ bool ExternalTester::testGPU2GPUevaluations() const{
     std::vector<double> a = {3.0, 4.0, -10.0}, b = {5.0, 7.0, 2.0};
 
     bool pass = true;
-    int gpu_index_first = (gpuid == -1) ? 0 : gpuid;
-    int gpu_end_gpus = (gpuid == -1) ? grid.getNumGPUs() : gpuid+1;
+    int gpu_index_first = beginTestGPUID();
+    int gpu_end_gpus = endTestGPUID();
     for(int t=0; t<num_tests; t++){
         grid.makeLocalPolynomialGrid(dims, 1, ((order[t] == 0) ? 4 : 7), order[t], pwp_rule[t]);
 
@@ -2178,8 +2171,8 @@ bool ExternalTester::testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const
     const BaseFunction *f = &f21expsincos;
     TasmanianSparseGrid grid_acc, grid_ref;
     bool pass = true;
-    int gstart = (gpuid == -1) ? 0 : gpuid;
-    int gend   = (gpuid == -1) ? TasmanianSparseGrid::getNumGPUs() : gpuid + 1;
+    int gstart = beginTestGPUID();
+    int gend   = endTestGPUID();
     for(int g = gstart; g < gend; g++){
         if (rule == rule_wavelet){
             grid_acc.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1);

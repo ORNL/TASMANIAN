@@ -64,7 +64,10 @@ class TestTasClass(unittest.TestCase):
         '''
         grid = TasmanianSG.TasmanianSparseGrid()
 
-        self.assertTrue((grid.getGPUID() == 0), "did not default to gpu 0")
+        if (tdata.bHasSycl):
+            self.assertTrue((grid.getGPUID() == -1), "did not default to gpu -1 (default_selector")
+        else:
+            self.assertTrue((grid.getGPUID() == 0), "did not default to gpu 0")
 
         if (grid.getNumGPUs() > 1):
             grid.setGPUID(1)

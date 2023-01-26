@@ -44,9 +44,9 @@
 
 namespace TasGrid{
 
-void InternalSyclQueue::init_testing(){
+void InternalSyclQueue::init_testing(int gpuid){
     use_testing = true;
-    test_queue = makeNewQueue(0);
+    test_queue = makeNewQueue(gpuid);
 }
 InternalSyclQueue test_queue;
 
@@ -301,8 +301,8 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
     oneapi::mkl::sparse::matrix_handle_t mat = nullptr;
     oneapi::mkl::sparse::init_matrix_handle(&mat);
 
-    oneapi::mkl::sparse::set_csr_data(mat, N, K, oneapi::mkl::index_base::zero,
-                                      const_cast<int*>(pntr.data()), const_cast<int*>(indx.data()), const_cast<scalar_type*>(vals.data()));
+    oneapi::mkl::sparse::set_csr_data(*q, mat, N, K, oneapi::mkl::index_base::zero,
+                                      const_cast<int*>(pntr.data()), const_cast<int*>(indx.data()), const_cast<scalar_type*>(vals.data())).wait();
 
     if (M == 1){ // using sparse-blas level 2
         oneapi::mkl::sparse::gemv(*q, oneapi::mkl::transpose::nontrans, alpha, mat,
@@ -312,7 +312,7 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
                                   alpha, mat, const_cast<scalar_type*>(A.data()), M, M, 0.0, C, M).wait();
     }
 
-    oneapi::mkl::sparse::release_matrix_handle(&mat);
+    oneapi::mkl::sparse::release_matrix_handle(*q, &mat).wait();
 }
 
 template void sparseMultiply<float>(AccelerationContext const*, int, int, int, float, GpuVector<float> const &A,

@@ -91,9 +91,9 @@ void TasmanianSparseGrid::clear(){
     conformal_asin_power = std::vector<int>();
     llimits = std::vector<int>();
     using_dynamic_construction = false;
-#ifdef Tasmanian_ENABLE_CUDA
+#ifdef Tasmanian_ENABLE_GPU
     acc_domain.reset();
-#endif // Tasmanian_ENABLE_CUDA
+#endif // Tasmanian_ENABLE_GPU
 }
 
 void TasmanianSparseGrid::write(const char *filename, bool binary) const{

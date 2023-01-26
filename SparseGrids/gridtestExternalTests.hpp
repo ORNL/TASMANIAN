@@ -134,6 +134,23 @@ public:
 
     static const char* testName(TestType type);
 
+    int beginTestGPUID() const {
+        // DPC++ uses only one GPU, either the one provided by the CLI
+        // or the one picked by the default_selector_v, i.e., gpuid == -1
+        #ifdef Tasmanian_ENABLE_DPCPP
+        return gpuid;
+        #else
+        return (gpuid == -1) ? 0 : gpuid;
+        #endif
+    }
+    int endTestGPUID() const {
+        #ifdef Tasmanian_ENABLE_DPCPP
+        return gpuid+1;
+        #else
+        return (gpuid == -1) ? TasmanianSparseGrid::getNumGPUs() : gpuid + 1;
+        #endif
+    }
+
 private:
     int num_mc;
     bool verbose;

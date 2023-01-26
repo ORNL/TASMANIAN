@@ -613,14 +613,25 @@ struct AccelerationContext{
     //! \brief Holds the context to the GPU TPL handles, e.g., MAGMA queue.
     mutable std::unique_ptr<GpuEngine> engine;
 
-    #ifdef Tasmanian_ENABLE_BLAS
-    //! \brief Creates a default context, the device id is set to 0 and acceleration is BLAS (if available) or none.
-    AccelerationContext() : mode(accel_cpu_blas), algorithm_select(algorithm_autoselect), device(0){}
-    #else
-    AccelerationContext() : mode(accel_none), algorithm_select(algorithm_autoselect), device(0){}
-    #endif
+    //! \brief Returns the default acceleration mode, cpu_blas if BLAS is enabled and none otherwise.
+    inline static constexpr TypeAcceleration getDefaultAccMode() {
+        #ifdef Tasmanian_ENABLE_BLAS
+        return accel_cpu_blas;
+        #else
+        return accel_none;
+        #endif
+    }
+    //! \brief Returns the default acceleration device, CUDA/HIP use GPU 0, SYCL uses -1 which uses sycl::default_selector_v
+    inline static constexpr int getDefaultAccDevice() {
+        #ifdef Tasmanian_ENABLE_DPCPP
+        return -1;
+        #else
+        return 0;
+        #endif
+    }
 
-    ~AccelerationContext(){}
+    //! \brief Creates a default context, the device id is set to 0 and acceleration is BLAS (if available) or none.
+    AccelerationContext() : mode(getDefaultAccMode()), algorithm_select(algorithm_autoselect), device(getDefaultAccDevice()){}
 
     //! \brief Sets algorithm affinity in the direction of sparse.
     ChangeType favorSparse(bool favor){
@@ -660,8 +671,13 @@ struct AccelerationContext{
     //! \brief Returns the ChangeType if enable() is called, but does not change the acceleration.
     ChangeType testEnable(TypeAcceleration acc, int new_gpu_id) const{
         TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
+        #ifdef Tasmanian_ENABLE_DPCPP
+        if (AccelerationMeta::isAccTypeGPU(effective_acc) and ((new_gpu_id < -1 or new_gpu_id >= AccelerationMeta::getNumGpuDevices())))
+            throw std::runtime_error("Invalid GPU device ID, see ./tasgrid -v for list of detected devices.");
+        #else
         if (AccelerationMeta::isAccTypeGPU(effective_acc) and ((new_gpu_id < 0 or new_gpu_id >= AccelerationMeta::getNumGpuDevices())))
             throw std::runtime_error("Invalid GPU device ID, see ./tasgrid -v for list of detected devices.");
+        #endif
         ChangeType mode_change = (effective_acc == mode) ? change_none : change_cpu_blas;
         ChangeType device_change = (device == new_gpu_id) ? change_none : change_gpu_device;
 
@@ -677,9 +693,13 @@ struct AccelerationContext{
         // get the effective new acceleration mode (use the fallback if acc is not enabled)
         TypeAcceleration effective_acc = AccelerationMeta::getAvailableFallback(acc);
         // if switching to a GPU mode, check if the device id is valid
+        #ifdef Tasmanian_ENABLE_DPCPP
+        if (AccelerationMeta::isAccTypeGPU(effective_acc) and ((new_gpu_id < -1 or new_gpu_id >= AccelerationMeta::getNumGpuDevices())))
+            throw std::runtime_error("Invalid GPU device ID, see ./tasgrid -v for list of detected devices.");
+        #else
         if (AccelerationMeta::isAccTypeGPU(effective_acc) and ((new_gpu_id < 0 or new_gpu_id >= AccelerationMeta::getNumGpuDevices())))
             throw std::runtime_error("Invalid GPU device ID, see ./tasgrid -v for list of detected devices.");
-
+        #endif
         if (AccelerationMeta::isAccTypeGPU(effective_acc)){
             // if the new mode is GPU-based, make an engine or reset the engine if the device has changed
             // if the engine exists and the device is not changed, then keep the existing engine
@@ -719,7 +739,7 @@ struct InternalSyclQueue{
     //! \brief Default constructor, assume we are not in a testing mode.
     InternalSyclQueue() : use_testing(false){}
     //! \brief Initialize the testing, in which case the internal queue would be used in place of a new queue.
-    void init_testing();
+    void init_testing(int gpuid);
     //! \brief Auto-converts to a non-owning std::unique_ptr.
     operator std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>> (){
         return std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>>(test_queue.get(),
