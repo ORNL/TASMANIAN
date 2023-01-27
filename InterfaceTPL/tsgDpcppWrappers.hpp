@@ -39,7 +39,6 @@
 
 #define MKL_INT int
 #include <CL/sycl.hpp>
-#include <CL/sycl/usm.hpp>
 #include "oneapi/mkl.hpp"
 
 /*!
@@ -56,37 +55,17 @@ namespace TasGrid{
 /*!
  * \internal
  * \ingroup TasmanianTPLWrappers
- * \brief Derives from sycl::device_selector and creates a list of device names to be used in Tasmanian.
+ * \brief Struct holding the names and memory capacity of each device.
  *
  * \endinternal
  */
-class tsg_gpu_selector : public sycl::device_selector{
-public:
-    //! \brief Default constructor.
-    tsg_gpu_selector() : deviceID(-1), has_gpu(false){}
-    //! \brief Constructor that selects a specific GPU device.
-    tsg_gpu_selector(int device) : deviceID(device), has_gpu(false){}
-    //! \brief Used during the device selection, also populates the two lists.
-    int operator()(const sycl::device &device) const override{
-        if (device.is_gpu()){
-            names.push_back(device.get_info<sycl::info::device::name>());
-            memory.push_back(device.get_info<sycl::info::device::global_mem_size>());
-            has_gpu = true;
-        }
-        if (deviceID > -1 and static_cast<size_t>(deviceID + 1) == names.size())
-            return 100; // if a specific device is desired, mark it high
-        else
-            return 1;
-    }
-    //! \brief The ID of the GPU device to be selected.
-    int const deviceID;
-    //! \brief Returns true if a GPU device has been found.
-    mutable bool has_gpu;
-    //! \brief Holds a list of the device names.
-    mutable std::vector<std::string> names;
-    //! \brief Holds a list of the device memory.
-    mutable std::vector<unsigned long long> memory;
+struct tsg_device_list {
+    //! \brief Device names.
+    std::vector<std::string> names;
+    //! \brief Memory capacity.
+    std::vector<unsigned long long> memory;
 };
+
 /*!
  * \internal
  * \ingroup TasmanianTPLWrappers
@@ -94,15 +73,15 @@ public:
  *
  * \endinternal
  */
-inline tsg_gpu_selector readSyclDevices(){
-    tsg_gpu_selector selector;
-    sycl::queue q(selector);
-    if (not selector.has_gpu){ // add the default CPU device
-        q = sycl::queue();
-        selector.names.push_back(q.get_device().get_info<sycl::info::device::name>());
-        selector.memory.push_back(q.get_device().get_info<sycl::info::device::global_mem_size>());
+inline tsg_device_list readSyclDevices(){
+    tsg_device_list result;
+    for(auto platform : sycl::platform::get_platforms()) {
+        for(auto device : platform.get_devices()) {
+            result.names.push_back(device.get_info<sycl::info::device::name>());
+            result.memory.push_back(device.get_info<sycl::info::device::global_mem_size>());
+        }
     }
-    return selector;
+    return result;
 }
 
 /*!
@@ -112,18 +91,27 @@ inline tsg_gpu_selector readSyclDevices(){
  *
  * \endinternal
  */
-inline std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>> makeNewQueue(int deviceID){
-    sycl::queue *qq = nullptr;
-    if (readSyclDevices().has_gpu){
-        tsg_gpu_selector selector(deviceID);
-        qq = new sycl::queue(selector);
-    }else{
-        qq = new sycl::queue();
-    }
-    return std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>>(
-                                    reinterpret_cast<int*>(qq),
+inline std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>> makeNewQueue(int const deviceID){
+    if (deviceID == -1) {
+        return std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>>(
+                                    reinterpret_cast<int*>( new sycl::queue( sycl::default_selector_v ) ),
                                     HandleDeleter<AccHandle::Syclqueue>()
                                 );
+    }
+    int dcount = deviceID;
+    for(auto platform : sycl::platform::get_platforms()) {
+        for(auto device : platform.get_devices()) {
+            if (dcount == 0) {
+                    return std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>>(
+                                    reinterpret_cast<int*>( new sycl::queue(device) ),
+                                    HandleDeleter<AccHandle::Syclqueue>()
+                                );
+            } else {
+                dcount--;
+            }
+        }
+    }
+    throw std::runtime_error("makeNewQueue() - Invalid deviceID = " + std::to_string(deviceID));
 }
 
 /*!

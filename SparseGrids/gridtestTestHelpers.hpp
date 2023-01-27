@@ -150,9 +150,6 @@ inline bool canUseCudaKernels(TasmanianSparseGrid const &grid){
     if (!(grid.getAccelerationType() == accel_gpu_cuda || grid.getAccelerationType() == accel_gpu_magma)) return false;
     if (grid.isLocalPolynomial() && (grid.getOrder() > 2 || grid.getOrder() == -1)) return false;
     if (grid.isWavelet() && grid.getOrder() == 3) return false;
-    #ifdef Tasmanian_ENABLE_DPCPP
-    if (grid.isLocalPolynomial()) return false;
-    #endif
     return true;
 }
 

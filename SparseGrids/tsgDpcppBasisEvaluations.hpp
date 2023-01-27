@@ -39,7 +39,6 @@
 
 #define MKL_INT int
 #include <CL/sycl.hpp>
-#include <CL/sycl/usm.hpp>
 #include "oneapi/mkl.hpp"
 
 namespace TasGrid{
