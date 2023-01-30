@@ -48,7 +48,7 @@ ParticleSwarmState::ParticleSwarmState(int cnum_dimensions, int cnum_particles):
         cache_particle_fvals(std::vector<double>(num_particles, std::numeric_limits<double>::max())),
         cache_best_particle_fvals(std::vector<double>(num_particles + 1, std::numeric_limits<double>::max())),
         cache_particle_inside(std::vector<bool>(num_particles, false)),
-        cache_best_particle_inside(std::vector<bool>(num_particles + 1, false)) {};
+        cache_best_particle_inside(std::vector<bool>(num_particles + 1, false)) {}
 
 
 ParticleSwarmState::ParticleSwarmState(int cnum_dimensions, std::vector<double> &&pp, std::vector<double> &&pv):
@@ -59,7 +59,7 @@ ParticleSwarmState::ParticleSwarmState(int cnum_dimensions, std::vector<double> 
         cache_particle_fvals(std::vector<double>(num_particles, std::numeric_limits<double>::max())),
         cache_best_particle_fvals(std::vector<double>(num_particles + 1, std::numeric_limits<double>::max())),
         cache_particle_inside(std::vector<bool>(num_particles, false)),
-        cache_best_particle_inside(std::vector<bool>(num_particles + 1, false)) {};
+        cache_best_particle_inside(std::vector<bool>(num_particles + 1, false)) {}
 
 
 void ParticleSwarmState::initializeParticlesInsideBox(const double box_lower[], const double box_upper[],

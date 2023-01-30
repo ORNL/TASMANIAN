@@ -93,7 +93,7 @@ OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const Gr
                                    const double tolerance, GradientDescentState &state) {
     // Wrapper to the proximal version with projection function == identity function.
     return GradientDescent(func, grad, identity, increase_coeff, decrease_coeff, max_iterations, tolerance, state);
-};
+}
 
 OptimizationStatus GradientDescent(const GradientFunctionSingle &grad, const double stepsize, const int max_iterations,
                                    const double tolerance, GradientDescentState &state) {
