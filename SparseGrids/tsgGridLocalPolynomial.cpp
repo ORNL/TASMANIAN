@@ -152,22 +152,20 @@ void GridLocalPolynomial::evaluateBatchOpenMP(const double x[], int num_x, doubl
 }
 void GridLocalPolynomial::evaluateBatch(const double x[], int num_x, double y[]) const{
     switch(acceleration->mode){
-//         case accel_gpu_magma:
-//         case accel_gpu_cuda: {
-//             acceleration->setDevice();
-//             if ((order == -1) || (order > 2) || (num_x == 1)){
-//                 // GPU evaluations are available only for order 0, 1, and 2. Cubic will come later, but higher order will not be supported.
-//                 // cannot use GPU to accelerate the evaluation of a single vector
-//                 evaluateGpuMixed(x, num_x, y);
-//                 return;
-//             }
-//             GpuVector<double> gpu_x(acceleration, num_dimensions, num_x, x), gpu_result(acceleration, num_x, num_outputs);
-//             evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
-//             gpu_result.unload(acceleration, y);
-//             break;
-//         }
         case accel_gpu_magma:
-        case accel_gpu_cuda:
+        case accel_gpu_cuda: {
+            acceleration->setDevice();
+            if ((order == -1) || (order > 2) || (num_x == 1)){
+                // GPU evaluations are available only for order 0, 1, and 2. Cubic will come later, but higher order will not be supported.
+                // cannot use GPU to accelerate the evaluation of a single vector
+                evaluateGpuMixed(x, num_x, y);
+                return;
+            }
+            GpuVector<double> gpu_x(acceleration, num_dimensions, num_x, x), gpu_result(acceleration, num_x, num_outputs);
+            evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
+            gpu_result.unload(acceleration, y);
+            break;
+        }
         case accel_gpu_cublas: {
             acceleration->setDevice();
             evaluateGpuMixed(x, num_x, y);
