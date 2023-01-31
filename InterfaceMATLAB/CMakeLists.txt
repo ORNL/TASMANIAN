@@ -42,6 +42,7 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgRefineSurplus.m
                                   tsgReloadGrid.m
                                   tsgSummary.m
+                                  tsgUsingConstruction.m
                                   tsgCoreTests.m
                                   tsgWriteCustomRuleFile.m
                                   tsgWriteMatrix.m)

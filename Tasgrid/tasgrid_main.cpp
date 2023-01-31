@@ -412,7 +412,7 @@ int main(int argc, const char ** argv){
             wrap.setDescription(args.front());
         }else if (args.front() == "-symm" || args.front() == "-symmetric"){
             wrap.setIsSymmetric(true);
-        }else if (command == command_summary){
+        }else if (command == command_summary || command == command_using_construct){
             wrap.setGridFilename(args.front());
         }else{
             cout << "WARNING: ignoring unknown option: " << args.front() << "\n";
@@ -467,6 +467,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << " -refine\t"       << "\t-r"      << "\t\trefines the grid\n";
         cout << " -cancelrefine\t"     << "\t-cr"     << "\t\tdiscards the last refinement (unless values are already loaded)\n";
         cout << " -mergerefine\t"     << "\t-mr"     << "\t\tcombines the loaded and needed points and discards the loaded values\n";
+        cout << " -using-construct\t" << "\t"     << "\tprints simple string indicating whether dynamic construction is in use\n";
         cout << " -getcoefficients"    << "\t-gc"     << "\t\tget the hierarchical coefficients of the grid\n";
         cout << " -setcoefficients"    << "\t-sc"     << "\t\tset the hierarchical coefficients of the grid\n";
         cout << " -getpoly\t"      << "\t"      << "\t\tget polynomial space\n";

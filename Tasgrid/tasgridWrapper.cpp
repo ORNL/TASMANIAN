@@ -71,6 +71,7 @@ TypeCommand TasgridWrapper::hasCommand(std::string const &s){
             {"-refine",        command_refine},        {"-r",  command_refine},
             {"-cancelrefine",  command_refine_clear},  {"-cr",   command_refine_clear},
             {"-mergerefine",   command_refine_merge},  {"-mr",   command_refine_merge},
+            {"-using-construct", command_using_construct},
             {"-summary", command_summary}, {"-s",   command_summary},
             {"-getcoefficients", command_getcoefficients}, {"-gc", command_getcoefficients},
             {"-setcoefficients", command_setcoefficients}, {"-sc", command_setcoefficients},
@@ -286,7 +287,9 @@ bool TasgridWrapper::checkSane() const{
         // additional checks in refineGrid() since checks depend on the type of grid
     }else if ((command == command_refine_clear) || (command == command_refine_merge)){
         if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
-    }else if (command == command_getrefcoeff){
+    }else if ((command == command_refine_clear) || (command == command_refine_merge)){
+        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
+    }else if (command == command_using_construct){
         if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
     }else if (command == command_getpoly){
         if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
@@ -791,6 +794,11 @@ bool TasgridWrapper::mergeRefine(){
     grid.mergeRefinement();
     return true;
 }
+bool TasgridWrapper::dynIsUsingConstruct(){
+    cout << "dynamic construction: " << ((grid.isUsingConstruction()) ? "enabled" : "disabled") << "\n";
+    return true;
+}
+
 bool TasgridWrapper::getPoly(){
     if ((grid.isGlobal()) || (grid.isSequence())){
         int num_d = grid.getNumDimensions();
@@ -1147,6 +1155,8 @@ bool TasgridWrapper::executeCommand(){
         }else{
             cerr << "ERROR: could not merge the refinement" << endl;
         }
+    }else if (command == command_using_construct){
+        dynIsUsingConstruct();
     }else if (command == command_getpoly){
         if (!getPoly()){
             cerr << "ERROR: could not get polynomial basis" << endl;

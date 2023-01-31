@@ -66,6 +66,7 @@ enum TypeCommand{
     command_refine,
     command_refine_clear,
     command_refine_merge,
+    command_using_construct,
 
     command_getpoly,
 
@@ -166,6 +167,8 @@ protected:
     bool refineGrid();
     bool cancelRefine();
     bool mergeRefine();
+
+    bool dynIsUsingConstruct();
 
     bool setHierarchy();
     bool getEvalHierarchyDense();
