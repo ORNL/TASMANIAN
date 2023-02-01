@@ -34,7 +34,7 @@ Tasmanian_find_libraries(REQUIRED iomp5
 list(APPEND Tasmanian_mklsycl ${Tasmanian_syclomp})
 
 if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
-    set(OpenMP_CXX_FLAGS "-openmp;-fopenmp=libiomp5")
+    set(OpenMP_CXX_FLAGS "-qopenmp")
     set(OpenMP_CXX_LIBRARY "${Tasmanian_syclomp};-pthread")
     set(OpenMP_CXX_LIB_NAMES "CXX")
     set(Tasmanian_ENABLE_OPENMP ON)
