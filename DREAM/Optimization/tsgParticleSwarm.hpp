@@ -153,9 +153,8 @@ public:
     inline void getBestPosition(double bp[]) const {std::copy_n(best_particle_positions.begin() + num_particles * num_dimensions, num_dimensions, bp);}
     //! \brief Returns the best knows position in the swarm.
     inline std::vector<double> getBestPosition() const {
-        std::vector<double> best_position(num_dimensions);
-        getBestPosition(best_position.data());
-        return best_position;
+        return std::vector<double>(best_particle_positions.begin() + num_particles * num_dimensions,
+                                   best_particle_positions.begin() + num_particles * num_dimensions + num_dimensions);
     }
 
     //! \brief Returns true if the particle positions have been initialized.
@@ -226,7 +225,7 @@ public:
     //! \brief Clear the previously best known particle velocities.
     void clearBestParticles() {
         best_positions_initialized = false;
-        best_particle_positions = std::vector<double>((num_particles + 1) * num_dimensions);
+        std::fill(best_particle_positions.begin(), best_particle_positions.end(), 0.0);
     }
     //! \brief Clear the particle swarm cache.
     void clearCache() {
