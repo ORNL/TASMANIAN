@@ -95,13 +95,6 @@ void ParticleSwarm(const ObjectiveFunction f, const TasDREAM::DreamDomain inside
     // Initialize helper variables and functions.
     size_t num_dimensions = (size_t) state.getNumDimensions();
     size_t num_particles = (size_t) state.getNumParticles();
-    std::vector<double> &particle_positions = state.getParticlePositionsRef();
-    std::vector<double> &particle_velocities = state.getParticleVelocitiesRef();
-    std::vector<double> &best_particle_positions = state.getBestParticlePositionsRef();
-    std::vector<double> &cache_particle_fvals = state.getCacheParticleFValsRef();
-    std::vector<double> &cache_best_particle_fvals = state.getCacheBestParticleFValsRef();
-    std::vector<bool> &cache_particle_inside = state.getCacheParticleInsideRef();
-    std::vector<bool> &cache_best_particle_inside = state.getCacheBestParticleInsideRef();
 
     // Create a lambda that converts f to a constrained version that only evaluates points inside the domain. This lambda also
     // writes to a bool vector whose i-th entry is true if particle i is in the domain.
@@ -132,15 +125,15 @@ void ParticleSwarm(const ObjectiveFunction f, const TasDREAM::DreamDomain inside
     // Create a lambda that updates the best particle positions and fvals (in the cache).
     auto update = [&]()->void {
         for (size_t i=0; i<num_particles; i++) {
-            bool is_smaller = (cache_particle_fvals[i] < cache_best_particle_fvals[i]) or !cache_best_particle_inside[i];
-            if (cache_particle_fvals[i] and is_smaller) {
-                std::copy_n(particle_positions.begin() + i * num_dimensions, num_dimensions, best_particle_positions.begin() + i * num_dimensions);
-                cache_best_particle_fvals[i] = cache_particle_fvals[i];
-                if (cache_best_particle_fvals[i] < cache_best_particle_fvals[num_particles]) {
-                    std::copy_n(particle_positions.begin() + i * num_dimensions, num_dimensions,
-                                best_particle_positions.begin() + num_particles * num_dimensions);
-                    cache_best_particle_fvals[num_particles] = cache_best_particle_fvals[i];
-                    cache_best_particle_inside[num_particles] = true;
+            bool is_smaller = (state.cache_particle_fvals[i] < state.cache_best_particle_fvals[i]) or !state.cache_best_particle_inside[i];
+            if (state.cache_particle_fvals[i] and is_smaller) {
+                std::copy_n(state.particle_positions.begin() + i * num_dimensions, num_dimensions, state.best_particle_positions.begin() + i * num_dimensions);
+                state.cache_best_particle_fvals[i] = state.cache_particle_fvals[i];
+                if (state.cache_best_particle_fvals[i] < state.cache_best_particle_fvals[num_particles]) {
+                    std::copy_n(state.particle_positions.begin() + i * num_dimensions, num_dimensions,
+                                state.best_particle_positions.begin() + num_particles * num_dimensions);
+                    state.cache_best_particle_fvals[num_particles] = state.cache_best_particle_fvals[i];
+                    state.cache_best_particle_inside[num_particles] = true;
                 }
             }
         }
@@ -148,9 +141,9 @@ void ParticleSwarm(const ObjectiveFunction f, const TasDREAM::DreamDomain inside
 
     // Set up the cache and best particle positions.
     if (!state.cache_initialized) {
-        f_constrained(particle_positions, cache_particle_fvals, cache_particle_inside);
+        f_constrained(state.particle_positions, state.cache_particle_fvals, state.cache_particle_inside);
         if (state.best_positions_initialized) {
-            f_constrained(best_particle_positions, cache_best_particle_fvals, cache_best_particle_inside);
+            f_constrained(state.best_particle_positions, state.cache_best_particle_fvals, state.cache_best_particle_inside);
         }
         state.cache_initialized = true;
     }
@@ -160,17 +153,17 @@ void ParticleSwarm(const ObjectiveFunction f, const TasDREAM::DreamDomain inside
     // Main algorithm starts here.
     for(int iter=0; iter<num_iterations; iter++) {
         for (size_t i=0; i<num_particles * num_dimensions; i++) {
-            particle_velocities[i] = inertia_weight * particle_velocities[i] +
-                                     cognitive_coeff * get_random01() * (best_particle_positions[i] - particle_positions[i]) +
+            state.particle_velocities[i] = inertia_weight * state.particle_velocities[i] +
+                                     cognitive_coeff * get_random01() * (state.best_particle_positions[i] - state.particle_positions[i]) +
                                      social_coeff * get_random01() * (
                                          // Best overall position.
-                                         best_particle_positions[num_particles * num_dimensions + i % num_dimensions] -
-                                         particle_positions[i]);
+                                         state.best_particle_positions[num_particles * num_dimensions + i % num_dimensions] -
+                                         state.particle_positions[i]);
         }
         for (size_t i=0; i< num_particles * num_dimensions; i++) {
-            particle_positions[i] += particle_velocities[i];
+            state.particle_positions[i] += state.particle_velocities[i];
         }
-        f_constrained(particle_positions, cache_particle_fvals, cache_particle_inside);
+        f_constrained(state.particle_positions, state.cache_particle_fvals, state.cache_particle_inside);
         update();
     }
 }

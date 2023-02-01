@@ -254,24 +254,6 @@ public:
                               const double cognitive_coeff, const double social_coeff, const int num_iterations,
                               ParticleSwarmState &state, const std::function<double(void)> get_random01);
 
-protected:
-    #ifndef __TASMANIAN_DOXYGEN_SKIP_INTERNAL
-    //! \brief Returns a reference to the particle positions.
-    inline std::vector<double> &getParticlePositionsRef() {return particle_positions;}
-    //! \brief Returns a reference to the particle velocities.
-    inline std::vector<double> &getParticleVelocitiesRef() {return particle_velocities;}
-    //! \brief Returns a reference to the previously best known particle positions.
-    inline std::vector<double> &getBestParticlePositionsRef() {return best_particle_positions;}
-    //! \brief Returns a reference to the cached function values.
-    inline std::vector<double> &getCacheParticleFValsRef() {return cache_particle_fvals;}
-    //! \brief Returns a reference to the previously best known function values.
-    inline std::vector<double> &getCacheBestParticleFValsRef() {return cache_best_particle_fvals;}
-    //! \brief Returns a reference to a boolean hash map of the domain of the loaded particles.
-    inline std::vector<bool> &getCacheParticleInsideRef() {return cache_particle_inside;}
-    //! \brief Returns a reference to a boolean hash map of the domain of the previously best known loaded particles.
-    inline std::vector<bool> &getCacheBestParticleInsideRef() {return cache_best_particle_inside;}
-    #endif
-
 private:
     bool positions_initialized, velocities_initialized, best_positions_initialized, cache_initialized;
     int num_dimensions, num_particles;
