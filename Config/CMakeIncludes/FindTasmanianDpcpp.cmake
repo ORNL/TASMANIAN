@@ -21,8 +21,8 @@ else()
     set(Tasmanian_MKL_SYCL_ROOT "$ENV{MKLROOT}" CACHE PATH "The root folder for the Intel oneMKL installation")
 endif()
 
-Tasmanian_find_libraries(REQUIRED libmkl_sycl.a
-                         OPTIONAL libmkl_intel_lp64.a libmkl_intel_thread.a libmkl_core.a
+Tasmanian_find_libraries(REQUIRED mkl_sycl
+                         OPTIONAL mkl_intel_lp64 mkl_intel_thread mkl_core
                          PREFIX ${Tasmanian_MKL_SYCL_ROOT}
                          LIST mklsycl)
 Tasmanian_find_libraries(REQUIRED OpenCL
