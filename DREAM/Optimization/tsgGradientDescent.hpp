@@ -128,6 +128,8 @@ class GradientDescentState {
     friend OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const GradientFunctionSingle &grad,
                                               const double increase_coeff, const double decrease_coeff, const int max_iterations,
                                               const double tolerance, GradientDescentState &state);
+    friend OptimizationStatus GradientDescent(const GradientFunctionSingle &grad, const double stepsize, const int max_iterations,
+                                              const double tolerance, std::vector<double> &state);
 
   private:
     double adaptive_stepsize;
@@ -148,12 +150,14 @@ class GradientDescentState {
  * \param max_iterations is the maximum number of iterations to perform
  * \param tolerance Stationarity tolerance; the algorithm terminates when the stationarity residual computed by
  *        TasOptimization::computeStationarityResidual() is less than or equal to \b tolerance
- * \param state contains the current iterate and returns the best iterate, does not need to have adaptive_stepsize set internally
+ * \param state contains the current iterate and returns the best iterate.
+ *        This algorithm does not use the adaptive step-size, so the state can be just a vector,
+ *        but the signature accepts a GradientDescentState with an automatic conversion.
  *
  * \returns TasOptimization::OptimizationStatus struct that contains information about the last iterate.
  */
 OptimizationStatus GradientDescent(const GradientFunctionSingle &grad, const double stepsize, const int max_iterations,
-                                   const double tolerance, GradientDescentState &state);
+                                   const double tolerance, std::vector<double> &state);
 
 /*!
  * \brief Applies the adaptive gradient descent algorithm on unrestricted domain.
