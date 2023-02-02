@@ -45,15 +45,15 @@ OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const Gr
 
     OptimizationStatus status{0, tolerance + 1.0}; // {performed_iterations, residual}
     size_t num_dimensions = state.getNumDimensions();
-    std::vector<double> &x = state;
-    std::vector<double> x0(x), gx0(num_dimensions), gx(num_dimensions), z0(num_dimensions), xStep(num_dimensions);
-    double fx(func(x)), fx0, fxStep;
-    grad(x, gx);
+    std::vector<double> x0 = state.x;
+    std::vector<double> gx0(num_dimensions), gx(num_dimensions), z0(num_dimensions), xStep(num_dimensions);
+    double fx(func(state.x)), fx0, fxStep;
+    grad(state.x, gx);
 
     state.adaptive_stepsize /= increase_coeff; // Offset the first iteration.
     while(status.residual > tolerance and status.performed_iterations < max_iterations) {
         // Iteration swaps must be performed first (instead of last) to avoid reverting x to x0 after work has been completed.
-        std::swap(x0, x);
+        std::swap(x0, state.x);
         std::swap(fx0, fx);
         std::swap(gx0, gx);
         // Optimistic stepsize update (see γ_d in the referenced paper above).
@@ -78,12 +78,12 @@ OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const Gr
             state.adaptive_stepsize /= decrease_coeff;
             status.performed_iterations++;
         } while (lhs > rhs + TasGrid::Maths::num_tol);
-        std::swap(xStep, x);
+        std::swap(xStep, state.x);
         std::swap(fxStep, fx);
         state.adaptive_stepsize *= decrease_coeff; // Offset the do-while loop.
         // Compute residual := ||(x0-x) / stepsize + gx - gx0||_2.
-        grad(x, gx);
-        status.residual = computeStationarityResidual(x, x0, gx, gx0, state.adaptive_stepsize);
+        grad(state.x, gx);
+        status.residual = computeStationarityResidual(state.x, x0, gx, gx0, state.adaptive_stepsize);
     }
     return status;
 }
@@ -96,20 +96,19 @@ OptimizationStatus GradientDescent(const ObjectiveFunctionSingle &func, const Gr
 }
 
 OptimizationStatus GradientDescent(const GradientFunctionSingle &grad, const double stepsize, const int max_iterations,
-                                   const double tolerance, GradientDescentState &state) {
+                                   const double tolerance, std::vector<double> &state) {
 
     OptimizationStatus status{0, tolerance + 1.0}; // {performed_iterations, residual}
-    size_t num_dimensions = state.getNumDimensions();
-    std::vector<double> &x = state;
+    size_t num_dimensions = state.size();
     std::vector<double> gx(num_dimensions);
-    grad(x, gx);
+    grad(state, gx);
 
     while (status.residual > tolerance and status.performed_iterations < max_iterations) {
         for (size_t j=0; j<num_dimensions; j++)
-            x[j] -= gx[j] * stepsize;
+            state[j] -= gx[j] * stepsize;
         status.performed_iterations++;
         // Compute residual := ||grad(x)||_2.
-        grad(x, gx);
+        grad(state, gx);
         status.residual = 0.0;
         for (size_t j=0; j<num_dimensions; j++)
             status.residual += gx[j] * gx[j];

@@ -153,9 +153,8 @@ public:
     inline void getBestPosition(double bp[]) const {std::copy_n(best_particle_positions.begin() + num_particles * num_dimensions, num_dimensions, bp);}
     //! \brief Returns the best knows position in the swarm.
     inline std::vector<double> getBestPosition() const {
-        std::vector<double> best_position(num_dimensions);
-        getBestPosition(best_position.data());
-        return best_position;
+        return std::vector<double>(best_particle_positions.begin() + num_particles * num_dimensions,
+                                   best_particle_positions.begin() + num_particles * num_dimensions + num_dimensions);
     }
 
     //! \brief Returns true if the particle positions have been initialized.
@@ -226,7 +225,7 @@ public:
     //! \brief Clear the previously best known particle velocities.
     void clearBestParticles() {
         best_positions_initialized = false;
-        best_particle_positions = std::vector<double>((num_particles + 1) * num_dimensions);
+        std::fill(best_particle_positions.begin(), best_particle_positions.end(), 0.0);
     }
     //! \brief Clear the particle swarm cache.
     void clearCache() {
@@ -253,24 +252,6 @@ public:
     friend void ParticleSwarm(const ObjectiveFunction f, const TasDREAM::DreamDomain inside, const double inertia_weight,
                               const double cognitive_coeff, const double social_coeff, const int num_iterations,
                               ParticleSwarmState &state, const std::function<double(void)> get_random01);
-
-protected:
-    #ifndef __TASMANIAN_DOXYGEN_SKIP_INTERNAL
-    //! \brief Returns a reference to the particle positions.
-    inline std::vector<double> &getParticlePositionsRef() {return particle_positions;}
-    //! \brief Returns a reference to the particle velocities.
-    inline std::vector<double> &getParticleVelocitiesRef() {return particle_velocities;}
-    //! \brief Returns a reference to the previously best known particle positions.
-    inline std::vector<double> &getBestParticlePositionsRef() {return best_particle_positions;}
-    //! \brief Returns a reference to the cached function values.
-    inline std::vector<double> &getCacheParticleFValsRef() {return cache_particle_fvals;}
-    //! \brief Returns a reference to the previously best known function values.
-    inline std::vector<double> &getCacheBestParticleFValsRef() {return cache_best_particle_fvals;}
-    //! \brief Returns a reference to a boolean hash map of the domain of the loaded particles.
-    inline std::vector<bool> &getCacheParticleInsideRef() {return cache_particle_inside;}
-    //! \brief Returns a reference to a boolean hash map of the domain of the previously best known loaded particles.
-    inline std::vector<bool> &getCacheBestParticleInsideRef() {return cache_best_particle_inside;}
-    #endif
 
 private:
     bool positions_initialized, velocities_initialized, best_positions_initialized, cache_initialized;
