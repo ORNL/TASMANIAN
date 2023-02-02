@@ -545,10 +545,10 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
         }}
-        #ifndef Tasmanian_ENABLE_DPCPP
+        #ifndef __FAST_MATH__
         // test the hard-coded sequence values vs the optimizer
-        // disable for DPC++ due to some bug, maybe because of the recursion
-        // the hard-coded points are usually good enough
+        // computing the sequence point is ill-conditioned problem and breaks down when --fast-math is enabled
+        // disable the test, fast maths should only use the hard-coded series
         if (rule == rule_minlebesgue){
             int n = 22;
             auto minleb = Optimizer::getGreedyNodes<rule_minlebesgue>(n);
