@@ -12,6 +12,7 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgEvaluateHierarchy.m
                                   tsgEvaluate.m
                                   tsgExample.m
+                                  tsgGetCandidateConstructionAnisotropic.m
                                   tsgGetHCoefficients.m
                                   tsgGetHSupport.m
                                   tsgGetInterpolationWeights.m

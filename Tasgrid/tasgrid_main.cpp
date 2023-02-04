@@ -468,6 +468,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << " -cancelrefine\t"     << "\t-cr"     << "\t\tdiscards the last refinement (unless values are already loaded)\n";
         cout << " -mergerefine\t"     << "\t-mr"     << "\t\tcombines the loaded and needed points and discards the loaded values\n";
         cout << " -using-construct\t" << "\t"     << "\tprints simple string indicating whether dynamic construction is in use\n";
+        cout << " -getconstructpnts" << "\t-gcp"     << "\t\tget points for dynamic construction\n";
         cout << " -getcoefficients"    << "\t-gc"     << "\t\tget the hierarchical coefficients of the grid\n";
         cout << " -setcoefficients"    << "\t-sc"     << "\t\tset the hierarchical coefficients of the grid\n";
         cout << " -getpoly\t"      << "\t"      << "\t\tget polynomial space\n";
@@ -880,6 +881,18 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -mergerefine\t"   << "\t-mr"     << "\t\tmerges the loaded and needed points and discards any loaded values\n\n";
             cout << "Accepted options:\n";
             cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
+            cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n\n";
+        }else if (com == command_get_candidate_construction){
+            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
+            cout << " -getconstructpnts" << "\t-gcp"     << "\t\tget points for dynamic construction\n";
+            cout << "Accepted options:\n";
+            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
+            cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
+            cout << " -refout\t"     << "\tsometimes" << "\t<int>"    << "\t\tselect the output to use for the refinement\n";
+            cout << " -anisotropyfile"   << "\tsometimes"      << "\t<filename>"   << "\tset the anisotropic weights\n";
+            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels\n";
+            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
+            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n";
             cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n\n";
         }else if (com == command_getpoly){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";

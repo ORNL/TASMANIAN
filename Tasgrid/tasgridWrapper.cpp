@@ -72,6 +72,7 @@ TypeCommand TasgridWrapper::hasCommand(std::string const &s){
             {"-cancelrefine",  command_refine_clear},  {"-cr",   command_refine_clear},
             {"-mergerefine",   command_refine_merge},  {"-mr",   command_refine_merge},
             {"-using-construct", command_using_construct},
+            {"-getconstructpnts", command_get_candidate_construction}, {"-gcp", command_get_candidate_construction},
             {"-summary", command_summary}, {"-s",   command_summary},
             {"-getcoefficients", command_getcoefficients}, {"-gc", command_getcoefficients},
             {"-setcoefficients", command_setcoefficients}, {"-sc", command_setcoefficients},
@@ -289,8 +290,11 @@ bool TasgridWrapper::checkSane() const{
         if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
     }else if ((command == command_refine_clear) || (command == command_refine_merge)){
         if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
-    }else if (command == command_using_construct){
+    }else if (command == command_using_construct || command == command_get_candidate_construction){
         if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
+        if (command == command_get_candidate_construction && outfilename.empty() && (printCout == false)){
+            cerr << "ERROR: no means of output are specified, you should specify -outfile or -print" << endl; pass = false;
+        }
     }else if (command == command_getpoly){
         if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile" << endl; pass = false; }
         if (depth_type == type_none){ cerr << "ERROR: must specify depth_type (e.g., select levels or polynomial basis)" << endl; pass = false; }
@@ -798,6 +802,33 @@ bool TasgridWrapper::dynIsUsingConstruct(){
     cout << "dynamic construction: " << ((grid.isUsingConstruction()) ? "enabled" : "disabled") << "\n";
     return true;
 }
+bool TasgridWrapper::getConstructedPoints(){
+    // put the sanity check code here, since many of the parameters of the refinement depend on the type of grid being used
+    if (grid.getNumOutputs() == 0){
+        cerr << "ERROR: cannot refine a grid with no outputs!" << endl;
+        return false;
+    }
+    if (!grid.isUsingConstruction())
+        grid.beginConstruction();
+
+    auto llimits = readLevelLimits(grid.getNumDimensions());
+
+    int num_d = grid.getNumDimensions();
+
+    std::vector<double> points;
+    if (grid.isLocalPolynomial() || grid.isWavelet()){
+    }else{
+        if (not anisofilename.empty()){
+            auto weights = readAnisotropicFile((OneDimensionalMeta::getControurType(depth_type) == type_curved) ? 2*num_dimensions : num_dimensions);
+            points = grid.getCandidateConstructionPoints(depth_type, weights, llimits);
+        }else{
+            points = grid.getCandidateConstructionPoints(depth_type, ref_output, llimits);
+        }
+    }
+    writeMatrix(outfilename, points.size() / num_d, num_d, points.data());
+    printMatrix(points.size() / num_d, num_d, points.data());
+    return true;
+}
 
 bool TasgridWrapper::getPoly(){
     if ((grid.isGlobal()) || (grid.isSequence())){
@@ -1143,6 +1174,12 @@ bool TasgridWrapper::executeCommand(){
     }else if ((command == command_refine)||(command == command_refine_aniso)||(command == command_refine_surp)){
         refineGrid();
         outputPoints(true);
+    }else if (command == command_get_candidate_construction){
+        if (getConstructedPoints()){
+            writeGrid();
+        }else{
+            cerr << "ERROR: values could not get construction points!" << endl;
+        }
     }else if (command == command_refine_clear){
         if (cancelRefine()){
             writeGrid();
