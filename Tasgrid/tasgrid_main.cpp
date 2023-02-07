@@ -72,13 +72,13 @@ int main(int argc, const char ** argv){
 
     // basic info, i.e., version, license, parallel support
     if (hasInfo(args.front())){
-        cout << "Tasmanian Sparse Grids  version: " << TasmanianSparseGrid::getVersion() << endl;
+        cout << "Tasmanian Sparse Grids  version: " << TasmanianSparseGrid::getVersion() << "\n";
         if ((std::string(TasmanianSparseGrid::getGitCommitHash()).compare("Tasmanian git hash is not available here") != 0)
             && (std::string(TasmanianSparseGrid::getGitCommitHash()).find("Release") != 0)){
-            cout << "                git commit hash: " << TasmanianSparseGrid::getGitCommitHash() << endl;
-            cout << "                cmake cxx flags: " << TasmanianSparseGrid::getCmakeCxxFlags() << endl;
+            cout << "                git commit hash: " << TasmanianSparseGrid::getGitCommitHash() << "\n";
+            cout << "                cmake cxx flags: " << TasmanianSparseGrid::getCmakeCxxFlags() << "\n";
         }
-        cout << "                        license: " << TasmanianSparseGrid::getLicense() << endl;
+        cout << "                        license: " << TasmanianSparseGrid::getLicense() << "\n";
         if (TasmanianSparseGrid::isOpenMPEnabled()){
             cout << "          OpenMP multithreading: Enabled\n";
         }else{
@@ -88,7 +88,7 @@ int main(int argc, const char ** argv){
         if (TasmanianSparseGrid::isCudaEnabled()) gpu_backend = "CUDA";
         if (TasmanianSparseGrid::isHipEnabled()) gpu_backend = "ROCm/HIP";
         if (TasmanianSparseGrid::isDpcppEnabled()) gpu_backend = "oneAPI/DPC++";
-        cout << "          GPU backend framework: " << gpu_backend << endl;
+        cout << "          GPU backend framework: " << gpu_backend << "\n";
         cout << "         Available acceleration: ";
         bool anyAcc = false, anyGPU = false;
         if (TasmanianSparseGrid::isAccelerationAvailable(accel_cpu_blas)){
@@ -113,22 +113,22 @@ int main(int argc, const char ** argv){
         if (!anyAcc){
             cout << " none";
         }
-        cout << endl;
+        cout << "\n";
         if (anyGPU){
             int numGPUs = TasmanianSparseGrid::getNumGPUs();
             if (numGPUs > 0){
-                cout << "                 Available GPUs:" << endl;
+                cout << "                 Available GPUs:" << "\n";
                 for(int i=0; i<numGPUs; i++){
                     std::string name = TasmanianSparseGrid::getGPUName(i);
                     int memory = TasmanianSparseGrid::getGPUMemory(i);
-                    cout << setw(11) << i << ":" << setw(20) << name << " with" << setw(7) << memory << "MB of RAM" << endl;
+                    cout << setw(11) << i << ":" << setw(20) << name << " with" << setw(7) << memory << "MB of RAM\n";
                 }
             }else{
                 cout << "        Available GPUs: none\n";
             }
         }
 
-        cout << endl;
+        cout << "\n";
         return 0;
     }
 
@@ -192,7 +192,7 @@ int main(int argc, const char ** argv){
     TasgridWrapper wrap;
     auto command = TasgridWrapper::hasCommand(args.front());
     if (command == command_none){
-        cout << "ERROR: unknown command " << args.front() << endl;
+        cout << "ERROR: unknown command " << args.front() << "\n";
         printHelp();
         return 1;
     }
@@ -430,7 +430,7 @@ int main(int argc, const char ** argv){
 
 void printHelp(TypeHelp ht, TypeCommand com){
 
-    cout << endl;
+    cout << "\n";
 
     if (ht == help_generic){
 
@@ -504,12 +504,12 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << " -print\t\t"    << "\t-p\t"       << "\t<none>"       << "\t\tprint to standard output\n";
         cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n";
 
-        cout << endl;
+        cout << "\n";
     }else if (ht == help_command){
         if (com == command_makeglobal){
             cout << "Commands\t"     << "\tShorthand" << "\tAction\n";
             cout << " -makeglobal\t"     << "\t-mg"       << "\t\tmake a grid from a global rule\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -dimensions\t"     << "\tyes\t"     << "\t<int>"    << "\t\tset the number of dimensions\n";
             cout << " -outputs\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the number of outputs\n";
@@ -537,7 +537,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_makesequence){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -makesequence\t"   << "\t-ms"     << "\t\tmake a grid from a sequence rule\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -dimensions\t"     << "\tyes\t"     << "\t<int>"    << "\t\tset the number of dimensions\n\n";
             cout << " -outputs\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the number of outputs\n";
@@ -559,7 +559,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_makelocalp){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -makelocalpoly\t"  << "\t-mp"     << "\t\tmake a grid from a local polynomial rule\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -dimensions\t"     << "\tyes\t"     << "\t<int>"    << "\t\tset the number of dimensions\n";
             cout << " -outputs\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the number of outputs\n";
@@ -580,7 +580,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_makewavelet){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -makewavelet\t"    << "\t-mw"     << "\t\tmake a grid from a wavelet rule\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -dimensions\t"     << "\tyes\t"     << "\t<int>"    << "\t\tset the number of dimensions\n";
             cout << " -outputs\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the number of outputs\n";
@@ -599,7 +599,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_makefourier){
             cout << "Commands\t"     << "\tShorthand" << "\tAction\n";
             cout << " -makefourier\t"     << "\t-mf"       << "\t\tmake a grid from a Fourier rule\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -dimensions\t"     << "\tyes\t"     << "\t<int>"    << "\t\tset the number of dimensions\n";
             cout << " -outputs\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the number of outputs\n";
@@ -619,7 +619,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_makequadrature){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -makequadrature"   << "\t-mq"     << "\t\tmake a quadrature\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -dimensions\t"     << "\tyes\t"     << "\t<int>"    << "\t\tset the number of dimensions\n";
             cout << " -depth\t\t"    << "\tyes\t"      << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)\n";
@@ -646,7 +646,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_makeexoquad){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -makeexoquad"   << "\t\t-meq"     << "\t\tmake an exotic quadrature\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -depth\t\t"    << "\tyes\t"      << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)\n";
             cout << " -shift\t\t"    << "\tyes\t"      << "\t<float>"    << "\t\tset the shift of the weight function\n";
@@ -662,7 +662,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_update){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -makeupdate\t"     << "\t-mu"     << "\t\tupdates a new global or sequence grid\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -depth\t\t"    << "\tyes\t"      << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)\n";
             cout << " -type\t\t"     << "\tyes\t"      << "\t<type>"       << "\t\tset the type of the grid\n";
@@ -673,14 +673,14 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_setconformal){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -setconformal\t"     << "\t-sc"     << "\t\tset conformal transformation\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -conformaltype\t"  << "\tyes\t"      << "\t<type>"       << "\t\tset the type of the map\n";
             cout << " -conformalfile\t"  << "\tyes\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain\n";
         }else if (com == command_getquadrature){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -getquadrature"    << "\t-gq"     << "\t\tmake a quadrature\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
@@ -690,7 +690,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_getcoefficients){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -getcoefficients"    << "\t-gc"     << "\t\tget the hierarchical coefficients\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
@@ -700,7 +700,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_setcoefficients){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -setcoefficients"    << "\t-sc"     << "\t\tset the hierarchical coefficients\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
@@ -721,7 +721,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_getdiffweights){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -getdiffweights"  << "\t-gd"     << "\t\toutput the differentiation weights\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
@@ -732,7 +732,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_getpoints){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -getpoints\t"      << "\t-gp"     << "\t\toutput the points\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
@@ -742,7 +742,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_getneeded){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -getneededpoints"  << "\t-gn"     << "\t\toutputs the points needing values to build an interpolant\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
@@ -752,14 +752,14 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_loadvalues){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -loadvalues\t"     << "\t-l"      << "\t\tload the values of the interpolated function\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -valsfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the file with values\n\n";
         }else if (com == command_evaluate){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -evaluate\t"       << "\t-e"      << "\t\tevaluates the interpolant\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
@@ -771,7 +771,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_evalhierarchical_dense){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -evalhierarchyd"       << "\t-ehd"      << "\t\tevaluates the hierarchical basis (dense output)\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
@@ -782,7 +782,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_evalhierarchical_sparse){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -evalhierarchys"       << "\t-ehs"      << "\t\tevaluates the hierarchical basis (sparse output)\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
@@ -793,7 +793,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_gethsupport){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -gethsupport\t"       << "\t-ghsup"      << "\t\tget the hierarchical support\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
@@ -802,7 +802,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_integrate){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -integrate\t"      << "\t-i"      << "\t\toutput the integral\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
@@ -812,7 +812,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_differentiate){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -differentiate\t"       << "\t-d"      << "\t\tdifferentiates the interpolant\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
@@ -823,7 +823,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_getanisocoeff){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -getanisotropy\t"    << "\t-ga"     << "\t\testimates the anisotropic coefficients\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -type\t\t"     << "\tyes\t"     << "\t<type>"       << "\t\tset the type of anisotropic coefficients\n";
@@ -835,7 +835,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_refine_aniso){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -refineaniso\t"    << "\t-ra"     << "\t\trefines the grid\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -type\t\t"     << "\tyes\t"     << "\t<type>"       << "\t\tset the type of anisotropic refinement\n";
@@ -850,7 +850,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         }else if (com == command_refine_surp){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -refinesurp\t"     << "\t-rs"     << "\t\trefines the grid\n\n";
-            cout << "Accepted options:"  << endl;
+            cout << "Accepted options:\n";
             cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
             cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
             cout << " -tolerance\t"      << "\tyes\t"     << "\t<float>"      << "\t\tset the tolerance for the refinement\n";
