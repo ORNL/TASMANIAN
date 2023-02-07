@@ -26,10 +26,12 @@ The Matlab or Octave interface to **tasgrid** consists of several functions that
 ### List of Matlab functions and corresponding C++ API
 
 ```
-  tsgCancelRefine.m                     ->  clearRefinement()
+  tsgCancelRefine.m                     ->  clearRefinement()/finishConstruction()
   tsgEstimateAnisotropicCoefficients.m  ->  estimateAnisotropicCoefficients()
   tsgEvaluateHierarchy.m                ->  evaluateHierarchicalFunctions()
   tsgEvaluate.m                         ->  evaluateBatch()
+  tsgGetCandidateConstructionAnisotropic.m
+  tsgGetCandidateConstructionSurplus.m  -> getCandidateConstructionPoints()
   tsgGetHCoefficients.m                 ->  getHierarchicalCoefficients()
   tsgGetInterpolationWeights.m          ->  getInterpolationWeights()
   tsgGetNeededPoints.m                  ->  getNeededPoints()
@@ -38,6 +40,7 @@ The Matlab or Octave interface to **tasgrid** consists of several functions that
   tsgGetQuadrature.m                    ->  getQuadratureWeights()/getPoints()
   tsgIntegrate.m                        ->  integrate()
   tsgLoadHCoefficients.m                ->  setHierarchicalCoefficients()
+  tsgLoadConstructedPoints.m            ->  loadConstructedPoints()
   tsgLoadValues.m                       ->  loadNeededValues()
   tsgMakeFourier.m                      ->  makeFourierGrid()
   tsgMakeGlobal.m                       ->  makeGlobalGrid()
