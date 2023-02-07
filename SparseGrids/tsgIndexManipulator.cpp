@@ -547,7 +547,7 @@ std::vector<int> inferAnisotropicWeights(AccelerationContext const *acceleration
 
     int max_weight = *std::max_element(weights.begin(), weights.begin() + num_dimensions);
 
-    if (max_weight < 0){ // all directions are diverging, default to isotropic total degree
+    if (max_weight <= 0){ // all directions are diverging, default to isotropic total degree
         std::fill_n(weights.begin(), num_dimensions, 1);
         if (OneDimensionalMeta::getControurType(depth) == type_curved)
             std::fill(weights.begin() + num_dimensions, weights.end(), 0);
