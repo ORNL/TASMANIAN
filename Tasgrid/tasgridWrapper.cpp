@@ -797,6 +797,9 @@ bool TasgridWrapper::refineGrid(){
 }
 bool TasgridWrapper::cancelRefine(){
     grid.clearRefinement();
+    if (grid.isUsingConstruction()){
+        grid.finishConstruction();
+    }
     return true;
 }
 bool TasgridWrapper::mergeRefine(){
@@ -822,6 +825,31 @@ bool TasgridWrapper::getConstructedPoints(){
 
     std::vector<double> points;
     if (grid.isLocalPolynomial() || grid.isWavelet()){
+        if (!set_tolerance){
+            cerr << "ERROR: must specify -tolerance for surplus refinement!" << endl;
+            return false;
+        }
+        if (!set_tref){
+            cerr << "ERROR: must specify -reftype option!" << endl;
+            return false;
+        }
+        Data2D<double> scale;
+        if (!valsfilename.empty()){
+            scale = readMatrix(valsfilename);
+            if (scale.getNumStrips() != grid.getNumPoints()){
+                cerr << "ERROR: the number of weights must match the number of points." << endl;
+                return false;
+            }
+            if ((ref_output == -1) && (scale.getStride() != (size_t) grid.getNumOutputs())){
+                cerr << "ERROR: the number of weights must match the number of outputs." << endl;
+                return false;
+            }
+            if ((ref_output > -1) && (scale.getStride() != 1)){
+                cerr << "ERROR: there must be one weight per output." << endl;
+                return false;
+            }
+        }
+        points = grid.getCandidateConstructionPoints(tolerance, tref, ref_output, llimits, scale.release());
     }else{
         if (not anisofilename.empty()){
             auto weights = readAnisotropicFile((OneDimensionalMeta::getControurType(depth_type) == type_curved) ? 2*num_dimensions : num_dimensions);

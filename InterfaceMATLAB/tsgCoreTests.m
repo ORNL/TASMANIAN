@@ -1072,7 +1072,7 @@ for i = 1:2
     tsgLoadValues(lGrid, v);
     tsgLoadConstructedPoints(lGrid2, p, v);
     if (~tsgUsingConstruction(lGrid2))
-        error(['Dynamic refinement not enabled after a call to tsgLoadConstructedPoints()'])
+        error(['Dynamic refinement not enabled after a call to tsgLoadConstructedPoints() i = ', num2str(i)])
     end
     rnd = rand(20, 2);
     [ref_result] = tsgEvaluate(lGrid, rnd);
@@ -1084,9 +1084,28 @@ for i = 1:2
     if (norm(ref_result - ll_result) > 1.E-14)
         error(['Dynamically loaded grid points did not match the original grid result. i = ', num2str(i)])
     end
+    tsgCancelRefine(lGrid2);
+    if (tsgUsingConstruction(lGrid2))
+        error(['Dynamic refinement failed to finalize. i = ', num2str(i)])
+    end
 end
 tsgDeleteGrid(lGrid);
 tsgDeleteGrid(lGrid2);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                     tsgGetCandidateConstructionAnisotropic()     %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[lGrid, p] = tsgMakeGlobal('_tsgcoretests_tt', 2, 1, 'clenshaw-curtis', 'iptotal', 2);
+pp = tsgGetCandidateConstructionAnisotropic(lGrid, 'iptotal', 0);
+if (norm(sortrows(p) - sortrows(pp)) > 1.E-14)
+    error(['Dynamically loaded grid points did not return the grid points.'])
+end
+[lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_tt', 2, 1, 'localp', 3, 1);
+pp = tsgGetCandidateConstructionSurplus(lGrid, 1.E-3, 'classic', 0);
+if (norm(sortrows(p) - sortrows(pp)) > 1.E-14)
+    error(['Dynamically loaded grid points did not return the grid points.'])
+end
+tsgDeleteGrid(lGrid);
 disp(['Dynamic construction:     PASS']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
