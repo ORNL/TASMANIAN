@@ -215,6 +215,16 @@ std::vector<double> listToNodes(std::forward_list<NodeData> const &node_list, si
  */
 class DynamicConstructorDataGlobal{
 public:
+    //! \brief Defines the result of adding a point to the list of know points with values.
+    enum class AddPointResult {
+        //! \brief Indicates the point was added to an existing tensor but more points are needed before processing the tensor.
+        tensor_incomplete,
+        //! \brief Indicates the point was added to an existing tensor and the tensor is ready for processing.
+        tensor_complete,
+        //! \brief Indicates the point is associated with an unknown tensor.
+        tensor_missing
+    };
+
     //! \brief Constructor, requires that the dimension and the number of model outputs is specified.
     DynamicConstructorDataGlobal(size_t cnum_dimensions, size_t cnum_outputs) : num_dimensions(cnum_dimensions), num_outputs(cnum_outputs){}
     //! \brief Read constructor.
@@ -236,6 +246,14 @@ public:
 
     //! \brief Returns the maximum index of any of the stored tensors.
     int getMaxTensor() const;
+    //! \brief Returns the maximum tensor weight.
+    double getMaxTensorWeight() const{
+        double maxw = 0;
+        for(auto it = tensors.begin(); it != tensors.end(); it++){
+            if (it->weight > maxw) maxw = it->weight;
+        }
+        return maxw;
+    }
 
     //! \brief Called after read, reinitializes the points and loaded structures for the tensors.
     void reloadPoints(std::function<int(int)> getNumPoints);
@@ -252,8 +270,8 @@ public:
     //! \brief Get the node indexes of the points associated with the candidate tensors, the order is the same as the tensors sorted by ascending weight.
     MultiIndexSet getNodesIndexes();
 
-    //! \brief Add a new data point with the index and the value, returns \b true if there is enough data to complete a tensor.
-    bool addNewNode(const std::vector<int> &point, const std::vector<double> &value); // returns whether a tensor is complete
+    //! \brief Add a new data point with the index and the value, returns information about the tensor.
+    AddPointResult addNewNode(const std::vector<int> &point, const std::vector<double> &value); // returns whether a tensor is complete
 
     //! \brief Returns a new set of tensors, points and values that can be added to the current tensors.
     void ejectCompleteTensor(MultiIndexSet const &current_tensors, MultiIndexSet &new_tensors, MultiIndexSet &new_points, StorageSet &vals);

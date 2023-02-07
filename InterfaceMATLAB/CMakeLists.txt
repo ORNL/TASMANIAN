@@ -12,6 +12,8 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgEvaluateHierarchy.m
                                   tsgEvaluate.m
                                   tsgExample.m
+                                  tsgGetCandidateConstructionAnisotropic.m
+                                  tsgGetCandidateConstructionSurplus.m
                                   tsgGetHCoefficients.m
                                   tsgGetHSupport.m
                                   tsgGetInterpolationWeights.m
@@ -24,6 +26,7 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgGetQuadrature.m
                                   tsgIntegrate.m
                                   tsgListGridsByName.m
+                                  tsgLoadConstructedPoints.m
                                   tsgLoadHCoefficients.m
                                   tsgLoadValues.m
                                   tsgMakeExoticQuadrature.m
@@ -42,6 +45,7 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgRefineSurplus.m
                                   tsgReloadGrid.m
                                   tsgSummary.m
+                                  tsgUsingConstruction.m
                                   tsgCoreTests.m
                                   tsgWriteCustomRuleFile.m
                                   tsgWriteMatrix.m)

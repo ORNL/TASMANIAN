@@ -977,14 +977,26 @@ std::vector<int> GridFourier::getMultiIndex(const double x[]){
     return p;
 }
 void GridFourier::loadConstructedPoint(const double x[], const std::vector<double> &y){
-    if (dynamic_values->addNewNode(getMultiIndex(x), y)) // if a new tensor is complete
+    std::vector<int> idx = getMultiIndex(x);
+    auto result = dynamic_values->addNewNode(idx, y);
+    if (result == DynamicConstructorDataGlobal::AddPointResult::tensor_complete){ // if a new tensor is complete
         loadConstructedTensors();
+    }else if (result == DynamicConstructorDataGlobal::AddPointResult::tensor_missing){
+        dynamic_values->addTensor(wrapper.getLevels(idx).data(), [&](int l)->int{ return wrapper.getNumPoints(l); },
+                                  dynamic_values->getMaxTensorWeight() + 1.0);
+    }
 }
 void GridFourier::loadConstructedPoint(const double x[], int numx, const double y[]){
     Utils::Wrapper2D<const double> wrapx(num_dimensions, x);
     Utils::Wrapper2D<const double> wrapy(num_outputs, y);
-    for(int i=0; i<numx; i++)
-        dynamic_values->addNewNode(getMultiIndex(wrapx.getStrip(i)), std::vector<double>(wrapy.getStrip(i), wrapy.getStrip(i) + num_outputs));
+    for(int i=0; i<numx; i++){
+        std::vector<int> idx = getMultiIndex(wrapx.getStrip(i));
+        if (dynamic_values->addNewNode(idx, std::vector<double>(wrapy.getStrip(i), wrapy.getStrip(i) + num_outputs))
+            == DynamicConstructorDataGlobal::AddPointResult::tensor_missing){
+            dynamic_values->addTensor(wrapper.getLevels(idx).data(), [&](int l)->int{ return wrapper.getNumPoints(l); },
+                                      dynamic_values->getMaxTensorWeight() + 1.0);
+        }
+    }
     loadConstructedTensors();
 }
 void GridFourier::loadConstructedTensors(){

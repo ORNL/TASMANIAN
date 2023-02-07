@@ -458,6 +458,7 @@ inline MultiIndexSet getLargestCompletion(MultiIndexSet const &current, MultiInd
             result = MultiIndexSet(num_dimensions, std::vector<int>(num_dimensions, 0));
         }
     }
+
     bool loopon = true;
     while(loopon){
         Data2D<int> update(num_dimensions, 0);

@@ -105,6 +105,9 @@ void DynamicConstructorDataGlobal::addTensor(const int *tensor, std::function<in
         int slot = tensors.front().points.getSlot(p.point);
         if (slot != -1) tensors.front().loaded[slot] = true;
     }
+    if (std::all_of(tensors.front().loaded.begin(), tensors.front().loaded.end(), [](bool b)->bool{ return b; })){
+        tensors.front().loaded.clear();
+    }
 }
 
 MultiIndexSet DynamicConstructorDataGlobal::getNodesIndexes(){
@@ -127,7 +130,8 @@ MultiIndexSet DynamicConstructorDataGlobal::getNodesIndexes(){
     return MultiIndexSet(num_dimensions, std::move(inodes));
 }
 
-bool DynamicConstructorDataGlobal::addNewNode(const std::vector<int> &point, const std::vector<double> &value){
+DynamicConstructorDataGlobal::AddPointResult
+DynamicConstructorDataGlobal::addNewNode(const std::vector<int> &point, const std::vector<double> &value){
     data.emplace_front(NodeData{point, value});
     for(auto &t : tensors){
         int slot = t.points.getSlot(point);
@@ -135,13 +139,15 @@ bool DynamicConstructorDataGlobal::addNewNode(const std::vector<int> &point, con
             t.loaded[slot] = true;
             if (std::all_of(t.loaded.begin(), t.loaded.end(), [](bool a)-> bool{ return a; })){ // if all entries are true
                 t.loaded = std::vector<bool>();
-                return true; // all points associated with this tensor have been loaded, signal to call ejectCompleteTensor()
+                return AddPointResult::tensor_complete;
+                // all points associated with this tensor have been loaded, signal to call ejectCompleteTensor()
             }else{
-                return false; // point added to the tensor, but the tensor is not complete yet
+                return AddPointResult::tensor_incomplete; // point added to the tensor, but the tensor is not complete yet
             }
         }
     }
-    return false; // could not find a tensor that contains this node???
+    // could not find a tensor that contains this node, must add a new tensor
+    return AddPointResult::tensor_missing;
 }
 
 void DynamicConstructorDataGlobal::ejectCompleteTensor(MultiIndexSet const &current_tensors, MultiIndexSet &new_tensors, MultiIndexSet &new_points, StorageSet &vals){

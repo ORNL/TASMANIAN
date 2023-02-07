@@ -275,10 +275,22 @@ public:
     OneDimensionalWrapper(int max_level, TypeOneDRule crule, double alpha, double beta) :
         OneDimensionalWrapper(CustomTabulated(), max_level, crule, alpha, beta){}
 
-    //! \brief Get the number of points for the \b level, can only querry loaded levels.
+    //! \brief Get the number of points for the \b level, can only query loaded levels.
     int getNumPoints(int level) const{ return num_points[level]; }
     //! \brief Get the global index of point \b j on \b level (used only by non-nested rules).
     int getPointIndex(int level, int j) const{ return indx[pntr[level] + j]; }
+    //! \brief Returns the first level associated with this point (nested rules only!).
+    int getLevel(int point) {
+        // assumes we have the correct number of levels loaded
+        int l = 0;
+        while(point >= num_points[l]) l++;
+        return l;
+    }
+    std::vector<int> getLevels(std::vector<int> const &point){
+        std::vector<int> result(point.size());
+        for(size_t i=0; i<point.size(); i++) result[i] = getLevel(point[i]);
+        return result;
+    }
 
     //! \brief Get number of loaded nodes.
     int getNumNodes() const{ return (int) unique.size(); }
@@ -296,7 +308,7 @@ public:
     const std::vector<int>& getPointsCount() const{ return pntr; }
 
     //! \brief Get the loaded rule.
-    TypeOneDRule getType() const{ return rule; }
+    TypeOneDRule getRule() const{ return rule; }
     //! \brief Get the number of cached levels.
     int getNumLevels() const{ return num_levels; }
 
