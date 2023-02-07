@@ -469,6 +469,7 @@ void printHelp(TypeHelp ht, TypeCommand com){
         cout << " -mergerefine\t"     << "\t-mr"     << "\t\tcombines the loaded and needed points and discards the loaded values\n";
         cout << " -using-construct\t" << "\t"     << "\tprints simple string indicating whether dynamic construction is in use\n";
         cout << " -getconstructpnts" << "\t-gcp"     << "\t\tget points for dynamic construction\n";
+        cout << " -loadconstructed" << "\t-lcp"     << "\t\tload points for dynamic construction\n";
         cout << " -getcoefficients"    << "\t-gc"     << "\t\tget the hierarchical coefficients of the grid\n";
         cout << " -setcoefficients"    << "\t-sc"     << "\t\tset the hierarchical coefficients of the grid\n";
         cout << " -getpoly\t"      << "\t"      << "\t\tget polynomial space\n";
@@ -894,6 +895,14 @@ void printHelp(TypeHelp ht, TypeCommand com){
             cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
             cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n";
             cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n\n";
+        }else if (com == command_load_construction){
+            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
+            cout << " -loadconstructed" << "\t-lcp"     << "\t\tload points for dynamic construction\n";
+            cout << "Accepted options:\n";
+            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
+            cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
+            cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
+            cout << " -valsfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the file with values\n\n";
         }else if (com == command_getpoly){
             cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
             cout << " -getpoly\t"      << "\t\t"      << "\t\tget polynomial space\n\n";

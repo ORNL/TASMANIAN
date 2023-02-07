@@ -1023,6 +1023,7 @@ for i=1:5
         error(['Mismatch in tsgDifferentiate: multi point case']);
     end
 end
+tsgDeleteGrid(lGrid);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgGetDifferentiationWeights()               %%%
@@ -1050,7 +1051,43 @@ for i=1:5
         error(['Mismatch in tsgGetDifferentiationWeights: multi point case']);
     end
 end
+tsgDeleteGrid(lGrid);
 disp(['Differentiation:          PASS']);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%                     tsgLoadConstructedPoints()                   %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+lrules = {'leja', 'clenshaw-curtis', 'localp'};
+ldepts = {10, 5, 5};
+lmodes = {'global', 'global', 'localp'};
+for i = 1:2
+    if lmodes{i} == 'global'
+        [lGrid, p] = tsgMakeGlobal('_tsgcoretests_ref', 2, 1, lrules{i}, 'iptotal', ldepts{i});
+        [lGrid2, ~] = tsgMakeGlobal('_tsgcoretests_ll', 2, 1, lrules{i}, 'iptotal', ldepts{i} - 3);
+    elseif lmodes{i} == 'localp'
+        [lGrid, p] = tsgMakeLocalPolynomial('_tsgcoretests_ref', 2, 1, lrules{i}, ldepts{i});
+        [lGrid2, ~] = tsgMakeLocalPolynomial('_tsgcoretests_ll', 2, 1, lrules{i}, ldepts{i} - 3);
+    end
+    v = exp(p(:,1) + p(:,2));
+    tsgLoadValues(lGrid, v);
+    tsgLoadConstructedPoints(lGrid2, p, v);
+    if (~tsgUsingConstruction(lGrid2))
+        error(['Dynamic refinement not enabled after a call to tsgLoadConstructedPoints()'])
+    end
+    rnd = rand(20, 2);
+    [ref_result] = tsgEvaluate(lGrid, rnd);
+    [ll_result] = tsgEvaluate(lGrid2, rnd);
+    if (norm(ref_result - ll_result) > 1.E-14)
+        error(['Dynamically loaded grid evals did not match the original grid result. i = ', num2str(i)])
+    end
+    pp = tsgGetPoints(lGrid2);
+    if (norm(ref_result - ll_result) > 1.E-14)
+        error(['Dynamically loaded grid points did not match the original grid result. i = ', num2str(i)])
+    end
+end
+tsgDeleteGrid(lGrid);
+tsgDeleteGrid(lGrid2);
+disp(['Dynamic construction:     PASS']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp(['']);

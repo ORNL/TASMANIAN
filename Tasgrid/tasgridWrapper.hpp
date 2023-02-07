@@ -69,6 +69,7 @@ enum TypeCommand{
 
     command_using_construct,
     command_get_candidate_construction,
+    command_load_construction,
 
     command_getpoly,
 
@@ -172,6 +173,7 @@ protected:
 
     bool dynIsUsingConstruct();
     bool getConstructedPoints();
+    bool loadConstructedPoints();
 
     bool setHierarchy();
     bool getEvalHierarchyDense();

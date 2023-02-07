@@ -25,6 +25,7 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgGetQuadrature.m
                                   tsgIntegrate.m
                                   tsgListGridsByName.m
+                                  tsgLoadConstructedPoints.m
                                   tsgLoadHCoefficients.m
                                   tsgLoadValues.m
                                   tsgMakeExoticQuadrature.m

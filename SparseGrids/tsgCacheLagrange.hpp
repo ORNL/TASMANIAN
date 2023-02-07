@@ -95,7 +95,7 @@ public:
             c *= (x - nodes[j]);
             cc[j+1] = c;
         }
-        c = (rule.getType() == rule_clenshawcurtis0) ? (x * x - 1.0) : 1.0;
+        c = (rule.getRule() == rule_clenshawcurtis0) ? (x * x - 1.0) : 1.0;
         cc[num_points-1] *= c * coeff[num_points-1];
         for(int j=num_points-2; j>=0; j--){
             c *= (x - nodes[j+1]);
@@ -172,8 +172,8 @@ public:
         int num_points = rule.getNumPoints(level);
         // cc first stores fj'(x), aux_f stores fj(x), and aux_g stores gj(x).
         std::vector<T> aux_f(num_points), aux_g(num_points);
-        cc[0] = (rule.getType() == rule_clenshawcurtis0) ? 2.0 * x : 0.0;
-        aux_f[0] = (rule.getType() == rule_clenshawcurtis0) ? x * x - 1.0 : 1.0;
+        cc[0] = (rule.getRule() == rule_clenshawcurtis0) ? 2.0 * x : 0.0;
+        aux_f[0] = (rule.getRule() == rule_clenshawcurtis0) ? x * x - 1.0 : 1.0;
         aux_g[num_points-1] = 1.0;
         for(int i=1; i<num_points; i++) {
             aux_f[i] = aux_f[i-1] * (x - nodes[i-1]);
