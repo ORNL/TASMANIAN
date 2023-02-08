@@ -1,8 +1,5 @@
 function tsgCoreTests()
 
-% Indexes and polynomial spaces are experimental
-% ListGridsByName(), Summary(), and PlotPoins2D() require human
-
 disp(['']);
 disp(['Testing TASMANIAN MATLAB interface']);
 [sFiles, sTasGrid] = tsgGetPaths();
@@ -16,17 +13,6 @@ if (status ~= 0)
     disp(cmdout);
     error('There was an error while executing tasgrid.');
 end
-%k = 1;
-%ll = 0;
-%while(((k + 6) < length(cmdout)) && (ll < 9))
-%    if ((cmdout(k) == ' ') && (cmdout(k+1) == ' ') && (cmdout(k+2) == ' ') && (cmdout(k+3) == ' '))
-%        ll = ll + 1;
-%        k = k + 4;
-%    else
-%        k = k + 1;
-%    end
-%end
-%disp(cmdout(1:k));
 disp(cmdout);
 
 
@@ -517,7 +503,7 @@ if (min(abs(p(:,3) - 1.0/27.0)) < 1.E-8)
 end
 tsgDeleteGrid(lGrid);
 
-disp(['tsgMake* functions:       PASS']);
+disp(['tsgMake* functions         PASS']);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -797,7 +783,7 @@ if (abs(I - sqrt(2.0) * pi^0.5 / 2.0) > 1.E-11)
 end
 tsgDeleteGrid(lGrid);
 
-disp(['Core I/O and evaluate:    PASS']);
+disp(['Core I/O and evaluate      PASS']);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -977,7 +963,7 @@ tsgDeleteGrid(lGridB);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % covered in tsgEvaluateHierarchy()
 
-disp(['Refinement functions:     PASS']);
+disp(['Refinement functions       PASS']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgReloadGrid()                              %%%
@@ -995,7 +981,7 @@ if ((lGrid2.iDim ~= 3) || (lGrid2.iOut ~= 7))
 end
 tsgDeleteGrid(lGrid);
 
-disp(['Utility functions:        PASS']);
+disp(['Utility functions          PASS']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgDifferentiate()                           %%%
@@ -1052,7 +1038,7 @@ for i=1:5
     end
 end
 tsgDeleteGrid(lGrid);
-disp(['Differentiation:          PASS']);
+disp(['Differentiation            PASS']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgLoadConstructedPoints()                   %%%
@@ -1106,7 +1092,7 @@ if (norm(sortrows(p) - sortrows(pp)) > 1.E-14)
     error(['Dynamically loaded grid points did not return the grid points.'])
 end
 tsgDeleteGrid(lGrid);
-disp(['Dynamic construction:     PASS']);
+disp(['Dynamic construction       PASS']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp(['']);
