@@ -1,15 +1,15 @@
 function [lGrid, points] = tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDepth, mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule, sConformalMap, vConfromalWeights, vLimitLevels)
 %
-% [lGrid, points] = 
-%               tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDepth, 
-%                    mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule, 
+% [lGrid, points] =
+%               tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDepth,
+%                    mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule,
 %                    sConformalMap, vConfromalWeights)
 %
 % creates a new sparse grid using a global rule
 %
 % INPUT:
 %
-% sGridName: the name of the grid, give it a string name, 
+% sGridName: the name of the grid, give it a string name,
 %            i.e. 'myGrid' or '1' or 'pi314'
 %            DO NOT LEAVE THIS EMPTY
 %
@@ -21,7 +21,7 @@ function [lGrid, points] = tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDep
 %
 % s1D: (string for the underlying 1-D rule that induces the grid)
 %
-%    Interpolation rules (Note: the quadrature induced by those rules is 
+%    Interpolation rules (Note: the quadrature induced by those rules is
 %                               constructed by integrating the interpolant)
 %
 %     'clenshaw-curtis'          'clenshaw-curtis-zero'          'fejer2'
@@ -33,7 +33,7 @@ function [lGrid, points] = tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDep
 %     'chebyshev'  'chebyshev-odd'
 %               approximation using roots of Chebyshev polynomials
 %               non-nested case (in contrast to Clenshaw-Curtis nodes)
-%               Note: the quadrature induced by those rules is 
+%               Note: the quadrature induced by those rules is
 %                     constructed by integrating the interpolant
 %
 %    Quadrature rules, the weights target exactness with respect to the
@@ -95,7 +95,7 @@ function [lGrid, points] = tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDep
 %               transform specifies the lower and upper bound of the domain
 %               in each direction. For gauss-laguerre and gauss-hermite
 %               grids, the transform gives the a and b parameters that
-%               change the weight to 
+%               change the weight to
 %               exp(-b (x - a))  and  exp(-b (x - a)^2)
 %
 % lCustomRule: (global grids of custom-tabulated rule)
@@ -115,14 +115,14 @@ function [lGrid, points] = tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDep
 %                   lCustomRule.vNodes
 %                   lCustomRule.vWeights
 %
-%                  see help tsgWriteCustomRuleFile.m for definition of 
+%                  see help tsgWriteCustomRuleFile.m for definition of
 %                  each field of the structure
 %
 % sConformalMap: (optional string giving the type of transform)
 %                conformal maps provide a non-linear domain transform,
 %                approximation (quadrature or interpolation) is done
 %                on the composition of f and the transform. A suitable
-%                transform could reduce the error by as much as an 
+%                transform could reduce the error by as much as an
 %                order of magnitude.
 %
 %                'asin': truncated MacLaurin series of arch-sin
@@ -134,9 +134,9 @@ function [lGrid, points] = tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDep
 % vLimitLevels: (optional vector of integers of size iDim)
 %               limit the level in each direction, no points beyond the
 %               specified limit will be used, e.g., in 2D using
-%               clenshaw-curtis rule, [1, 99] forces the grid to have 
-%               at most 3 possible values in the first variable and 
-%               ~2^99 (practicallyt infinite) number in the second 
+%               clenshaw-curtis rule, [1, 99] forces the grid to have
+%               at most 3 possible values in the first variable and
+%               ~2^99 (practicallyt infinite) number in the second
 %               direction. vLimitLevels works in conjunction with
 %               iDepth and sType, the points added to the grid will
 %               obey both bounds
@@ -146,12 +146,12 @@ function [lGrid, points] = tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDep
 % lGrid: list containing information about the sparse grid, can be used
 %        to call other functions
 %
-% points: (optional) the points of the grid in an array 
+% points: (optional) the points of the grid in an array
 %         of dimension [num_poits, dim]
 %
-% [lGrid, points] = 
-%               tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDepth, 
-%                    mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule, 
+% [lGrid, points] =
+%               tsgMakeGlobal(sGridName, iDim, iOut, s1D, sType, iDepth,
+%                    mTransformAB, vAlphaBeta, vAnisotropy, lCustomRule,
 %                    sConformalMap, vConfromalWeights)%
 
 if (~isnumeric(iDim) || ~isreal(iDim) || ~(rem(iDim,1) == 0) || ~(sum(size(iDim) == [1,1])) || ~(iDim > 0))
@@ -289,7 +289,7 @@ end
 
 [status, cmdout] = system(sCommand);
 
-if (max(size(findstr('ERROR', cmdout))) ~= 0)
+if (max(size(strfind(cmdout, 'ERROR'))) ~= 0)
     disp(cmdout);
     error('The tasgrid execurable returned an error, see above');
     return;

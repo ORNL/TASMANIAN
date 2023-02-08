@@ -7,7 +7,7 @@ function [lGrid, points] = tsgMakeWavelet(sGridName, iDim, iOut, iDepth, iOrder,
 %
 % INPUT:
 %
-% sGridName: the name of the grid, give it a string name, 
+% sGridName: the name of the grid, give it a string name,
 %            i.e. 'myGrid' or '1' or 'pi314'
 %            DO NOT LEAVE THIS EMPTY
 %
@@ -18,7 +18,7 @@ function [lGrid, points] = tsgMakeWavelet(sGridName, iDim, iOut, iDepth, iOrder,
 %       the number of outputs
 %
 % iDepth: (integer non-negative)
-%          controls the density of the grid, i.e., the number of 
+%          controls the density of the grid, i.e., the number of
 %          levels to use
 %
 % iOrder: (integer must be 1 or 3)
@@ -29,14 +29,14 @@ function [lGrid, points] = tsgMakeWavelet(sGridName, iDim, iOut, iDepth, iOrder,
 %               transform specifies the lower and upper bound of the domain
 %               in each direction. For gauss-laguerre and gauss-hermite
 %               grids, the transform gives the a and b parameters that
-%               change the weight to 
+%               change the weight to
 %               exp(-b (x - a))  and  exp(-b (x - a)^2)
 %
 % sConformalMap: (optional string giving the type of transform)
 %                conformal maps provide a non-linear domain transform,
 %                approximation (quadrature or interpolation) is done
 %                on the composition of f and the transform. A suitable
-%                transform could reduce the error by as much as an 
+%                transform could reduce the error by as much as an
 %                order of magnitude.
 %
 %                'asin': truncated MacLaurin series of arch-sin
@@ -59,7 +59,7 @@ function [lGrid, points] = tsgMakeWavelet(sGridName, iDim, iOut, iDepth, iOrder,
 % lGrid: list containing information about the sparse grid, can be used
 %        to call other functions
 %
-% points: (optional) the points of the grid in an array 
+% points: (optional) the points of the grid in an array
 %         of dimension [num_poits, dim]
 %
 % [lGrid, points] = tsgMakeWavelet(sGridName, iDim, iOut, iDepth, iOrder,
@@ -142,7 +142,7 @@ end
 
 [status, cmdout] = system(sCommand);
 
-if (max(size(findstr('ERROR', cmdout))) ~= 0)
+if (max(size(strfind(cmdout, 'ERROR'))) ~= 0)
     disp(cmdout);
     error('The tasgrid execurable returned an error, see above');
     return;
