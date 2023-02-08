@@ -44,7 +44,7 @@ function [new_points] = tsgGetCandidateConstructionAnisotropic(lGrid, sType, iOu
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid);
 
 sCommand = [sTasGrid,' -getconstructpnts'];
 

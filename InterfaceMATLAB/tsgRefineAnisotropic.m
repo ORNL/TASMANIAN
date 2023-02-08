@@ -41,7 +41,7 @@ function [new_points] = tsgRefineAnisotropic(lGrid, sType, iMinNew, iOut, vLimit
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid);
 
 sCommand = [sTasGrid,' -refineaniso'];
 

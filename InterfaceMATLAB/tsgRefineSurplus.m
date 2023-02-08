@@ -51,7 +51,7 @@ function [new_points] = tsgRefineSurplus(lGrid, fTolerance, sRefinementType, iOu
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid);
 
 sCommand = [sTasGrid,' -refinesurp'];
 

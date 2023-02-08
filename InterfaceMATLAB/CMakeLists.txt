@@ -33,6 +33,7 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgMakeFilenames.m
                                   tsgMakeFourier.m
                                   tsgMakeGlobal.m
+                                  tsgMakeGridFilename.m
                                   tsgMakeLocalPolynomial.m
                                   tsgMakeQuadrature.m
                                   tsgMakeSequence.m

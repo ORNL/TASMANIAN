@@ -29,7 +29,7 @@ function [result] = tsgEvaluate(lGrid, mX)
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid);
 
 sCommand = [sTasGrid,' -evaluate'];
 

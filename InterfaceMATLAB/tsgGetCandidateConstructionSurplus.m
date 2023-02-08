@@ -53,7 +53,7 @@ function [new_points] = tsgGetCandidateConstructionSurplus(lGrid, fTolerance, sR
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid);
 
 sCommand = [sTasGrid,' -getconstructpnts'];
 

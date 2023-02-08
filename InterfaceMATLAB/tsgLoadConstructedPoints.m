@@ -22,7 +22,7 @@ function tsgLoadConstructedPoints(lGrid, mX, mY)
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid);
 
 sCommand = [sTasGrid,' -loadconstructed'];
 

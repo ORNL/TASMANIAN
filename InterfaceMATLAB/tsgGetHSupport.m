@@ -14,7 +14,7 @@ function [coefficients] = tsgGetHSupport(lGrid)
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid);
 
 sCommand = [sTasGrid,' -gethsupport'];
 

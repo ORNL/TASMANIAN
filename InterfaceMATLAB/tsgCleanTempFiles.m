@@ -23,7 +23,7 @@ function tsgCleanTempFiles(lGrid, lFiles)
 
 % generate filenames
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid);
 
 sFileX = regexprep(sFileX, '\\ ', ' ');
 sFileV = regexprep(sFileV, '\\ ', ' ');

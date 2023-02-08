@@ -12,7 +12,7 @@ function tsgDeleteGrid(lGrid)
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid);
 
 sFileG = regexprep(sFileG, '\\ ', ' ');
 if (exist(sFileG, 'file') == 2)
