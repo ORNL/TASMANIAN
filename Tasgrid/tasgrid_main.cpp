@@ -72,13 +72,13 @@ int main(int argc, const char ** argv){
 
     // basic info, i.e., version, license, parallel support
     if (hasInfo(args.front())){
-        cout << "Tasmanian Sparse Grids  version: " << TasmanianSparseGrid::getVersion() << endl;
+        cout << "Tasmanian Sparse Grids  version: " << TasmanianSparseGrid::getVersion() << "\n";
         if ((std::string(TasmanianSparseGrid::getGitCommitHash()).compare("Tasmanian git hash is not available here") != 0)
             && (std::string(TasmanianSparseGrid::getGitCommitHash()).find("Release") != 0)){
-            cout << "                git commit hash: " << TasmanianSparseGrid::getGitCommitHash() << endl;
-            cout << "                cmake cxx flags: " << TasmanianSparseGrid::getCmakeCxxFlags() << endl;
+            cout << "                git commit hash: " << TasmanianSparseGrid::getGitCommitHash() << "\n";
+            cout << "                cmake cxx flags: " << TasmanianSparseGrid::getCmakeCxxFlags() << "\n";
         }
-        cout << "                        license: " << TasmanianSparseGrid::getLicense() << endl;
+        cout << "                        license: " << TasmanianSparseGrid::getLicense() << "\n";
         if (TasmanianSparseGrid::isOpenMPEnabled()){
             cout << "          OpenMP multithreading: Enabled\n";
         }else{
@@ -88,7 +88,7 @@ int main(int argc, const char ** argv){
         if (TasmanianSparseGrid::isCudaEnabled()) gpu_backend = "CUDA";
         if (TasmanianSparseGrid::isHipEnabled()) gpu_backend = "ROCm/HIP";
         if (TasmanianSparseGrid::isDpcppEnabled()) gpu_backend = "oneAPI/DPC++";
-        cout << "          GPU backend framework: " << gpu_backend << endl;
+        cout << "          GPU backend framework: " << gpu_backend << "\n";
         cout << "         Available acceleration: ";
         bool anyAcc = false, anyGPU = false;
         if (TasmanianSparseGrid::isAccelerationAvailable(accel_cpu_blas)){
@@ -113,27 +113,27 @@ int main(int argc, const char ** argv){
         if (!anyAcc){
             cout << " none";
         }
-        cout << endl;
+        cout << "\n";
         if (anyGPU){
             int numGPUs = TasmanianSparseGrid::getNumGPUs();
             if (numGPUs > 0){
-                cout << "                 Available GPUs:" << endl;
+                cout << "                 Available GPUs:" << "\n";
                 for(int i=0; i<numGPUs; i++){
                     std::string name = TasmanianSparseGrid::getGPUName(i);
                     int memory = TasmanianSparseGrid::getGPUMemory(i);
-                    cout << setw(11) << i << ":" << setw(20) << name << " with" << setw(7) << memory << "MB of RAM" << endl;
+                    cout << setw(11) << i << ":" << setw(20) << name << " with" << setw(7) << memory << "MB of RAM\n";
                 }
             }else{
                 cout << "        Available GPUs: none\n";
             }
         }
 
-        cout << endl;
+        cout << "\n";
         return 0;
     }
 
     // help with interface commands
-    if (args.front() == "-listtypes"){
+    if (args.front() == "-listtypes" || args.front() == "-lt"){
         printHelp(help_listtypes);
         return 0;
     }
@@ -192,7 +192,7 @@ int main(int argc, const char ** argv){
     TasgridWrapper wrap;
     auto command = TasgridWrapper::hasCommand(args.front());
     if (command == command_none){
-        cout << "ERROR: unknown command " << args.front() << endl;
+        cout << "ERROR: unknown command " << args.front() << "\n";
         printHelp();
         return 1;
     }
@@ -430,522 +430,734 @@ int main(int argc, const char ** argv){
 
 void printHelp(TypeHelp ht, TypeCommand com){
 
-    cout << endl;
-
     if (ht == help_generic){
+        cout << R"help(
+    Usage: tasgrid <command> <option1> <value1> <option2> <value2> ...
 
-        cout << " Usage: tasgrid <command> <option1> <value1> <option2> <value2> ... \n\n";
+Commands                Shorthand    Action
+ -help                  -h,--help    show verbose help options
+ -listtypes             -lt          list accepted grid types and 1-D rules
+ -test                               perform a number of internal tests
+ -makeglobal            -mg          make a grid from a global rule
+ -makesequence          -ms          make a grid from a sequence rule
+ -makelocalpoly         -mp          make a grid from a local polynomial rule
+ -makewavelet           -mw          make a grid from a wavelet rule
+ -makefourier           -mf          make a grid from a Fourier rule
+ -makequadrature        -mq          make a quadrature
+ -makeexoquad           -meq         make an exotic quadrature
+ -makeupdate            -mu          updates an existing global/sequence/fourier grid
+ -setconformal          -sc          set conformal domain transform
+ -getquadrature         -gq          output quadrature weights and points
+ -getinterweights       -gi          output the interpolation weights
+ -getdiffweights        -gd          output the differentiation weights
+ -getpoints             -gp          output the points
+ -getneededpoints       -gn          outputs the points needing values to build an interpolant
+ -loadvalues            -l           load the values of the interpolated function
+ -evaluate              -e           evaluates the interpolant
+ -evalhierarchyd        -ehd         evaluates the hierarchical basis (dense output)
+ -evalhierarchys        -ehs         evaluates the hierarchical basis (sparse output)
+ -gethsupport           -ghsup       get the hierarchical support
+ -integrate             -i           output the integral
+ -differentiate         -d           differentiates the interpolant
+ -getanisotropy         -ga          estimates the anisotropic coefficients
+ -refineaniso           -ra          refines the grid
+ -refinesurp            -rs          refines the grid
+ -refine                -r           refines the grid
+ -cancelrefine          -cr          discards the last refinement (unless values are already loaded)
+ -mergerefine           -mr          combines the loaded and needed points and discards the loaded values
+ -using-construct                    prints simple string indicating whether dynamic construction is in use
+ -getconstructpnts      -gcp         get points for dynamic construction
+ -loadconstructed       -lcp         load points for dynamic construction
+ -getcoefficients       -gc          get the hierarchical coefficients of the grid
+ -setcoefficients       -sc          set the hierarchical coefficients of the grid
+ -getpoly                            get polynomial space
+ -summary               -s           writes short description
 
-        cout << "Commands\t"       << "\tShorthand"   << "\tAction\n";
-        cout << " -help\t"         << "\t\t-h,--help" << "\tshow verbose help options\n";
-        cout << " -listtypes\t"    << "\t-lt\t"       << "\tlist accepted grid types and 1-D rules\n";
-        cout << " -test\t"         << "\t\t\t"    << "\tperform a number of internal tests\n";
-        cout << " -makeglobal\t"       << "\t-mg"     << "\t\tmake a grid from a global rule\n";
-        cout << " -makesequence\t"     << "\t-ms"     << "\t\tmake a grid from a sequence rule\n";
-        cout << " -makelocalpoly\t"    << "\t-mp"     << "\t\tmake a grid from a local polynomial rule\n";
-        cout << " -makewavelet\t"      << "\t-mw"     << "\t\tmake a grid from a wavelet rule\n";
-        cout << " -makefourier\t"      << "\t-mf"     << "\t\tmake a grid from a Fourier rule\n";
-        cout << " -makequadrature"     << "\t-mq"     << "\t\tmake a quadrature\n";
-        cout << " -makeexoquad\t"     << "\t-meq"     << "\t\tmake an exotic quadrature\n";
-        cout << " -makeupdate\t"       << "\t-mu"     << "\t\tupdates an existing global/sequence/fourier grid\n";
-        cout << " -setconformal\t"     << "\t-sc"     << "\t\tset conformal domain transform\n";
-        cout << " -getquadrature\t"    << "\t-gq"     << "\t\toutput quadrature weights and points\n";
-        cout << " -getinterweights"    << "\t-gi"     << "\t\toutput the interpolation weights\n";
-        cout << " -getdiffweights"    << "\t-gd"     << "\t\toutput the differentiation weights\n";
-        cout << " -getpoints\t"    << "\t-gp"     << "\t\toutput the points\n";
-        cout << " -getneededpoints"    << "\t-gn"     << "\t\toutputs the points needing values to build an interpolant\n";
-        cout << " -loadvalues\t"       << "\t-l"      << "\t\tload the values of the interpolated function\n";
-        cout << " -evaluate\t"     << "\t-e"      << "\t\tevaluates the interpolant\n";
-        cout << " -evalhierarchyd"     << "\t-ehd"      << "\t\tevaluates the hierarchical basis (dense output)\n";
-        cout << " -evalhierarchys"     << "\t-ehs"      << "\t\tevaluates the hierarchical basis (sparse output)\n";
-        cout << " -gethsupport\t"       << "\t-ghsup"     << "\t\tget the hierarchical support\n";
-        cout << " -integrate\t"    << "\t-i"      << "\t\toutput the integral\n";
-        cout << " -differentiate\t"    << "\t-d"      << "\t\tdifferentiates the interpolant\n";
-        cout << " -getanisotropy\t"    << "\t-ga"     << "\t\testimates the anisotropic coefficients\n";
-        cout << " -refineaniso\t"      << "\t-ra"     << "\t\trefines the grid\n";
-        cout << " -refinesurp\t"       << "\t-rs"     << "\t\trefines the grid\n";
-        cout << " -refine\t"       << "\t-r"      << "\t\trefines the grid\n";
-        cout << " -cancelrefine\t"     << "\t-cr"     << "\t\tdiscards the last refinement (unless values are already loaded)\n";
-        cout << " -mergerefine\t"     << "\t-mr"     << "\t\tcombines the loaded and needed points and discards the loaded values\n";
-        cout << " -using-construct\t" << "\t"     << "\tprints simple string indicating whether dynamic construction is in use\n";
-        cout << " -getconstructpnts" << "\t-gcp"     << "\t\tget points for dynamic construction\n";
-        cout << " -loadconstructed" << "\t-lcp"     << "\t\tload points for dynamic construction\n";
-        cout << " -getcoefficients"    << "\t-gc"     << "\t\tget the hierarchical coefficients of the grid\n";
-        cout << " -setcoefficients"    << "\t-sc"     << "\t\tset the hierarchical coefficients of the grid\n";
-        cout << " -getpoly\t"      << "\t"      << "\t\tget polynomial space\n";
-        cout << " -summary\t"      << "\t-s"      << "\t\twrites short description\n\n";
+Options                 Shorthand  Value         Action
+ -help                  help                     display verbose information about this command
+ -dimensions            -dim       <int>         set the number of dimensions
+ -outputs               -out       <int>         set the number of outputs
+ -depth                 -dt        <int>         set the depth of the grid (e.g. levels)
+ -type                  -tt        <type>        set the type of the grid
+ -conformaltype         -tt        <type>        set the type of the transformation
+ -onedim                -1d        <rule>        set the one dimensional rule
+ -order                 -or        <int>         set the order for local polynomial and wavelet basis
+ -alpha                            <float>       the alpha parameter for Gegenbauer/Jacobi/Laguerre/Hermite quadrature
+ -beta                             <float>       the beta parameter for Jacobi quadrature
+ -tolerance             -tol       <float>       set the tolerance for the refinement
+ -refout                -rout      <int>         select the output to use for the refinement
+ -mingrowth             -ming      <int>         minimum number of new points
+ -reftype               -rt        <int>         set the type of refinement
 
-        cout << "Options\t\t"    << "\tShorthand"  << "\tValue"    << "\t\tAction\n";
-        cout << " -help\t\t"     << "\thelp\t"     << "\t"         << "\t\tdisplay verbose information about this command\n";
-        cout << " -dimensions\t"     << "\t-dim\t"     << "\t<int>"    << "\t\tset the number of dimensions\n";
-        cout << " -outputs\t"    << "\t-out\t"     << "\t<int>"    << "\t\tset the number of outputs\n";
-        cout << " -depth\t\t"    << "\t-dt\t"      << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)\n";
-        cout << " -type\t\t"     << "\t-tt\t"      << "\t<type>"       << "\t\tset the type of the grid\n";
-        cout << " -conformaltype\t"     << "\t-tt\t"      << "\t<type>"       << "\t\tset the type of the transformation\n";
-        cout << " -onedim\t"     << "\t-1d\t"      << "\t<rule>"       << "\t\tset the one dimensional rule\n";
-        cout << " -order\t\t"    << "\t-or\t"      << "\t<int>"    << "\t\tset the order for local polynomial and wavelet basis\n";
-        cout << " -alpha\t\t"    << "\t\t"     << "\t<float>"      << "\t\tthe alpha parameter for Gegenbauer/Jacobi/Laguerre/Hermite quadrature\n";
-        cout << " -beta\t\t"     << "\t\t"     << "\t<float>"      << "\t\tthe beta parameter for Jacobi quadrature\n";
-        cout << " -tolerance\t"      << "\t-tol\t"     << "\t<float>"      << "\t\tset the tolerance for the refinement\n";
-        cout << " -refout\t"     << "\t-rout\t"    << "\t<int>"    << "\t\tselect the output to use for the refinement\n";
-        cout << " -mingrowth\t"      << "\t-ming\t"   << "\t<int>"    << "\t\tminimum number of new points\n";
-        cout << " -reftype\t"    << "\t-rt\t"      << "\t<int>"    << "\t\tset the type of refinement\n";
+ -gridfile              -gf        <filename>    set the name for the grid file
+ -xfile                 -xf        <filename>    set the name for the file with points
+ -valsfile              -vf        <filename>    set the name for the file with values
+ -outputfile            -of        <filename>    set the name for the output file
+ -anisotropyfile        -af        <filename>    set the anisotropic weights
+ -transformfile         -tf        <filename>    set the transformation of the domain
+ -conformalfile         -tf        <filename>    set the conformal transformation of the domain
+ -levellimitsfile       -lf        <filename>    set the limits for the levels
+ -customfile            -cf        <filename>    set the file with the custom-tabulated rule
+ -gpuid                            <int>         set the gpu to use for evaluations
+ -print                 -p         <none>        print to standard output
+ -ascii                            <none>        use ASCII grid file format
 
-        cout << " -gridfile\t"       << "\t-gf\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-        cout << " -xfile\t\t"    << "\t-xf\t"      << "\t<filename>"   << "\tset the name for the file with points\n";
-        cout << " -valsfile\t"       << "\t-vf\t"      << "\t<filename>"   << "\tset the name for the file with values\n";
-        cout << " -outputfile\t"     << "\t-of\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-        cout << " -anisotropyfile"   << "\t-af\t"      << "\t<filename>"   << "\tset the anisotropic weights\n";
-        cout << " -transformfile\t"  << "\t-tf\t"      << "\t<filename>"   << "\tset the transformation of the domain\n";
-        cout << " -conformalfile\t"  << "\t-tf\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain\n";
-        cout << " -levellimitsfile"  << "\t-lf\t"      << "\t<filename>"   << "\tset the limits for the levels\n";
-        cout << " -customfile\t"     << "\t-cf\t"      << "\t<filename>"   << "\tset the file with the custom-tabulated rule\n";
-        cout << " -gpuid\t\t"    << "\t\t"     << "\t<int>\t"   << "\tset the gpu to use for evaluations\n";
-        cout << " -print\t\t"    << "\t-p\t"       << "\t<none>"       << "\t\tprint to standard output\n";
-        cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n";
-
-        cout << endl;
+)help";
     }else if (ht == help_command){
-        if (com == command_makeglobal){
-            cout << "Commands\t"     << "\tShorthand" << "\tAction\n";
-            cout << " -makeglobal\t"     << "\t-mg"       << "\t\tmake a grid from a global rule\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -dimensions\t"     << "\tyes\t"     << "\t<int>"    << "\t\tset the number of dimensions\n";
-            cout << " -outputs\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the number of outputs\n";
-            cout << " -depth\t\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)\n";
-            cout << " -type\t\t"     << "\tyes\t"     << "\t<type>"       << "\t\tset the type of the grid\n";
-            cout << " -onedim\t"     << "\tyes\t"     << "\t<rule>"       << "\t\tset the one dimensional rule\n";
-            cout << " \t\t\t\t\t"    << "\t\tmust use a global rule (see manual)\n";
-            cout << " -alpha\t\t"    << "\tsometimes" << "\t<float>"      << "\t\tthe alpha parameter for Gegenbauer/Jacobi/Laguerre/Hermite quadrature\n";
-            cout << " \t\t\t\t\t"    << "\t\trequired for those rules\n";
-            cout << " -beta\t\t"     << "\tsometimes" << "\t<float>"      << "\t\tthe beta parameter for Jacobi quadrature\n";
-            cout << " \t\t\t\t\t"    << "\t\trequired for Jacobi rule\n";
-            cout << " -gridfile\t"       << "\tno\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -anisotropyfile"   << "\tno\t"      << "\t<filename>"   << "\tset the anisotropic weights\n";
-            cout << " -transformfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the transformation of the domain\n";
-            cout << " -customfile\t"     << "\tsometimes" << "\t<filename>"   << "\tset the file with the custom-tabulated rule\n";
-            cout << " -conformaltype\t"  << "\tno\t"      << "\t<type>"       << "\t\tset the type of the map\n";
-            cout << " -conformalfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain\n";
-            cout << " \t\t\t\t\t"    << "\t\trequired for custom-tabulated rule\n";
-            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels\n";
-            cout << " -print\t\t"    << "\tno\t"      << "\t<none>"       << "\t\tprint to standard output\n";
-            cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n\n";
-            cout << "Note: -outputfile or -print output the points of the grid\n";
-            cout << "Note: at least one of -gridfile, -outputfile, or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_makesequence){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -makesequence\t"   << "\t-ms"     << "\t\tmake a grid from a sequence rule\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -dimensions\t"     << "\tyes\t"     << "\t<int>"    << "\t\tset the number of dimensions\n\n";
-            cout << " -outputs\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the number of outputs\n";
-            cout << " -depth\t\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)\n";
-            cout << " -type\t\t"     << "\tyes\t"     << "\t<type>"       << "\t\tset the type of the grid\n";
-            cout << " -onedim\t"     << "\tyes\t"     << "\t<rule>"       << "\t\tset the one dimensional rule\n";
-            cout << " \t\t\t\t\t"    << "\t\tmust use a sequence rule (see manual)\n";
-            cout << " -gridfile\t"       << "\tno\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -anisotropyfile"   << "\tno\t"      << "\t<filename>"   << "\tset the anisotropic weights\n";
-            cout << " -transformfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the transformation of the domain\n";
-            cout << " -conformaltype\t"  << "\tno\t"      << "\t<type>"       << "\t\tset the type of the map\n";
-            cout << " -conformalfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain\n";
-            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels\n";
-            cout << " -print\t\t"    << "\tno\t"      << "\t<none>"       << "\t\tprint to standard output\n";
-            cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n\n";
-            cout << "Note: -outputfile or -print output the points of the grid\n";
-            cout << "Note: at least one of -gridfile, -outputfile, or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_makelocalp){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -makelocalpoly\t"  << "\t-mp"     << "\t\tmake a grid from a local polynomial rule\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -dimensions\t"     << "\tyes\t"     << "\t<int>"    << "\t\tset the number of dimensions\n";
-            cout << " -outputs\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the number of outputs\n";
-            cout << " -depth\t\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)\n";
-            cout << " -order\t\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the order for local polynomial basis\n";
-            cout << " -onedim\t"     << "\tyes\t"     << "\t<rule>"       << "\t\tset the one dimensional rule\n";
-            cout << " \t\t\t\t\t"    << "\t\tmust use a local polynomial rule (see manual)\n";
-            cout << " -gridfile\t"       << "\tno\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -transformfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the transformation of the domain\n";
-            cout << " -conformaltype\t"  << "\tno\t"      << "\t<type>"       << "\t\tset the type of the map\n";
-            cout << " -conformalfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain\n";
-            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels\n";
-            cout << " -print\t\t"    << "\tno\t"      << "\t<none>"       << "\t\tprint to standard output\n";
-            cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n\n";
-            cout << "Note: -outputfile or -print output the points of the grid\n";
-            cout << "Note: at least one of -gridfile, -outputfile, or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_makewavelet){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -makewavelet\t"    << "\t-mw"     << "\t\tmake a grid from a wavelet rule\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -dimensions\t"     << "\tyes\t"     << "\t<int>"    << "\t\tset the number of dimensions\n";
-            cout << " -outputs\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the number of outputs\n";
-            cout << " -depth\t\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)\n";
-            cout << " -order\t\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the order for the wavelet basis\n";
-            cout << " -gridfile\t"       << "\tno\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -transformfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the transformation of the domain\n";
-            cout << " -conformaltype\t"  << "\tno\t"      << "\t<type>"       << "\t\tset the type of the map\n";
-            cout << " -conformalfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain\n";
-            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels\n";
-            cout << " -print\t\t"    << "\tno\t"      << "\t<none>"       << "\t\tprint to standard output\n";
-            cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n\n";
-            cout << "Note: -outputfile or -print output the points of the grid\n";
-            cout << "Note: at least one of -gridfile, -outputfile, or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_makefourier){
-            cout << "Commands\t"     << "\tShorthand" << "\tAction\n";
-            cout << " -makefourier\t"     << "\t-mf"       << "\t\tmake a grid from a Fourier rule\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -dimensions\t"     << "\tyes\t"     << "\t<int>"    << "\t\tset the number of dimensions\n";
-            cout << " -outputs\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the number of outputs\n";
-            cout << " -depth\t\t"    << "\tyes\t"     << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)\n";
-            cout << " -type\t\t"     << "\tyes\t"     << "\t<type>"       << "\t\tset the type of the grid\n";
-            cout << " -gridfile\t"       << "\tno\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -anisotropyfile"   << "\tno\t"      << "\t<filename>"   << "\tset the anisotropic weights\n";
-            cout << " -transformfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the transformation of the domain\n";
-            cout << " -conformaltype\t"  << "\tno\t"      << "\t<type>"       << "\t\tset the type of the map\n";
-            cout << " -conformalfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain\n";
-            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels\n";
-            cout << " -print\t\t"    << "\tno\t"      << "\t<none>"       << "\t\tprint to standard output\n";
-            cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n\n";
-            cout << "Note: -outputfile or -print output the points of the grid\n";
-            cout << "Note: at least one of -gridfile, -outputfile, or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_makequadrature){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -makequadrature"   << "\t-mq"     << "\t\tmake a quadrature\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -dimensions\t"     << "\tyes\t"     << "\t<int>"    << "\t\tset the number of dimensions\n";
-            cout << " -depth\t\t"    << "\tyes\t"      << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)\n";
-            cout << " -type\t\t"     << "\tsometimes"      << "\t<type>"       << "\t\tset the type of the grid\n";
-            cout << " \t\t\t\t\t"    << "\t\trequired only for global rules (see manual)\n";
-            cout << " -order\t\t"    << "\tsometimes"      << "\t<int>"    << "\t\tset the order for local polynomial basis\n";
-            cout << " \t\t\t\t\t"    << "\t\trequired only for local polynomial and wavelet (see manual)\n";
-            cout << " -onedim\t"     << "\tyes\t"      << "\t<rule>"       << "\t\tset the one dimensional rule\n";
-            cout << " \t\t\t\t\t"    << "\t\tcan use any rule (see manual)\n";
-            cout << " -alpha\t\t"    << "\tsometimes"  << "\t<float>"      << "\t\tthe alpha parameter for Gegenbauer/Jacobi/Laguerre/Hermite quadrature\n";
-            cout << " \t\t\t\t\t"    << "\t\trequired for those rules\n";
-            cout << " -beta\t\t"     << "\tsometimes"  << "\t<float>"      << "\t\tthe beta parameter for Jacobi quadrature\n";
-            cout << " \t\t\t\t\t"    << "\t\trequired for Jacobi rule\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -anisotropyfile"   << "\tno\t"      << "\t<filename>"   << "\tset the anisotropic weights\n";
-            cout << " -transformfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the transformation of the domain\n";
-            cout << " -customfile\t"     << "\tsometimes"  << "\t<filename>"   << "\tset the file with the custom-tabulated rule\n";
-            cout << " -conformaltype\t"  << "\tno\t"      << "\t<type>"       << "\t\tset the type of the map\n";
-            cout << " -conformalfile\t"  << "\tno\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain\n";
-            cout << " \t\t\t\t\t"    << "\t\trequired for custom-tabulated rule\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output the points and weights of the grid\n";
-            cout << "Note: at least one of -outputfile, or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_makeexoquad){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -makeexoquad"   << "\t\t-meq"     << "\t\tmake an exotic quadrature\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -depth\t\t"    << "\tyes\t"      << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)\n";
-            cout << " -shift\t\t"    << "\tyes\t"      << "\t<float>"    << "\t\tset the shift of the weight function\n";
-            cout << " -weightfile\t"    << "\tyes\t"      << "\t<filename>"    << "\tset the name of the file containing a\n";
-            cout << " \t\t\t\t\t"    << "\t\tsurrogate/interpolant of the weight function;\n";
-            cout << " \t\t\t\t\t"    << "\t\tmust be a TasmanianSparseGrid in ASCII format\n";
-            cout << " -description\t"    << "\tyes\t"      << "\t<string>"    << "\tshort description of the quadrature\n";
-            cout << " -symmetric\t"    << "\tno\t"      << "\t<none>"    << "\t\tdeclare that the weight function is symmetric"  << endl;
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output the points and weights of the grid\n";
-            cout << "Note: at least one of -outputfile, or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_update){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -makeupdate\t"     << "\t-mu"     << "\t\tupdates a new global or sequence grid\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -depth\t\t"    << "\tyes\t"      << "\t<int>"    << "\t\tset the depth of the grid (e.g. levels)\n";
-            cout << " -type\t\t"     << "\tyes\t"      << "\t<type>"       << "\t\tset the type of the grid\n";
-            cout << " -anisotropyfile"   << "\tno\t"      << "\t<filename>"   << "\tset the anisotropic weights\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output the new points of the grid\n";
-        }else if (com == command_setconformal){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -setconformal\t"     << "\t-sc"     << "\t\tset conformal transformation\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -conformaltype\t"  << "\tyes\t"      << "\t<type>"       << "\t\tset the type of the map\n";
-            cout << " -conformalfile\t"  << "\tyes\t"      << "\t<filename>"   << "\tset the conformal transformation of the domain\n";
-        }else if (com == command_getquadrature){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -getquadrature"    << "\t-gq"     << "\t\tmake a quadrature\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output the points and weights of the grid\n";
-            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_getcoefficients){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -getcoefficients"    << "\t-gc"     << "\t\tget the hierarchical coefficients\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output the hierarchical coefficients of the sparse grid\n";
-            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_setcoefficients){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -setcoefficients"    << "\t-sc"     << "\t\tset the hierarchical coefficients\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output the hierarchical coefficients of the sparse grid\n";
-            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_getinterweights){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -getinterweights"  << "\t-gi"     << "\t\toutput the interpolation weights\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"      << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output the interpolation weight for each point in the xfile, see equation (1.2) in the manual\n";
-            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_getdiffweights){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -getdiffweights"  << "\t-gd"     << "\t\toutput the differentiation weights\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"      << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output the differentiation weight for each point in the xfile\n";
-            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_getpoints){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -getpoints\t"      << "\t-gp"     << "\t\toutput the points\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output the points of the grid\n";
-            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_getneeded){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -getneededpoints"  << "\t-gn"     << "\t\toutputs the points needing values to build an interpolant\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output the new points of the grid\n";
-            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_loadvalues){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -loadvalues\t"     << "\t-l"      << "\t\tload the values of the interpolated function\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -valsfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the file with values\n\n";
-        }else if (com == command_evaluate){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -evaluate\t"       << "\t-e"      << "\t\tevaluates the interpolant\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
-            cout << " -gpuid\t\t"    << "\tno\t"     << "\t<int>\t"   << "\tset the gpu to use for evaluations\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output values of the interpolant at the points specified in the xfile\n";
-            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_evalhierarchical_dense){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -evalhierarchyd"       << "\t-ehd"      << "\t\tevaluates the hierarchical basis (dense output)\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output values of the hierarchical basis functions in the xfile\n";
-            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_evalhierarchical_sparse){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -evalhierarchys"       << "\t-ehs"      << "\t\tevaluates the hierarchical basis (sparse output)\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output values of the hierarchical basis functions in the xfile\n";
-            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_gethsupport){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -gethsupport\t"       << "\t-ghsup"      << "\t\tget the hierarchical support\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_integrate){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -integrate\t"      << "\t-i"      << "\t\toutput the integral\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output the integral if the loaded function, see equation (1.3) in the manual\n";
-            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_differentiate){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -differentiate\t"       << "\t-d"      << "\t\tdifferentiates the interpolant\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print derivative (Jacobian matrix) of the interpolant at the points specified in the xfile\n";
-            cout << "Note: at least one of -outputfile or -print must be specified, otherwise the command has no output\n\n";
-        }else if (com == command_getanisocoeff){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -getanisotropy\t"    << "\t-ga"     << "\t\testimates the anisotropic coefficients\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -type\t\t"     << "\tyes\t"     << "\t<type>"       << "\t\tset the type of anisotropic coefficients\n";
-            cout << " -refout\t"     << "\tsometimes" << "\t<int>"    << "\t\tselect the output to use\n";
-            cout << " \t\t\t\t\t"    << "\t\trequired by global grids only\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output the estimated anisotropic coefficients\n\n";
-        }else if (com == command_refine_aniso){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -refineaniso\t"    << "\t-ra"     << "\t\trefines the grid\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -type\t\t"     << "\tyes\t"     << "\t<type>"       << "\t\tset the type of anisotropic refinement\n";
-            cout << " -mingrowth\t"      << "\tno\t"      << "\t<int>"    << "\t\tminimum number of new points (defaults to 1)\n";
-            cout << " -refout\t"     << "\tsometimes" << "\t<int>"    << "\t\tselect the output to use for the refinement\n";
-            cout << " \t\t\t\t\t"    << "\t\trequired by global grids, for sequence grids defaults to -1 (use all outputs)\n";
-            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n";
-            cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n\n";
-            cout << "Note: -outputfile or -print output the new points of the grid\n\n";
-        }else if (com == command_refine_surp){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -refinesurp\t"     << "\t-rs"     << "\t\trefines the grid\n\n";
-            cout << "Accepted options:"  << endl;
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -tolerance\t"      << "\tyes\t"     << "\t<float>"      << "\t\tset the tolerance for the refinement\n";
-            cout << " -reftype\t"    << "\tsometimes" << "\t<int>"    << "\t\tset the type of refinement\n";
-            cout << " \t\t\t\t\t"    << "\t\trequired by local polynomial and wavelet grids\n";
-            cout << " -refout\t"     << "\tsometimes" << "\t<int>"    << "\t\tselect the output to use for the refinement\n";
-            cout << " \t\t\t\t\t"    << "\t\trequired by global grids, for sequence grids defaults to -1 (use all outputs)\n";
-            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels\n";
-            cout << " -valsfile\t"       << "\t-vf\t"      << "\t<filename>"   << "\tset the correction weights for the surpluses\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n";
-            cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n\n";
-            cout << "Note: -outputfile or -print output the new points of the grid\n\n";
-        }else if (com == command_refine){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -refine\t"     << "\t-r"    << "\t\trefines the grid\n\n";
-            cout << "Accepted options:\n";
-            cout << " -refine calls -refineaniso for Global and Sequence grids and -refinesurp otherwise\n";
-            cout << " see \"-refineaniso help\" or \"-refinesurp help\" for the corresponding accepted options\n\n";
-            cout << "Note: -outputfile or -print output the new points of the grid\n\n";
-        }else if (com == command_refine_clear){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -cancelrefine\t"   << "\t-cr"     << "\t\tdiscards the last refinement (unless values are already loaded)\n\n";
-            cout << "Accepted options:\n";
-            cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n\n";
-        }else if (com == command_refine_merge){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -mergerefine\t"   << "\t-mr"     << "\t\tmerges the loaded and needed points and discards any loaded values\n\n";
-            cout << "Accepted options:\n";
-            cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n\n";
-        }else if (com == command_get_candidate_construction){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -getconstructpnts" << "\t-gcp"     << "\t\tget points for dynamic construction\n";
-            cout << "Accepted options:\n";
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -refout\t"     << "\tsometimes" << "\t<int>"    << "\t\tselect the output to use for the refinement\n";
-            cout << " -anisotropyfile"   << "\tsometimes"      << "\t<filename>"   << "\tset the anisotropic weights\n";
-            cout << " -levellimitsfile"  << "\tno\t"      << "\t<filename>"   << "\tset the limits for the levels\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n";
-            cout << " -ascii\t\t"    << "\t\t"       << "\t<none>"       << "\t\tuse ASCII grid file format\n\n";
-        }else if (com == command_load_construction){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -loadconstructed" << "\t-lcp"     << "\t\tload points for dynamic construction\n";
-            cout << "Accepted options:\n";
-            cout << "Options\t\t"    << "\tRequired"  << "\tValue"    << "\t\tAction\n";
-            cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -xfile\t\t"    << "\tyes\t"     << "\t<filename>"   << "\tset the name for the file with points\n";
-            cout << " -valsfile\t"       << "\tyes\t"      << "\t<filename>"   << "\tset the name for the file with values\n\n";
-        }else if (com == command_getpoly){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -getpoly\t"      << "\t\t"      << "\t\tget polynomial space\n\n";
-            cout << "Accepted options:\n";
-            cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n";
-            cout << " -type\t\t"     << "\tyes\t"     << "\t<type>"       << "\t\tspecifies whether to use quadrature or interpolation\n";
-            cout << " -outputfile\t"     << "\tno\t"      << "\t<filename>"   << "\tset the name for the output file\n";
-            cout << " -print\t\t"    << "\tno\t"       << "\t<none>"       << "\t\tprint to standard output\n\n";
-            cout << "Note: -outputfile or -print output the polynomial indexes\n\n";
-        }else if (com == command_summary){
-            cout << "Commands\t"     << "\tShorthand"   << "\tAction\n";
-            cout << " -summary\t"    << "\t-s"      << "\t\twrites short description\n\n";
-            cout << "Accepted options:\n";
-            cout << " -gridfile\t"       << "\tyes\t"     << "\t<filename>"   << "\tset the name for the grid file\n\n";
-            cout << "Note that 'tasgrid -s <filename>' is also accepted\n\n";
+        switch(com){
+            case command_makeglobal:
+                cout << R"help(
+Commands             Shorthand    Action
+ -makeglobal         -mg          make a grid from a global rule
+
+Accepted options:
+Options              Required     Value         Action
+ -dimensions         yes          <int>         set the number of dimensions
+ -outputs            yes          <int>         set the number of outputs
+ -depth              yes          <int>         set the depth of the grid (e.g. levels)
+ -type               yes          <type>        set the type of the grid
+ -onedim             yes          <rule>        set the one dimensional rule
+                                                must use a global rule (see manual)
+ -alpha              sometimes    <float>       the alpha parameter for Gegenbauer/Jacobi/Laguerre/Hermite quadrature
+                                                required for those rules
+ -beta               sometimes    <float>       the beta parameter for Jacobi quadrature
+                                                required for Jacobi rule
+ -gridfile           no           <filename>    set the name for the grid file
+ -outputfile         no           <filename>    set the name for the output file
+ -anisotropyfile     no           <filename>    set the anisotropic weights
+ -transformfile      no           <filename>    set the transformation of the domain
+ -customfile         sometimes    <filename>    set the file with the custom-tabulated rule
+ -conformaltype      no           <type>        set the type of the map
+ -conformalfile      no           <filename>    set the conformal transformation of the domain
+                                                required for custom-tabulated rule
+ -levellimitsfile    no           <filename>    set the limits for the levels
+ -print              no           <none>        print to standard output
+ -ascii                           <none>        use ASCII grid file format
+Note: -outputfile or -print output the points of the grid
+Note: at least one of -gridfile, -outputfile, or -print must be specified, otherwise the command has no output
+)help";
+                break;
+            case command_makesequence:
+                cout << R"help(
+Commands             Shorthand    Action
+ -makesequence       -ms          make a grid from a sequence rule
+
+Accepted options:
+Options              Required     Value         Action
+ -dimensions         yes          <int>         set the number of dimensions
+ -outputs            yes          <int>         set the number of outputs
+ -depth              yes          <int>         set the depth of the grid (e.g. levels)
+ -type               yes          <type>        set the type of the grid
+ -onedim             yes          <rule>        set the one dimensional rule
+                                                must use a sequence rule (see manual)
+ -gridfile           no           <filename>    set the name for the grid file
+ -outputfile         no           <filename>    set the name for the output file
+ -anisotropyfile     no           <filename>    set the anisotropic weights
+ -transformfile      no           <filename>    set the transformation of the domain
+ -conformaltype      no           <type>        set the type of the map
+ -conformalfile      no           <filename>    set the conformal transformation of the domain
+ -levellimitsfile    no           <filename>    set the limits for the levels
+ -print              no           <none>        print to standard output
+ -ascii                           <none>        use ASCII grid file format
+Note: -outputfile or -print output the points of the grid
+Note: at least one of -gridfile, -outputfile, or -print must be specified, otherwise the command has no output
+)help";
+                break;
+            case command_makelocalp:
+                cout << R"help(
+Commands            Shorthand    Action
+ -makelocalpoly     -mp          make a grid from a local polynomial rule
+
+Accepted options:
+Options             Required     Value         Action
+ -dimensions        yes          <int>         set the number of dimensions
+ -outputs           yes          <int>         set the number of outputs
+ -depth             yes          <int>         set the depth of the grid (e.g. levels)
+ -order             yes          <int>         set the order for local polynomial basis
+ -onedim            yes          <rule>        set the one dimensional rule
+                                               must use a local polynomial rule (see manual)
+ -gridfile          no           <filename>    set the name for the grid file
+ -outputfile        no           <filename>    set the name for the output file
+ -transformfile     no           <filename>    set the transformation of the domain
+ -conformaltype     no           <type>        set the type of the map
+ -conformalfile     no           <filename>    set the conformal transformation of the domain
+ -levellimitsfile   no           <filename>    set the limits for the levels
+ -print             no           <none>        print to standard output
+ -ascii                          <none>        use ASCII grid file format
+Note: -outputfile or -print output the points of the grid
+Note: at least one of -gridfile, -outputfile, or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_makewavelet:
+                cout << R"help(
+Commands             Shorthand    Action
+ -makewavelet        -mw          make a grid from a wavelet rule
+
+Accepted options:
+Options              Required     Value         Action
+ -dimensions         yes          <int>         set the number of dimensions
+ -outputs            yes          <int>         set the number of outputs
+ -depth              yes          <int>         set the depth of the grid (e.g. levels)
+ -order              yes          <int>         set the order for the wavelet basis
+ -gridfile           no           <filename>    set the name for the grid file
+ -outputfile         no           <filename>    set the name for the output file
+ -transformfile      no           <filename>    set the transformation of the domain
+ -conformaltype      no           <type>        set the type of the map
+ -conformalfile      no           <filename>    set the conformal transformation of the domain
+ -levellimitsfile    no           <filename>    set the limits for the levels
+ -print              no           <none>        print to standard output
+ -ascii                           <none>        use ASCII grid file format
+Note: -outputfile or -print output the points of the grid
+Note: at least one of -gridfile, -outputfile, or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_makefourier:
+                cout << R"help(
+Commands             Shorthand    Action
+ -makefourier        -mf          make a grid from a Fourier rule
+
+Accepted options:
+Options              Required     Value         Action
+ -dimensions         yes          <int>         set the number of dimensions
+ -outputs            yes          <int>         set the number of outputs
+ -depth              yes          <int>         set the depth of the grid (e.g. levels)
+ -type               yes          <type>        set the type of the grid
+ -gridfile           no           <filename>    set the name for the grid file
+ -outputfile         no           <filename>    set the name for the output file
+ -anisotropyfile     no           <filename>    set the anisotropic weights
+ -transformfile      no           <filename>    set the transformation of the domain
+ -conformaltype      no           <type>        set the type of the map
+ -conformalfile      no           <filename>    set the conformal transformation of the domain
+ -levellimitsfile    no           <filename>    set the limits for the levels
+ -print              no           <none>        print to standard output
+ -ascii                           <none>        use ASCII grid file format
+Note: -outputfile or -print output the points of the grid
+Note: at least one of -gridfile, -outputfile, or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_makequadrature:
+                cout << R"help(
+Commands            Shorthand    Action
+ -makequadrature    -mq          make a quadrature
+
+Accepted options:
+Options             Required     Value         Action
+ -dimensions        yes          <int>         set the number of dimensions
+ -depth             yes          <int>         set the depth of the grid (e.g. levels)
+ -type              sometimes    <type>        set the type of the grid
+                                               required only for global rules (see manual)
+ -order             sometimes    <int>         set the order for local polynomial basis
+                                               required only for local polynomial and wavelet (see manual)
+ -onedim            yes          <rule>        set the one dimensional rule
+                                               can use any rule (see manual)
+ -alpha             sometimes    <float>       the alpha parameter for Gegenbauer/Jacobi/Laguerre/Hermite quadrature
+                                               required for those rules
+ -beta              sometimes    <float>       the beta parameter for Jacobi quadrature
+                                               required for Jacobi rule
+ -outputfile        no           <filename>    set the name for the output file
+ -anisotropyfile    no           <filename>    set the anisotropic weights
+ -transformfile     no           <filename>    set the transformation of the domain
+ -customfile        sometimes    <filename>    set the file with the custom-tabulated rule
+ -conformaltype     no           <type>        set the type of the map
+ -conformalfile     no           <filename>    set the conformal transformation of the domain
+                                               required for custom-tabulated rule
+ -print             no           <none>        print to standard output
+Note: -outputfile or -print output the points and weights of the grid
+Note: at least one of -outputfile, or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+
+            case command_makeexoquad:
+                cout << R"help(
+Commands         Shorthand    Action
+ -makeexoquad    -meq         make an exotic quadrature
+
+Accepted options:
+Options          Required     Value         Action
+ -depth          yes          <int>         set the depth of the grid (e.g. levels)
+ -shift          yes          <float>       set the shift of the weight function
+ -weightfile     yes          <filename>    set the name of the file containing a
+                                            surrogate/interpolant of the weight function
+                                            must be a TasmanianSparseGrid in ASCII format
+ -description    yes          <string>      short description of the quadrature
+ -symmetric      no           <none>        declare that the weight function is symmetric   endl
+ -outputfile     no           <filename>    set the name for the output file
+ -print          no           <none>        print to standard output
+Note: -outputfile or -print output the points and weights of the grid
+Note: at least one of -outputfile, or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_update:
+                cout << R"help(
+Commands            Shorthand    Action
+ -makeupdate        -mu          updates a new global or sequence grid
+
+Accepted options:
+Options             Required     Value         Action
+ -depth             yes          <int>         set the depth of the grid (e.g. levels)
+ -type              yes          <type>        set the type of the grid
+ -anisotropyfile    no           <filename>    set the anisotropic weights
+ -outputfile        no           <filename>    set the name for the output file
+ -print             no           <none>        print to standard output
+Note: -outputfile or -print output the new points of the grid
+
+)help";
+                break;
+            case command_setconformal:
+                cout << R"help(
+Commands           Shorthand    Action
+ -setconformal     -sc          set conformal transformation
+
+Accepted options:
+Options            Required     Value         Action
+ -conformaltype    yes          <type>        set the type of the map
+ -conformalfile    yes          <filename>    set the conformal transformation of the domain
+
+)help";
+                break;
+            case command_getquadrature:
+                cout << R"help(
+Commands           Shorthand    Action
+ -getquadrature    -gq          make a quadrature
+
+Accepted options:
+Options            Required     Value         Action
+ -gridfile         yes          <filename>    set the name for the grid file
+ -outputfile       no           <filename>    set the name for the output file
+ -print            no           <none>        print to standard output
+Note: -outputfile or -print output the points and weights of the grid
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_getcoefficients:
+                cout << R"help(
+Commands             Shorthand    Action
+ -getcoefficients    -gc          get the hierarchical coefficients
+
+Accepted options:
+Options              Required     Value         Action
+ -gridfile           yes          <filename>    set the name for the grid file
+ -outputfile         no           <filename>    set the name for the output file
+ -print              no           <none>        print to standard output
+Note: -outputfile or -print output the hierarchical coefficients of the sparse grid
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_setcoefficients:
+                cout << R"help(
+Commands             Shorthand    Action
+ -setcoefficients    -sc          set the hierarchical coefficients
+
+Accepted options:
+Options              Required     Value         Action
+ -gridfile           yes          <filename>    set the name for the grid file
+ -outputfile         no           <filename>    set the name for the output file
+ -print              no           <none>        print to standard output
+Note: -outputfile or -print output the hierarchical coefficients of the sparse grid
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_getinterweights:
+                cout << R"help(
+Commands             Shorthand    Action
+ -getinterweights    -gi          output the interpolation weights
+
+Accepted options:
+Options              Required     Value         Action
+ -gridfile           yes          <filename>    set the name for the grid file
+ -xfile              yes          <filename>    set the name for the file with points
+ -outputfile         no           <filename>    set the name for the output file
+ -print              no           <none>        print to standard output
+Note: -outputfile or -print output the interpolation weight for each point in the xfile, see equation (1.2) in the manual
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_getdiffweights:
+                cout << R"help(
+Commands            Shorthand    Action
+ -getdiffweights    -gd          output the differentiation weights
+
+Accepted options:
+Options             Required     Value         Action
+ -gridfile          yes          <filename>    set the name for the grid file
+ -xfile             yes          <filename>    set the name for the file with points
+ -outputfile        no           <filename>    set the name for the output file
+ -print             no           <none>        print to standard output
+Note: -outputfile or -print output the differentiation weight for each point in the xfile
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_getpoints:
+                cout << R"help(
+Commands        Shorthand    Action
+ -getpoints     -gp          output the points
+
+Accepted options:
+Options         Required     Value         Action
+ -gridfile      yes          <filename>    set the name for the grid file
+ -outputfile    no           <filename>    set the name for the output file
+ -print         no           <none>        print to standard output
+Note: -outputfile or -print output the points of the grid
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_getneeded:
+                cout << R"help(
+Commands             Shorthand    Action
+ -getneededpoints    -gn          outputs the points needing values to build an interpolant
+
+Accepted options:
+Options              Required     Value         Action
+ -gridfile           yes          <filename>    set the name for the grid file
+ -outputfile         no           <filename>    set the name for the output file
+ -print              no           <none>        print to standard output
+Note: -outputfile or -print output the new points of the grid
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_loadvalues:
+                cout << R"help(
+Commands        Shorthand    Action
+ -loadvalues    -l           provides values of the model outputs at the needed grid points
+
+Accepted options:
+Options         Required     Value         Action
+ -gridfile      yes          <filename>    set the name for the grid file
+ -valsfile      -vf          <filename>    set the name for the file with values
+Note: the -valsfile must contains rows equal to the number of needed points or
+      (if there are no needed points) the number of loaded points
+      the number of columns must match the number of outputs set for the grid
+
+)help";
+                break;
+            case command_evaluate:
+                cout << R"help(
+Commands        Shorthand    Action
+ -evaluate      -e           evaluates the interpolant
+
+Accepted options:
+Options         Required     Value         Action
+ -gridfile      yes          <filename>    set the name for the grid file
+ -xfile         yes          <filename>    set the name for the file with points
+ -gpuid         no           <int>         set the gpu to use for evaluations
+ -outputfile    no           <filename>    set the name for the output file
+ -print         no           <none>        print to standard output
+Note: -outputfile or -print output values of the interpolant at the points specified in the xfile
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_evalhierarchical_dense:
+                cout << R"help(
+Commands            Shorthand    Action
+ -evalhierarchyd    -ehd         evaluates the hierarchical basis (dense output)
+
+Accepted options:
+Options             Required     Value         Action
+ -gridfile          yes          <filename>    set the name for the grid file
+ -xfile             yes          <filename>    set the name for the file with points
+ -outputfile        no           <filename>    set the name for the output file
+ -print             no           <none>        print to standard output
+Note: -outputfile or -print output values of the hierarchical basis functions in the xfile
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_evalhierarchical_sparse:
+                cout << R"help(
+Commands            Shorthand    Action
+ -evalhierarchys    -ehs         evaluates the hierarchical basis (sparse output)
+
+Accepted options:
+Options             Required     Value         Action
+ -gridfile          yes          <filename>    set the name for the grid file
+ -xfile             yes          <filename>    set the name for the file with points
+ -outputfile        no           <filename>    set the name for the output file
+ -print             no           <none>        print to standard output
+Note: -outputfile or -print output values of the hierarchical basis functions in the xfile
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_gethsupport:
+                cout << R"help(
+Commands         Shorthand    Action
+ -gethsupport    -ghsup       get the hierarchical support
+
+Accepted options:
+Options          Required     Value         Action
+ -gridfile       yes          <filename>    set the name for the grid file
+ -outputfile     no           <filename>    set the name for the output file
+ -print          no           <none>        print to standard output
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_integrate:
+                cout << R"help(
+Commands        Shorthand    Action
+ -integrate     -i           output the integral
+
+Accepted options:
+Options         Required     Value         Action
+ -gridfile      yes          <filename>    set the name for the grid file
+ -outputfile    no           <filename>    set the name for the output file
+ -print         no           <none>        print to standard output
+Note: -outputfile or -print output the integral if the loaded function, see equation (1.3) in the manual
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_differentiate:
+                cout << R"help(
+Commands           Shorthand    Action
+ -differentiate    -d           differentiates the interpolant
+
+Accepted options:
+Options            Required     Value         Action
+ -gridfile         yes          <filename>    set the name for the grid file
+ -xfile            yes          <filename>    set the name for the file with points
+ -outputfile       no           <filename>    set the name for the output file
+ -print            no           <none>        print to standard output
+Note: -outputfile or -print derivative (Jacobian matrix) of the interpolant at the points specified in the xfile
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_getanisocoeff:
+                cout << R"help(
+Commands           Shorthand    Action
+ -getanisotropy    -ga          estimates the anisotropic coefficients
+
+Accepted options:
+Options            Required     Value         Action
+ -gridfile         yes          <filename>    set the name for the grid file
+ -type             yes          <type>        set the type of anisotropic coefficients
+ -refout           sometimes    <int>         select the output to use
+                                              required by global grids only
+ -outputfile       no           <filename>    set the name for the output file
+ -print            no           <none>        print to standard output
+Note: -outputfile or -print output the estimated anisotropic coefficients
+
+)help";
+                break;
+            case command_refine_aniso:
+                cout << R"help(
+Commands             Shorthand    Action
+ -refineaniso        -ra          refines the grid
+
+Accepted options:
+Options              Required     Value         Action
+ -gridfile           yes          <filename>    set the name for the grid file
+ -type               yes          <type>        set the type of anisotropic refinement
+ -mingrowth          no           <int>         minimum number of new points (defaults to 1)
+ -refout             sometimes    <int>         select the output to use for the refinement
+                                                required by global grids, for sequence grids
+                                                defaults to -1 (use all outputs)
+ -levellimitsfile    no           <filename>    set the limits for the levels
+ -outputfile         no           <filename>    set the name for the output file
+ -print              no           <none>        print to standard output
+ -ascii              <none>       use ASCII grid file format
+Note: -outputfile or -print output the new points of the grid
+
+)help";
+                break;
+            case command_refine_surp:
+                cout << R"help(
+Commands             Shorthand    Action
+ -refinesurp         -rs          refines the grid
+
+Accepted options:
+Options              Required     Value     Action
+ -gridfile           yes          <filename>    set the name for the grid file
+ -tolerance          yes          <float>       set the tolerance for the refinement
+ -reftype            sometimes    <int>         set the type of refinement
+                                                required by local polynomial and wavelet grids
+ -refout             sometimes    <int>         select the output to use for the refinement
+                                                required by global grids, for sequence grids
+                                                defaults to -1 (use all outputs)
+ -levellimitsfile    no           <filename>    set the limits for the levels
+ -valsfile           no           <filename>    set the correction weights for the surpluses
+ -outputfile         no           <filename>    set the name for the output file
+ -print              no           <none>        print to standard output
+ -ascii                           <none>        use ASCII grid file format
+Note: -outputfile or -print output the new points of the grid
+
+)help";
+                break;
+            case command_refine:
+                cout << R"help(
+Commands      Shorthand    Action
+ -refine      -r     refines the grid
+
+ -refine calls -refineaniso for Global and Sequence grids and -refinesurp otherwise
+ see "-refineaniso help" or "-refinesurp help" for the corresponding accepted options
+Note: -outputfile or -print output the new points of the grid
+
+)help";
+                break;
+            case command_refine_clear:
+                cout << R"help(
+Commands          Shorthand    Action
+ -cancelrefine    -cr          discards the last refinement (unless values are already loaded)
+Accepted options:
+Options           Required     Value         Action
+ -gridfile        yes          <filename>    set the name for the grid file
+ -ascii                        <none>        use ASCII grid file format
+
+)help";
+                break;
+            case command_refine_merge:
+                cout << R"help(
+Commands         Shorthand    Action
+ -mergerefine    -mr          merges the loaded and needed points and discards any loaded values
+
+Accepted options:
+Options          Required     Value         Action
+    -gridfile    yes          <filename>    set the name for the grid file
+    -ascii       <none>       use ASCII grid file format
+
+)help";
+                break;
+            case command_using_construct:
+                cout << R"help(
+Commands             Action
+ -using-construct    writes short string indicating whether dynamic construction is on
+
+Accepted options:
+Options       Required     Value         Action
+ -gridfile    yes          <filename>    set the name for the grid file
+Note that 'tasgrid -using-construct <filename>' is also accepted
+
+)help";
+                break;
+            case command_get_candidate_construction:
+                cout << R"help(
+Commands              Shorthand    Action
+ -getconstructpnts    -gcp         get points for dynamic construction
+
+Accepted options:
+Options               Required     Value         Action
+ -gridfile            yes          <filename>    set the name for the grid file
+ -refout              sometimes    <int>         select the output to use for the refinement
+ -anisotropyfile      sometimes    <filename>    set the anisotropic weights
+ -levellimitsfile     no           <filename>    set the limits for the levels
+ -outputfile          no           <filename>    set the name for the output file
+ -print               no           <none>        print to standard output
+ -ascii                            <none>        use ASCII grid file format
+
+)help";
+                break;
+            case command_load_construction:
+                cout << R"help(
+Commands             Shorthand    Action
+ -loadconstructed    -lcp         load points for dynamic construction
+
+Accepted options:
+Options              Required     Value         Action
+ -gridfile           yes          <filename>    set the name for the grid file
+ -xfile              yes          <filename>    set the name for the file with points
+ -valsfile           yes          <filename>    set the name for the file with values
+
+)help";
+                break;
+            case command_getpoly:
+                cout << R"help(
+Commands        Shorthand    Action
+ -getpoly                    get polynomial space
+
+Accepted options:
+Options         Required     Value         Action
+ -gridfile      yes          <filename>    set the name for the grid file
+ -type          yes          <type>        specifies whether to use quadrature or interpolation
+ -outputfile    no           <filename>    set the name for the output file
+ -print         no           <none>        print to standard output
+Note: -outputfile or -print output the polynomial indexes
+
+)help";
+                break;
+            case command_summary:
+                cout << R"help(
+Commands      Shorthand    Action
+ -summary     -s           writes short description
+
+Accepted options:
+Options       Required     Value         Action
+ -gridfile    yes          <filename>    set the name for the grid file
+Note that 'tasgrid -s <filename>' is also accepted
+
+)help";
+                break;
+            case command_getpointsindex:
+            case command_getneededindex:
+                cout << R"help(
+Commands              Action
+ -getpointsindexes    returns the integer multi-index set of the points
+ -getneededindexes    returns the integer multi-index set of the needed points
+Note: these commands exist primarily for debugging purposes
+
+Accepted options:
+Options         Required     Value         Action
+ -gridfile      yes          <filename>    set the name for the grid file
+ -outputfile    no           <filename>    set the name for the output file
+ -print         no           <none>        print to standard output
+Note: -outputfile or -print derivative (Jacobian matrix) of the interpolant at the points specified in the xfile
+Note: at least one of -outputfile or -print must be specified, otherwise the command has no output
+
+)help";
+                break;
+            case command_none:
+                throw std::runtime_error("ERROR: incorrect command for help");
         }
     }else if (ht == help_listtypes){
-        cout << "This only lists the strings associated with each option for spelling purposes.\n";
-        cout << "Refer to the manual for details about each type.\n\n";
-        cout << "List of global grids types:\n";
-        cout << "  level     curved     hyperbolic     tensor\n";
-        cout << "  iptotal   ipcurved   iphyperbolic   iptensor\n";
-        cout << "  qptotal   qpcurved   qphyperbolic   qptensor\n\n";
-        cout << "List of global grids rules:\n";
-        cout << "         chebyshev          chebyshev-odd    clenshaw-curtis   clenshaw-curtis-zero\n";
-        cout << "              leja               leja-odd              rleja              rleja-odd\n";
-        cout << "     rleja-double2          rleja-double4      rleja-shifted     rleja-shifted-even\n";
-        cout << "      max-lebesgue       max-lebesgue-odd       min-lebesgue       min-lebesgue-odd\n";
-        cout << "         min-delta          min-delta-odd             fejer2\n";
-        cout << "    gauss-legendre     gauss-legendre-odd    gauss-patterson       custom-tabulated\n";
-        cout << "  gauss-gegenbauer   gauss-gegenbauer-odd       gauss-jacobi       gauss-jacobi-odd\n";
-        cout << "    gauss-laguerre     gauss-laguerre-odd      gauss-hermite      gauss-hermite-odd\n";
-        cout << "  gauss-chebyshev1   gauss-chebyshev1-odd   gauss-chebyshev2   gauss-chebyshev2-odd\n\n";
-        cout << "List of sequence grids rules:\n";
-        cout << "              leja              rleja     rleja-shifted\n";
-        cout << "      max-lebesgue       min-lebesgue         min-delta \n\n";
-        cout << "List of local polynomial grids rules:\n";
-        cout << "      localp    localp-zero    semi-localp   localp-boundary\n\n";
-        cout << "List of local wavelet grids rules:\n";
-        cout << "      wavelet\n\n";
-        cout << "List of local polynomial and wavelet refinement types:\n";
-        cout << "      classic     parents    direction    fds\n\n";
-        cout << "List of conformal maps:\n";
-        cout << "      asin\n\n";
+        cout << R"help(
+This only lists the strings associated with each option for spelling purposes.
+Refer to the manual for details about each type.
+
+List of global grids types:
+  level     curved     hyperbolic     tensor
+  iptotal   ipcurved   iphyperbolic   iptensor
+  qptotal   qpcurved   qphyperbolic   qptensor
+
+List of global grids rules:
+         chebyshev          chebyshev-odd    clenshaw-curtis   clenshaw-curtis-zero
+              leja               leja-odd              rleja              rleja-odd
+     rleja-double2          rleja-double4      rleja-shifted     rleja-shifted-even
+      max-lebesgue       max-lebesgue-odd       min-lebesgue       min-lebesgue-odd
+         min-delta          min-delta-odd             fejer2
+    gauss-legendre     gauss-legendre-odd    gauss-patterson       custom-tabulated
+  gauss-gegenbauer   gauss-gegenbauer-odd       gauss-jacobi       gauss-jacobi-odd
+    gauss-laguerre     gauss-laguerre-odd      gauss-hermite      gauss-hermite-odd
+  gauss-chebyshev1   gauss-chebyshev1-odd   gauss-chebyshev2   gauss-chebyshev2-odd
+
+List of sequence grids rules:
+              leja              rleja     rleja-shifted
+      max-lebesgue       min-lebesgue         min-delta
+
+List of local polynomial grids rules:
+      localp    localp-zero    semi-localp   localp-boundary
+
+List of local wavelet grids rules:
+      wavelet
+
+List of local polynomial and wavelet refinement types:
+      classic     parents    direction    fds
+
+List of conformal maps:
+      asin
+
+)help";
     }
 }

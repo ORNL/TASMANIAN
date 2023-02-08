@@ -52,7 +52,6 @@ enum TypeCommand{
 
     command_getpoints,
     command_getneeded,
-    command_getrefcoeff,
 
     command_loadvalues,
 
