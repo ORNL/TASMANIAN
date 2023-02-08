@@ -282,7 +282,7 @@ sCommand = [sCommand, ' -of ', sFileO];
 
 [status, cmdout] = system(sCommand);
 
-if (max(size(findstr('ERROR', cmdout))) ~= 0)
+if (max(size(strfind(cmdout, 'ERROR'))) ~= 0)
     disp(cmdout);
     error('The tasgrid execurable returned an error, see above');
     return;

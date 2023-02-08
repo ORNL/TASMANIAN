@@ -49,7 +49,7 @@ end
 
 [status, cmdout] = system(sCommand);
 
-if (size(findstr('ERROR', cmdout)) ~= [0, 0])
+if (max(size(strfind(cmdout, 'ERROR'))) ~= 0)
     disp(cmdout);
     error('The tasgrid execurable returned an error, see above');
     return;
