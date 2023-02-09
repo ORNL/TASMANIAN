@@ -4,8 +4,9 @@ The Matlab or Octave interface to **tasgrid** consists of several functions that
 
 * The interface requires that Matlab is able to call external commands, specifically the **tasgrid** executable.
 * The interface also requires access to a folder where the files can be written.
-* The Matlab work folder option in the *install* scrip as well as CMake allows you to automatically specify where the temporary files will be stored. The *make matlab* target in the GNU make engine sets the work folder in a sub-folder of the Tasmanian source directory. In either case, the default folder can be changed by manually editing **tsgGetPaths.m**.
+* The Matlab work folder option in CMake allows you to automatically specify where the temporary files will be stored. The *make matlab* target in the GNU make engine sets the work folder in a sub-folder of the Tasmanian source directory. In either case, the default folder can be changed by manually editing **tsgGetPaths.m**.
 * Each grid has a user specified name, that is a string which gets pre-pended at the beginning of the file name.
+* Any Tasmanian grid file can be loaded into a MATLAB object using the **c** function
 * The **tsgDeleteGrid()**, **tsgDeleteGridByName()** and **tsgListGridsByName()** functions allow for cleaning the files in the temporary folder.
 * Every Tasmanian-Matlab function corresponds to one **tasgrid** command.
 * Every function comes with help comments that can be accessed by typing
@@ -90,9 +91,18 @@ Those functions are used internally to clean the temporary files.
 
 Scans the work folder and lists the existing grids regardless whether those are currently associated with Matlab objects. The names can be used for calls to **tsgDeleteGridByName()** and **tsgReloadGrid()**.
 
+### Function tsgLoadGridFromFile()
+
+Takes an existing filename created with any of the Tasmanian interfaces and loads it into an object. The object still needs a unique name for the temporary files, but the file can be anywhere in the system and only needs read/write permissions. Many methods, e.g., **tsgEvaluate()** do not modify the file and work with just read permissions. Note that writing to the file from two interfaces at the same time will likely cause file corruption, simultaneous regarding and writing will probably crash, concurrent reads will work.
+```
+lGrid = tsgReloadGrid( <name>, <filename> )
+```
+
 ### Function tsgDeleteGrid()/tsgDeleteGridByName()
 
 Deleting the Matlab object doesn't remove the files from the work folder, thus **tsgDeleteGrid()** has to be explicitly called to remove the files associated with the grid. If the Matlab object has been lost (i.e., cleared by accident), then the grid files can be deleted by specifying just the name for **tsgDeleteGridByName()**, see also **tsgListGridsByName()**.
+
+* **WARNING** the **tsgDeleteGrid()** method will delete the file used in **tsgLoadGridFromFile()**.
 
 ### Function tsgReloadGrid()
 
@@ -141,4 +151,4 @@ You can save the **lGrid** object just like any other Matlab object. However, a 
 * Working with the Matlab interface is very similar to working with dynamical memory, where the data is stored on the disk as opposed to the RAM and the **lGrid** object is the pointer. Also, the grids are associated by name as opposed to a memory address.
 * If multiple users are sharing the same temporary folder, then it would be useful if they come up with a naming convention that prevents two users from using the same grid name. For example, instead of both users creating a grid named *mygrid1*, the users should name their grids *johngrid1* and *janegrid1*.
 * All of the grid data for all of the grids is stored in the same folder. Anyone with access to the temporary folder has full access to all of the sparse grid data.
-* If two users have separate copied of **tsgGetPaths()**, then they can use separate storage folders without any of the multi-user considerations. This is true even if all other files are shared, including the **tasgrid** executable and Tasmanian libraries.
+* If two users have separate copies of **tsgGetPaths()**, then they can use separate storage folders without any of the multi-user considerations. This is true even if all other files are shared, including the **tasgrid** executable and Tasmanian libraries.

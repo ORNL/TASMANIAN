@@ -1,6 +1,17 @@
 Changelog for version 7.9
 --------------
 
+* improved MATLAB interface
+    * better internal filenames for the grid files
+    * possible to interface with an external grid file
+    * added bindings for the asynchronous (dynamic) construction
+* updated OneAPI support to 2023
+* required cmake 3.19 and 3.21 when using HIP
+    * switched to native search for CUDA mathlibs
+
+Changelog for version 7.9
+--------------
+
 * new module: Tasmanian Optimization
     * implements Gradient Descent and Particle Swarm methods
     * included examples and documentation
