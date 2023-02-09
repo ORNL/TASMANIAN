@@ -197,7 +197,7 @@ namespace TasGrid{
  * This can be done either in batches of point or in dynamic construction setup
  * where values can be given one at a time in an arbitrary order (see next paragraph).
  * See also the papers referenced in TasGrid::TypeDepth and TasGrid::TypeRefinement.
- * - updateGlobalGrid(), updateSequenceGrid(), updateFourierGrid()
+ * - updateGrid()
  * - setAnisotropicRefinement(), setSurplusRefinement()
  * - getAnisotropicRefinement(), getSurplusRefinement()
  * - clearRefinement()
@@ -336,6 +336,11 @@ public:
     void write(std::ostream &ofs, bool binary = mode_binary) const;
     //! \brief Read the grid from the given stream \b ifs using either \b binary or ASCII format.
     void read(std::istream &ifs, bool binary = mode_binary);
+
+    //! \brief Overload that works directly with std::string
+    void write(std::string const& fname, bool binary = mode_binary) const{ write(fname.c_str(), binary); }
+    //! \brief Overload that works directly with std::string
+    void read(std::string const& fname){ read(fname.c_str()); }
 
     /*!
      * \brief Make a Global Grid using Lagrange polynomials with support over the entire domain.
@@ -612,6 +617,18 @@ public:
      * Array dimensions are not checked, otherwise identical to updateFourierGrid().
      */
     void updateFourierGrid(int depth, TypeDepth type, const int *anisotropic_weights = nullptr, const int *level_limits = nullptr);
+    /*!
+     * \brief Based on the grid type, calls updateGlobalGrid(), updateSequenceGrid() or updateFourierGrid().
+     *
+     * \throws std::runtime_error if the grid is not Global, Sequence or Fourier.
+     */
+    void updateGrid(int depth, TypeDepth type, std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits = std::vector<int>());
+    /*!
+     * \brief Overload using raw-arrays.
+     *
+     * Array dimensions are not checked, otherwise identical to updateFourierGrid().
+     */
+    void updateGrid(int depth, TypeDepth type, const int *anisotropic_weights = nullptr, const int *level_limits = nullptr);
 
     //! \brief Return the \b alpha parameter in the call to makeGlobalGrid(), or return 0 if the grid is not Global.
     double getAlpha() const{ return (isGlobal()) ? get<GridGlobal>()->getAlpha() : 0.0; }
@@ -1030,6 +1047,14 @@ public:
      * \param q must have size of at least getNumOutputs().
      */
     void integrate(double q[]) const;
+    /*!
+     * \brief Overload that returns a vector.
+     */
+    std::vector<double> integrate() const{
+        std::vector<double> result;
+        integrate(result);
+        return result;
+    }
     /*!
      * \brief Computes the derivative (if available) of the surrogate model at an input point.
      *

@@ -766,7 +766,7 @@ tsgDeleteGrid(lGrid);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                     tsgIntegrate()                               %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-[lGrid, p] = tsgMakeGlobal('_tsgcoretests_int', 1, 1, 'gauss-hermite', 'level', 2, [], [0.0, 0.0]);
+[lGrid, p] = tsgMakeGlobal('_tsgcoretests_int', 1, 1, 'gauss-hermite', 'level', 2, [], [0.0,]);
 v = [p.^2];
 tsgLoadValues(lGrid, v)
 [I] = tsgIntegrate(lGrid);
@@ -774,7 +774,7 @@ if (abs(I - pi^0.5 / 2.0) > 1.E-11)
     error('Mismatch in tsgIntegrate(): case 1');
 end
 
-[lGrid, p] = tsgMakeGlobal('_tsgcoretests_int', 1, 1, 'gauss-hermite', 'level', 2, [], [2.0, 0.0]);
+[lGrid, p] = tsgMakeGlobal('_tsgcoretests_int', 1, 1, 'gauss-hermite', 'level', 2, [], [2.0,]);
 v = [sqrt(2.0) * ones(size(v,1), 1)];
 tsgLoadValues(lGrid, v)
 [I] = tsgIntegrate(lGrid);

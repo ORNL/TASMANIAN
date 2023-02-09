@@ -137,67 +137,54 @@ public:
     static bool isCreateCommand(TypeCommand com);
 
 protected:
-    bool checkSane() const;
+    enum class output_points_mode{
+        regular, needed
+    };
 
-    void createGlobalGird();
-    void createSequenceOrFourierGird();
-    void createLocalPolynomialGird();
-    void createWaveletGird();
-    void createQuadrature();
+    bool checkSane() const;
+    bool checkSanePostRead() const;
+
+    void iassert(bool, const char*) const;
+    bool readGridfile();
+    std::vector<int> readLimits() const;
+    std::vector<int> readAnisotropic() const;
+
     void createExoticQuadrature();
-    bool updateGrid();
+
+    void setTransform();
+    void setConformal();
+
+    void outputPoints(output_points_mode mode) const;
+    void outputIndexes(output_points_mode mode) const;
+    void outputQuadrature() const;
+
     void writeGrid() const;
-    bool readGrid();
 
     void outputPoints(bool useNeeded) const;
-    void outputQuadrature() const;
-    void outputExoticQuadrature() const;
+
     void outputHierarchicalCoefficients() const;
-    void outputHierachicalSupport() const;
 
-    bool setConformalTransformation();
+    Data2D<double> verifiedRead(std::string const& filename, int expected_stride) const;
+    void processEvalLike() const;
+    void processOutputLike() const;
 
-    bool loadValues();
+    void loadComputedValues();
+    void setHierarchy();
+    void refineGrid();
 
-    bool getInterWeights();
-    bool getDiffWeights();
-    bool getEvaluate();
-    bool getIntegrate();
-    bool getDifferentiate();
-    bool getAnisoCoeff();
+    void getPoly();
 
-    bool refineGrid();
-    bool cancelRefine();
-    bool mergeRefine();
+    void getConstructedPoints();
 
-    bool dynIsUsingConstruct();
-    bool getConstructedPoints();
-    bool loadConstructedPoints();
-
-    bool setHierarchy();
-    bool getEvalHierarchyDense();
-    bool getEvalHierarchySparse();
-
-    bool getPoly();
-
-    bool getSummary();
-
-    bool getPointsIndexes();
-    bool getNeededIndexes();
-
-    std::vector<int> readAnisotropicFile(int num_weights) const;
-    std::pair<std::vector<double>, std::vector<double>> readTransform() const;
-    std::vector<int> readLevelLimits(int num_weights) const;
-
-    static Data2D<double> readMatrix(std::string const &filename);
+    Data2D<double> readMatrix(std::string const &filename) const;
     void writeMatrix(std::string const &filename, int rows, int cols, const double mat[]) const;
     void printMatrix(int rows, int cols, const double mat[], bool isComplex = false) const;
 
     // Overloads.
     template<typename T>
-    inline void writeMatrix(std::string const &filename, const Data2D<T> &mat) { writeMatrix(filename, mat.getNumStrips(), mat.getStride(), mat.data()); }
+    inline void writeMatrix(std::string const &filename, const Data2D<T> &mat) const { writeMatrix(filename, mat.getNumStrips(), mat.getStride(), mat.data()); }
     template<typename T>
-    inline void printMatrix(const Data2D<T> &mat, bool isComplex = false) { printMatrix(mat.getNumStrips(), mat.getStride(), mat.data(), isComplex); }
+    inline void printMatrix(const Data2D<T> &mat, bool isComplex = false) const { printMatrix(mat.getNumStrips(), mat.getStride(), mat.data(), isComplex); }
 
   private:
     TasmanianSparseGrid grid;
@@ -239,6 +226,8 @@ protected:
     std::string weightfilename;
     std::string description;
     bool is_symmetric_weight_function;
+
+    mutable bool pass_flag; // report internal errors
 };
 
 #endif
