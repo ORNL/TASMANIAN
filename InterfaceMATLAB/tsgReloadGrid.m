@@ -49,6 +49,7 @@ l3 = strsplit(sLines{4});
 
 % create lGrid object
 lGrid.sName = sGridName;
+lGrid.sFilename = sFileG;
 
 if (strcmp(l1{4}, 'Global'))
     lGrid.sType = 'global';

@@ -966,7 +966,7 @@ tsgDeleteGrid(lGridB);
 disp(['Refinement functions       PASS']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%                     tsgReloadGrid()                              %%%
+%%%                     tsgReloadGrid()/tsgLoadGridFromFile()        %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [lGrid, p] = tsgMakeGlobal('_tsgcoretests_ch', 3, 7, 'chebyshev', 'iptotal', 5);
 [lGrid2] = tsgReloadGrid('_tsgcoretests_ch');
@@ -978,6 +978,10 @@ if (lGrid2.sType ~= 'Global')
 end
 if ((lGrid2.iDim ~= 3) || (lGrid2.iOut ~= 7))
     error('Mismatch in tsgReloadGrid() could not reload grid: iDim and iOut');
+end
+[lGrid3] = tsgLoadGridFromFile('_tsgcoretests_ch2', lGrid2.sFilename);
+if ((lGrid3.iDim ~= 3) || (lGrid3.iOut ~= 7))
+    error('Mismatch in tsgLoadGridFromFile() could not load grid: iDim and iOut');
 end
 tsgDeleteGrid(lGrid);
 
