@@ -4,7 +4,7 @@ function tsgDeleteGridByName(sGridName)
 %
 % deletes all of the background files used by the grid with name sGridName,
 % this function is to be used if the grid class lGrid has been lost
-% 
+%
 % NOTE: lGrid containing the sGridName can no longer be used
 %
 % INPUT:
@@ -14,6 +14,8 @@ function tsgDeleteGridByName(sGridName)
 %
 
 lGrid.sName = sGridName;
+tsgDeleteGrid(lGrid);
+lGrid.sFilename = tsgMakeGridFilename(sGridName);
 tsgDeleteGrid(lGrid);
 
 end

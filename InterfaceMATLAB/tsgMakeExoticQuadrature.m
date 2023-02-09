@@ -39,8 +39,9 @@ end
 
 % generate filenames
 [~, sTasGrid] = tsgGetPaths();
-[~, ~, ~, ~, ~, sFileC, ~] = tsgMakeFilenames('');
-[sWeightFileG, ~, ~, ~, ~, ~, ~] = tsgMakeFilenames(lWeightGrid.sName);
+lTempGrid.sName = '';
+[~, ~, ~, ~, ~, sFileC, ~] = tsgMakeFilenames(lTempGrid);
+[sWeightFileG, ~, ~, ~, ~, ~, ~] = tsgMakeFilenames(lWeightGrid);
 
 sCommand = [sTasGrid,' -makeexoquad'];
 sCommand = [sCommand, ' -depth ',       num2str(iDepth)];
@@ -63,7 +64,6 @@ end
 lCustomRule = tsgReadCustomRuleFile(sFileC);
 
 lClean.sFileC = 1;
-lDummyGrid.sName = '';
-tsgCleanTempFiles(lDummyGrid, lClean);
+tsgCleanTempFiles(lTempGrid, lClean);
 
 end

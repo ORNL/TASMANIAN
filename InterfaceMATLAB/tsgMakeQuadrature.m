@@ -169,7 +169,8 @@ function [weights, points] = tsgMakeQuadrature(iDim, s1D, sType, iDepth, iOrder,
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames('');
+lTempGrid.sName = '';
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lTempGrid);
 
 sCommand = [sTasGrid,' -makequadrature'];
 

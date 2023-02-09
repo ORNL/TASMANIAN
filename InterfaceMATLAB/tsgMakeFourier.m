@@ -109,6 +109,7 @@ end
 
 % create lGrid object
 lGrid.sName = sGridName;
+lGrid.sFilename = tsgMakeGridFilename(sGridName);
 lGrid.iDim  = iDim;
 lGrid.iOut  =  iOut;
 lGrid.sType = 'fourier';
@@ -120,7 +121,7 @@ end
 
 % generate filenames
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid);
 
 sCommand = [sTasGrid,' -makefourier'];
 

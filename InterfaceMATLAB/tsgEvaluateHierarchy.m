@@ -26,7 +26,7 @@ function [vals] = tsgEvaluateHierarchy(lGrid, mX)
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid);
 
 if (strcmp(lGrid.sType, 'global') || strcmp(lGrid.sType, 'sequence') || strcmp(lGrid.sType, 'fourier'))
     sCommand = [sTasGrid,' -evalhierarchyd'];

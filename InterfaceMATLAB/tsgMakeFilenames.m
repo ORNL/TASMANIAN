@@ -1,6 +1,6 @@
-function [sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(sGridName)
+function [sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid)
 %
-% [sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(sGridName)
+% [sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid)
 %
 % given the paths from tsgGetPaths() it returns the filenames of all files associated with the name
 %
@@ -13,18 +13,24 @@ else
     id = feature('getpid');
 end
 
-sFileG = [sFiles, sGridName,'_FileG']; % the filename to store the grid
+if (isfield(lGrid, 'sFilename'))
+    % new convention, the filename is stored into the lGrid object
+    sFileG = lGrid.sFilename;
+else
+    % using the old naming convention
+    sFileG = [sFiles, lGrid.sName,'_FileG']; % the filename to store the grid
+end
 
-sFileX = [sFiles, sGridName,'_FileX',num2str(id)]; % file with points to evaluate the surrogate
+sFileX = [sFiles, lGrid.sName,'.FileX',num2str(id)]; % file with points to evaluate the surrogate
 
-sFileV = [sFiles, sGridName,'_FileV']; % file with values to be loaded
+sFileV = [sFiles, lGrid.sName,'.FileV']; % file with values to be loaded
 
-sFileO = [sFiles, sGridName,'_FileO',num2str(id)]; % file for output
+sFileO = [sFiles, lGrid.sName,'.FileO',num2str(id)]; % file for output
 
-sFileW = [sFiles, sGridName,'_FileW']; % file with anisotropic weights
+sFileW = [sFiles, lGrid.sName,'.FileW']; % file with anisotropic weights
 
-sFileC = [sFiles, sGridName,'_FileC']; % file with the custom rule
+sFileC = [sFiles, lGrid.sName,'.FileC']; % file with the custom rule
 
-sFileL = [sFiles, sGridName,'_FileL']; % file with level limits
+sFileL = [sFiles, lGrid.sName,'.FileL']; % file with level limits
 
 end

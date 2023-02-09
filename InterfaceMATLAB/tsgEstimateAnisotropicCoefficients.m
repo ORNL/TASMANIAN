@@ -24,7 +24,7 @@ function [coefficients] = tsgEstimateAnisotropicCoefficients(lGrid, sType, iOut)
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lGrid);
 
 sCommand = [sTasGrid,' -getanisotropy'];
 

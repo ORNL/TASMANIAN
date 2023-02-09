@@ -87,6 +87,7 @@ function [lGrid, points] = tsgMakeSequence(sGridName, iDim, iOut, s1D, sType, iD
 
 % create lGrid object
 lGrid.sName = sGridName;
+lGrid.sFilename = tsgMakeGridFilename(sGridName);
 lGrid.iDim  = iDim;
 lGrid.iOut  =  iOut;
 lGrid.sType = 'sequence';
@@ -98,7 +99,7 @@ end
 
 % generate filenames
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lGrid);
 
 sCommand = [sTasGrid,' -makesequence'];
 

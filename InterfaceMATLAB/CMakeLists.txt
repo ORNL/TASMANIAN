@@ -27,12 +27,14 @@ set(Tasmanian_matlab_source_files tsgCancelRefine.m
                                   tsgIntegrate.m
                                   tsgListGridsByName.m
                                   tsgLoadConstructedPoints.m
+                                  tsgLoadGridFromFile.m
                                   tsgLoadHCoefficients.m
                                   tsgLoadValues.m
                                   tsgMakeExoticQuadrature.m
                                   tsgMakeFilenames.m
                                   tsgMakeFourier.m
                                   tsgMakeGlobal.m
+                                  tsgMakeGridFilename.m
                                   tsgMakeLocalPolynomial.m
                                   tsgMakeQuadrature.m
                                   tsgMakeSequence.m

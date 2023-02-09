@@ -19,11 +19,14 @@ function  [lNewGrid] = tsgCopyGrid(lOldGrid, sNewGridName)
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lOldGrid.sName);
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lOldGrid);
 
 lNewGrid = lOldGrid;
 lNewGrid.sName = sNewGridName;
-[sFileGNew, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lNewGrid.sName);
+if isfield(lNewGrid, 'sFilename')
+    lNewGrid.sFilename = tsgMakeGridFilename(sNewGridName);
+end
+[sFileGNew, sFileX, sFileV, sFileO, sFileW, sFileC, sFileL] = tsgMakeFilenames(lNewGrid);
 
 sFileG    = regexprep(sFileG, '\\ ', ' ');
 sFileGNew = regexprep(sFileGNew, '\\ ', ' ');

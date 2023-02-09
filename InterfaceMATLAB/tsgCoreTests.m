@@ -249,11 +249,11 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [sFiles, sTasGrid] = tsgGetPaths();
 sFiles = regexprep(sFiles, '\\ ', ' ');
-if (~exist([sFiles,'_tsgcoretests_lgrid_FileG'], 'file'))
+if (~exist([sFiles,'_tsgcoretests_lgrid.tsgrid'], 'file'))
     error('Mismatch in tsgDeleteGrid: cannot find a file that should exist');
 end
 tsgDeleteGrid(lGrid);
-if (exist([sFiles,'_tsgcoretests_lgrid_FileG'], 'file'))
+if (exist([sFiles,'_tsgcoretests_lgrid.tsgrid'], 'file'))
     error('Mismatch in tsgDeleteGrid: did not delete the file');
 end
 
@@ -266,7 +266,7 @@ end
 tsgDeleteGrid(lGridA);
 [p2] = tsgGetPoints(lGridB);
 if (norm(p - p2) > 1.E-11)
-    error('Mismatch in tsgCopyGrid: did not delete the file');
+    error('Mismatch in tsgCopyGrid: did not get the correct points');
 end
 tsgDeleteGrid(lGridB);
 
@@ -345,11 +345,11 @@ tsgDeleteGrid(lGrid);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [sFiles, sTasGrid] = tsgGetPaths();
 sFiles = regexprep(sFiles, '\\ ', ' ');
-if (~exist([sFiles,'_tsgcoretests_lgrid2_FileG'], 'file'))
+if (~exist([sFiles,'_tsgcoretests_lgrid2.tsgrid'], 'file'))
     error('Mismatch in tsgDeleteGrid: cannot find a file that should exist');
 end
 tsgDeleteGridByName('_tsgcoretests_lgrid2');
-if (exist([sFiles,'_tsgcoretests_lgrid2_FileG'], 'file'))
+if (exist([sFiles,'_tsgcoretests_lgrid2.tsgrid'], 'file'))
     error('Mismatch in tsgDeleteGrid: did not delete the file');
 end
 
@@ -966,7 +966,7 @@ tsgDeleteGrid(lGridB);
 disp(['Refinement functions       PASS']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%                     tsgReloadGrid()                              %%%
+%%%                     tsgReloadGrid()/tsgLoadGridFromFile()        %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [lGrid, p] = tsgMakeGlobal('_tsgcoretests_ch', 3, 7, 'chebyshev', 'iptotal', 5);
 [lGrid2] = tsgReloadGrid('_tsgcoretests_ch');
@@ -978,6 +978,10 @@ if (lGrid2.sType ~= 'Global')
 end
 if ((lGrid2.iDim ~= 3) || (lGrid2.iOut ~= 7))
     error('Mismatch in tsgReloadGrid() could not reload grid: iDim and iOut');
+end
+[lGrid3] = tsgLoadGridFromFile('_tsgcoretests_ch2', lGrid2.sFilename);
+if ((lGrid3.iDim ~= 3) || (lGrid3.iOut ~= 7))
+    error('Mismatch in tsgLoadGridFromFile() could not load grid: iDim and iOut');
 end
 tsgDeleteGrid(lGrid);
 

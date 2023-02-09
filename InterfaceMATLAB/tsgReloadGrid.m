@@ -19,11 +19,20 @@ function [lGrid] = tsgReloadGrid(sGridName)
 %
 
 [sFiles, sTasGrid] = tsgGetPaths();
-[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(sGridName);
+lTempGrid.sName = sGridName;
+[sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lTempGrid);
 
+% try the old way
 sTestFile = regexprep(sFileG, '\\ ', ' ');
 if (exist(sTestFile, 'file') ~= 2)
-    error(['There is no grid named: ',sGridName]);
+    lTempGrid.sName = sGridName;
+    lTempGrid.sFilename = tsgMakeGridFilename(sGridName);
+    [sFileG, sFileX, sFileV, sFileO, sFileW, sFileC] = tsgMakeFilenames(lTempGrid);
+
+    sTestFile = regexprep(sFileG, '\\ ', ' ');
+    if (exist(sTestFile, 'file') ~= 2)
+        error(['There is no grid named: ',sGridName]);
+    end
 end
 
 sCommand = [sTasGrid,' -summary -gridfile ', sFileG];
@@ -40,6 +49,7 @@ l3 = strsplit(sLines{4});
 
 % create lGrid object
 lGrid.sName = sGridName;
+lGrid.sFilename = sFileG;
 
 if (strcmp(l1{4}, 'Global'))
     lGrid.sType = 'global';
