@@ -337,6 +337,11 @@ public:
     //! \brief Read the grid from the given stream \b ifs using either \b binary or ASCII format.
     void read(std::istream &ifs, bool binary = mode_binary);
 
+    //! \brief Overload that works directly with std::string
+    void write(std::string const& fname, bool binary = mode_binary) const{ write(fname.c_str(), binary); }
+    //! \brief Overload that works directly with std::string
+    void read(std::string const& fname){ read(fname.c_str()); }
+
     /*!
      * \brief Make a Global Grid using Lagrange polynomials with support over the entire domain.
      *
