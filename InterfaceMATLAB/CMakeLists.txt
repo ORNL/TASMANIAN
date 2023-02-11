@@ -80,6 +80,16 @@ set(Tasmanian_matlab_workdir "${Tasmanian_MATLAB_WORK_FOLDER}/")
 string(REPLACE " " "\\ " Tasmanian_matlab_workdir "${Tasmanian_matlab_workdir}")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/tsgGetPaths.install.m" "${CMAKE_CURRENT_BINARY_DIR}/configured/tsgGetPaths.m" @ONLY)
 
+# test if we can find the octave executable and we can get the version
+# do not test with MATLAB to avoid potential license issues
+find_program(Tasmanian_OCTAVE_EXECUABLE NAMES octave)
+if (Tasmanian_OCTAVE_EXECUABLE)
+    execute_process(COMMAND octave --version OUTPUT_QUIET RESULT_VARIABLE Tasmanian_octave_works)
+    if ("${Tasmanian_octave_works}" STREQUAL 0)
+        add_test(TasmanianOctave octave --eval "addpath('${CMAKE_CURRENT_BINARY_DIR}/matlab'); tsgCoreTests()")
+    endif()
+endif()
+
 # create the MATLAB work-folder on install
 install(CODE "file(MAKE_DIRECTORY \"${Tasmanian_MATLAB_WORK_FOLDER}\")")
 
