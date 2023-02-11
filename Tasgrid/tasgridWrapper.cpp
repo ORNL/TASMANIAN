@@ -34,11 +34,49 @@
 #include "tsgExoticQuadrature.hpp"
 #include "tasgridWrapper.hpp"
 
+
+// helper class
+struct internal_sparse_matrix{
+    int num_cols;
+    std::vector<int> pntr, indx;
+    std::vector<double> vals;
+    internal_sparse_matrix(int cols) : num_cols(cols){}
+    template<bool iomode>
+    void writeSparseMatrix(std::ostream &os) const{
+        int nnz = static_cast<int>(indx.size());
+        int rows = static_cast<int>(pntr.size() - 1);
+        IO::writeNumbers<iomode, IO::pad_line>(os, rows, num_cols, nnz);
+        IO::writeVector<iomode, IO::pad_line>(pntr, os);
+        IO::writeVector<iomode, IO::pad_line>(indx, os);
+        IO::writeVector<iomode, IO::pad_line>(vals, os);
+    }
+    void write(std::string const &filename, bool use_ascii) const{
+        if (not filename.empty()){
+            if (use_ascii){
+                std::ofstream ofs(filename);
+                ofs << std::scientific; ofs.precision(17);
+                writeSparseMatrix<mode_ascii>(ofs);
+            }else{
+                std::ofstream ofs(filename, std::ios::out | std::ios::binary);
+                char charTSG[3] = {'T', 'S', 'G'};
+                ofs.write(charTSG, 3 * sizeof(char));
+                writeSparseMatrix<mode_binary>(ofs);
+            }
+        }
+    }
+    void write(bool print_to_cout) const{
+        if (print_to_cout){
+            cout << std::scientific; cout.precision(17);
+            writeSparseMatrix<mode_ascii>(cout);
+        }
+    }
+};
+
 TasgridWrapper::TasgridWrapper() : command(command_none), num_dimensions(0), num_outputs(-1), depth(-1), order(1),
     depth_type(type_none), rule(rule_none),
     conformal(conformal_none), alpha(0.0), beta(0.0), set_alpha(false), set_beta(false), tolerance(0.0), set_tolerance(false),
     ref_output(-1), min_growth(-1), tref(refine_fds), set_tref(false),
-    printCout(false), useASCII(false), set_gpuid(-1), shift(0.0), set_shift(false)
+    printCout(false), useASCII(false), set_gpuid(-2), shift(0.0), set_shift(false)
 {}
 TasgridWrapper::~TasgridWrapper(){}
 
@@ -103,324 +141,568 @@ bool TasgridWrapper::isCreateCommand(TypeCommand com){
              (com == command_makeexoquad));
 }
 
-bool TasgridWrapper::checkSane() const{
+struct command_tester{
+    TypeCommand command;
+    bool inside(std::vector<TypeCommand> const &command_list1, std::vector<TypeCommand> const &command_list2 = {}){
+        return (std::any_of(command_list1.begin(), command_list1.end(), [&](TypeCommand c)->bool{ return (c == command); })
+            or std::any_of(command_list2.begin(), command_list2.end(), [&](TypeCommand c)->bool{ return (c == command); }));
+    }
+};
+struct test_result_wrapper{
     bool pass = true;
+    operator bool() const{ return pass; }
+    void fail_if(bool condition, const char *text){
+        if (condition){
+            cerr << "ERROR: " << text << "\n";
+            pass = false;
+        }
+    }
+    void worry_if(bool condition, const char *text){
+        if (condition) cerr << "WARNING: " << text << "\n";
+    }
+};
+
+bool TasgridWrapper::checkSane() const{
     if (command == command_none){
-        cerr << "ERROR: checkSane(), no command specified\n";  return false;
-    }else if (command == command_makeglobal){
-        if (num_dimensions < 1){ cerr << "ERROR: must specify number of dimensions\n"; pass = false; }
-        if (num_outputs < 0){ cerr << "ERROR: must specify number of outputs (could use zero)\n"; pass = false; }
-        if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)\n"; pass = false; }
-        if (depth_type == type_none){ cerr << "ERROR: must specify depth_type (e.g., select levels or polynomial basis)\n"; pass = false; }
-        if (rule == rule_none){ cerr << "ERROR: must specify rule to use (e.g., clenshaw-curtis)\n"; pass = false; }
-        if (!(OneDimensionalMeta::isGlobal(rule))){ cerr << "ERROR: cannot use global grids with rule: " << IO::getRuleString(rule) << "\n"; pass = false; }
-        if ((rule == rule_gaussgegenbauer) || (rule == rule_gausslaguerre) || (rule == rule_gausshermite) || (rule == rule_gaussgegenbauerodd) || (rule == rule_gausshermiteodd) ){
-            if (!set_alpha){ cerr << "ERROR: one dimensional rule " << IO::getRuleString(rule) << " requires alpha parameter\n"; pass = false; }
-        }else if (rule == rule_gaussjacobi){
-            if (!set_alpha){ cerr << "ERROR: one dimensional rule " << IO::getRuleString(rule) << " requires alpha parameter\n"; pass = false; }
-            if (!set_beta ){ cerr << "ERROR: one dimensional rule " << IO::getRuleString(rule) << " requires beta parameter\n"; pass = false; }
-        }else{
-            if (set_alpha){ cerr << "WARNING: alpha parameter set, but one dimensional rule " << IO::getRuleString(rule) << " doesn't depend on alpha\n"; }
-            if (set_beta ){ cerr << "WARNING: beta parameter set, but one dimensional rule " << IO::getRuleString(rule) << " doesn't depend on beta\n"; }
-        }
-        if (customfilename.empty()){
-            if (rule == rule_customtabulated){
-                cerr << "ERROR: custom-tabulated rule specified, but no -customflile given\n"; pass = false;
-            }
-        }else{
-            if (rule != rule_customtabulated){
-                cerr << "WARNING: -customflile given, but is only valid for the custom-tabulated rule and not rule " << IO::getRuleString(rule) << "\n";
-            }
-        }
-        if (gridfilename.empty() && outfilename.empty() && (printCout == false)){
-            cerr << "ERROR: no means of output are specified, you should specify -gridfile, -outfile or -print\n"; pass = false;
-        }
-        if ((conformal == conformal_none) != conformalfilename.empty()){
-            cerr << "WARNING: conformal transform requires both -conformaltype and -conformalfile, ignoring conformal mapping\n";
-        }
-        return pass;
-    }else if (command == command_makesequence){
-        if (num_dimensions < 1){ cerr << "ERROR: must specify number of dimensions\n"; pass = false; }
-        if (num_outputs < 0){ cerr << "ERROR: must specify number of outputs (could use zero)\n"; pass = false; }
-        if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)\n"; pass = false; }
-        if (depth_type == type_none){ cerr << "ERROR: must specify depth_type (e.g., select levels or polynomial basis)\n"; pass = false; }
-        if (rule == rule_none){ cerr << "ERROR: must specify rule to use (e.g., rleja)\n"; pass = false; }
-        if (!(OneDimensionalMeta::isSequence(rule))){ cerr << "ERROR: rule is set to " << IO::getRuleString(rule) << " which is not a sequence rule (e.g., leja, rleja, min/max-lebesgue)\n"; pass = false; }
-        if (gridfilename.empty() && outfilename.empty() && (printCout == false)){
-            cerr << "ERROR: no means of output are specified, you should specify -gridfile, -outfile or -print\n"; pass = false;
-        }
-        if ((conformal == conformal_none) != conformalfilename.empty()){
-            cerr << "WARNING: conformal transform requires both -conformaltype and -conformalfile, ignoring conformal mapping\n";
-        }
-        return pass;
-    }else if (command == command_makelocalp){
-        if (num_dimensions < 1){ cerr << "ERROR: must specify number of dimensions\n"; pass = false; }
-        if (num_outputs < 0){ cerr << "ERROR: must specify number of outputs (could use zero)\n"; pass = false; }
-        if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)\n"; pass = false; }
-        if (order < -1){ cerr << "ERROR: the maximum order cannot be less than -1"; pass = false; }
-        if (rule == rule_none){ cerr << "ERROR: must specify rule to use (e.g., localp)\n"; pass = false; }
-        if (!(OneDimensionalMeta::isLocalPolynomial(rule))){ cerr << "ERROR: cannot use a local polynomial grid with rule: " << IO::getRuleString(rule) << "\n"; pass = false; }
-        if (gridfilename.empty() && outfilename.empty() && (printCout == false)){
-            cerr << "ERROR: no means of output are specified, you should specify -gridfile, -outfile or -print\n"; pass = false;
-        }
-        if ((conformal == conformal_none) != conformalfilename.empty()){
-            cerr << "WARNING: conformal transform requires both -conformaltype and -conformalfile, ignoring conformal mapping\n";
-        }
-        return pass;
-    }else if (command == command_makewavelet){
-        if (num_dimensions < 1){ cerr << "ERROR: must specify number of dimensions\n"; pass = false; }
-        if (num_outputs < 0){ cerr << "ERROR: must specify number of outputs (could use zero)\n"; pass = false; }
-        if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)\n"; pass = false; }
-        if ((order != 1) && (order != 3)){ cerr << "ERROR: the order must be either 1 or 3"; pass = false; }
-        if (gridfilename.empty() && outfilename.empty() && (printCout == false)){
-            cerr << "ERROR: no means of output are specified, you should specify -gridfile, -outfile or -print\n"; pass = false;
-        }
-        if ((conformal == conformal_none) != conformalfilename.empty()){
-            cerr << "WARNING: conformal transform requires both -conformaltype and -conformalfile, ignoring conformal mapping\n";
-        }
-        return pass;
-    }else if (command == command_makefourier){
-        if (num_dimensions < 1){ cerr << "ERROR: must specify number of dimensions\n"; pass = false; }
-        if (num_outputs < 0){ cerr << "ERROR: must specify number of outputs (could use zero)\n"; pass = false; }
-        if (depth < 0){ cerr << "ERROR: must specify depth\n"; pass = false; }
-        if (depth_type == type_none){ cerr << "ERROR: must specify depth_type\n"; pass = false; }
-        if (gridfilename.empty() && outfilename.empty() && (printCout == false)){
-            cerr << "ERROR: no means of output are specified, you should specify -gridfile, -outfile or -print\n"; pass = false;
-        }
-        if ((conformal == conformal_none) != conformalfilename.empty()){
-            cerr << "WARNING: conformal transform requires both -conformaltype and -conformalfile, ignoring conformal mapping\n";
-        }
-        return pass;
-    }else if (command == command_makequadrature){
-        if (num_dimensions < 1){ cerr << "ERROR: must specify number of dimensions\n"; pass = false; }
-        if (num_outputs != -1){ cerr << "WARNING: ignoring the -outputs specified for the -makequadrature command\n"; }
-        if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)\n"; pass = false; }
-        if (rule == rule_none){ cerr << "ERROR: must specify rule to use (e.g., clenshaw-curtis)\n"; pass = false; }
-        if (OneDimensionalMeta::isGlobal(rule)){ // global quadrature
-            if (depth_type == type_none){ cerr << "ERROR: must specify depth_type (e.g., select levels or polynomial basis)\n"; pass = false; }
-
-            if ((rule == rule_gaussgegenbauer) || (rule == rule_gausslaguerre) || (rule == rule_gausshermite) || (rule == rule_gaussgegenbauerodd) || (rule == rule_gausshermiteodd)){
-                if (!set_alpha){ cerr << "ERROR: one dimensional rule " << IO::getRuleString(rule) << " requires alpha parameter\n"; pass = false; }
-            }
-            if (rule == rule_gaussjacobi){
-                if (!set_alpha){ cerr << "ERROR: one dimensional rule " << IO::getRuleString(rule) << " requires alpha parameter\n"; pass = false; }
-                if (!set_beta ){ cerr << "ERROR: one dimensional rule " << IO::getRuleString(rule) << " requires beta parameter\n"; pass = false; }
-            }
-        }else if (OneDimensionalMeta::isLocalPolynomial(rule)){
-            if (order < -1){ cerr << "ERROR: the maximum order cannot be less than -1"; pass = false; }
-        }else if (OneDimensionalMeta::isWavelet(rule)){
-            if ((order != 1) && (order != 3)){ cerr << "ERROR: the order must be either 1 or 3"; pass = false; }
-        }else if (OneDimensionalMeta::isFourier(rule)){
-            if (depth_type == type_none){ cerr << "ERROR: must specify depth_type (e.g., select levels or polynomial basis)\n"; pass = false; }
-        }else{
-            if (rule == rule_none){
-                cerr << "ERROR: must specify rule to use (e.g., clenshaw-curtis or localp)\n"; pass = false;
-            }else{
-                cerr << "ERROR: cannot make a quadrature with rule " << IO::getRuleString(rule) << "\n"; pass = false;
-            }
-        }
-        if (outfilename.empty() && (printCout == false)){
-            cerr << "ERROR: no means of output are specified, you should specify -outfile or -print\n"; pass = false;
-        }
-        if (!gridfilename.empty()){  cerr << "WARNING: quadrature does not output a -gridfile, if you need a gridfile use -makeglobal/-makelocalpoly commands followed by -getquadrature\n"; }
-        if ((conformal == conformal_none) != conformalfilename.empty()){
-            cerr << "WARNING: conformal transform requires both -conformaltype and -conformalfile, ignoring conformal mapping\n";
-        }
-        return pass;
-    }else if (command == command_makeexoquad){
-        if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)\n"; pass = false; }
-        if (!set_shift){ cerr << "ERROR: must specify shift parameter\n"; pass = false; }
-        if (weightfilename.empty()){ cerr << "ERROR: must specify filename of weight function surrogate/interpolant\n"; pass = false; }
-        if (description.empty()){ cerr << "ERROR: must specify description\n"; pass = false; }
-        if (outfilename.empty() && (printCout == false)){
-            cerr << "ERROR: no means of output are specified, you should specify -outfile or -print\n"; pass = false;
-        }
-        return pass;
-
-    }else if (command == command_update){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-        if (depth < 0){ cerr << "ERROR: must specify depth (e.g., level or polynomial degree)\n"; pass = false; }
-        if (depth_type == type_none){ cerr << "ERROR: must specify depth_type (e.g., select levels or polynomial basis)\n"; pass = false; }
-    }else if (command == command_setconformal){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-        if (conformal == conformal_none){  cerr << "ERROR: must specify valid -conformaltype\n"; pass = false;  }
-        if (conformalfilename.empty()){ cerr << "ERROR: must specify valid -conformalfile\n"; pass = false; }
-    }else if ((command == command_getquadrature)   || (command == command_getpoints) || (command == command_getneeded) ||
-              (command == command_getcoefficients) || (command == command_gethsupport)){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-        if (outfilename.empty() && (printCout == false)){
-            cerr << "ERROR: no means of output are specified, you should specify -outfile or -print\n"; pass = false;
-        }
-        return pass;
-    }else if ((command == command_loadvalues) || (command == command_setcoefficients)){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-        if (valsfilename.empty()){ cerr << "ERROR: must specify valid -valsfile\n"; pass = false; }
-        return pass;
-    }else if ((command == command_getinterweights) || (command == command_evaluate)
-              || (command == command_evalhierarchical_dense) || (command == command_evalhierarchical_sparse)
-              || (command == command_differentiate)){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-        if (xfilename.empty()){ cerr << "ERROR: must specify valid -pointsfile\n"; pass = false; }
-        if (outfilename.empty() && (printCout == false)){
-            cerr << "ERROR: no means of output are specified, you should specify -outfile or -print\n"; pass = false;
-        }
-    }else if (command == command_integrate){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-        if (outfilename.empty() && (printCout == false)){
-            cerr << "ERROR: no means of output are specified, you should specify -outfile or -print\n"; pass = false;
-        }
-    }else if (command == command_getanisocoeff){
-        if (depth_type == type_none){
-            cerr << "ERROR: must specify type of coefficients with valid -type!\n";
-            return false;
-        }
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-        if (outfilename.empty() && (printCout == false)){
-            cerr << "ERROR: no means of output are specified, you should specify -outfile or -print\n"; pass = false;
-        }
-    }else if (command == command_refine){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-        // additional checks in refineGrid() since checks depend on the type of grid
-    }else if (command == command_refine_aniso){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-        // additional checks in refineGrid() since checks depend on the type of grid
-    }else if (command == command_refine_surp){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-        // additional checks in refineGrid() since checks depend on the type of grid
-    }else if ((command == command_refine_clear) || (command == command_refine_merge)){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-    }else if ((command == command_refine_clear) || (command == command_refine_merge)){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-    }else if (command == command_using_construct || command == command_get_candidate_construction){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-        if (command == command_get_candidate_construction && outfilename.empty() && (printCout == false)){
-            cerr << "ERROR: no means of output are specified, you should specify -outfile or -print\n"; pass = false;
-        }
-    }else if (command == command_load_construction) {
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-        if (xfilename.empty()){ cerr << "ERROR: must specify valid -pointsfile\n"; pass = false; }
-        if (valsfilename.empty()){ cerr << "ERROR: must specify valid -valsfile\n"; pass = false; }
-    }else if (command == command_getpoly){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-        if (depth_type == type_none){ cerr << "ERROR: must specify depth_type (e.g., select levels or polynomial basis)\n"; pass = false; }
-        if ((depth_type != type_iptotal) && (depth_type != type_ipcurved) && (depth_type != type_iptensor) && (depth_type != type_iphyperbolic) &&
-             (depth_type != type_qptotal) && (depth_type != type_qpcurved) && (depth_type != type_qptensor) && (depth_type != type_qphyperbolic)){
-            cerr << "ERROR: the type here must start with either i or q indicating whether we seek the polynomils for integration or interpolation.\n"; pass = false;
-        }
-        if (outfilename.empty() && (printCout == false)){
-            cerr << "ERROR: no means of output are specified, you should specify -outfile or -print\n"; pass = false;
-        }
-    }else if (command == command_summary){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
-    }else if (command == command_getcoefficients){
-        if (gridfilename.empty()){ cerr << "ERROR: must specify valid -gridfile\n"; pass = false; }
+        cerr << "ERROR: no command specified\n";
+        return false;
     }
 
-    return pass;
+    command_tester com{command};
+    std::vector<TypeCommand> makecoms = {command_makeglobal, command_makesequence, command_makelocalp, command_makewavelet, command_makefourier};
+
+    test_result_wrapper test;
+    // adopt the signature for the checks, problem and commands that have the problem
+    // e.g., num_dimensions < 1 is problem when using make-grid command or make quadrature
+    test.fail_if(num_dimensions < 1 and com.inside(makecoms, {command_makequadrature}),
+                 "must specify number of dimensions (e.g., number of model inputs)");
+    test.fail_if(num_outputs < 1 and com.inside(makecoms),
+                 "must specify number of outputs (could be zero)");
+    test.fail_if(depth < 0 and com.inside(makecoms, {command_makequadrature, command_makeexoquad, command_update}),
+                 "must specify depth (e.g., level or polynomial degree)");
+    test.fail_if(order < -1 and (command == command_makelocalp
+                                 or (command == command_makequadrature and OneDimensionalMeta::isLocalPolynomial(rule))),
+                 "the maximum order for local polynomial cannot be less than -1");
+    test.fail_if(order != 1 and order != 3 and (command == command_makewavelet
+                                                or (command == command_makequadrature and OneDimensionalMeta::isWavelet(rule))),
+                 "the wavelet order must be either 1 or 3");
+
+    test.fail_if(depth_type == type_none and
+                 (com.inside({command_makeglobal, command_makesequence, command_makefourier,
+                              command_update, command_getanisocoeff, command_getpoly})
+                  or (command == command_makequadrature and (OneDimensionalMeta::isGlobal(rule) or OneDimensionalMeta::isFourier(rule)))),
+                 "must specify depth_type (e.g., select levels or polynomial basis)");
+    test.fail_if(rule == rule_none and com.inside({command_makeglobal, command_makesequence, command_makelocalp, command_makequadrature}),
+                 "must specify rule to use (e.g., clenshaw-curtis or localp)");
+
+    if (command == command_makeglobal or command == command_makequadrature){
+        bool needs_alpha = (rule == rule_gaussgegenbauer or rule == rule_gausslaguerre or rule == rule_gausshermite or
+                            rule == rule_gaussgegenbauerodd or rule == rule_gausshermiteodd or rule == rule_gaussjacobi);
+        bool needs_beta = (rule == rule_gaussjacobi);
+
+        test.fail_if(not set_alpha and needs_alpha,
+                     (std::string("one dimensional rule ") + IO::getRuleString(rule) + " requires alpha parameter").c_str());
+        test.fail_if(not set_beta and needs_beta,
+                     (std::string("one dimensional rule ") + IO::getRuleString(rule) + " requires alpha parameter").c_str());
+
+        test.worry_if(set_alpha and not needs_alpha,
+                      (std::string("alpha parameter set, but one dimensional rule ") + IO::getRuleString(rule) + " doesn't depend on alpha").c_str());
+        test.worry_if(set_beta and not needs_beta,
+                      (std::string("beta parameter set, but one dimensional rule ") + IO::getRuleString(rule) + " doesn't depend on beta").c_str());
+
+        test.fail_if(customfilename.empty() and rule == rule_customtabulated,
+                     "ustom-tabulated rule specified, but no -customflile given");
+        test.worry_if(not customfilename.empty() and rule != rule_customtabulated,
+                      "custom-tabulated rule specified, but no -customflile given");
+    }
+
+    // not output at all
+    test.fail_if(gridfilename.empty() and outfilename.empty() and not printCout and com.inside(makecoms),
+                 "no means of output are specified, you should specify -gridfile, -outfile or -print");
+    // cannot output to gridfile and outfile and print are not set
+    test.fail_if(outfilename.empty() and not printCout
+                 and com.inside({command_makequadrature, command_makeexoquad, command_getinterweights, command_evaluate,
+                                 command_evalhierarchical_dense, command_evalhierarchical_sparse, command_differentiate,
+                                 command_get_candidate_construction, command_getquadrature, command_getpoints,
+                                 command_getneeded, command_getcoefficients, command_gethsupport, command_integrate,
+                                 command_getanisocoeff, command_getpoly}),
+                 "no means of output are specified, you should specify -outfile or -print");
+
+    test.fail_if(conformalfilename.empty() and conformal != conformal_none,
+                 "conformal transform requires both -conformaltype and -conformalfile");
+
+    test.fail_if(conformal == conformal_none and command == command_setconformal,
+                 "must specify valid -conformaltype");
+    test.fail_if(conformalfilename.empty() and command == command_setconformal,
+                 "must specify valid -conformalfile");
+
+    test.fail_if(gridfilename.empty() and not com.inside(makecoms, {command_makequadrature, command_makeexoquad}),
+                 "must specify valid -gridfile");
+    test.fail_if(xfilename.empty()
+                 and com.inside({command_getinterweights, command_evaluate, command_evalhierarchical_dense,
+                                 command_evalhierarchical_sparse, command_differentiate, command_load_construction}),
+                 "must specify valid -pointsfile");
+
+    test.fail_if(valsfilename.empty() and com.inside({command_loadvalues, command_setcoefficients, command_load_construction}),
+                 "must specify valid -valsfile");
+
+    // handle special cases per command
+    switch(command){
+        case command_makeglobal:
+            test.fail_if(not OneDimensionalMeta::isGlobal(rule),
+                         (std::string("cannot use global grids with rule: ") + IO::getRuleString(rule)).c_str());
+            break;
+        case command_makesequence:
+            test.fail_if(not OneDimensionalMeta::isSequence(rule),
+                         (std::string("rule is set to ") + IO::getRuleString(rule) + " which is not a sequence rule (e.g., leja, rleja, min/max-lebesgue)").c_str());
+            break;
+        case command_makelocalp:
+            test.fail_if(not OneDimensionalMeta::isLocalPolynomial(rule),
+                         (std::string("cannot use local polynomial grids with rule: ") + IO::getRuleString(rule)).c_str());
+            break;
+        case command_makeexoquad:
+            test.fail_if(not set_shift, "must specify shift parameter");
+            test.fail_if(weightfilename.empty(), "must specify shift parameter");
+            test.fail_if(description.empty(), "must specify description string");
+            break;
+        case command_getpoly:
+            test.fail_if(depth_type == type_level and depth_type == type_curved and depth_type == type_hyperbolic,
+                         "the type here must start with either i or q indicating whether we seek the polynomils for integration or interpolation");
+            break;
+        default:
+            break;
+    }
+
+    test.worry_if(num_outputs != -1 and command == command_makequadrature,
+                  "ignoring the -outputs specified for the -makequadrature command");
+    test.worry_if(not gridfilename.empty() and command == command_makequadrature,
+                  "quadrature does not output a -gridfile, if you need a gridfile use -makeglobal/-makelocalpoly commands followed by -getquadrature");
+    test.worry_if(not conformalfilename.empty() and conformal == conformal_none,
+                  "conformal transform requires both -conformaltype and -conformalfile, ignoring conformal mapping");
+
+    return test;
+}
+bool TasgridWrapper::checkSanePostRead() const{
+    command_tester com{command};
+    test_result_wrapper test;
+
+    test.fail_if(grid.getNumLoaded() == 0 and
+                 com.inside({command_evaluate, command_differentiate, command_integrate, command_getanisocoeff,
+                             command_getcoefficients, command_refine, command_refine_aniso, command_refine_surp}),
+                 "the grid has no loaded data");
+    test.fail_if(grid.getNumOutputs() == 0 and
+                 com.inside({command_evaluate, command_differentiate, command_integrate, command_getanisocoeff,
+                             command_getcoefficients, command_refine, command_refine_aniso, command_refine_surp,
+                             command_get_candidate_construction}),
+                 "the grid has no outputs");
+
+    test.fail_if(ref_output >= grid.getNumOutputs() and
+                 com.inside({command_getanisocoeff, }),
+                 "-refout outside of the range, note the outputs are indexed from zero");
+    test.fail_if(ref_output == -1 and grid.getNumOutputs() > 1 and grid.isGlobal() and
+                 com.inside({command_getanisocoeff}),
+                 "-refout cannot use -1 when working with Global grids");
+
+    test.fail_if((grid.isLocalPolynomial() or grid.isWavelet()) and command == command_refine_aniso,
+                 "anisotropic operations are available only for Global, Sequence and Fourier grids");
+    test.fail_if((grid.isFourier() and command == command_refine_surp),
+                 "surplus refinement cannot be applied to Fourier grids");
+
+    bool is_refine = (command == command_refine or command == command_get_candidate_construction);
+    if (command == command_refine_aniso or (is_refine and (grid.isGlobal() or grid.isSequence() or grid.isFourier()))){
+        test.fail_if(grid.isLocalPolynomial() or grid.isWavelet(),
+                     "anisotropic refinement can be applied only to Global, Sequence and Fourier grids");
+        test.fail_if(depth_type == type_none, "anisotropic refinement requires depth type with -tt");
+        test.fail_if(ref_output == -1 and grid.getNumOutputs() > 1 and grid.isGlobal() and
+                     com.inside({command_getanisocoeff}),
+                     "-refout cannot use -1 when working with Global grids");
+
+        test.worry_if(set_tolerance, "anisotropic refinement (and grids Global, Sequence, Fourier) ignores the -tolerance option");
+        test.worry_if(set_tref, "anisotropic refinement (and grids Global, Sequence, Fourier) ignores the -reftype option");
+    }
+
+    if (command == command_refine_surp or (is_refine and (grid.isLocalPolynomial() or grid.isWavelet()))){
+        test.fail_if(not set_tolerance, "must specify -tolerance for surplus refinement");
+        test.fail_if(not set_tref, "must specify -reftype option");
+
+        test.worry_if(not valsfilename.empty() and (grid.isGlobal() or grid.isSequence() or grid.isFourier()),
+                      "the scale factors are not used with Global, Sequence and Fourier grids");
+    }
+
+    test.fail_if((grid.isLocalPolynomial() or grid.isWavelet()) and command == command_getpoly,
+                 "cannot call -getpoly for a grid that is neither Global nor Sequence");
+
+    return test;
+}
+void TasgridWrapper::iassert(bool condition, const char* text) const{
+    if (not condition){
+        cerr << "ERROR: " << text << "\n";
+        pass_flag = false;
+    }
 }
 
-void TasgridWrapper::createGlobalGird(){
-    auto weights = readAnisotropicFile((OneDimensionalMeta::getControurType(depth_type) == type_curved) ? 2*num_dimensions : num_dimensions);
-    auto llimits = readLevelLimits(num_dimensions);
-    grid.makeGlobalGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights, alpha, beta, customfilename.c_str(), llimits);
-    if (!transformfilename.empty()){
-        auto transforms = readTransform();
-        grid.setDomainTransform(transforms.first, transforms.second);
+bool TasgridWrapper::executeCommand(){
+    if (not checkSane()) return false;
+    pass_flag = true;
+    if (command == command_makeexoquad){
+        createExoticQuadrature();
+        return pass_flag;
     }
-    if ((conformal != conformal_none) && (!conformalfilename.empty())){
-        if (!setConformalTransformation()){
-            cerr << "ERROR: could not set conformal transform\n";
+    if (set_gpuid > -2){
+        try{
+            grid.enableAcceleration(accel_gpu_cuda, set_gpuid);
+        }catch(std::runtime_error &e){
+            cerr << "WARNING: setting the GPU failed with the following message: \n";
+            cerr << e.what() << "\n";
         }
     }
-}
-void TasgridWrapper::createSequenceOrFourierGird(){
-    auto weights = readAnisotropicFile((OneDimensionalMeta::getControurType(depth_type) == type_curved) ? 2*num_dimensions : num_dimensions);
-    auto llimits = readLevelLimits(num_dimensions);
-    if (command == command_makefourier || rule == rule_fourier){    // rule condition is for quadrature
-        grid.makeFourierGrid(num_dimensions, num_outputs, depth, depth_type, weights, llimits);
-    }else{
-        grid.makeSequenceGrid(num_dimensions, num_outputs, depth, depth_type, rule, weights, llimits);
+
+    command_tester com{command};
+    std::vector<TypeCommand> makecoms = {command_makeglobal, command_makesequence, command_makelocalp, command_makewavelet,
+                                         command_makefourier, command_makequadrature};
+    std::vector<TypeCommand> constcoms = {
+        command_getquadrature, command_getinterweights, command_getdiffweights, command_getpoints,
+        command_getneeded, command_evaluate, command_integrate, command_differentiate, command_getanisocoeff,
+        command_getpoly, command_summary, command_getcoefficients, command_evalhierarchical_sparse,
+        command_evalhierarchical_dense, command_gethsupport, command_getpointsindex, command_getneededindex
+    };
+    // read grid or make a new grid
+    if (not com.inside(makecoms, {command_makeexoquad})){
+        if (not readGridfile()) return false;
     }
-    if (!transformfilename.empty()){
-        auto transforms = readTransform();
-        grid.setDomainTransform(transforms.first, transforms.second);
-    }
-    if ((conformal != conformal_none) && (!conformalfilename.empty())){
-        if (!setConformalTransformation()){
-            cerr << "ERROR: could not set conformal transform\n";
+
+    if (not checkSanePostRead()) return false;
+
+    if (command == command_makequadrature) num_outputs = 0;
+
+    if (com.inside(makecoms)){
+        auto llimits = readLimits();
+        auto aniso = readAnisotropic();
+
+        if (command == command_makeglobal or (command == command_makequadrature and OneDimensionalMeta::isGlobal(rule))){
+            grid.makeGlobalGrid(num_dimensions, num_outputs, depth, depth_type, rule, aniso, alpha, beta, customfilename.c_str(), llimits);
+        }else if (command == command_makesequence){
+            grid.makeSequenceGrid(num_dimensions, num_outputs, depth, depth_type, rule, aniso, llimits);
+        }else if (command == command_makefourier or (command == command_makequadrature and rule == rule_fourier)){
+            grid.makeFourierGrid(num_dimensions, num_outputs, depth, depth_type, aniso, llimits);
+        }else if (command == command_makelocalp or (command == command_makequadrature and OneDimensionalMeta::isGlobal(rule))){
+            grid.makeLocalPolynomialGrid(num_dimensions, num_outputs, depth, order, rule, llimits);
+        }else{ // wavelets
+            grid.makeWaveletGrid(num_dimensions, num_outputs, depth, order, llimits);
         }
+        setTransform();
     }
-}
-void TasgridWrapper::createLocalPolynomialGird(){
-    auto llimits = readLevelLimits(num_dimensions);
-    grid.makeLocalPolynomialGrid(num_dimensions, num_outputs, depth, order, rule, llimits);
-    if (!transformfilename.empty()){
-        auto transforms = readTransform();
-        grid.setDomainTransform(transforms.first, transforms.second);
+
+    if (com.inside(makecoms) or command == command_setconformal)
+        setConformal();
+
+    switch(command){
+        case command_update:
+            grid.updateGrid(depth, depth_type, readAnisotropic());
+            break;
+        case command_getdiffweights:
+        case command_getinterweights:
+        case command_evalhierarchical_dense:
+        case command_evalhierarchical_sparse:
+        case command_evaluate:
+        case command_differentiate:
+            processEvalLike();
+            break;
+        case command_integrate:
+        case command_gethsupport:
+        case command_getanisocoeff:
+            processOutputLike();
+            break;
+        case command_getcoefficients:
+            outputHierarchicalCoefficients();
+            break;
+        case command_loadvalues:
+        case command_load_construction:
+            loadComputedValues();
+            break;
+        case command_setcoefficients:
+            setHierarchy();
+            break;
+        case command_refine_clear:
+            grid.clearRefinement();
+            if (grid.isUsingConstruction())
+                grid.finishConstruction();
+            break;
+        case command_refine_merge:
+            grid.mergeRefinement();
+            break;
+        case command_using_construct:
+            cout << "dynamic construction: " << ((grid.isUsingConstruction()) ? "enabled" : "disabled") << "\n";
+            break;
+        case command_summary:
+            grid.printStats();
+            break;
+        case command_getneededindex:
+        case command_getpointsindex:
+            outputIndexes((command == command_getneededindex) ? output_points_mode::needed : output_points_mode::regular);
+            break;
+        case command_getpoly:
+            getPoly();
+            break;
+        case command_refine:
+        case command_refine_aniso:
+        case command_refine_surp:
+            refineGrid();
+            break;
+        case command_get_candidate_construction:
+            getConstructedPoints();
+            break;
+        default:
+            break;
     }
-    if ((conformal != conformal_none) && (!conformalfilename.empty())){
-        if (!setConformalTransformation()){
-            cerr << "ERROR: could not set conformal transform\n";
-        }
-    }
-}
-void TasgridWrapper::createWaveletGird(){
-    auto llimits = readLevelLimits(num_dimensions);
-    grid.makeWaveletGrid(num_dimensions, num_outputs, depth, order, llimits);
-    if (!transformfilename.empty()){
-        auto transforms = readTransform();
-        grid.setDomainTransform(transforms.first, transforms.second);
-    }
-    if ((conformal != conformal_none) && (!conformalfilename.empty())){
-        if (!setConformalTransformation()){
-            cerr << "ERROR: could not set conformal transform\n";
-        }
-    }
-}
-void TasgridWrapper::createQuadrature(){
-    if (num_outputs != 0) num_outputs = 0;
-    if (OneDimensionalMeta::isGlobal(rule)){
-        createGlobalGird();
-    }else if (OneDimensionalMeta::isLocalPolynomial(rule)){
-        createLocalPolynomialGird();
-    }else if (OneDimensionalMeta::isWavelet(rule)){
-        createWaveletGird();
-    }else if (OneDimensionalMeta::isFourier(rule)){
-        createSequenceOrFourierGird();
-    }else{
-        cerr << "ERROR: createQuadrature\n";
-    }
+
+    if (com.inside(makecoms) or command == command_getpoints)
+        outputPoints(output_points_mode::regular);
+    if (com.inside({command_getneeded, command_refine, command_refine_aniso, command_refine_surp}))
+        outputPoints(output_points_mode::needed);
+    if (command == command_makequadrature or command == command_getquadrature)
+        outputQuadrature();
+
+    if (not com.inside(constcoms))
+        writeGrid();
+
+    return pass_flag;
 }
 void TasgridWrapper::createExoticQuadrature(){
     TasGrid::TasmanianSparseGrid weight_surrogate;
     weight_surrogate.read(weightfilename.c_str());
+    iassert(weight_surrogate.getNumDimensions() == 1, "the weight function surrogate must be one-dimensional");
+    iassert(weight_surrogate.getNumLoaded() > 0, "the weight function surrogate must have loaded values for interpolation");
     ct = TasGrid::getExoticQuadrature(depth, shift, weight_surrogate, description.c_str(), is_symmetric_weight_function);
-}
-bool TasgridWrapper::updateGrid(){
-    if (!(grid.isGlobal() || grid.isSequence() || grid.isFourier())){
-        cerr << "ERROR: -makeupdate can be called only for Global and Sequence grids\n";
-        return false;
+    if (not outfilename.empty()){
+        std::ofstream ofs(outfilename, std::ios::out | std::ios::trunc);
+        ct.write<mode_ascii>(ofs);
     }
-    auto weights = readAnisotropicFile((OneDimensionalMeta::getControurType(depth_type) == type_curved) ? 2*num_dimensions : num_dimensions);
-    if (grid.isGlobal()){
-        grid.updateGlobalGrid(depth, depth_type, weights);
-    }else if (grid.isSequence()){
-        grid.updateSequenceGrid(depth, depth_type, weights);
-    }else{
-        grid.updateFourierGrid(depth, depth_type, weights);
-    }
-    return true;
+    if (printCout)
+        ct.write<mode_ascii>(cout);
 }
-void TasgridWrapper::writeGrid() const{ grid.write(gridfilename.c_str(), (useASCII) ? mode_ascii : mode_binary); }
-bool TasgridWrapper::readGrid(){
+bool TasgridWrapper::readGridfile(){
     try{
-        grid.read(gridfilename.c_str());
-        return true;
+        grid.read(gridfilename);
     }catch(std::runtime_error &e){
         cerr << e.what() << "\n";
         return false;
     }
+    num_dimensions = grid.getNumDimensions();
+    num_outputs = grid.getNumOutputs();
+    rule = grid.getRule();
+    return true;
 }
+std::vector<int> TasgridWrapper::readLimits() const{
+    if (levellimitfilename.empty()) return std::vector<int>();
+    auto mat = readMatrix(levellimitfilename);
+    iassert(mat.getNumStrips() == 1, "level limits file must contain only one row");
+    iassert(static_cast<int>(mat.getStride()) == num_dimensions,
+            (std::string("level limits file has wrong number of entries, expected: ") + std::to_string(num_dimensions) +
+             " but found " + std::to_string(mat.getStride())).c_str());
+
+    std::vector<int> llimits(num_dimensions);
+    std::transform(mat.begin(), mat.end(), llimits.begin(), [](double x)->int{ return static_cast<int>(x); });
+    return llimits;
+}
+std::vector<int> TasgridWrapper::readAnisotropic() const{
+    if (anisofilename.empty()) return std::vector<int>();
+    auto mat = readMatrix(anisofilename);
+    iassert(mat.getNumStrips() == 1, "anisotropy file must contain only one row");
+    size_t expected_size = static_cast<size_t>(
+        (OneDimensionalMeta::getControurType(depth_type) == type_curved) ? 2*num_dimensions : num_dimensions);
+    iassert(mat.getStride() == expected_size,
+            (std::string("level limits file has wrong number of entries, expected: ") + std::to_string(expected_size) +
+             " but found " + std::to_string(mat.getStride())).c_str());
+    std::vector<int> weights(expected_size);
+    std::transform(mat.begin(), mat.end(), weights.begin(), [](double x)->int{ return static_cast<int>(x); });
+    return weights;
+}
+void TasgridWrapper::setTransform(){
+    if (transformfilename.empty()) return;
+    auto mat = readMatrix(transformfilename);
+    iassert(mat.getStride() == 2, "the matrix in the transform file must have exactly two columns");
+    iassert(mat.getNumStrips() == num_dimensions,
+            (std::string("the domain transform expects ") + std::to_string(num_dimensions) +
+             " rows but found " + std::to_string(mat.getNumStrips()) + " in the file: " + transformfilename).c_str());
+    std::vector<double> transa((size_t) num_dimensions);
+    std::vector<double> transb((size_t) num_dimensions);
+    for(int i=0; i<num_dimensions; i++){
+        transa[i] = mat.getStrip(i)[0];
+        transb[i] = mat.getStrip(i)[1];
+    }
+    grid.setDomainTransform(transa, transb);
+}
+void TasgridWrapper::setConformal(){
+    if (conformal == conformal_asin){
+        auto mat = readMatrix(conformalfilename);
+        iassert(mat.getNumStrips() == 1, "the conformal file for asin should contain only one row");
+        iassert(static_cast<int>(mat.getStride()) == num_dimensions,
+                (std::string("conformal file for asin wrong number of entries, expected: ") + std::to_string(num_dimensions) +
+                 " but found " + std::to_string(mat.getStride())).c_str());
+        std::vector<int> coeff(mat.getTotalEntries());
+        std::transform(mat.begin(), mat.end(), coeff.begin(), [](double x)->int{ return static_cast<int>(x); });
+        grid.setConformalTransformASIN(coeff);
+    }
+}
+void TasgridWrapper::outputPoints(output_points_mode mode) const{
+    if (outfilename.empty() and not printCout) return;
+    int num_points = (mode == output_points_mode::needed) ? grid.getNumNeeded() : grid.getNumPoints();
+    auto points = (mode == output_points_mode::needed) ? grid.getNeededPoints() : grid.getPoints();
+    writeMatrix(outfilename, num_points, num_dimensions, points.data());
+    printMatrix(num_points, num_dimensions, points.data());
+}
+void TasgridWrapper::outputIndexes(output_points_mode mode) const{
+    const int *p = (mode == output_points_mode::needed) ? grid.getNeededIndexes() : grid.getPointsIndexes();
+    int num_points = (mode == output_points_mode::needed) ? grid.getNumNeeded() : grid.getNumPoints();
+    Data2D<double> pv(num_dimensions, num_points);
+    std::transform(p, p + Utils::size_mult(num_points, num_dimensions), pv.getStrip(0), [](int i)->double{ return double(i); });
+
+    writeMatrix(outfilename, num_points, num_dimensions, pv.getStrip(0));
+    printMatrix(num_points, num_dimensions, pv.getStrip(0));
+}
+void TasgridWrapper::outputQuadrature() const{
+    if (outfilename.empty() and not printCout) return;
+    int num_points = grid.getNumPoints();
+    auto pnts  = grid.getPoints();
+    Utils::Wrapper2D<double> points(num_dimensions, pnts.data());
+    auto weights = grid.getQuadratureWeights();
+    Data2D<double> combined(num_dimensions + 1, num_points);
+    for(int i=0; i<num_points; i++){
+        combined.getStrip(i)[0] = weights[i];
+        std::copy_n(points.getStrip(i), num_dimensions, &(combined.getStrip(i)[1]));
+    }
+    writeMatrix(outfilename, num_points, num_dimensions+1, combined.getStrip(0));
+    printMatrix(num_points, num_dimensions+1, combined.getStrip(0));
+}
+void TasgridWrapper::writeGrid() const{
+    if (gridfilename.empty()) return;
+    grid.write(gridfilename.c_str(), (useASCII) ? mode_ascii : mode_binary);
+}
+Data2D<double> TasgridWrapper::verifiedRead(std::string const& filename, int expected_stride) const{
+    if (filename.empty() or expected_stride == 0) return Data2D<double>();
+    Data2D<double> x = readMatrix(filename);
+    iassert(x.getStride() == static_cast<size_t>(expected_stride),
+            (std::string("the matrix in file ") + filename + " has " + std::to_string(x.getStride()) +
+             " rows, but it should have " + std::to_string(expected_stride)).c_str());
+    return x;
+}
+
+void TasgridWrapper::processEvalLike() const{
+    int num_points = grid.getNumPoints();
+    if (not pass_flag) return;
+
+    auto x = verifiedRead(xfilename, num_dimensions);
+
+    Data2D<double> result;
+    switch(command){
+        case command_evaluate:
+            result = Data2D<double>(num_outputs, x.getNumStrips());
+            grid.evaluateBatch(x.data(), x.getNumStrips(), result.data());
+            break;
+        case command_differentiate:
+            result = Data2D<double>(num_outputs * num_dimensions, x.getNumStrips());
+            #pragma omp parallel for
+            for (int i=0; i<x.getNumStrips(); i++)
+                grid.differentiate(x.getStrip(i), result.getStrip(i));
+            break;
+        case command_getinterweights:
+            result = Data2D<double>(num_points, x.getNumStrips());
+            #pragma omp parallel for
+            for(int i=0; i<x.getNumStrips(); i++)
+                grid.getInterpolationWeights(x.getStrip(i), result.getStrip(i));
+            break;
+        case command_getdiffweights:
+            result = Data2D<double>(num_points * num_dimensions, x.getNumStrips());
+            #pragma omp parallel for
+            for(int i=0; i<x.getNumStrips(); i++)
+                grid.getDifferentiationWeights(x.getStrip(i), result.getStrip(i));
+            break;
+        case command_evalhierarchical_dense:
+            result = Data2D<double>(num_points * (grid.isFourier() ? 2 : 1), x.getNumStrips());
+            grid.evaluateHierarchicalFunctions(x.data(), x.getNumStrips(), result.data());
+            break;
+        case command_evalhierarchical_sparse:
+        { // scope is needed to declare sparse variables
+            internal_sparse_matrix matrix(num_points);
+            grid.evaluateSparseHierarchicalFunctions(x.release(), matrix.pntr, matrix.indx, matrix.vals);
+            matrix.write(outfilename, useASCII);
+            matrix.write(printCout);
+            return; // after this, there is output section but invalid for this command
+        }
+            break;
+        default:
+            throw std::runtime_error("ERROR: internal problem, processEvalLike() called with wrong command");
+            break;
+    }
+
+    writeMatrix(outfilename, result);
+    printMatrix(result);
+}
+void TasgridWrapper::processOutputLike() const{
+    // returns data and updates the above through capture
+    Data2D<double> result;
+    switch(command){
+        case command_integrate:
+            if (not pass_flag) return;
+            result = Data2D<double>(1, grid.getNumOutputs(), grid.integrate());
+            break;
+        case command_gethsupport:
+            result = Data2D<double>(grid.getNumDimensions(), grid.getNumPoints(), grid.getHierarchicalSupport());
+            break;
+        case command_getanisocoeff:
+            if (not pass_flag) return;
+            {
+                std::vector<int> ab = grid.estimateAnisotropicCoefficients(depth_type,
+                                                                           (grid.isGlobal() and ref_output == -1) ? 0 : ref_output);
+                std::vector<double> temp(ab.size());
+                std::transform(ab.begin(), ab.end(), temp.begin(), [](int i)->double{ return double(i); });
+                result = Data2D<double>(1, grid.getNumDimensions() * ((OneDimensionalMeta::getControurType(depth_type) == type_curved) ? 2 : 1), std::move(temp));
+            }
+            break;
+        default:
+            throw std::runtime_error("invalid command for processOutputLike() method");
+    }
+    writeMatrix(outfilename, result);
+    printMatrix(result);
+}
+void TasgridWrapper::outputHierarchicalCoefficients() const{
+    const double *coeff = grid.getHierarchicalCoefficients();
+    int num_points = grid.getNumPoints();
+    if (grid.isFourier()){
+        // use interwoven format for complex coefficients
+        Data2D<double> coeff_fourier(2 * num_outputs, num_points);
+        Utils::Wrapper2D<const double> real(num_outputs, coeff);
+        Utils::Wrapper2D<const double> imag(num_outputs, real.getStrip(num_points));
+        for(int p=0; p<num_points; p++){
+            double *c = coeff_fourier.getStrip(p);
+            double const *r = real.getStrip(p);
+            double const *i = imag.getStrip(p);
+
+            for(size_t j=0; j<size_t(num_outputs); j++){
+                c[2*j    ] = r[j];
+                c[2*j + 1] = i[j];
+            }
+        }
+        writeMatrix(outfilename, num_points, 2 * num_outputs, coeff_fourier.getStrip(0));
+        printMatrix(num_points, num_outputs, coeff_fourier.getStrip(0), true);
+    }else{
+        writeMatrix(outfilename, num_points, num_outputs, coeff);
+        printMatrix(num_points, num_outputs, coeff);
+    }
+}
+void TasgridWrapper::loadComputedValues(){
+    auto v = verifiedRead(valsfilename, num_outputs);
+    if (command == command_loadvalues){
+        grid.loadNeededValues(v.release());
+    }else{
+        if (not grid.isUsingConstruction())
+            grid.beginConstruction();
+        auto x = verifiedRead(xfilename, num_dimensions);
+        grid.loadConstructedPoints(x.release(), v.release());
+    }
+}
+
 void TasgridWrapper::outputPoints(bool useNeeded) const{
     int num_p, num_d = grid.getNumDimensions();
     std::vector<double> points;
@@ -435,283 +717,9 @@ void TasgridWrapper::outputPoints(bool useNeeded) const{
     writeMatrix(outfilename, num_p, num_d, points.data());
     printMatrix(num_p, num_d, points.data());
 }
-void TasgridWrapper::outputQuadrature() const{
-    if (outfilename.empty() && (printCout == false)) return;
-    int num_p = grid.getNumPoints();
-    int num_d = grid.getNumDimensions();
-    int offset = num_d + 1;
-    auto points  = grid.getPoints();
-    auto weights = grid.getQuadratureWeights();
-    Data2D<double> combined(num_d + 1, num_p);
-    auto ip = points.begin();
-    auto iw = weights.begin();
-    for(int i=0; i<num_p; i++){
-        double *c = combined.getStrip(i);
-        c[0] = *iw++;
-        std::copy_n(ip, size_t(num_d), &(c[1]));
-        std::advance(ip, num_d);
-    }
-    writeMatrix(outfilename, num_p, offset, combined.getStrip(0));
-    printMatrix(num_p, offset, combined.getStrip(0));
-}
-void TasgridWrapper::outputExoticQuadrature() const{
-    if (!outfilename.empty()){
-        std::ofstream ofs(outfilename, std::ios::out | std::ios::trunc);
-        ct.write<mode_ascii>(ofs);
-    }
-    if (printCout){
-        ct.write<mode_ascii>(cout);
-    }
-    return;
-}
-void TasgridWrapper::outputHierarchicalCoefficients() const{
-    const double *coeff = grid.getHierarchicalCoefficients();
-    int num_pnts = grid.getNumPoints();
-    int num_outs = grid.getNumOutputs();
-    if (grid.isFourier()){
-        // use interwoven format for complex coefficients
-        Data2D<double> coeff_fourier(2 * num_outs, num_pnts);
-        Utils::Wrapper2D<const double> real(num_outs, coeff);
-        Utils::Wrapper2D<const double> imag(num_outs, real.getStrip(num_pnts));
-        for(int p=0; p<num_pnts; p++){
-            double *c = coeff_fourier.getStrip(p);
-            double const *r = real.getStrip(p);
-            double const *i = imag.getStrip(p);
 
-            for(size_t j=0; j<size_t(num_outs); j++){
-                c[2*j    ] = r[j];
-                c[2*j + 1] = i[j];
-            }
-        }
-        writeMatrix(outfilename, num_pnts, 2 * num_outs, coeff_fourier.getStrip(0));
-        printMatrix(num_pnts, num_outs, coeff_fourier.getStrip(0), true);
-    }else{
-        writeMatrix(outfilename, num_pnts, num_outs, coeff);
-        printMatrix(num_pnts, num_outs, coeff);
-    }
-}
-void TasgridWrapper::outputHierachicalSupport() const{
-    std::vector<double> supp = grid.getHierarchicalSupport();
-    writeMatrix(outfilename, grid.getNumPoints(), grid.getNumDimensions(), supp.data());
-    printMatrix(grid.getNumPoints(), grid.getNumDimensions(), supp.data());
-}
-bool TasgridWrapper::setConformalTransformation(){
-    if (conformal == conformal_asin){
-        auto mat = readMatrix(conformalfilename);
-        if (mat.getNumStrips() != 1){
-            cerr << "ERROR: the conformal file for asin should contain only one row\n";
-            return false;
-        }
-        if (mat.getStride() != (size_t) grid.getNumDimensions()){
-            cerr << "ERROR: the conformal file for asin should contain " << grid.getNumDimensions() << " columns, instead it has " << mat.getStride() << "\n";
-            return false;
-        }
-        std::vector<int> coeff(mat.getTotalEntries());
-        std::transform(mat.begin(), mat.end(), coeff.begin(), [](double x)->int{ return static_cast<int>(x); });
-
-        grid.setConformalTransformASIN(coeff);
-        return true;
-    }else{
-        cerr << "ERROR: conformal type not implemented\n";
-        return false;
-    }
-}
-bool TasgridWrapper::loadValues(){
-    auto vals = readMatrix(valsfilename);
-    if (grid.getNumNeeded() == 0){
-        if (vals.getNumStrips() != grid.getNumLoaded()){
-            cerr << "ERROR: grid has " << grid.getNumLoaded() << " new values, but " << valsfilename << " specifies " << vals.getNumStrips() << "\n";
-            return false;
-        }
-    }else{
-        if (vals.getNumStrips() != grid.getNumNeeded()){
-            cerr << "ERROR: grid is awaiting " << grid.getNumNeeded() << " new values, but " << valsfilename << " specifies " << vals.getNumStrips() << "\n";
-            return false;
-        }
-    }
-    if (vals.getStride() != (size_t) grid.getNumOutputs()){
-        cerr << "ERROR: grid is set for " << grid.getNumOutputs() << " outputs, but " << valsfilename << " specifies " << vals.getStride() << "\n";
-        return false;
-    }
-    grid.loadNeededPoints(vals.data());
-    return true;
-}
-bool TasgridWrapper::getInterWeights(){
-    auto x = readMatrix(xfilename);
-    if (x.getStride() != (size_t) grid.getNumDimensions()){
-        cerr << "ERROR: grid is set for " << grid.getNumDimensions() << " dimensions, but " << xfilename << " specifies " << x.getStride() << "\n";
-        return false;
-    }
-    if (x.empty()){
-        cerr << "ERROR: no points specified in " << xfilename << "\n";
-        return false;
-    }
-    int numx = x.getNumStrips();
-    int num_p = grid.getNumPoints();
-    Data2D<double> result(grid.getNumPoints(), numx);
-
-    #pragma omp parallel for
-    for(int i=0; i<numx; i++) // in windows OpenMP loop counters must be signed ??
-        grid.getInterpolationWeights(x.getStrip(i), result.getStrip(i));
-
-    writeMatrix(outfilename, numx, (int) num_p, result.getStrip(0));
-    printMatrix(numx, (int) num_p, result.getStrip(0));
-
-    return true;
-}
-bool TasgridWrapper::getDiffWeights(){
-    auto x = readMatrix(xfilename);
-    if (x.getStride() != (size_t) grid.getNumDimensions()){
-        cerr << "ERROR: grid is set for " << grid.getNumDimensions() << " dimensions, but " << xfilename << " specifies " << x.getStride() << "\n";
-        return false;
-    }
-    if (x.empty()){
-        cerr << "ERROR: no points specified in " << xfilename << "\n";
-        return false;
-    }
-    Data2D<double> result(grid.getNumPoints() * grid.getNumDimensions(), x.getNumStrips());
-
-    #pragma omp parallel for
-    for(int i=0; i<x.getNumStrips(); i++)
-        grid.getDifferentiationWeights(x.getStrip(i), result.getStrip(i));
-
-    writeMatrix(outfilename, result);
-    printMatrix(result);
-
-    return true;
-}
-bool TasgridWrapper::getEvaluate(){
-    if (grid.getNumLoaded() == 0){
-        cerr << "ERROR: no values loaded in the grid, cannot evaluate!\n";
-        return false;
-    }
-    if (grid.getNumOutputs() == 0){
-        cerr << "ERROR: no outputs set for the grid, nothing to evaluate!\n";
-        return false;
-    }
-    auto x = readMatrix(xfilename);
-    if (x.getStride() != (size_t) grid.getNumDimensions()){
-        cerr << "ERROR: grid is set for " << grid.getNumDimensions() << " dimensions, but " << xfilename << " specifies " << x.getStride() << "\n";
-        return false;
-    }
-    if (x.empty()){
-        cerr << "ERROR: no points specified in " << xfilename << "\n";
-        return false;
-    }
-    int num_out = grid.getNumOutputs();
-
-    if (set_gpuid > -1){
-        if (set_gpuid < grid.getNumGPUs()){
-            grid.enableAcceleration(accel_gpu_cuda);
-            grid.setGPUID(set_gpuid);
-        }else{
-            cerr << "WARNING: invalud GPU specified " << set_gpuid << "\n";
-        }
-    }
-
-    int num_points = x.getNumStrips();
-    std::vector<double> result;
-    grid.evaluateBatch(x.release(), result);
-
-    writeMatrix(outfilename, num_points, (int) num_out, result.data());
-    printMatrix(num_points, (int) num_out, result.data());
-
-    return true;
-}
-bool TasgridWrapper::getIntegrate(){
-    if (grid.getNumLoaded() == 0){
-        cerr << "ERROR: no values loaded in the grid, cannot evaluate!\n";
-        return false;
-    }
-    if (grid.getNumOutputs() == 0){
-        cerr << "ERROR: no outputs set for the grid, nothing to evaluate!\n";
-        return false;
-    }
-    int num_out = grid.getNumOutputs();
-    std::vector<double> q;
-    grid.integrate(q);
-
-    writeMatrix(outfilename, 1, num_out, q.data());
-    printMatrix(1, num_out, q.data());
-
-    return true;
-}
-bool TasgridWrapper::getDifferentiate(){
-    if (grid.getNumLoaded() == 0){
-        cerr << "ERROR: no values loaded in the grid, cannot evaluate!\n";
-        return false;
-    }
-    if (grid.getNumOutputs() == 0){
-        cerr << "ERROR: no outputs set for the grid, nothing to evaluate!\n";
-        return false;
-    }
-    auto x = readMatrix(xfilename);
-    if (x.getStride() != (size_t) grid.getNumDimensions()){
-        cerr << "ERROR: grid is set for " << grid.getNumDimensions() << " dimensions, but " << xfilename << " specifies " << x.getStride() << "\n";
-        return false;
-    }
-    if (x.empty()){
-        cerr << "ERROR: no points specified in " << xfilename << "\n";
-        return false;
-    }
-    Data2D<double> result(grid.getNumDimensions() * grid.getNumOutputs(), x.getNumStrips());
-    #pragma omp parallel for
-    for (int i=0; i<x.getNumStrips(); i++)
-        grid.differentiate(x.getStrip(i), result.getStrip(i));
-
-    writeMatrix(outfilename, result);
-    printMatrix(result);
-
-    return true;
-}
-bool TasgridWrapper::getAnisoCoeff(){
-    if (grid.getNumOutputs() == 0){
-        cerr << "ERROR: cannot estimate coefficients with no outputs!\n";
-        return false;
-    }
-    if (grid.getNumLoaded() == 0){
-        cerr << "ERROR: cannot estimate coefficients for a grid with no loaded values!\n";
-        return false;
-    }
-    std::vector<int> ab;
-    if (grid.isSequence()){
-        ab = grid.estimateAnisotropicCoefficients(depth_type, ref_output);
-    }else{
-        if (ref_output >= grid.getNumOutputs()){
-            cerr << "ERROR: -ref_output " << ref_output << " is specified, however, the grid has only " << grid.getNumOutputs() << " outputs!\n";
-            cerr << " HINT: the outputs are indexed starting at zero!\n";
-            return false;
-        }
-        if ((ref_output == -1) && (grid.getNumOutputs() > 1)){
-            cerr << "ERROR: must specify a refinement output with -ref_output option!\n";
-            return false;
-        }else if (ref_output == -1) ref_output = 0;
-        ab = grid.estimateAnisotropicCoefficients(depth_type, ref_output);
-    }
-    size_t num_coeff = (size_t) grid.getNumDimensions();
-    if (OneDimensionalMeta::getControurType(depth_type) == type_curved)
-        num_coeff *= 2;
-
-    std::vector<double> coeff(num_coeff);
-    std::transform(ab.begin(), ab.end(), coeff.begin(), [](int i)->double{ return double(i); });
-
-    writeMatrix(outfilename, (int) num_coeff, 1, coeff.data());
-    printMatrix((int) num_coeff, 1, coeff.data());
-
-    return true;
-}
-
-bool TasgridWrapper::refineGrid(){
-    // put the sanity check code here, since many of the parameters of the refinement depend on the type of grid being used
-    if (grid.getNumOutputs() == 0){
-        cerr << "ERROR: cannot refine a grid with no outputs!\n";
-        return false;
-    }
-    if (grid.getNumLoaded() == 0){
-        cerr << "ERROR: cannot refine a grid with no loaded values!\n";
-        return false;
-    }
-    auto llimits = readLevelLimits(grid.getNumDimensions());
+void TasgridWrapper::refineGrid(){
+    auto llimits = readLimits();
     TypeCommand effective_command = command;
     if (command == command_refine){
         if (grid.isGlobal() || grid.isSequence()){
@@ -721,347 +729,82 @@ bool TasgridWrapper::refineGrid(){
         }
     }
     if (effective_command == command_refine_aniso){
-        if ((!grid.isGlobal()) && (!grid.isSequence()) && (!grid.isFourier())){
-            cerr << "ERROR: anisotropic refinement can be used only for global/sequence/Fourier grids!\n";
-            return false;
-        }
-        if (set_tolerance){
-            cerr << "WARNING: anisotropic refinement ignores the -tolerance option!\n";
-        }
-        if (depth_type == type_none){
-            cerr << "ERROR: anisotropic refinement requires -type!\n";
-            return false;
-        }
-        if (set_tref){
-            cerr << "WARNING: anisotropic refinement ignores the -reftype option!\n";
-        }
         if (min_growth < 1) min_growth = 1;
-        if (grid.isSequence()){
-            grid.setAnisotropicRefinement(depth_type, min_growth, ref_output, llimits);
-        }else{
-            if (ref_output >= grid.getNumOutputs()){
-                cerr << "ERROR: -ref_output " << ref_output << " is specified, however, the grid has only " << grid.getNumOutputs() << " outputs!\n";
-                cerr << " HINT: the outputs are indexed starting at zero!\n";
-                return false;
-            }
-            if ((ref_output == -1) && (grid.getNumOutputs() > 1)){
-                cerr << "ERROR: must specify a refinement output with -ref_output option!\n";
-                return false;
-            }else if (ref_output == -1) ref_output = 0;
-            grid.setAnisotropicRefinement(depth_type, min_growth, ref_output, llimits);
-        }
+        if (grid.isGlobal() and ref_output == -1) ref_output = 0;
+        grid.setAnisotropicRefinement(depth_type, min_growth, ref_output, llimits);
     }else{ // using surplus refinement
-        if (!set_tolerance){
-            cerr << "ERROR: must specify -tolerance for surplus refinement!\n";
-            return false;
+        Data2D<double> scale;
+        if (not valsfilename.empty() and (grid.isLocalPolynomial() or grid.isWavelet())){
+            scale = readMatrix(valsfilename);
+            iassert(scale.getNumStrips() == grid.getNumPoints(), "the number of weights must match the number of points");
+            if (ref_output == -1)
+                iassert(scale.getStride() == 1, "the number of weights must match the number of outputs");
+            if (ref_output > -1)
+                iassert(scale.getStride() == (size_t) grid.getNumOutputs(), "there must be one weight per output");
         }
-        if ((grid.isLocalPolynomial()) || (grid.isWavelet())){
-            if (!set_tref){
-                cerr << "ERROR: must specify -reftype option!\n";
-                return false;
-            }
-            Data2D<double> scale;
-            if (!valsfilename.empty()){
-                scale = readMatrix(valsfilename);
-                if (scale.getNumStrips() != grid.getNumPoints()){
-                    cerr << "ERROR: the number of weights must match the number of points.\n";
-                    return false;
-                }
-                if ((ref_output == -1) && (scale.getStride() != (size_t) grid.getNumOutputs())){
-                    cerr << "ERROR: the number of weights must match the number of outputs.\n";
-                    return false;
-                }
-                if ((ref_output > -1) && (scale.getStride() != 1)){
-                    cerr << "ERROR: there must be one weight per output.\n";
-                    return false;
-                }
-            }
-            grid.setSurplusRefinement(tolerance, tref, ref_output, llimits, scale.release());
-        }else if (grid.isSequence()){
+        if (not pass_flag) return;
+        if (grid.isGlobal() and ref_output == -1) ref_output = 0;
+        if (grid.isGlobal() and grid.isSequence()){
             grid.setSurplusRefinement(tolerance, ref_output, llimits);
         }else{
-            if (ref_output >= grid.getNumOutputs()){
-                cerr << "ERROR: -ref_output " << ref_output << " is specified, however, the grid has only " << grid.getNumOutputs() << " outputs!\n";
-                cerr << " HINT: the outputs are indexed starting at zero!\n";
-                return false;
-            }
-            if ((ref_output == -1) && (grid.getNumOutputs() > 1)){
-                cerr << "ERROR: must specify a refinement output with -ref_output option!\n";
-                return false;
-            }else if (ref_output == -1) ref_output = 0;
-            grid.setSurplusRefinement(tolerance, ref_output, llimits);
+            grid.setSurplusRefinement(tolerance, tref, ref_output, llimits, scale.release());
         }
     }
-    writeGrid();
-    return true;
 }
-bool TasgridWrapper::cancelRefine(){
-    grid.clearRefinement();
-    if (grid.isUsingConstruction()){
-        grid.finishConstruction();
-    }
-    return true;
-}
-bool TasgridWrapper::mergeRefine(){
-    grid.mergeRefinement();
-    return true;
-}
-bool TasgridWrapper::dynIsUsingConstruct(){
-    cout << "dynamic construction: " << ((grid.isUsingConstruction()) ? "enabled" : "disabled") << "\n";
-    return true;
-}
-bool TasgridWrapper::getConstructedPoints(){
-    // put the sanity check code here, since many of the parameters of the refinement depend on the type of grid being used
-    if (grid.getNumOutputs() == 0){
-        cerr << "ERROR: cannot refine a grid with no outputs!\n";
-        return false;
-    }
+void TasgridWrapper::getConstructedPoints(){
     if (!grid.isUsingConstruction())
         grid.beginConstruction();
 
-    auto llimits = readLevelLimits(grid.getNumDimensions());
-
-    int num_d = grid.getNumDimensions();
+    auto llimits = readLimits();
 
     std::vector<double> points;
     if (grid.isLocalPolynomial() || grid.isWavelet()){
-        if (!set_tolerance){
-            cerr << "ERROR: must specify -tolerance for surplus refinement!\n";
-            return false;
-        }
-        if (!set_tref){
-            cerr << "ERROR: must specify -reftype option!\n";
-            return false;
-        }
         Data2D<double> scale;
         if (!valsfilename.empty()){
             scale = readMatrix(valsfilename);
-            if (scale.getNumStrips() != grid.getNumPoints()){
-                cerr << "ERROR: the number of weights must match the number of points.\n";
-                return false;
-            }
-            if ((ref_output == -1) && (scale.getStride() != (size_t) grid.getNumOutputs())){
-                cerr << "ERROR: the number of weights must match the number of outputs.\n";
-                return false;
-            }
-            if ((ref_output > -1) && (scale.getStride() != 1)){
-                cerr << "ERROR: there must be one weight per output.\n";
-                return false;
-            }
+            iassert(scale.getNumStrips() == grid.getNumPoints(), "the number of weights must match the number of points");
+            if (ref_output == -1)
+                iassert(scale.getStride() == (size_t) grid.getNumOutputs(), "the number of weights must match the number of outputs");
+            else
+                iassert(scale.getStride() == 1, "there must be one weight per output");
+            if (not pass_flag) return;
         }
         points = grid.getCandidateConstructionPoints(tolerance, tref, ref_output, llimits, scale.release());
     }else{
         if (not anisofilename.empty()){
-            auto weights = readAnisotropicFile((OneDimensionalMeta::getControurType(depth_type) == type_curved) ? 2*num_dimensions : num_dimensions);
+            auto weights = readAnisotropic();
             points = grid.getCandidateConstructionPoints(depth_type, weights, llimits);
         }else{
             points = grid.getCandidateConstructionPoints(depth_type, ref_output, llimits);
         }
     }
-    writeMatrix(outfilename, points.size() / num_d, num_d, points.data());
-    printMatrix(points.size() / num_d, num_d, points.data());
-    return true;
-}
-bool TasgridWrapper::loadConstructedPoints(){
-    if (grid.getNumOutputs() == 0){
-        cerr << "ERROR: cannot refine a grid with no outputs!\n";
-        return false;
-    }
-    if (!grid.isUsingConstruction())
-        grid.beginConstruction();
-    auto x = readMatrix(xfilename);
-    auto y = readMatrix(valsfilename);
-    if (grid.getNumDimensions() != static_cast<int>(x.getStride())){
-        cerr << "ERROR: the number of dimensions of the " << xfilename << " does not match the dimensions of the grid\n";
-        return false;
-    }
-    if (grid.getNumOutputs() != static_cast<int>(y.getStride())){
-        cerr << "ERROR: the number of outputs of the " << valsfilename << " does not match the outputs of the grid\n";
-        return false;
-    }
-    if (x.getNumStrips() != y.getNumStrips()){
-        cerr << "ERROR: the number of points and values must match, instead reading " << x.getNumStrips() << " and " << y.getNumStrips() << "\n";
-        return false;
-    }
-    if (x.getNumStrips() == 0){
-        cerr << "ERROR: no points provided for loading\n";
-        return false;
-    }
-    grid.loadConstructedPoints(x.data(), x.getNumStrips(), y.data());
-    return true;
+    writeMatrix(outfilename, points.size() / num_dimensions, num_dimensions, points.data());
+    printMatrix(points.size() / num_dimensions, num_dimensions, points.data());
 }
 
-bool TasgridWrapper::getPoly(){
-    if ((grid.isGlobal()) || (grid.isSequence())){
-        int num_d = grid.getNumDimensions();
-        bool integrate = ((depth_type == type_iptotal) || (depth_type == type_ipcurved) || (depth_type == type_iptensor) || (depth_type == type_iphyperbolic));
-        std::vector<int> poly = grid.getGlobalPolynomialSpace(integrate);
-        std::vector<double> double_poly(poly.size());
-        std::transform(poly.begin(), poly.end(), double_poly.begin(), [](int x)->double{ return static_cast<double>(x); });
-        writeMatrix(outfilename, (int) double_poly.size() / num_d, num_d, double_poly.data());
-        printMatrix((int) double_poly.size() / num_d, num_d, double_poly.data());
-    }else{
-        cerr << "ERROR: cannot call -getpoly for a grid that is neither Global nor Sequence\n";
-        return false;
-    }
-    return true;
+void TasgridWrapper::getPoly(){
+    bool integrate = ((depth_type == type_iptotal) || (depth_type == type_ipcurved) || (depth_type == type_iptensor) || (depth_type == type_iphyperbolic));
+    std::vector<int> poly = grid.getGlobalPolynomialSpace(integrate);
+    std::vector<double> double_poly(poly.size());
+    std::transform(poly.begin(), poly.end(), double_poly.begin(), [](int x)->double{ return static_cast<double>(x); });
+    writeMatrix(outfilename, (int) double_poly.size() / num_dimensions, num_dimensions, double_poly.data());
+    printMatrix((int) double_poly.size() / num_dimensions, num_dimensions, double_poly.data());
 }
-bool TasgridWrapper::getSummary(){
-    grid.printStats();
-    return true;
-}
-
-bool TasgridWrapper::getEvalHierarchyDense(){
-    auto x = readMatrix(xfilename);
-    if (x.getStride() != (size_t) grid.getNumDimensions()){
-        cerr << "ERROR: grid is set for " << grid.getNumDimensions() << " dimensions, but " << xfilename << " specifies " << x.getStride() << "\n";
-        return false;
-    }
-    if (x.empty()){
-        cerr << "ERROR: no points specified in " << xfilename << "\n";
-        return false;
-    }
-    int num_p = grid.getNumPoints();
-    int num_x = x.getNumStrips();
-    auto result = grid.evaluateHierarchicalFunctions(x.release());
-
-    writeMatrix(outfilename, num_x, ((grid.isFourier()) ? 2 * num_p : num_p), result.data());
-    printMatrix(num_x, (int) num_p, result.data(), grid.isFourier());
-
-    return true;
-}
-template<bool iomode>
-void writeSparseMatrix(int cols, std::vector<int> const &pntr, std::vector<int> const &indx, std::vector<double> const &vals, std::ostream &os){
-    int nnz = static_cast<int>(indx.size());
-    int rows = static_cast<int>(pntr.size() - 1);
-    IO::writeNumbers<iomode, IO::pad_line>(os, rows, cols, nnz);
-    IO::writeVector<iomode, IO::pad_line>(pntr, os);
-    IO::writeVector<iomode, IO::pad_line>(indx, os);
-    IO::writeVector<iomode, IO::pad_line>(vals, os);
-}
-bool TasgridWrapper::getEvalHierarchySparse(){
-    auto x = readMatrix(xfilename);
-    if (x.getStride() != (size_t) grid.getNumDimensions()){
-        cerr << "ERROR: grid is set for " << grid.getNumDimensions() << " dimensions, but " << xfilename << " specifies " << x.getStride() << "\n";
-        return false;
-    }
-    if (x.empty()){
-        cerr << "ERROR: no points specified in " << xfilename << "\n";
-        return false;
-    }
-    std::vector<int> pntr , indx;
-    std::vector<double> vals;
-    grid.evaluateSparseHierarchicalFunctions(x.release(), pntr, indx, vals);
-    int num_p = grid.getNumPoints();
-    if (!outfilename.empty()){
-        if (useASCII){
-            std::ofstream ofs(outfilename);
-            ofs << std::scientific; ofs.precision(17);
-            writeSparseMatrix<mode_ascii>(num_p, pntr, indx, vals, ofs);
-            ofs.close();
-        }else{
-            std::ofstream ofs(outfilename, std::ios::out | std::ios::binary);
-            char charTSG[3] = {'T', 'S', 'G'};
-            ofs.write(charTSG, 3 * sizeof(char));
-            writeSparseMatrix<mode_binary>(num_p, pntr, indx, vals, ofs);
-            ofs.close();
-        }
-    }
-    if (printCout){
-        cout << std::scientific; cout.precision(17);
-        writeSparseMatrix<mode_ascii>(num_p, pntr, indx, vals, cout);
-    }
-    return true;
-}
-bool TasgridWrapper::setHierarchy(){
+void TasgridWrapper::setHierarchy(){
     auto vals = readMatrix(valsfilename);
-    if (vals.getNumStrips() != grid.getNumPoints()){
-        cerr << "ERROR: grid is awaiting " << grid.getNumPoints() << " hierarchical surpluses, but " << valsfilename
-             << " specifies " << vals.getNumStrips() << "\n";
-        return false;
-    }
-    if (!(grid.isFourier()) && (vals.getStride() != (size_t) grid.getNumOutputs())){
-        cerr << "ERROR: grid is set for " << grid.getNumOutputs() << " outputs, but " << valsfilename << " specifies " << vals.getStride() << "\n";
-        return false;
-    }else if (grid.isFourier() && (vals.getStride() != (size_t) (2 * grid.getNumOutputs()))){
-        cerr << "ERROR: fourier grid is set for " << grid.getNumOutputs() << " outputs, but " << valsfilename << " specifies " << (vals.getStride() / 2) << "\n";
-        return false;
-    }
+    iassert(vals.getNumStrips() == grid.getNumPoints(),
+            (std::string("grid is awaiting ") + std::to_string(grid.getNumPoints()) + " hierarchical surpluses, but "
+             + valsfilename + " specifies " + std::to_string(vals.getNumStrips())).c_str());
+    if (grid.isFourier())
+        iassert((vals.getStride() == (size_t) (2 * grid.getNumOutputs())),
+                (std::string("fourier grid is set for ") + std::to_string(grid.getNumOutputs()) + " outputs, but "
+                 + valsfilename + " specifies " + std::to_string(vals.getStride())).c_str());
+    else
+        iassert((vals.getStride() == (size_t) grid.getNumOutputs()),
+                (std::string("grid is set for ") + std::to_string(grid.getNumOutputs()) + " outputs, but "
+                 + valsfilename + " specifies " + std::to_string(vals.getStride())).c_str());
+    if (not pass_flag) return;
     grid.setHierarchicalCoefficients(vals.release());
-    return true;
-}
-
-bool TasgridWrapper::getPointsIndexes(){
-    const int *p = grid.getPointsIndexes();
-    int num_p = grid.getNumPoints();
-    int num_d = grid.getNumDimensions();
-    Data2D<double> pv(num_d, num_p);
-    std::transform(p, p + Utils::size_mult(num_p, num_d), pv.getStrip(0), [](int i)->double{ return double(i); });
-
-    writeMatrix(outfilename, num_p, num_d, pv.getStrip(0));
-    printMatrix(num_p, num_d, pv.getStrip(0));
-
-    return true;
-}
-bool TasgridWrapper::getNeededIndexes(){
-    const int *p = grid.getNeededIndexes();
-    int num_p = grid.getNumNeeded();
-    int num_d = grid.getNumDimensions();
-    Data2D<double> pv(num_d, num_p);
-    std::transform(p, p + Utils::size_mult(num_p, num_d), pv.getStrip(0), [](int i)->double{ return double(i); });
-
-    writeMatrix(outfilename, num_p, num_d, pv.getStrip(0));
-    printMatrix(num_p, num_d, pv.getStrip(0));
-
-    return true;
-}
-
-std::vector<int> TasgridWrapper::readAnisotropicFile(int num_weights) const{
-    if (anisofilename.empty()) return std::vector<int>();
-    auto mat = readMatrix(anisofilename);
-    if (mat.getNumStrips() != 1)
-        throw std::runtime_error("ERROR: anisotropy file must contain only one row");
-    if (mat.getStride() != ((size_t) num_weights)){
-        cerr << "ERROR: anisotropy file has wrong number of entries, " << num_weights << " expected " << mat.getStride() << " found.\n";
-        throw std::runtime_error("ERROR: anisotropy file has wrong number of entries");
-    }
-
-    std::vector<int> weights(mat.getTotalEntries());
-    std::transform(mat.begin(), mat.end(), weights.begin(), [](double x)->int{ return static_cast<int>(x); });
-    return weights;
-}
-std::pair<std::vector<double>, std::vector<double>> TasgridWrapper::readTransform() const{
-    auto mat = readMatrix(transformfilename);
-    if (mat.getStride() != 2){
-        cerr << "ERROR: file " << transformfilename << " must have exactly two columns.\n";
-        throw std::runtime_error("ERROR: incorrect format for the transform file");
-    }
-    if (mat.getNumStrips() != num_dimensions){
-        cerr << "ERROR: file " << transformfilename << " has " << mat.getNumStrips() << " rows, instead of the number of dimensions " << num_dimensions << "\n";
-        throw std::runtime_error("ERROR: incorrect format for the transform file");
-    }
-    std::vector<double> transa((size_t) num_dimensions);
-    std::vector<double> transb((size_t) num_dimensions);
-    for(int i=0; i<num_dimensions; i++){
-        transa[i] = mat.getStrip(i)[0];
-        transb[i] = mat.getStrip(i)[1];
-    }
-    return std::make_pair(transa, transb);
-}
-std::vector<int> TasgridWrapper::readLevelLimits(int num_weights) const{
-    if (levellimitfilename.empty()) return std::vector<int>();
-    auto mat = readMatrix(levellimitfilename);
-    if (mat.getNumStrips() != 1)
-        throw std::runtime_error("ERROR: level limits file must contain only one row");
-
-    if (mat.getStride() != ((size_t)  num_weights)){
-        cerr << "ERROR: level limits file has wrong number of entries, " << num_weights << " expected " << mat.getStride() << " found.\n";
-        throw std::runtime_error("ERROR: level limits file has incorrect format.");
-    }
-
-    std::vector<int> llimits(mat.getTotalEntries());
-    std::transform(mat.begin(), mat.end(), llimits.begin(), [](double x)->int{ return static_cast<int>(x); });
-    return llimits;
 }
 
 template<typename iomode>
@@ -1071,16 +814,13 @@ Data2D<double> readMatrixFromOpen(std::istream &is){
     return Data2D<double>(cols, rows, IO::readVector<iomode, double>(is, Utils::size_mult(cols, rows)));
 }
 
-Data2D<double> TasgridWrapper::readMatrix(std::string const &filename){
+Data2D<double> TasgridWrapper::readMatrix(std::string const &filename) const{
     Data2D<double> matrix;
     if (filename.empty()) return matrix;
     std::ifstream ifs;
     ifs.open(filename, std::ios::in | std::ios::binary);
-    if (!(ifs.good())){
-        cerr << "ERROR: could not open file " << filename << "\n";
-        ifs.close();
-        return matrix;
-    }
+    iassert(ifs.good(), (std::string("could not open file ") + filename).c_str());
+    if (not pass_flag) return matrix;
     char tsg[3] = {'A', 'A', 'A'};
     ifs.read(tsg, 3*sizeof(char));
     if ((tsg[0] == 'T') && (tsg[1] == 'S') && (tsg[2] == 'G')){
@@ -1090,9 +830,7 @@ Data2D<double> TasgridWrapper::readMatrix(std::string const &filename){
         ifs.open(filename);
         matrix = readMatrixFromOpen<IO::mode_ascii_type>(ifs);
     }
-    if (matrix.empty())
-        cerr << "WARNING: empty file " << filename << "\n";
-    ifs.close();
+    if (matrix.empty()) cerr << "WARNING: empty file " << filename << "\n";
     return matrix;
 }
 void TasgridWrapper::writeMatrix(std::string const &filename, int rows, int cols, const double mat[]) const{
@@ -1144,158 +882,6 @@ void TasgridWrapper::printMatrix(int rows, int cols, const double mat[], bool is
         cout << '\n';
     }
     cout << "\n";
-}
-
-bool TasgridWrapper::executeCommand(){
-    if (!checkSane()) return false;
-    if (command == command_makeglobal){
-        createGlobalGird();
-    }else if (command == command_makesequence){
-        createSequenceOrFourierGird();
-    }else if (command == command_makelocalp){
-        createLocalPolynomialGird();
-    }else if (command == command_makewavelet){
-        createWaveletGird();
-    }else if (command == command_makefourier){
-        createSequenceOrFourierGird();
-    }else if (command == command_makequadrature){
-        createQuadrature();
-        outputQuadrature();
-    }else if (command == command_makeexoquad){
-        createExoticQuadrature();
-        outputExoticQuadrature();
-    }
-    if (isCreateCommand(command)){
-        if (command != command_makequadrature && command != command_makeexoquad){
-            outputPoints(false);
-            if (!gridfilename.empty()) writeGrid();
-        }
-    }else{
-        if (!readGrid()){
-            cerr << "ERROR: could not read the grid in file: " << gridfilename << ", please specify -gridfile\n";
-            return false;
-        }
-    }
-
-    if (command == command_update){
-        if (!updateGrid()){
-            cerr << "ERROR: could not update the grid\n";
-            return false;
-        }
-    }else if (command == command_setconformal){
-        if (setConformalTransformation()){
-            writeGrid();
-        }else{
-            cerr << "ERROR: could not set the conformal grid\n";
-            return false;
-        }
-    }else if (command == command_getcoefficients){
-        outputHierarchicalCoefficients();
-    }else if (command == command_getquadrature){
-        outputQuadrature();
-    }else if (command == command_getpoints){
-        outputPoints(false);
-    }else if (command == command_getneeded){
-        outputPoints(true);
-    }else if (command == command_gethsupport){
-        outputHierachicalSupport();
-    }else if (command == command_loadvalues){
-        if (loadValues()){
-            writeGrid();
-        }else{
-            cerr << "ERROR: values could not be loaded!\n";
-        }
-    }else if (command == command_getinterweights){
-        if (!getInterWeights()){
-            cerr << "ERROR: could not generate interpolation weights\n";
-            return false;
-        }
-    }else if (command == command_getdiffweights){
-        if (!getDiffWeights()){
-            cerr << "ERROR: could not generate differentiation weights\n";
-            return false;
-        }
-    }else if (command == command_evaluate){
-        if (!getEvaluate()){
-            cerr << "ERROR: could not evaluate the grid\n";
-            return false;
-        }
-    }else if (command == command_integrate){
-        if (!getIntegrate()){
-            cerr << "ERROR: could not integrate the grid\n";
-            return false;
-        }
-    }else if (command == command_differentiate){
-        if (!getDifferentiate()){
-            cerr << "ERROR: could not differentiate the grid\n";
-            return false;
-        }
-    }else if (command == command_getanisocoeff){
-        getAnisoCoeff();
-    }else if ((command == command_refine)||(command == command_refine_aniso)||(command == command_refine_surp)){
-        refineGrid();
-        outputPoints(true);
-    }else if (command == command_get_candidate_construction){
-        if (getConstructedPoints()){
-            writeGrid();
-        }else{
-            cerr << "ERROR: values could not get construction points!\n";
-        }
-    }else if (command == command_load_construction){
-        if (loadConstructedPoints()){
-            writeGrid();
-        }else{
-            cerr << "ERROR: values could not get loaded!\n";
-        }
-    }else if (command == command_refine_clear){
-        if (cancelRefine()){
-            writeGrid();
-        }else{
-            cerr << "ERROR: could not clear the refinement\n";
-        }
-    }else if (command == command_refine_merge){
-        if (mergeRefine()){
-            writeGrid();
-        }else{
-            cerr << "ERROR: could not merge the refinement\n";
-        }
-    }else if (command == command_using_construct){
-        dynIsUsingConstruct();
-    }else if (command == command_getpoly){
-        if (!getPoly()){
-            cerr << "ERROR: could not get polynomial basis\n";
-            return false;
-        }
-    }else if (command == command_summary){
-        getSummary();
-    }else if (command == command_evalhierarchical_dense){
-        if (!getEvalHierarchyDense()){
-            cerr << "ERROR: could not evaluate the (dense) hierarchical basis functions\n";
-            return false;
-        }
-    }else if (command == command_evalhierarchical_sparse){
-        if (!getEvalHierarchySparse()){
-            cerr << "ERROR: could not evaluate the (sparse) hierarchical basis functions\n";
-            return false;
-        }
-    }else if (command == command_setcoefficients){
-        if (setHierarchy()){
-            writeGrid();
-        }else{
-            cerr << "ERROR: could not set the hierarchical coefficients\n";
-            return false;
-        }
-    }else if (command == command_getpointsindex){
-        if (!getPointsIndexes()){
-            cerr << "ERROR: could not get the indexes\n";
-        }
-    }else if (command == command_getneededindex){
-        if (!getNeededIndexes()){
-            cerr << "ERROR: could not get the indexes\n";
-        }
-    }
-
-    return true;
 }
 
 #endif

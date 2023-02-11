@@ -286,19 +286,7 @@ void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const int 
                      Utils::copyArray(level_limits, getNumDimensions()));
 }
 void TasmanianSparseGrid::updateGlobalGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
-    if (isGlobal()){
-        int dims = base->getNumDimensions();
-        if (depth < 0) throw std::invalid_argument("ERROR: updateGlobalGrid() requires non-negative depth");
-        size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dims : dims;
-        if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: updateGlobalGrid() requires anisotropic_weights with either 0 or dimensions entries");
-        if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: updateGlobalGrid() requires level_limits with either 0 or dimensions entries");
-
-        if (!level_limits.empty()) llimits = level_limits; // if level_limits is empty, use the existing llimits (if any)
-
-        get<GridGlobal>()->updateGrid(depth, type, anisotropic_weights, llimits);
-    }else{
-        throw std::runtime_error("ERROR: updateGlobalGrid() called, but the grid is not global");
-    }
+    updateGrid(depth, type, anisotropic_weights, level_limits);
 }
 
 void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
@@ -307,36 +295,39 @@ void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const in
                        Utils::copyArray(level_limits, getNumDimensions()));
 }
 void TasmanianSparseGrid::updateSequenceGrid(int depth, TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
-    if (isSequence()){
-        int dims = base->getNumDimensions();
-        if (depth < 0) throw std::invalid_argument("ERROR: updateSequenceGrid() requires non-negative depth");
-        size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dims : dims;
-        if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: updateSequenceGrid() requires anisotropic_weights with either 0 or dimenions entries");
-        if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: updateSequenceGrid() requires level_limits with either 0 or dimensions entries");
-
-        if (!level_limits.empty()) llimits = level_limits; // if level_limits is empty, use the existing llimits (if any)
-        get<GridSequence>()->updateGrid(depth, type, anisotropic_weights, llimits);
-    }else{
-        throw std::runtime_error("ERROR: updateSequenceGrid called, but the grid is not sequence");
-    }
+    updateGrid(depth, type, anisotropic_weights, level_limits);
 }
 
 void TasmanianSparseGrid::updateFourierGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
-    if (empty()) throw std::runtime_error("ERROR: updateFourierGrid() called, but the grid is empty");
-    updateFourierGrid(depth, type, Utils::copyArray(anisotropic_weights, (OneDimensionalMeta::isTypeCurved(type)) ? 2*getNumDimensions() : getNumDimensions()),
-                       Utils::copyArray(level_limits, getNumDimensions()));
+    updateGrid(depth, type, anisotropic_weights, level_limits);
 }
 void TasmanianSparseGrid::updateFourierGrid(int depth, TypeDepth type, std::vector<int> const &anisotropic_weights,
                                             std::vector<int> const &level_limits){
-    if (!isFourier()) throw std::runtime_error("ERROR: updateFourierGrid() called, but the grid is not Fourier");
+    updateGrid(depth, type, anisotropic_weights, level_limits);
+}
+void TasmanianSparseGrid::updateGrid(int depth, TypeDepth type, const int *anisotropic_weights, const int *level_limits){
+    if (empty()) throw std::runtime_error("ERROR: updateGrid() called, but the grid is empty");
+    updateGrid(depth, type,
+               Utils::copyArray(anisotropic_weights, (OneDimensionalMeta::isTypeCurved(type)) ? 2*getNumDimensions() : getNumDimensions()),
+               Utils::copyArray(level_limits, getNumDimensions()));
+}
+void TasmanianSparseGrid::updateGrid(int depth, TypeDepth type, std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits){
+    if (empty()) throw std::runtime_error("ERROR: updateGrid() called, but the grid is empty");
     int dims = base->getNumDimensions();
-    if (depth < 0) throw std::invalid_argument("ERROR: updateSequenceGrid() requires non-negative depth");
+    if (depth < 0) throw std::invalid_argument("ERROR: cannot update with a negative depth");
     size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dims : dims;
-    if ((!anisotropic_weights.empty()) && (anisotropic_weights.size() != expected_aw_size)) throw std::invalid_argument("ERROR: updateSequenceGrid() requires anisotropic_weights with either 0 or dimenions entries");
-    if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: updateSequenceGrid() requires level_limits with either 0 or dimensions entries");
-
-    if (!level_limits.empty()) llimits = level_limits; // if level_limits is empty, use the existing llimits (if any)
-    get<GridFourier>()->updateGrid(depth, type, anisotropic_weights, llimits);
+    if (not anisotropic_weights.empty() and anisotropic_weights.size() != expected_aw_size) throw std::invalid_argument("ERROR: in updateGrid() anisotropic_weights must be either empty or has size equal to dimenions or twice dimenions based on the type of the update.");
+    if (not level_limits.empty() and level_limits.size() != (size_t) dims) throw std::invalid_argument("ERROR: in updateGrid() level_limits must be either empty or must have size equal to the number of dimensions");
+    if (not level_limits.empty()) llimits = level_limits; // if level_limits is empty, use the existing llimits (if any)
+    if (isGlobal()){
+        get<GridGlobal>()->updateGrid(depth, type, anisotropic_weights, llimits);
+    }else if (isSequence()){
+        get<GridSequence>()->updateGrid(depth, type, anisotropic_weights, llimits);
+    }else if (isFourier()){
+        get<GridFourier>()->updateGrid(depth, type, anisotropic_weights, llimits);
+    }else{
+        throw std::runtime_error("ERROR: an update operation can be performed only on Global, Sequence and Fourier grids.");
+    }
 }
 
 TypeOneDRule TasmanianSparseGrid::getRule() const{ return (base) ? base->getRule() : rule_none; }

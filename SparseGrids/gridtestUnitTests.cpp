@@ -575,16 +575,8 @@ std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() co
             grid.updateGlobalGrid(2, type_level);  // grid not initialized
         },
         [](void)->void{
-            auto grid = makeSequenceGrid(2, 1, 3, type_level, rule_rleja);
-            grid.updateGlobalGrid(2, type_level);  // grid not global
-        },
-        [](void)->void{
             TasmanianSparseGrid grid;
             grid.updateSequenceGrid(2, type_level);  // grid not initialized
-        },
-        [](void)->void{
-            auto grid = makeGlobalGrid(2, 1, 3, type_level, rule_rleja);
-            grid.updateSequenceGrid(2, type_level);  // grid not sequence
         },
         [](void)->void{
             std::vector<double> v;
