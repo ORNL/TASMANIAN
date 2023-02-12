@@ -34,7 +34,6 @@
 #ifndef __TASMANIAN_OPTIMIZATION_HPP
 #define __TASMANIAN_OPTIMIZATION_HPP
 
-#include "tsgOptimizationUtils.hpp"
 #include "tsgParticleSwarm.hpp"
 #include "tsgGradientDescent.hpp"
 
