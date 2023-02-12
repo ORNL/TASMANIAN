@@ -266,7 +266,7 @@ bool TasgridWrapper::checkSane() const{
             test.fail_if(description.empty(), "must specify description string");
             break;
         case command_getpoly:
-            test.fail_if(depth_type == type_level and depth_type == type_curved and depth_type == type_hyperbolic,
+            test.fail_if(depth_type == type_level or depth_type == type_curved or depth_type == type_hyperbolic,
                          "the type here must start with either i or q indicating whether we seek the polynomils for integration or interpolation");
             break;
         default:
