@@ -49,7 +49,6 @@
 #include <atomic>
 #include <cassert>
 
-#include "TasmanianDREAM.hpp" // also brings in TasmanianSparseGrids.hpp
 #include "TasmanianOptimization.hpp"
 
 #ifdef Tasmanian_ENABLE_MPI

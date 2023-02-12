@@ -1,11 +1,15 @@
 Changelog for version 7.9
 --------------
 
+* improved error checking for the CLI interface
+    * affects mostly the internal structure
 * improved MATLAB interface
     * better internal filenames for the grid files
     * possible to interface with an external grid file
     * added bindings for the asynchronous (dynamic) construction
-* updated OneAPI support to 2023
+* updated GPU support
+    * OneAPI support for 2023
+    * CUDA 12 support
 * required cmake 3.19 and 3.21 when using HIP
     * switched to native search for CUDA mathlibs
 
