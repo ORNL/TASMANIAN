@@ -1,4 +1,4 @@
-Changelog for version 7.9
+Changelog for version 7.10
 --------------
 
 * improved error checking for the CLI interface
