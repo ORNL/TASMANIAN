@@ -107,7 +107,7 @@ void GpuEngine::setCuSolverDnHandle(void *handle){
 
 int AccelerationMeta::getNumGpuDevices(){
     int gpu_count = 0;
-    cudaGetDeviceCount(&gpu_count);
+    TasGpu::cucheck( cudaGetDeviceCount(&gpu_count), "cudaGetDeviceCount()");
     return gpu_count;
 }
 void AccelerationMeta::setDefaultGpuDevice(int deviceID){
@@ -298,15 +298,27 @@ inline void sparse_gemv(cusparseHandle_t handle, int M, int N, int nnz, typename
     cudaDataType_t cuda_type = (std::is_same<scalar_type, float>::value) ? CUDA_R_32F : CUDA_R_64F;
 
     size_t bsize = 0;
+    #if (CUDART_VERSION < 12000)
     cucheck( cusparseSpMV_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matdesc, xdesc, &beta, ydesc, cuda_type, CUSPARSE_MV_ALG_DEFAULT, &bsize),
         "cusparseSpMV_bufferSize()"
     );
+    #else
+    cucheck( cusparseSpMV_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matdesc, xdesc, &beta, ydesc, cuda_type, CUSPARSE_SPMV_ALG_DEFAULT, &bsize),
+        "cusparseSpMV_bufferSize()"
+    );
+    #endif
 
     GpuVector<scalar_type> buffer(nullptr, bsize / sizeof(scalar_type));
 
+    #if (CUDART_VERSION < 12000)
     cucheck( cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matdesc, xdesc, &beta, ydesc, cuda_type, CUSPARSE_MV_ALG_DEFAULT, buffer.data()),
         "cusparseSpMV()"
     );
+    #else
+    cucheck( cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matdesc, xdesc, &beta, ydesc, cuda_type, CUSPARSE_SPMV_ALG_DEFAULT, buffer.data()),
+        "cusparseSpMV()"
+    );
+    #endif
 }
 //! \brief Wrapper around dgemm().
 template<typename scalar_type>
