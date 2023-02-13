@@ -50,10 +50,12 @@ if (Tasmanian_ENABLE_HIP)
 endif()
 
 if (Tasmanian_ENABLE_MAGMA)
-    target_link_libraries(Tasmanian_dependencies INTERFACE ${Tasmanian_magmalibs})
-    Tasmanian_find_rpath(LIBRARIES ${Tasmanian_magma} LIST rpath)
-
-    target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${Tasmanian_magma_h}/>)
+    target_link_libraries(Tasmanian_dependencies INTERFACE Tasmanian::MAGMA)
+    if (Tasmanian_MAGMA_DOWNLOAD)
+    else()
+        Tasmanian_find_rpath(LIBRARIES ${Tasmanian_magma} LIST rpath)
+        target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${Tasmanian_magma_h}/>)
+    endif()
 endif()
 
 if (Tasmanian_ENABLE_MPI)
