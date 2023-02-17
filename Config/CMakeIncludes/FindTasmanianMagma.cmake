@@ -21,6 +21,8 @@ if (Tasmanian_MAGMA_DOWNLOAD)
     if (Tasmanian_ENABLE_CUDA)
         set(MAGMA_ENABLE_CUDA ON CACHE BOOL "pass into MAGMA")
         set(USE_FORTRAN OFF CACHE BOOL "pass into MAGMA")
+    else()
+        message(FATAL_ERROR "Automatic download for MAGMA is supported only with the CUDA backend")
     endif()
 
     FetchContent_Declare(TasmanianMAGMA
