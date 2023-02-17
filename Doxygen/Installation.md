@@ -143,6 +143,11 @@ ROCm capabilities require CMake 3.21.
 
 * The MAGMA option can be passed without the *Tasmanian_* prefix and if not specified explicitly those will be read from the OS environment.
 
+* Option for automated download of MAGMA, the package will be downloaded, build, and installed together with Tasmanian in the same prefix.
+```
+  -D Tasmanian_MAGMA_DOWNLOAD:BOOL=<ON/OFF> (works only on Linux)
+```
+
 * The **ROCm** capabilities **NO LONGER** require that the CMake CXX compiler is set to *hipcc*.
     * by default, Tasmanian will search for hip in `/opt/rocm /opt/rocm/hip` following the [ROCm documentation](https://rocmdocs.amd.com/en/latest/Installation_Guide/Using-CMake-with-AMD-ROCm.html)
     * additional search paths can be added using `CMAKE_PREFIX_PATH`
@@ -354,6 +359,8 @@ In the above example:
 ### Known Issues
 
 Several known issues and work-around fixes:
+* the automated MAGMA download reports the wrong GPU architecture enabled
+    * ignore the MAGMA message the build correctly respects `CMAKE_CUDA_ARCHITECTURES`
 * The addon tests sometime fail due to thread scheduling
     * The overhead associated with thread scheduling is much larger than the simple test models used,
     which leads to unrealistically large fluctuations in sample run-time, which in turn leads to

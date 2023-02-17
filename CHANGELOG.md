@@ -1,6 +1,8 @@
-Changelog for version 7.10
+Changelog for version 7.10 (development)
 --------------
 
+* added option to automatically download/configure/build MAGMA
+    * enabled with -DTasmanian_MAGMA_DOWNLOAD=ON
 * improved error checking for the CLI interface
     * affects mostly the internal structure
 * improved MATLAB interface

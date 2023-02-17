@@ -64,6 +64,12 @@ if (@Tasmanian_ENABLE_HIP@)
     endforeach()
 endif()
 
+if (@Tasmanian_ENABLE_MAGMA@)
+    add_library(Tasmanian::MAGMA INTERFACE IMPORTED)
+    target_link_libraries(Tasmanian::MAGMA INTERFACE @Tasmanian_magma@)
+    target_include_directories(Tasmanian::MAGMA INTERFACE @Tasmanian_magma_h@)
+endif()
+
 if (TARGET tasmanian) # swig Tasmanian Fortran
     add_library(Tasmanian_libfortran03 INTERFACE IMPORTED GLOBAL)
     target_link_libraries(Tasmanian_libfortran03 INTERFACE tasmanian)
