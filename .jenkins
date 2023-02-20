@@ -55,10 +55,10 @@ cmake \
   -D Tasmanian_ENABLE_MPI=ON \
   -D MPIEXEC_PREFLAGS="--allow-run-as-root" \
   -D Tasmanian_ENABLE_FORTRAN=ON \
-  -D Tasmanian_TESTS_OMP_NUM_THREADS=4 \
+  -D Tasmanian_TESTS_OMP_NUM_THREADS=2 \
 .. &&
                               make -j4 &&
-                              ctest -j4 -V --no-compress-output -T Test &&
+                              ctest -j2 -V --no-compress-output -T Test &&
                               make install &&
                               make test_install
                         '''
