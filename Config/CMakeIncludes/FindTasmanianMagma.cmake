@@ -16,21 +16,29 @@ if (NOT MAGMA_ROOT)
 endif()
 
 if (Tasmanian_MAGMA_DOWNLOAD)
+    message(STATUS "Building MAGMA together with Tasmanian, will install alongside")
     include (FetchContent)
 
     if (Tasmanian_ENABLE_CUDA)
         set(MAGMA_ENABLE_CUDA ON CACHE BOOL "pass into MAGMA")
-        set(USE_FORTRAN OFF CACHE BOOL "pass into MAGMA")
+        if ("${CMAKE_CUDA_ARCHITECTURES}" STREQUAL "")
+            message(WARNING "CMAKE_CUDA_ARCHITECTURES is unspecified which will cause CUDA to switch to JIT compilation, this is fine for Tasmanian; however, MAGMA contains a huge number of kernels and JIT adds minutes of startup time on program launch.")
+        endif()
     else()
-        message(FATAL_ERROR "Automatic download for MAGMA is supported only with the CUDA backend")
+        set(MAGMA_ENABLE_HIP ON CACHE BOOL "pass into MAGMA")
+        if ("${CMAKE_HIP_ARCHITECTURES}" STREQUAL "")
+            message(WARNING "CMAKE_HIP_ARCHITECTURES is unspecified which will cause HIP to switch to JIT compilation, this is fine for Tasmanian; however, MAGMA contains a huge number of kernels and JIT adds minutes of startup time on program launch.")
+        endif()
     endif()
+
+    set(USE_FORTRAN ON CACHE BOOL "Passed into MAGMA, the MAGMA-Fortran capabilities are not used by Tasmanian.")
 
     FetchContent_Declare(TasmanianMAGMA
                          URL "http://icl.utk.edu/projectsfiles/magma/downloads/magma-2.7.0.tar.gz"
                          URL_HASH "SHA256=fda1cbc4607e77cacd8feb1c0f633c5826ba200a018f647f1c5436975b39fd18"
                          DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/_magma_download/
                          SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/_magma_download/magma
-                         PATCH_COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/Config/patch_magma.sh
+                         PATCH_COMMAND patch CMakeLists.txt -i ${CMAKE_CURRENT_SOURCE_DIR}/Config/magma_cmake.patch
                          )
     FetchContent_MakeAvailable(TasmanianMAGMA)
 

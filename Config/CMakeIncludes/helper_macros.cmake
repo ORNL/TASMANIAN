@@ -150,14 +150,12 @@ macro(Tasmanian_rpath_target)
             list(APPEND _rpt_rpath "${CMAKE_CURRENT_BINARY_DIR}/../${_rpt_comp}")
         endforeach()
         set_target_properties(${Tasmanian_rpt_TARGET} PROPERTIES
-                              BUILD_WITH_INSTALL_RPATH "ON"
-                              INSTALL_RPATH "${_rpt_rpath}")
+                              BUILD_RPATH "${_rpt_rpath}")
         unset(_rpt_rpath)
         unset(_rpt_comp)
-    else()
-        set_target_properties(${Tasmanian_rpt_TARGET} PROPERTIES
-                              INSTALL_RPATH "${Tasmanian_rpath}")
     endif()
+    set_target_properties(${Tasmanian_rpt_TARGET} PROPERTIES
+                          INSTALL_RPATH "${Tasmanian_rpath}")
     unset(Tasmanian_rpt_TARGET)
     unset(Tasmanian_rpt_USE_CURRENT)
     unset(Tasmanian_rpt_COMPONENTS)
