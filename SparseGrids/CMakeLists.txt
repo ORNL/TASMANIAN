@@ -70,7 +70,6 @@ add_library(Tasmanian_libsparsegrid
         $<$<BOOL:${Tasmanian_ENABLE_DPCPP}>:${CMAKE_CURRENT_SOURCE_DIR}/tsgDpcppKernels.cpp>
         )
 
-
 ########################################################################
 # add the gridtest and examples executables
 ########################################################################
@@ -102,6 +101,11 @@ if (Tasmanian_ENABLE_CUDA)
     set_property(TARGET Tasmanian_libsparsegrid PROPERTY CUDA_STANDARD 11)
 elseif(Tasmanian_ENABLE_HIP)
     set_source_files_properties(${Tasmanian_source_libsparsegrid_hip} PROPERTIES LANGUAGE HIP)
+elseif(Tasmanian_ENABLE_DPCPP)
+    target_compile_options(Tasmanian_libsparsegrid PRIVATE -fsycl)
+    target_compile_options(Tasmanian_gridtest      PRIVATE -fsycl)
+    target_link_options(Tasmanian_libsparsegrid    PRIVATE -fsycl)
+    target_link_options(Tasmanian_gridtest         PRIVATE -fsycl)
 endif()
 
 target_link_libraries(Tasmanian_libsparsegrid  Tasmanian_dependencies)
