@@ -5,8 +5,8 @@
 #
 #
 
-Tasmanian_compiler_type(COMPILER ${CMAKE_CXX_COMPILER} TYPE "DPC++" RESULT Tasmanian_dpcpp_compiler)
-Tasmanian_compiler_type(COMPILER ${CMAKE_CXX_COMPILER} SWITCH "--help" TYPE "sycl" RESULT Tasmanian_sycl_compiler)
+Tasmanian_compiler_type(COMPILER ${CMAKE_CXX_COMPILER} SWITCH "--version" TYPE "DPC++" RESULT Tasmanian_dpcpp_compiler)
+Tasmanian_compiler_type(COMPILER ${CMAKE_CXX_COMPILER} SWITCH "--help"    TYPE "sycl"  RESULT Tasmanian_sycl_compiler)
 
 get_filename_component(Tasmanian_dpcpproot ${CMAKE_CXX_COMPILER} DIRECTORY)  # convert <path>/bin/dpcpp to <path>/bin
 get_filename_component(Tasmanian_dpcpproot ${Tasmanian_dpcpproot} DIRECTORY)  # convert <path>/bin to <path>
