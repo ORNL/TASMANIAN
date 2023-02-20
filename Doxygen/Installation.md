@@ -155,7 +155,8 @@ ROCm capabilities require CMake 3.21.
     * `Tasmanian_ENABLE_ROCM`, if defined, will be added to `CMAKE_PREFIX_PATH` to search for `roc::hip`
 
 * The **OneAPI** capabilities require:
-    * the CMake CXX compiler is set to *dpcpp*
+    * Tasmanian **NO LONGER** requires that the CMake CXX compiler is set to *dpcpp*
+    * the compiler is now set to Intel *ipcx*, Tasmanian will automatically add the *-fsycl* flag (when needed)
     * `Tasmanian_ENABLE_BLAS` is set to **ON**
     * BLAS is set to the CPU version of MKL, e.g., using `BLAS_LIBRARIES` or `BLA_VENDOR`
 
