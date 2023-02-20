@@ -10,6 +10,10 @@
 #    Tasmanian_magmalibs: list of libmagma and libmagma_sparse
 #    Tasmanian_magma_h: path to the folder containing magma.h
 #    Tasmanian_magma: the libmagma library
+#    Tasmanian::MAGMA target
+#
+# Note: if using auto-build for MAGMA, then Tasmanian::MAGMA will point to the build tree
+#       Tasmanian_magmalibs will point to the install tree
 
 if (NOT MAGMA_ROOT)
     set(MAGMA_ROOT "$ENV{MAGMA_ROOT}")
