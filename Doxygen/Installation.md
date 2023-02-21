@@ -106,7 +106,7 @@ ROCm capabilities require CMake 3.21.
       e.g., [https://www.openblas.net/](https://www.openblas.net/); optimized BLAS improves the
       performance when using evaluate commands on grids with many points or working with models with many outputs
     * Linear Algebra PACKage (LAPACK) is a set of advanced solver, eigen-solvers and decomposition methods
-      that build upon BLAS and is usually included in the same packge, e.g., OpenBLAS, MKL, ESSL, and ATLAS;
+      that build upon BLAS and is usually included in the same package, e.g., OpenBLAS, MKL, ESSL, and ATLAS;
       within Tasmanian, the name BLAS in CMake or run-time options indicate the dependence and usage of both BLAS and LAPACK
     * CUDA is a C++ language extension that allows Tasmanian to leverage the computing power of Nvidia GPU devices,
       which greatly enhances the performance of `evaluateFast()` and `evaluateBatch()` and a few other calls
@@ -116,6 +116,8 @@ ROCm capabilities require CMake 3.21.
       algebra developed at the University of Tennessee at Knoxville
     * MPI allows the use of distributed memory in Bayesian inference, parallel model construction, and send/receive grid through an MPI comm
 * The **Tasmanian_ENABLE_RECOMMENDED** option searches for OpenMP, BLAS, and Python, enables the options (if possible) and also sets the `-O3` flag
+* **Tasmanian_ENABLE_FORTRAN** enables the Fortran 2003 interface
+    * Fortran 90 interface is deprecated, but can be enabled with **-DTasmanian_ENABLE_FORTRAN90=ON**
 * Additional interfaces are available, beyond the default C/C++ library and the command line tools:
     * Python and Fortran require appropriate interpreter and compiler
     * The MATLAB/Octave interface requires a work-folder with read/write permission for temporary files.
@@ -372,8 +374,6 @@ Several known issues and work-around fixes:
 * Some older versions of the PGI compiler fails when using optimization `-O2`
     * use the `-O1` instead, or the newest version of the compiler
 * XL compiler with OpenMP segfaults if the OMP_NUM_THREADS is not set correctly
-* XL and PGI Fortran compiler do not work with the deprecated Fortran 90 interface
-    * disable the deprecated interface with `-DTasmanian_DISABLE_F90=ON`
 * XL Fortran needs to use the default halt level which is unnecessarily modified by CMake
     * overwrite the CMake flags using `-DCMAKE_Fortran_FLAGS=-qthreaded`
     * see [the github discussion for details](https://github.com/xsdk-project/xsdk-issues/issues/94#issuecomment-916890894)

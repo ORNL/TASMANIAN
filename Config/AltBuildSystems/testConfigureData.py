@@ -13,6 +13,7 @@ iGPUID = -1 # not used by the GNU Make
 bHasBlas = False
 bHasCuBlas = False
 bHasCuda = False
+bHasSycl = False
 
 bUsingMSVC = False
 

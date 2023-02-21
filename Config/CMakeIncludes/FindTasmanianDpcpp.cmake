@@ -2,7 +2,14 @@
 # FindTasmanianDpcpp.cmake module
 ########################################################################
 #
+# DPC++ and SYCL compatibility
+# 1. Check if the compiler --version and --help return words like "sycl" and "DPC++", i.e., didn't accidentally set the compiler to g++
+# 2. Use -DMKLROOT or environment MKLROOT to find both MKL and OneMKL
+# 3. Manually set the OpenMP flags, since CMake doesn't know the correct flags for DPC++
+# 4. Print status message
 #
+# Defines Tasmanian_mklsycl variables with all the relevant variables for the dependencies
+# Note: the -fsycl flag is applied privately to lib-sparsegrid
 #
 
 Tasmanian_compiler_type(COMPILER ${CMAKE_CXX_COMPILER} SWITCH "--version" TYPE "DPC++" RESULT Tasmanian_dpcpp_compiler)
@@ -25,13 +32,6 @@ Tasmanian_find_libraries(REQUIRED mkl_sycl
                          OPTIONAL mkl_intel_lp64 mkl_intel_thread mkl_core
                          PREFIX ${Tasmanian_MKL_SYCL_ROOT}
                          LIST mklsycl)
-Tasmanian_find_libraries(REQUIRED OpenCL
-                         PREFIX ${Tasmanian_dpcpproot}/lib/
-                         LIST mklsycl)
-Tasmanian_find_libraries(REQUIRED iomp5
-                         PREFIX ${Tasmanian_dpcpproot}/compiler/lib/intel64/
-                         LIST syclomp)
-list(APPEND Tasmanian_mklsycl ${Tasmanian_syclomp})
 
 if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
     set(OpenMP_CXX_FLAGS "-qopenmp")
