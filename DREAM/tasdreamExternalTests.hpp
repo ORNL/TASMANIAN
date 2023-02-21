@@ -75,7 +75,7 @@ inline void reportPassFail(bool pass, const char *name){
 //! \brief Report Pass/FAIL bases on pass, format is "name variant Pass/FAIL"
 //! \ingroup TasDREAMTesting
 inline void reportPassFail(bool pass, const char *name, const char *variant){
-    cout << setw(15) << name << setw(30) << variant << setw(15) << ((pass) ? "Pass" : "FAIL") << endl;
+    cout << setw(20) << name << setw(30) << variant << setw(15) << ((pass) ? "Pass" : "FAIL") << endl;
 }
 
 //! \internal
