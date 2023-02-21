@@ -101,7 +101,7 @@ void ParticleSwarm(const ObjectiveFunction f, const TasDREAM::DreamDomain inside
     auto f_constrained = [=](const std::vector<double> &x_batch, std::vector<double> &fval_batch, std::vector<bool> &inside_batch)->void {
         // Collect and apply the domain information given by inside() and x_batch.
         size_t num_batch(fval_batch.size()), num_inside(0);
-        std::vector<double> candidate(num_dimensions), is_inside(num_batch), inside_points;
+        std::vector<double> candidate(num_dimensions), inside_points;
         for (size_t i=0; i<num_batch; i++) {
             fval_batch[i] = std::numeric_limits<double>::max();
             std::copy_n(x_batch.begin() + i * num_dimensions, num_dimensions, candidate.begin());
@@ -117,19 +117,26 @@ void ParticleSwarm(const ObjectiveFunction f, const TasDREAM::DreamDomain inside
             f(inside_points, inside_vals);
         int j = 0;
         for (size_t i=0; i<num_batch; i++) {
-            if (inside_batch[i])
-                fval_batch[i] = inside_vals[j++];
+            fval_batch[i] = (inside_batch[i]) ? inside_vals[j++] : 0.0;
         }
     };
 
     // Create a lambda that updates the best particle positions and fvals (in the cache).
     auto update = [&]()->void {
         for (size_t i=0; i<num_particles; i++) {
-            bool is_smaller = (state.cache_particle_fvals[i] < state.cache_best_particle_fvals[i]) or !state.cache_best_particle_inside[i];
-            if (state.cache_particle_fvals[i] and is_smaller) {
-                std::copy_n(state.particle_positions.begin() + i * num_dimensions, num_dimensions, state.best_particle_positions.begin() + i * num_dimensions);
+            // if current particle not inside, do nothing
+            // if inside and best particle not inside, accept new best know position
+            // if both inside, but current is better than best know, update the best known
+            if (state.cache_particle_inside[i]
+                and (not state.cache_best_particle_inside[i] or state.cache_particle_fvals[i] < state.cache_best_particle_fvals[i])){
+
+                std::copy_n(state.particle_positions.begin() + i * num_dimensions, num_dimensions,
+                            state.best_particle_positions.begin() + i * num_dimensions);
                 state.cache_best_particle_fvals[i] = state.cache_particle_fvals[i];
-                if (state.cache_best_particle_fvals[i] < state.cache_best_particle_fvals[num_particles]) {
+                state.cache_best_particle_inside[i] = true;
+                if (not state.cache_best_particle_inside[num_particles] or
+                    state.cache_best_particle_fvals[i] < state.cache_best_particle_fvals[num_particles]) {
+
                     std::copy_n(state.particle_positions.begin() + i * num_dimensions, num_dimensions,
                                 state.best_particle_positions.begin() + num_particles * num_dimensions);
                     state.cache_best_particle_fvals[num_particles] = state.cache_best_particle_fvals[i];
@@ -152,14 +159,46 @@ void ParticleSwarm(const ObjectiveFunction f, const TasDREAM::DreamDomain inside
 
     // Main algorithm starts here.
     for(int iter=0; iter<num_iterations; iter++) {
-        for (size_t i=0; i<num_particles * num_dimensions; i++) {
-            state.particle_velocities[i] = inertia_weight * state.particle_velocities[i] +
-                                     cognitive_coeff * get_random01() * (state.best_particle_positions[i] - state.particle_positions[i]) +
-                                     social_coeff * get_random01() * (
-                                         // Best overall position.
-                                         state.best_particle_positions[num_particles * num_dimensions + i % num_dimensions] -
-                                         state.particle_positions[i]);
+        if (state.cache_best_particle_inside[num_particles]) {
+            for (size_t i=0; i<num_particles; i++) {
+                double cognitive_rng = get_random01();
+                double social_rng    = get_random01();
+                if (state.cache_best_particle_inside[i]) {
+                    for(size_t j=0; j<num_dimensions; j++){
+                        state.particle_velocities[i*num_dimensions + j]
+                            = inertia_weight * state.particle_velocities[i*num_dimensions + j]
+                            + cognitive_coeff * cognitive_rng *
+                                (state.best_particle_positions[i*num_dimensions + j] - state.particle_positions[i*num_dimensions + j])
+                            + social_coeff * social_rng *
+                                (state.best_particle_positions[num_particles * num_dimensions + j] - state.particle_positions[i*num_dimensions + j]);
+                    }
+                } else {
+                    for(size_t j=0; j<num_dimensions; j++){
+                        state.particle_velocities[i*num_dimensions + j]
+                            = inertia_weight * state.particle_velocities[i*num_dimensions + j]
+                            + social_coeff * social_rng *
+                                (state.best_particle_positions[num_particles * num_dimensions + j] - state.particle_positions[i*num_dimensions + j]);
+                    }
+                }
+            }
+        } else {
+            for (size_t i=0; i<num_particles; i++) {
+                double cognitive_rng = get_random01();
+                if (state.cache_best_particle_inside[i]) {
+                    for(size_t j=0; j<num_dimensions; j++){
+                        state.particle_velocities[i*num_dimensions + j]
+                            = inertia_weight * state.particle_velocities[i*num_dimensions + j]
+                            + cognitive_coeff * cognitive_rng *
+                                (state.best_particle_positions[i*num_dimensions + j] - state.particle_positions[i*num_dimensions + j]);
+                    }
+                } else {
+                    for(size_t j=0; j<num_dimensions; j++){
+                        state.particle_velocities[i*num_dimensions + j] = inertia_weight * state.particle_positions[i*num_dimensions + j];
+                    }
+                }
+            }
         }
+
         for (size_t i=0; i< num_particles * num_dimensions; i++) {
             state.particle_positions[i] += state.particle_velocities[i];
         }
