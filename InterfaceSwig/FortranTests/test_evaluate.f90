@@ -132,11 +132,17 @@ subroutine test_eval_sequence()
     real(C_DOUBLE), dimension(:,:), allocatable :: values
     real(C_DOUBLE) :: x(2, 4), y1(1, 4), y2(2, 4), y_ref1(1, 4), y_ref2(2, 4)
     real(C_FLOAT) :: xf(2, 4), yf(1, 4), y_ref1f(1, 4)
-    integer :: i, num_points
+    integer :: i, num_points, default_gpu
 
     grid  = TasmanianSparseGrid()
     grid1 = TasmanianSparseGrid()
     grid2 = TasmanianSparseGrid()
+
+    if (grid%isDpcppEnabled()) then
+        default_gpu = -1
+    else
+        default_gpu = 0
+    endif
 
     call grid%makeSequenceGrid(2, 3, 6, tsg_type_level, tsg_rule_mindelta)
     points => grid%returnNeededPoints()
@@ -187,7 +193,7 @@ subroutine test_eval_sequence()
         call grid1%evaluateBatch(xf(:,1), 4, yf(:,1))
         call approx2df(1, 4, yf, y_ref1f)
 
-        call grid1%enableAcceleration(tsg_accel_gpu_cuda, 0)
+        call grid1%enableAcceleration(tsg_accel_gpu_cuda, default_gpu)
         call grid%favorSparseAcceleration(.true.) ! has no effect
 
         ! reset yf to call eval fast in single precision
@@ -195,7 +201,7 @@ subroutine test_eval_sequence()
         call grid1%evaluateFast(xf(:,1), yf(:,1))
         call approx2df(1, 1, yf, y_ref1f)
 
-        call tassert(grid1%getGPUID() == 0)
+        call tassert(grid1%getGPUID() == default_gpu)
         call grid1%setGPUID(0) ! just for coverage
     endif
 
