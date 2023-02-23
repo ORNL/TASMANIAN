@@ -29,6 +29,10 @@ set_target_properties(Tasmanian_libdream PROPERTIES OUTPUT_NAME "tasmaniandream"
                                                     VERSION   ${PROJECT_VERSION})
 Tasmanian_rpath_target(TARGET Tasmanian_libdream COMPONENTS SparseGrids)
 
+if (Tasmanian_ENABLE_OPENMP)
+    target_compile_options(Tasmanian_libdream PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${OpenMP_CXX_FLAGS}>)
+endif()
+
 install(TARGETS Tasmanian_libdream
         EXPORT  "${Tasmanian_export_name}"
         RUNTIME DESTINATION "bin"

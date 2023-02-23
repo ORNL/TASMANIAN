@@ -158,37 +158,39 @@ void ParticleSwarm(const ObjectiveFunction f, const TasDREAM::DreamDomain inside
     state.best_positions_initialized = true;
 
     // Main algorithm starts here.
+    std::vector<double> rng_cache(2 * num_particles);
     for(int iter=0; iter<num_iterations; iter++) {
         if (state.cache_best_particle_inside[num_particles]) {
-            for (size_t i=0; i<num_particles; i++) {
-                double cognitive_rng = get_random01();
-                double social_rng    = get_random01();
+            for(auto &r : rng_cache) r = get_random01();
+            #pragma omp parallel for
+            for (int i=0; i<static_cast<int>(num_particles); i++) {
                 if (state.cache_best_particle_inside[i]) {
                     for(size_t j=0; j<num_dimensions; j++){
                         state.particle_velocities[i*num_dimensions + j]
                             = inertia_weight * state.particle_velocities[i*num_dimensions + j]
-                            + cognitive_coeff * cognitive_rng *
+                            + cognitive_coeff * rng_cache[2*i] *
                                 (state.best_particle_positions[i*num_dimensions + j] - state.particle_positions[i*num_dimensions + j])
-                            + social_coeff * social_rng *
+                            + social_coeff * rng_cache[2*i + 1] *
                                 (state.best_particle_positions[num_particles * num_dimensions + j] - state.particle_positions[i*num_dimensions + j]);
                     }
                 } else {
                     for(size_t j=0; j<num_dimensions; j++){
                         state.particle_velocities[i*num_dimensions + j]
                             = inertia_weight * state.particle_velocities[i*num_dimensions + j]
-                            + social_coeff * social_rng *
+                            + social_coeff * rng_cache[2*i] *
                                 (state.best_particle_positions[num_particles * num_dimensions + j] - state.particle_positions[i*num_dimensions + j]);
                     }
                 }
             }
         } else {
-            for (size_t i=0; i<num_particles; i++) {
-                double cognitive_rng = get_random01();
+            for(size_t i=0; i<num_particles; i++) rng_cache[i] = get_random01();
+            #pragma omp parallel for
+            for (int i=0; i<static_cast<int>(num_particles); i++) {
                 if (state.cache_best_particle_inside[i]) {
                     for(size_t j=0; j<num_dimensions; j++){
                         state.particle_velocities[i*num_dimensions + j]
                             = inertia_weight * state.particle_velocities[i*num_dimensions + j]
-                            + cognitive_coeff * cognitive_rng *
+                            + cognitive_coeff * rng_cache[i] *
                                 (state.best_particle_positions[i*num_dimensions + j] - state.particle_positions[i*num_dimensions + j]);
                     }
                 } else {
