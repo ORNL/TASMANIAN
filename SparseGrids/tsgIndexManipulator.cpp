@@ -266,10 +266,23 @@ std::vector<int> getMaxIndexes(const MultiIndexSet &mset){
     size_t num_dimensions = mset.getNumDimensions();
     std::vector<int> max_index(num_dimensions, 0);
     int n = mset.getNumIndexes();
-    for(int i=0; i<n; i++){
-        const int* p = mset.getIndex(i);
-        for(size_t j=0; j<num_dimensions; j++) if (max_index[j] < p[j]) max_index[j] = p[j];
+
+    #pragma omp parallel
+    {
+        std::vector<int> local_max_index(num_dimensions, 0);
+        #pragma omp for
+        for(int i=0; i<n; i++){
+            const int* p = mset.getIndex(i);
+            for(size_t j=0; j<num_dimensions; j++) if (local_max_index[j] < p[j]) local_max_index[j] = p[j];
+        }
+        #pragma omp critical
+        {
+            for(size_t j=0; j<num_dimensions; j++){
+                if (max_index[j] < local_max_index[j]) max_index[j] = local_max_index[j];
+            }
+        }
     }
+
     return max_index;
 }
 
