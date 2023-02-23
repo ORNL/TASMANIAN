@@ -55,12 +55,18 @@ void repeatAddIndexes(std::function<bool(const std::vector<int> &index)> inside,
     while(adding){
         Data2D<int> level((int) num_dimensions, 0);
         int num_indexes = level_sets.back().getNumIndexes();
+        #pragma omp parallel for
         for(int i=0; i<num_indexes; i++){
             std::vector<int> point(num_dimensions);
             std::copy_n(level_sets.back().getIndex(i), num_dimensions, point.data());
             for(auto &p : point){
                 p += (use_parents) ? -1 : 1; // parents have lower index, children have higher indexes
-                if ( (!use_parents || (p >= 0)) && inside(point) ) level.appendStrip(point);
+                if ( (!use_parents || (p >= 0)) && inside(point) ){
+                    #pragma omp critical
+                    {
+                        level.appendStrip(point);
+                    }
+                }
                 p -= (use_parents) ? -1 : 1; // restore p
             }
         }
@@ -79,10 +85,11 @@ void repeatAddIndexes(std::function<bool(const std::vector<int> &index)> inside,
  * \endinternal
  */
 inline MultiIndexSet unionSets(std::vector<MultiIndexSet> &level_sets){
-    size_t num_levels = level_sets.size();
+    long long num_levels = level_sets.size();
     while(num_levels > 1){
-        size_t stride = num_levels / 2 + (((num_levels % 2) > 0) ? 1 : 0);
-        for(size_t i=0; i<stride; i++)
+        long long stride = num_levels / 2 + (((num_levels % 2) > 0) ? 1 : 0);
+        #pragma omp parallel for
+        for(long long i=0; i<stride; i++)
             if (i + stride < num_levels)
                 level_sets[i] += level_sets[i + stride];
         num_levels = stride;
@@ -94,13 +101,19 @@ void completeSetToLower(MultiIndexSet &set){
     size_t num_dimensions = set.getNumDimensions();
     int num = set.getNumIndexes();
     Data2D<int> completion((int) num_dimensions, 0);
+    #pragma omp parallel for
     for(int i=0; i<num; i++){
         std::vector<int> point(num_dimensions);
         std::copy_n(set.getIndex(i), num_dimensions, point.data());
         for(auto &p : point){
             if (p != 0){
                 p--;
-                if (set.missing(point)) completion.appendStrip(point);
+                if (set.missing(point)){
+                    #pragma omp critical
+                    {
+                        completion.appendStrip(point);
+                    }
+                }
                 p++;
             }
         }
