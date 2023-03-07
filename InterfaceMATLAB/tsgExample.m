@@ -10,7 +10,7 @@ function tsgExample(bFast)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% EXAMPLE 1: 
+% EXAMPLE 1:
 %
 % integrate: f(x,y) = exp(-x^2) * cos(y) over [-1,1] x [-1,1]
 % using classical Smolyak grid with Clenshaw-Curtis points and weights
@@ -53,7 +53,7 @@ disp([' ']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% EXAMPLE 2: 
+% EXAMPLE 2:
 %
 % integrate: f(x,y) = exp(-x^2) * cos(y) over (x,y) in [-5,5] x [-2,3]
 % using Gauss-Patterson rules chosen to integrate exactly polynomials of
@@ -100,7 +100,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% EXAMPLE 3: 
+% EXAMPLE 3:
 %
 % integrate: f(x,y) = exp(-x^2) * cos(y) over (x,y) in [-5,5] x [-2,3]
 % using Gauss-Patterson, Clenshaw-Curtis and Gauss-Legendre rules and
@@ -121,32 +121,32 @@ disp([' precision   nodes       error       nodes       error       nodes       
 for prec = 9:4:30
     tt = num2str(prec);
     ss = [blanks(6 - length(tt)),tt];
-    
+
     [weights, points] = tsgMakeQuadrature(dim, 'clenshaw-curtis', 'qptotal', prec, order, domain);
     I = weights' * (exp(-points(:,1).^2) .* cos(points(:,2)));
     tt = num2str(size(points,1));
     ss = [ss,'      ',blanks(5 - length(tt)),tt];
     tt = num2str(abs(I-E),5);
     ss = [ss,' ',blanks(12 - length(tt)),tt];
-    
+
     ss = [ss,blanks(30 - length(ss))];
-    
+
     [weights, points] = tsgMakeQuadrature(dim, 'gauss-legendre', 'qptotal', prec, order, domain);
     I = weights' * (exp(-points(:,1).^2) .* cos(points(:,2)));
     tt = num2str(size(points,1));
     ss = [ss,'      ',blanks(5 - length(tt)),tt];
     tt = num2str(abs(I-E),5);
     ss = [ss,' ',blanks(12 - length(tt)),tt];
-    
+
     ss = [ss,blanks(60 - length(ss))];
-    
+
     [weights, points] = tsgMakeQuadrature(dim, 'gauss-patterson', 'qptotal', prec, order, domain);
     I = weights' * (exp(-points(:,1).^2) .* cos(points(:,2)));
     tt = num2str(size(points,1));
     ss = [ss,blanks(5 - length(tt)),tt];
     tt = num2str(abs(I-E),5);
     ss = [ss,' ',blanks(12 - length(tt)),tt];
-    
+
     disp(ss);
 end
 disp([' ']);
@@ -160,7 +160,7 @@ disp([' ']);
 %
 % interpolate: f(x,y) = exp(-x^2) * cos(y)
 % over [2,3] x [2,3]
-% with a rule that exactly interpolates polynomials of total degree up to 
+% with a rule that exactly interpolates polynomials of total degree up to
 % degree specified by prec
 %
 % NOTE: any grid with name '_tsgExample4' will be overwritten by the
@@ -285,7 +285,7 @@ tsgDeleteGrid(lGrid); % clear all temporary used files
 %
 % EXAMPLE 6:
 %
-% interpolate: f(x,y) = exp(-x^2) * cos(y) 
+% interpolate: f(x,y) = exp(-x^2) * cos(y)
 % using different refinement schemes
 %
 
@@ -322,7 +322,7 @@ nump3 = size(points, 1);
 for iI = 1:10
     tt = num2str(iI);
     ss = [blanks(6 - length(tt)),tt];
-    
+
     [points] = tsgRefineAnisotropic(lGrid1, 'iptotal', 10);
     vals = (exp(-points(:,1).^2) .* cos(points(:,2)));
     tsgLoadValues(lGrid1, vals);
@@ -332,9 +332,9 @@ for iI = 1:10
     [res] = tsgEvaluate(lGrid1, pnts);
     tt = num2str(max(abs(res - tres)),5);
     ss = [ss,' ',blanks(12 - length(tt)),tt];
-    
+
     ss = [ss,blanks(30 - length(ss))];
-    
+
     [points] = tsgRefineAnisotropic(lGrid2, 'ipcurved', 10);
     vals = (exp(-points(:,1).^2) .* cos(points(:,2)));
     tsgLoadValues(lGrid2, vals);
@@ -344,10 +344,10 @@ for iI = 1:10
     [res] = tsgEvaluate(lGrid2, pnts);
     tt = num2str(max(abs(res - tres)),5);
     ss = [ss,' ',blanks(12 - length(tt)),tt];
-    
+
     ss = [ss,blanks(60 - length(ss))];
-    
-    [points] = tsgRefineSurplus(lGrid3, 1.E-10);
+
+    [points] = tsgRefineSurplus(lGrid3, 1.E-10, 'classic');
     vals = (exp(-points(:,1).^2) .* cos(points(:,2)));
     tsgLoadValues(lGrid3, vals);
     nump3 = nump3 + size(points, 1);
@@ -356,7 +356,7 @@ for iI = 1:10
     [res] = tsgEvaluate(lGrid3, pnts);
     tt = num2str(max(abs(res - tres)),5);
     ss = [ss,' ',blanks(12 - length(tt)),tt];
-    
+
     disp(ss);
 end
 disp([' ']);
@@ -371,7 +371,7 @@ tsgDeleteGrid(lGrid3);
 %
 % EXAMPLE 7:
 %
-% interpolate: f(x,y) = exp(-x^2) * cos(y) 
+% interpolate: f(x,y) = exp(-x^2) * cos(y)
 % using different local polynomial rules
 %
 
@@ -424,7 +424,7 @@ disp(['-------------------------------------------------------------------------
 disp([' Example 8: interpolate f(x,y) = cos(0.5 * pi * x) * cos(0.5 * pi * y) ']);
 disp(['    using localp and localp-zero rules with depth ',num2str(prec)]);
 disp(['    the error is estimated as the maximum from 1000 random points']);
-disp([' ']); 
+disp([' ']);
 
 [lGrid, points] = tsgMakeLocalPolynomial('_tsgExample8', dim, outs, 'localp', prec, 2);
 vals = (cos(0.5 * pi * points(:,1)) .* cos(0.5 * pi * points(:,2)));
@@ -485,7 +485,7 @@ nump2 = size(points, 1);
 for iI = 1:7
     tt = num2str(iI);
     ss = [blanks(6 - length(tt)),tt];
-    
+
     [points] = tsgRefineSurplus(lGrid1, tol, 'classic');
     vals = exp(-points(:,1)) ./ (1 + 100 * exp(-10 * points(:,2)));
     tsgLoadValues(lGrid1, vals);
@@ -495,9 +495,9 @@ for iI = 1:7
     [res] = tsgEvaluate(lGrid1, pnts);
     tt = num2str(max(abs(res - tres)),5);
     ss = [ss,' ',blanks(12 - length(tt)),tt];
-    
+
     ss = [ss,blanks(30 - length(ss))];
-    
+
     [points] = tsgRefineSurplus(lGrid2, tol, 'fds');
     vals = exp(-points(:,1)) ./ (1 + 100 * exp(-10 * points(:,2)));
     tsgLoadValues(lGrid2, vals);
@@ -507,7 +507,7 @@ for iI = 1:7
     [res] = tsgEvaluate(lGrid2, pnts);
     tt = num2str(max(abs(res - tres)),5);
     ss = [ss,' ',blanks(12 - length(tt)),tt];
-    
+
     disp(ss);
 end
 disp([' ']);
@@ -556,7 +556,7 @@ nump2 = size(points, 1);
 for iI = 1:8
     tt = num2str(iI);
     ss = [blanks(6 - length(tt)),tt];
-    
+
     [points] = tsgRefineSurplus(lGrid1, tol, 'fds');
     vals = exp(-points(:,1)) ./ (1 + 100 * exp(-10 * points(:,2)));
     tsgLoadValues(lGrid1, vals);
@@ -566,9 +566,9 @@ for iI = 1:8
     [res] = tsgEvaluate(lGrid1, pnts);
     tt = num2str(max(abs(res - tres)),5);
     ss = [ss,' ',blanks(12 - length(tt)),tt];
-    
+
     ss = [ss,blanks(30 - length(ss))];
-    
+
     [points] = tsgRefineSurplus(lGrid2, tol, 'fds');
     vals = exp(-points(:,1)) ./ (1 + 100 * exp(-10 * points(:,2)));
     tsgLoadValues(lGrid2, vals);
@@ -578,7 +578,7 @@ for iI = 1:8
     [res] = tsgEvaluate(lGrid2, pnts);
     tt = num2str(max(abs(res - tres)),5);
     ss = [ss,' ',blanks(12 - length(tt)),tt];
-    
+
     disp(ss);
 end
 disp([' Note: wavelets have a larger Lebesgue constant and thus wavelets are not always better than polynomials.']);
@@ -592,7 +592,7 @@ tsgDeleteGrid(lGrid2);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% EXAMPLE 11: 
+% EXAMPLE 11:
 %
 % interpolate: f(x,y,z) = 1/((1+4x^2)*(1+5y^2)*(1+6z^2))
 % using classical and conformal transformation
