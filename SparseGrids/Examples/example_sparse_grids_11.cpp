@@ -97,14 +97,14 @@ void sparse_grids_example_11(){
         return;
     }
 
-    // accel_cpu_blas: works on the CPU and can utilize all availabel RAM
-    // accel_gpu_cuda: works on the GPU but it is resticted to the case
+    // accel_cpu_blas: works on the CPU and can utilize all available RAM
+    // accel_gpu_cuda: works on the GPU but it is restricted to the case
     //                 where the data can fit in GPU memory
     // accel_gpu_magma: works out-of-core, the data is stored in CPU RAM
     //                  while computations are still done on the GPU
     grid.enableAcceleration(TasGrid::accel_gpu_magma);
 
-    // constructs the grid, depending on the amoutn of data data,
+    // constructs the grid, depending on the amount of data data,
     // the side of the grid and the enabled acceleration
     // this can take significant amount of time
     TasGrid::loadUnstructuredDataL2(data_input, data_output, 1.E-4, grid);
