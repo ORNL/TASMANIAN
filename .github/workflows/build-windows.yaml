@@ -20,7 +20,7 @@ jobs:
     continue-on-error: false
     strategy:
       matrix:
-        runner: [windows-2019]
+        runner: [windows-2019, windows-2022]
 
     steps:
       - uses: actions/checkout@v2
