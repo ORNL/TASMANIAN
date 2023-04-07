@@ -22,13 +22,12 @@ jobs:
       matrix:
         runner: [ubuntu-20.04, ubuntu-22.04]
         compiler: [clang++, g++]
-        fortran_compiler: [gfortran-9]
-        python: [python3]
+        fortran_compiler: [gfortran]
 
     steps:
       - uses: actions/checkout@v2
       - name: Install requirements
-        run: ${{ matrix.python }} -m pip install numpy
+        run: python3 -m pip install numpy
       - name: Build
         run: >
           rm -rf build && mkdir -p build && cd build &&
@@ -37,7 +36,7 @@ jobs:
           -D CMAKE_CXX_FLAGS="-O3 -Wall -Wextra -Wshadow -pedantic"
           -D CMAKE_CXX_COMPILER=${{ matrix.compiler }}
           -D CMAKE_Fortran_COMPILER=${{ matrix.fortran_compiler }}
-          -D PYTHON_EXECUTABLE=/usr/bin/${{ matrix.python }}
+          -D PYTHON_EXECUTABLE=/usr/bin/python3
           -D Tasmanian_ENABLE_RECOMMENDED=ON
           -D Tasmanian_ENABLE_FORTRAN=ON
           -D Tasmanian_TESTS_OMP_NUM_THREADS=4 .. &&
