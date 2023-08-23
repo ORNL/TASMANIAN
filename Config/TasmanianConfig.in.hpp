@@ -51,9 +51,6 @@
 #define Tasmanian_ENABLE_GPU // One GPU definition
 #endif
 
-// used mostly to suppress default cerr messages
-#cmakedefine USE_XSDK_DEFAULTS
-
 // handle variations in library standards
 #cmakedefine Tasmanian_BLAS_HAS_ZGELQ
 

@@ -70,7 +70,6 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 # 6. Print final messages
 ########################################################################
 
-option(USE_XSDK_DEFAULTS            "Enable xSDK compatibility"              OFF)
 option(BUILD_SHARED_LIBS            "Specify shared or static libraries for Tasmanian"  ON)
 option(Tasmanian_ENABLE_RECOMMENDED "Enable (if found) OpenMP, BLAS, and Python, also set optimization flags" OFF)
 option(Tasmanian_ENABLE_OPENMP      "Enable OpenMP support for Tasmanian (recommended)"    OFF)
