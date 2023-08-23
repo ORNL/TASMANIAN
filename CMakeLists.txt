@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 
 cmake_policy(VERSION 3.19)
 project(Tasmanian VERSION 7.10.0 LANGUAGES CXX)
-set(Tasmanian_version_comment " (development)") # e.g., " (release candidate)", " (development)", ""
+set(Tasmanian_version_comment " (release candidate)") # e.g., " (release candidate)", " (development)", ""
 set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some headers and python modules (only human readable)
 
 ########################################################################
@@ -71,20 +71,20 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 ########################################################################
 
 option(BUILD_SHARED_LIBS            "Specify shared or static libraries for Tasmanian"  ON)
-option(Tasmanian_ENABLE_RECOMMENDED "Enable (if found) OpenMP, BLAS, and Python, also set optimization flags" OFF)
+option(Tasmanian_ENABLE_RECOMMENDED "Enable (if found) OpenMP, BLAS, and Python, also sets optimization flags" OFF)
 option(Tasmanian_ENABLE_OPENMP      "Enable OpenMP support for Tasmanian (recommended)"    OFF)
 option(Tasmanian_ENABLE_BLAS        "Enable CPU Blas support for Tasmanian (recommended)"  OFF)
 option(Tasmanian_ENABLE_PYTHON      "Enable Python interface for Tasmanian (recommended)"  OFF)
 option(Tasmanian_ENABLE_CUDA        "Enable Nvidia CUDA kernels and libraries within Tasmanian (stable)"    OFF)
 option(Tasmanian_ENABLE_HIP         "Enable AMD HIP kernels and ROCm libraries within Tasmanian (stable)"   OFF)
-option(Tasmanian_ENABLE_DPCPP       "Enable Intel DPC++ kernels and libraries within Tasmanian (mostly stable)"    OFF)
+option(Tasmanian_ENABLE_DPCPP       "Enable Intel DPC++ kernels and libraries within Tasmanian (stable)"    OFF)
 option(Tasmanian_ENABLE_MAGMA       "Enable acceleration using UTK Magma library within Tasmanian (stable)" OFF)
 option(Tasmanian_ENABLE_FORTRAN     "Enable Fortran interface for Tasmanian (stable)" OFF)
 option(Tasmanian_ENABLE_MPI         "Enable MPI support for Tasmanian (stable)"       OFF)
-option(Tasmanian_ENABLE_SWIG        "Regenerate Fortran 2003 bindings with SWIG"       OFF)
+option(Tasmanian_ENABLE_SWIG        "Regenerate Fortran 2003 bindings with SWIG (developers only)"       OFF)
 option(Tasmanian_ENABLE_DOXYGEN     "Enable Doxygen documentation for Tasmanian (complete)" OFF)
 
-option(Tasmanian_ENABLE_FORTRAN90   "(deprecated) Enable the old Fortran 90 interface of Tasmanian" OFF)
+option(Tasmanian_ENABLE_FORTRAN90   "(deprecated, untested) Enable the old Fortran 90 interface of Tasmanian" OFF)
 
 # treat those similar to options, but give values other than ON/OFF
 set(Tasmanian_MATLAB_WORK_FOLDER     ""  CACHE PATH   "Enable MATLAB interface and use the path for the MATLAB work folder (stable)")
