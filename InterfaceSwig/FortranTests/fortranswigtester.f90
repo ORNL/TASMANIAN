@@ -34,7 +34,7 @@ program FORSWIGTESTER
     integer :: i
 
 write(*,*)
-write(*,'(a,i1,a,i1)') 'Testing Tasmanian Fortran 2003-SWIG interface: version ', &
+write(*,'(a,i1,a,i2)') 'Testing Tasmanian Fortran 2003-SWIG interface: version ', &
                        grid%getVersionMajor(), ".", grid%getVersionMinor()
 write(*,*)
 
