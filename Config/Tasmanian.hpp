@@ -50,7 +50,7 @@
  * \endcode
  *
  * Note that "Tasmanian.h" is also acceptable and will include "Tasmanian.hpp" in a C++ context
- * and the C interface headers in the C context (in 7.0 only sparse grids have a C interface).
+ * and the C interface headers in the C context (currently, only sparse grids have a C interface).
  */
 
 #include "TasmanianAddons.hpp" // includes DREAM and Sparse Grid

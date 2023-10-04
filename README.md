@@ -70,14 +70,15 @@ Download the .bib file:
 See also the detailed [Installation](Doxygen/Installation.md) instructions.
 
 * The CMake way: see the detailed instruction for a full list of options
-* The basic way: using GNU Make, `g++` and optionally `gfortran` and `/usr/bin/python`
-* The easy way: using cmake and the `install` script, see `./install --help`
-* The MS Windows way: use the CMake GUI to set the folders and options then use either the IDE or the command prompt
-* Tasmanian is also available through Python PIP, make sure you have the latest `pip`
+    * supported on Linux, MacOSX and Windows
+* The basic way: using GNU Make, `g++` and `/usr/bin/python3`
+    * supported only on Linux and MacOSX
+    * enables only very basic features in C++, MATLAB and Python
+* Tasmanian is available through Python PIP, make sure you have the latest `pip`
 ```
   python3 -m pip install Tasmanian --user
 ```
-* Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
+* Tasmanian is included in Spack: [https://spack.io/](https://spack.io/)
 
 ### Basic Usage of Tasmanian
 
