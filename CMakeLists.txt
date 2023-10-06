@@ -13,7 +13,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D Tasmanian_ENABLE_PYTHON:BOOL=OFF      (recommended)
 #    -D Tasmanian_ENABLE_CUDA:BOOL=OFF        (stable)
 #    -D Tasmanian_ENABLE_HIP:BOOL=OFF         (stable)
-#    -D Tasmanian_ENABLE_DPCPP:BOOL=OFF       (mostly stable)
+#    -D Tasmanian_ENABLE_DPCPP:BOOL=OFF       (stable)
 #    -D Tasmanian_ENABLE_MAGMA:BOOL=OFF       (stable)
 #    -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""  (stable)
 #    -D Tasmanian_ENABLE_FORTRAN:BOOL=OFF     (stable)
