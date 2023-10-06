@@ -1,4 +1,4 @@
-Changelog for version 7.10 (development)
+Changelog for version 8.0
 --------------
 
 * added option to automatically download/configure/build MAGMA
@@ -12,8 +12,10 @@ Changelog for version 7.10 (development)
 * updated GPU support
     * OneAPI support for 2023
     * CUDA 12 support
-* required cmake 3.19 and 3.21 when using HIP
+* required CMake 3.19 and 3.21 when using HIP
     * switched to native search for CUDA mathlibs
+    * switched to HIP as a CMake language
+    * switched to DPC++ using clang++ with automatically added -fsycl flag
 
 Changelog for version 7.9
 --------------
