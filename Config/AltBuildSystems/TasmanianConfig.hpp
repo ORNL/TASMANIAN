@@ -31,12 +31,12 @@
 #ifndef __TASMANIAN_CONFIG_HPP
 #define __TASMANIAN_CONFIG_HPP
 
-#define TASMANIAN_VERSION_MAJOR 7
-#define TASMANIAN_VERSION_MINOR 10
-#define TASMANIAN_VERSION_STRING "7.10"
+#define TASMANIAN_VERSION_MAJOR 8
+#define TASMANIAN_VERSION_MINOR 0
+#define TASMANIAN_VERSION_STRING "8.0"
 #define TASMANIAN_LICENSE "BSD 3-Clause with UT-Battelle disclaimer"
 
 #define TASMANIAN_GIT_COMMIT_HASH "Tasmanian git hash is not available here"
-#define TASMANIAN_CXX_FLAGS "Not availabe in simple GNU Make mode"
+#define TASMANIAN_CXX_FLAGS "Not available in simple GNU Make mode"
 
 #endif
