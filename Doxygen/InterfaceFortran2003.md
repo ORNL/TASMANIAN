@@ -88,7 +88,7 @@ Fortran 2003 does not support namespaces and the wrapper API works directly with
     TasGrid::readGrid                => TasmanianReadGrid
     TasGrid::copyGrid                => TasmanianCopyGrid
 ```
-Although the methods do not support array API and hence anisotropic weights and level limits still require the use of the member functions, e.g., `grid%makeGlobalGrid()`.
+Although the methods do not support array API and hence anisotropic weights and level limits still require the use of the member functions, e.g., `makeGlobalGrid()`.
 
 The static array API works with allocatable variables but requires user allocation of memory and is not very expressive. Functions that return pointers to pre-allocated data are preferable; however, functions and subroutines cannot share names in generic overloads. Thus, the Fortran functions use alternative names that start with `return` as opposed to `get`, e.g.,
 ```

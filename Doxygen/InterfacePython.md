@@ -12,9 +12,7 @@ See the Fortran 2003 comments about the row major matrix format.
 
 ### Requirements
 
-Both Python 2 and 3 are supported and the installed module is fully compatible with both
-regardless of the Python version used during install and testing.
-Tasmanian uses the following modules:
+Python 3 is the only version currently tested and Tasmanian uses the following modules:
 * **required** `sys`
 * **required** `c_types`
 * **required** `numpy`
@@ -30,9 +28,6 @@ Starting with Tasmanian 7.0 all Python capabilities are included in a single mod
 ```
     import Tasmanian
 ```
-Older version of Tasmanian have Python bindings only for the Sparse Grid class
-and the module was called `TasmanianSG`. The API is backwards compatible
-and there is no need to change existing codes.
 
 Note that the Tasmanian install path must be included in the Python search path:
 ```

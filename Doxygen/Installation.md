@@ -5,7 +5,6 @@
 ### Document Sections
 * Requirements
 * Install using CMake: the preferred way
-* Install with the `install` script-wrapper around CMake
 * Install with (basic) GNU Make
 * Install with Python Pip
 * Install with Spack
@@ -29,14 +28,14 @@ Optional features:
 * Acceleration using Nvidia [linear algebra libraries](https://developer.nvidia.com/cublas) and custom [CUDA kernels](https://developer.nvidia.com/cuda-zone)
 * Acceleration using AMD ROCm [linear algebra libraries](https://rocsparse.readthedocs.io/en/master/) and custom [HIP kernels](https://rocmdocs.amd.com/en/latest/ROCm_API_References/HIP-API.html)
 * Acceleration using Intel OneAPI [oneMKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/components/onemkl.html) and custom [DPC++ kernels](https://software.intel.com/content/www/us/en/develop/tools/oneapi.html)
-* GPU accelerated linear algebra using [UTK MAGMA library](http://icl.cs.utk.edu/magma/)
+* GPU out-of-core algorithms using the [UTK MAGMA library](http://icl.cs.utk.edu/magma/)
 * Basic [Python matplotlib](https://matplotlib.org/) support
 * Fully featured [MATLAB/Octave](https://www.gnu.org/software/octave/) interface via wrappers around the command-line tool
-* Fortran 2003 interface using [gfortran](https://gcc.gnu.org/wiki/GFortran) or [ifort](https://software.intel.com/en-us/intel-compilers) or [pgfortran](https://www.pgroup.com/index.htm) or [xlf2003](https://www.ibm.com/products/xl-fortran-linux-compiler-power)
+* Fortran 2003 interface using [gfortran](https://gcc.gnu.org/wiki/GFortran), [flang](https://flang.llvm.org/docs/), [ifort](https://software.intel.com/en-us/intel-compilers), [pgfortran](https://www.pgroup.com/index.htm), [xlf2003](https://www.ibm.com/products/xl-fortran-linux-compiler-power)
 * Addon templates for the [Message Passing Interface (MPI)](https://en.wikipedia.org/wiki/Message_Passing_Interface)
 * [Doxygen](http://www.doxygen.org/) documentation
 
-**Note:** with the exception of the Intel and PGI compilers and the MAGMA library, the rest of the software is included in the repositories of most Linux distributions, e.g., [Ubuntu](https://www.ubuntu.com/) or [Fedora](https://getfedora.org/), as well as [Mac OSX Homebrew](https://brew.sh/).
+**Note:** with the exception of the MAGMA library and some of the more exotic compilers, the rest of the software is included in most Linux distributions (or HomeBrew) or there are vendor supported software repositories.
 
 | Feature | Tested versions     | Recommended      |
 |----|----|----|
@@ -45,14 +44,13 @@ Optional features:
 | icc     | 18.1                | 18.1             |
 | xl      | 16.1                | 16.1             |
 | pgi     | 19.10 - 20.4        | 20.4             |
-| cmake   | 3.19 - 3.23         | 3.22             |
+| cmake   | 3.19 - 3.25         | 3.22             |
 | python  | 3.8 - 3.10          | any              |
 | anaconda| 5.3                 | 5.3              |
 | OpenBlas| 0.2.18 - 3.08       | any              |
-| ATLAS   | 3.10                | 3.10             |
 | ESSL    | 6.2                 | 6.2              |
-| CUDA    | 10.0 - 11           | 11.3             |
-| ROCm    | 5.2 -5.3            | 5.3              |
+| CUDA    | 10.0 - 12           | 12.1             |
+| ROCm    | 5.5 -5.7            | any              |
 | libiomp | 5.0                 | 5.0              |
 | MAGMA   | 2.5.1 - 2.6.1       | 2.6.1            |
 | Doxygen | 1.8.13              | 1.8.13           |
@@ -106,15 +104,15 @@ ROCm capabilities require CMake 3.21.
       e.g., [https://www.openblas.net/](https://www.openblas.net/); optimized BLAS improves the
       performance when using evaluate commands on grids with many points or working with models with many outputs
     * Linear Algebra PACKage (LAPACK) is a set of advanced solver, eigen-solvers and decomposition methods
-      that build upon BLAS and is usually included in the same package, e.g., OpenBLAS, MKL, ESSL, and ATLAS;
+      that build upon BLAS and is usually included in the same package, e.g., OpenBLAS, MKL and ESSL;
       within Tasmanian, the name BLAS in CMake or run-time options indicate the dependence and usage of both BLAS and LAPACK
     * CUDA is a C++ language extension that allows Tasmanian to leverage the computing power of Nvidia GPU devices,
       which greatly enhances the performance of `evaluateFast()` and `evaluateBatch()` and a few other calls
     * HIP/ROCm is very similar to CUDA but uses AMD GPU devices instead, Tasmanian supports a HIP backend
-    * DPC++/OneAPI is the Intel alternative to CUDA and HIP, Tasmanian supports a DPC++ backend
+    * SYCL/DPC++/OneAPI is the Intel alternative to CUDA and HIP, Tasmanian supports a SYCL/DPC++ backend
     * Matrix Algebra on GPU and Multicore Architectures (MAGMA) is a library for GPU accelerated linear
       algebra developed at the University of Tennessee at Knoxville
-    * MPI allows the use of distributed memory in Bayesian inference, parallel model construction, and send/receive grid through an MPI comm
+    * MPI allows the use of distributed memory in Bayesian inference, parallel surrogate model construction, and send/receive grid through an MPI communicators
 * The **Tasmanian_ENABLE_RECOMMENDED** option searches for OpenMP, BLAS, and Python, enables the options (if possible) and also sets the `-O3` flag
 * **Tasmanian_ENABLE_FORTRAN** enables the Fortran 2003 interface
     * Fortran 90 interface is deprecated, but can be enabled with **-DTasmanian_ENABLE_FORTRAN90=ON**
@@ -124,7 +122,7 @@ ROCm capabilities require CMake 3.21.
       The interface is enabled by setting **Tasmanian_MATLAB_WORK_FOLDER** to a valid read/write location.
 * The Doxygen option will build the HTML documentation
 
-* Options to adjust the testing environment: by default Tasmanian testing will use the system provided OpenMP parameters and run tests on all visible Nvidia GPU devices; specific number of threads and device can be selected (note that only the testing environment is affected here):
+* Options to adjust the testing environment: by default Tasmanian testing will use the system provided OpenMP parameters and run tests on all visible GPU devices; specific number of threads and device can be selected (note that only the testing environment is affected):
 ```
  -D Tasmanian_TESTS_OMP_NUM_THREADS=<number-of-threads-for-testing> (only used with OpenMP)
  -D Tasmanian_TESTS_GPU_ID=<cuda-device-id-for-testing>             (only used with CUDA)
@@ -143,24 +141,23 @@ ROCm capabilities require CMake 3.21.
   -D MPIEXEC_EXECUTABLE:PATH=<path>    (needed for MPI testing)
 ```
 
-* The MAGMA option can be passed without the *Tasmanian_* prefix and if not specified explicitly those will be read from the OS environment.
+* The MAGMA option can be passed without the *Tasmanian_* prefix and if not specified explicitly, it will be read from the OS environment.
 
 * Option for automated download of MAGMA, the package will be downloaded, build, and installed together with Tasmanian in the same prefix.
 ```
   -D Tasmanian_MAGMA_DOWNLOAD:BOOL=<ON/OFF> (works only on Linux)
 ```
 
-* The **ROCm** capabilities **NO LONGER** require that the CMake CXX compiler is set to *hipcc*.
+* The **ROCm** capabilities **NO LONGER** require the CMake CXX compiler to be set to *hipcc*.
     * by default, Tasmanian will search for hip in `/opt/rocm /opt/rocm/hip` following the [ROCm documentation](https://rocmdocs.amd.com/en/latest/Installation_Guide/Using-CMake-with-AMD-ROCm.html)
     * additional search paths can be added using `CMAKE_PREFIX_PATH`
     * the CXX compiler, if not set automatically, should be set to ROCm clang, e.g., `/opt/rocm/llvm/bin/clang++`
-    * `Tasmanian_ENABLE_ROCM`, if defined, will be added to `CMAKE_PREFIX_PATH` to search for `roc::hip`
+    * if `Tasmanian_ENABLE_ROCM` is defined and set to a directory, it will be added to `CMAKE_PREFIX_PATH` to search for `roc::hip`
 
 * The **OneAPI** capabilities require:
-    * Tasmanian **NO LONGER** requires that the CMake CXX compiler is set to *dpcpp*
-    * the compiler is now set to Intel *ipcx*, Tasmanian will automatically add the *-fsycl* flag (when needed)
+    * the compiler has to be set to Intel *ipcx*, Tasmanian will automatically add the *-fsycl* flag (when needed)
     * `Tasmanian_ENABLE_BLAS` is set to **ON**
-    * BLAS is set to the CPU version of MKL, e.g., using `BLAS_LIBRARIES` or `BLA_VENDOR`
+    * BLAS is set to the CPU version of MKL, e.g., using `BLAS_LIBRARIES` or `BLA_VENDOR` or `MKLROOT` environment variable
 
 * Alternatives allowing to directly specify libraries and bypass `find_package()` altogether:
 ```
@@ -185,7 +182,8 @@ ROCm capabilities require CMake 3.21.
 The core capabilities of Tasmanian can be build with a few simple GNU Make commands.
 The basic build engine is useful for quick testing and exploring Tasmanian, or
 if CMake is unavailable or unwanted.
-Acceleration options other than OpenMP are not supported in the basic mode.
+Acceleration options other than OpenMP are not supported in the basic mode,
+CMake is so common these days that it should be the default way to install.
 
 * Using GNU Make with `g++` and optionally `/usr/bin/env python`
 ```
@@ -197,7 +195,7 @@ Acceleration options other than OpenMP are not supported in the basic mode.
 ```
 In the basic mode, the source folder will become the installation folder, i.e.,
 the libraries, executables and Python modules will be build in the source folder
-and the headers will be copied to the `include` folder.
+and the headers will be copied to the `include` sub-folder.
 
 ### Install with Python Pip
 
@@ -206,12 +204,9 @@ Tasmanian is included in the Python Pip index: [https://pypi.org/project/Tasmani
   python3 -m pip install Tasmanian --user   (user installation)
   python3 -m pip install Tasmanian          (virtual env installation)
 ```
-Pip versions prior to 1.10 cannot handle the extra dependencies, those must be installed manually
-```
-  python3 -m pip install scikit-build packaging numpy --user
-```
 
 The Tasmanian module is not a regular Python-only project but a wrapper around the C++ libraries, note the following:
+* The compiled binaries are cached by pip and `--no-cache-dir` option must be used to change the options.
 * Pip versions prior to 1.10 require that dependencies are installed manually.
 * Only user installations are supported, installation for all users is possible with CMake but not Pip.
 * Python virtual environments are supported, as well as Linux, Mac and Windows operating systems.
@@ -243,24 +238,24 @@ export MKLROOT              /opt/intel/oneapi/mkl/latest
 python3 -m venv tasmanian_virtual_env                   # create a virtual environment
 source ./tasmanian_virtual_env/bin/activate             # activate the virtual environment
 export Tasmanian_ENABLE_CUDA=/usr/local/cuda/bin/nvcc   # specify the CUDA compiler
-python -m pip install Tasmanian                         # will install Tasmanian with CUDA
+python -m pip install Tasmanian --no-cache-dir          # will install Tasmanian with CUDA
 python -m Tasmanian                                     # print the install log
-./tasmanian_virtual_env/bin/tasgrid -v                  # print the available CUDA devices
+tasgrid -v                                              # print the available CUDA devices
 ```
 
 Additional notes:
 * under MS Windows the environment variables can be set from Advanced System Settings,
   but the paths should use Linux style of back-slashes, e.g., `C:/Program Files/CUDA/bin/nvcc.exe`
-* scikit build does not support the latest `Visual Studio 16 2019`, regular CMake install works fine
+* scikit build sometimes lags in support for the latest MS Visual Studio, regular CMake install works fine
 * under OSX some users have reported segfaults when using a pip install, the problem does not
-  appear when using CMake or the install script, the issue is under investigation
+  appear when using CMake, the issue is under investigation
 
 
 ### Install with Spack
 
 Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 ```
- spack install tasmanian@7.0+openmp+blas+cuda+magma+python+fortran
+ spack install tasmanian@8.0+openmp+blas+cuda+magma+python+fortran
 ```
 
 ### Install on MS Windows platform
@@ -344,7 +339,7 @@ In addition, the following variables will be set:
 ```
 The possible components are:
 ```
-  SHARED STATIC OPENMP BLAS CUDA HIP MAGMA MPI PYTHON MATLAB FORTRAN
+  SHARED STATIC OPENMP BLAS CUDA HIP DPCPP MAGMA MPI PYTHON MATLAB FORTRAN
 ```
 The modules correspond to shared and static libraries and the cmake options used during build.
 
