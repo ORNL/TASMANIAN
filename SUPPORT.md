@@ -1,3 +1,3 @@
 # Tasmanian Support
 
-See our contact information at [http://tasmanian.ornl.gov/](http://tasmanian.ornl.gov/)
+Open a GitHub issue or email stoyanovmk @at@ ornl .dot. gov
