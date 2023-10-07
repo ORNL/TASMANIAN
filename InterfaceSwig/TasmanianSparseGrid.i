@@ -40,6 +40,10 @@ namespace TasGrid {
 %ignore TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *, int);
 %ignore TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *);
 
+%ignore TasmanianSparseGrid::write(const std::string &, bool) const;
+%ignore TasmanianSparseGrid::write(std::string const&) const;
+%ignore TasmanianSparseGrid::read(const std::string &);
+
 %ignore TasmanianSparseGrid::beginConstruction;
 %ignore TasmanianSparseGrid::isUsingConstruction;
 %ignore TasmanianSparseGrid::loadConstructedPoints;
