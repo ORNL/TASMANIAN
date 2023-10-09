@@ -102,22 +102,22 @@ void GpuEngine::setRocSparseHandle(void *handle){
 
 int AccelerationMeta::getNumGpuDevices(){
     int gpu_count = 0;
-    hipGetDeviceCount(&gpu_count);
+    TasGpu::hipcheck( hipGetDeviceCount(&gpu_count), "hipGetDeviceCount()");
     return gpu_count;
 }
 void AccelerationMeta::setDefaultGpuDevice(int deviceID){
-    hipSetDevice(deviceID);
+    TasGpu::hipcheck( hipSetDevice(deviceID), "hipSetDevice()");
 }
 unsigned long long AccelerationMeta::getTotalGPUMemory(int deviceID){ // int deviceID
     hipDeviceProp_t prop;
-    hipGetDeviceProperties(&prop, deviceID);
+    TasGpu::hipcheck( hipGetDeviceProperties(&prop, deviceID), "hipGetDeviceProperties()");
     return prop.totalGlobalMem;
 }
 std::string AccelerationMeta::getGpuDeviceName(int deviceID){ // int deviceID
     if ((deviceID < 0) || (deviceID >= getNumGpuDevices())) return std::string();
 
     hipDeviceProp_t prop;
-    hipGetDeviceProperties(&prop, deviceID);
+    TasGpu::hipcheck( hipGetDeviceProperties(&prop, deviceID), "hipGetDeviceProperties()");
 
     return std::string(prop.name);
 }

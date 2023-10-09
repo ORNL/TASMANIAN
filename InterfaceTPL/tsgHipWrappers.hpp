@@ -41,9 +41,9 @@
 #define __HIP_PLATFORM_HCC__
 #endif
 #include <hip/hip_runtime.h>
-#include <rocblas.h>
-#include <rocsparse.h>
-#include <rocsolver.h>
+#include <rocblas/rocblas.h>
+#include <rocsparse/rocsparse.h>
+#include <rocsolver/rocsolver.h>
 
 #ifdef Tasmanian_ENABLE_MAGMA
 #define HAVE_HIP
