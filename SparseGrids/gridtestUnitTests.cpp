@@ -41,7 +41,7 @@
 #define __HIP_PLATFORM_HCC__
 #endif
 #include <hip/hip_runtime.h>
-#include <rocblas.h>
+#include <rocblas/rocblas.h>
 #endif
 
 #ifdef Tasmanian_ENABLE_DPCPP
