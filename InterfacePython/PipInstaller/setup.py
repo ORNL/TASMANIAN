@@ -70,7 +70,7 @@ if isosxframework:
 # call the actual package setup command
 setup(
     name='Tasmanian',
-    version='8.0rc1',
+    version='8.0',
     author='Miroslav Stoyanov',
     author_email='stoyanovmk@ornl.gov',
     description='UQ library for sparse grids, optimization and Bayesian inference',
