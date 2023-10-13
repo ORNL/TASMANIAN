@@ -961,7 +961,7 @@ std::vector<double> GridFourier::getCandidateConstructionPoints(std::function<do
     for(int i=0; i<new_tensors.getNumIndexes(); i++)
         dynamic_values->addTensor(new_tensors.getIndex(i), [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
 
-    return MultiIndexManipulations::indexesToNodes(dynamic_values->getNodesIndexes(), wrapper);
+    return MultiIndexManipulations::getIndexesToNodes(dynamic_values->getNodesIndexes(), wrapper);
 }
 std::vector<int> GridFourier::getMultiIndex(const double x[]){
     std::vector<int> p(num_dimensions);

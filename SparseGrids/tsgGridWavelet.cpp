@@ -415,7 +415,7 @@ void GridWavelet::buildInterpolationMatrix() const{
     for(int b=0; b<num_blocks; b++){
         int block_end = (b < num_blocks - 1) ? (b+1) * num_chunk : num_points;
         for(int i=b * num_chunk; i < block_end; i++){
-            std::vector<double> xi = MultiIndexManipulations::indexesToNodes(work.getIndex(i), (size_t) num_dimensions, rule1D);
+            std::vector<double> xi = MultiIndexManipulations::getIndexesToNodes(work.getIndex(i), (size_t) num_dimensions, rule1D);
 
             // loop over the basis functions to see if supported
             int numpntr = 0;
