@@ -562,7 +562,7 @@ OutputIteratorLike indexesToNodes(IteratorLike ibegin, size_t num_entries, RuleL
  * \brief Overload that returns the result in a vector.
  */
 template<class IndexList, class RuleLike>
-std::vector<double> indexesToNodes(IndexList const &list, RuleLike const &rule){
+std::vector<double> getIndexesToNodes(IndexList const &list, RuleLike const &rule){
     std::vector<double> result(std::distance(list.begin(), list.end()));
     indexesToNodes(list, rule, result.begin());
     return result;
@@ -573,7 +573,7 @@ std::vector<double> indexesToNodes(IndexList const &list, RuleLike const &rule){
  * \brief Overload that returns the result in a vector.
  */
 template<class IteratorLike, class RuleLike>
-std::vector<double> indexesToNodes(IteratorLike ibegin, size_t num_entries, RuleLike const &rule){
+std::vector<double> getIndexesToNodes(IteratorLike ibegin, size_t num_entries, RuleLike const &rule){
     std::vector<double> result(num_entries);
     indexesToNodes(ibegin, num_entries, rule, result.begin());
     return result;

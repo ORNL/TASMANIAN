@@ -473,7 +473,7 @@ std::vector<double> GridGlobal::getCandidateConstructionPoints(std::function<dou
     for(int i=0; i<new_tensors.getNumIndexes(); i++)
         dynamic_values->addTensor(new_tensors.getIndex(i), [&](int l)->int{ return wrapper.getNumPoints(l); }, tweights[i]);
 
-    return MultiIndexManipulations::indexesToNodes(dynamic_values->getNodesIndexes(), wrapper);
+    return MultiIndexManipulations::getIndexesToNodes(dynamic_values->getNodesIndexes(), wrapper);
 }
 std::vector<int> GridGlobal::getMultiIndex(const double x[]){
     std::vector<int> p(num_dimensions);

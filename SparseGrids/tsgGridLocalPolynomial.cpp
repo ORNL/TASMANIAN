@@ -576,7 +576,7 @@ void GridLocalPolynomial::expandGrid(const std::vector<int> &point, const std::v
         surpluses = Data2D<double>(num_outputs, 1, std::vector<double>(value)); // one value is its own surplus
     }else{ // merge with existing points
         // compute the surplus for the point
-        std::vector<double> xnode = MultiIndexManipulations::indexesToNodes(point, *rule);
+        std::vector<double> xnode = MultiIndexManipulations::getIndexesToNodes(point, *rule);
         std::vector<double> approximation(num_outputs), surp(num_outputs);
         evaluate(xnode.data(), approximation.data());
         std::transform(approximation.begin(), approximation.end(), value.begin(), surp.begin(), [&](double e, double v)->double{ return v - e; });
@@ -755,7 +755,7 @@ void GridLocalPolynomial::updateSurpluses(MultiIndexSet const &work, int max_lev
         for(int s=0; s<level_size; s++){
             int i = indexses_for_levels[l][s];
 
-            std::vector<double> x = MultiIndexManipulations::indexesToNodes(work.getIndex(i), num_dimensions, *rule);
+            std::vector<double> x = MultiIndexManipulations::getIndexesToNodes(work.getIndex(i), num_dimensions, *rule);
             double *surpi = surpluses.getStrip(i);
 
             std::vector<int> monkey_count(max_level + 1);
@@ -818,7 +818,7 @@ void GridLocalPolynomial::applyTransformationTransposed(double weights[], const 
     for(int l=active_top_level; l>0; l--){
         for(size_t i=0; i<active_points.size(); i++){
             if (level[i] == l){
-                std::vector<double> node = MultiIndexManipulations::indexesToNodes(work.getIndex(active_points[i]), num_dimensions, *rule);
+                std::vector<double> node = MultiIndexManipulations::getIndexesToNodes(work.getIndex(active_points[i]), num_dimensions, *rule);
 
                 std::fill(used.begin(), used.end(), false);
 
@@ -1071,7 +1071,7 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
     for(int l=top_level; l>0; l--){
         for(int i=0; i<num_points; i++){
             if (level[i] == l){
-                std::vector<double> node = MultiIndexManipulations::indexesToNodes(work.getIndex(i), num_dimensions, *rule);
+                std::vector<double> node = MultiIndexManipulations::getIndexesToNodes(work.getIndex(i), num_dimensions, *rule);
 
                 std::vector<bool> used(work.getNumIndexes(), false);
 
