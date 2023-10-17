@@ -1,0 +1,222 @@
+\documentclass{article}
+\usepackage{ifthen}
+\usepackage{epsfig}
+\usepackage[utf8]{inputenc}
+\usepackage{newunicodechar}
+  \newunicodechar{⁻}{${}^{-}$}% Superscript minus
+  \newunicodechar{²}{${}^{2}$}% Superscript two
+  \newunicodechar{³}{${}^{3}$}% Superscript three
+
+\pagestyle{empty}
+\begin{document}
+$ \left( \begin{array}{rrrr} 1 & 2 & 3 & 4 \\ 5 & 6 & 7 & 8 \\ 9 & 10 & 11 & 12 \\ \end{array} \right) $
+\pagebreak
+
+$ \xi_1, \xi_2, \cdots, \xi_d $
+\pagebreak
+
+$ \eta_1, \eta_2, \cdots, \eta_d $
+\pagebreak
+
+$ \alpha $
+\pagebreak
+
+$ \rho(x) $
+\pagebreak
+
+$ \beta $
+\pagebreak
+
+$ d $
+\pagebreak
+
+$ \eta $
+\pagebreak
+
+$ \xi $
+\pagebreak
+
+$ \int_\Gamma f(x) \rho(x) dx $
+\pagebreak
+
+$ \Gamma $
+\pagebreak
+
+$ f(x) $
+\pagebreak
+
+$ [0, \infty) $
+\pagebreak
+
+$ [a, \infty) $
+\pagebreak
+
+$ (-\infty, \infty) $
+\pagebreak
+
+$ \left\{ (i_1, i_2, \cdots, i_d) : \sum_{k=1}^d \xi_k i_k \leq L \right\} $
+\pagebreak
+
+$ \left\{ (i_1, i_2, \cdots, i_d) : \sum_{k=1}^d \xi_k i_k + \sum_{k=1}^d \eta_k \log(i_k + 1) \leq L \right\} $
+\pagebreak
+
+$ \left\{ (i_1, i_2, \cdots, i_d) : \prod_{k=1}^d (i_k + 1)^{\xi_k} \leq L \right\} $
+\pagebreak
+
+$ \left\{ \prod_{k=1}^d x^{i_k} : \sum_{k=1}^d \xi_k i_k \leq L \right\} $
+\pagebreak
+
+$ \left\{ \prod_{k=1}^d x^{i_k} : \sum_{k=1}^d \xi_k i_k + \sum_{k=1}^d \eta_k \log(i_k + 1) \leq L \right\} $
+\pagebreak
+
+$ \left\{ \prod_{k=1}^d x^{i_k} : \prod_{k=1}^d (i_k + 1)^{\xi_k} \leq L \right\} $
+\pagebreak
+
+$ \left\{ \prod_{k=1}^d x^{i_k} : i_k \leq \xi_k \mbox{ for all } k \right\} $
+\pagebreak
+
+$ \int_{a}^{b} f(x) / \sqrt{(b - x)(x - a)} dx $
+\pagebreak
+
+$ \int_{a}^{b} f(x) \sqrt{(b - x)(x - a)} dx $
+\pagebreak
+
+$ \int_{a}^{b} f(x) (b - x)^\alpha (x - a)^\alpha dx $
+\pagebreak
+
+$ \int_{a}^{b} f(x) (b - x)^\alpha (x - a)^\beta dx $
+\pagebreak
+
+$ \int_{a}^{\infty} f(x) (x - a)^\alpha \exp \left(-b (x - a) \right) dx $
+\pagebreak
+
+$ \int_{-\infty}^{\infty} f(x) (x - a)^\alpha \exp \left(-b (x - a)^2 \right) dx $
+\pagebreak
+
+$ \min_x \| A x - b \|_2 $
+\pagebreak
+
+$ \min_x \| A x - B \|_2 $
+\pagebreak
+
+$ \int \mu(x) dx$
+\pagebreak
+
+$ mu(x) dx$
+\pagebreak
+
+$ A^T x = b $
+\pagebreak
+
+$ A X = B $
+\pagebreak
+
+$ x = s_i + w ( s_k - s_j) $
+\pagebreak
+
+$ \exp( -0.5 x^2 ) $
+\pagebreak
+
+$ -0.5 x^2 $
+\pagebreak
+
+$ y = \exp(- 0.5 (x - M)^2 / V) $
+\pagebreak
+
+$ y = \exp(- R * (x - x_0)) $
+\pagebreak
+
+$ y = (x - x_0)^{\alpha - 1} (x_1 - x_0)^{\beta - 1} $
+\pagebreak
+
+$ y = (x - x_0)^{\alpha - 1} \exp(-\beta (x - x_0)) $
+\pagebreak
+
+$ L(y | d_1 \cdots d_n) = \exp\left( 0.5 sum_{i=1}^n (y - d_i)^T \Sigma^{-1} (y - d_i) \right)$
+\pagebreak
+
+$ d_i $
+\pagebreak
+
+$ \Sigma $
+\pagebreak
+
+$ x_1,\ldots,x_k $
+\pagebreak
+
+$ {\rm f\_single}(x_1),\ldots, {\rm f\_single}(x_k) $
+\pagebreak
+
+$ -\inf_{\|d\| = 1, d\in T_C(x)} f'(x;d) $
+\pagebreak
+
+$ f'(x;d)=\lim_{t \to 0} \frac{ f(x+td)-f(x) }{ t }, $
+\pagebreak
+
+$C$
+\pagebreak
+
+$f$
+\pagebreak
+
+$T_C(x)$
+\pagebreak
+
+$x$
+\pagebreak
+
+$ \int_{-1}^{1} f(x) \rho(x) dx $
+\pagebreak
+
+$ \int_{-1}^{1} | \rho(x) | dx < \infty $
+\pagebreak
+
+$ \rho(x) \geq c > -\infty $
+\pagebreak
+
+$ \rho(x) + c \geq 0 $
+\pagebreak
+
+$ \sin(x) $
+\pagebreak
+
+$ \sin(x) / x $
+\pagebreak
+
+$ \cos(x) $
+\pagebreak
+
+$ \min_c \| G_c(x) - Y \|_2 $
+\pagebreak
+
+$ G_c(x) = H c $
+\pagebreak
+
+$ C = \alpha A B + \beta C $
+\pagebreak
+
+$ C = C Q^T $
+\pagebreak
+
+$ min_x \| A x - B \|^2_2 $
+\pagebreak
+
+$ A = P L U $
+\pagebreak
+
+$ C = \alpha A B $
+\pagebreak
+
+$ \int_{-1}^{+1} \int_{-1}^{+1} \exp(-x^2) \cos(y) dy dx $
+\pagebreak
+
+$ \int_{-5}^{+5} \int_{-2}^{+3} \exp(-x^2) \cos(y) dy dx $
+\pagebreak
+
+$ \int_{-5}^{+5} \int_{-5}^{+5} \int_{-2}^{+3} \int_{-2}^{+3} \exp(-x_1^2 -x_2^2) \cos(x_3) \cos(x_4) dx_4 dx_3 dx_2 dx_1 $
+\pagebreak
+
+$ f(x,y) = ( 4 - 2.1 x^2 + x^4 / 3) x^2 + x y + ( - 4 + 4 y^2) y^2 $
+\pagebreak
+
+\end{document}
