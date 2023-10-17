@@ -20,7 +20,7 @@ set(DOXYGEN_HTML_COLORSTYLE_GAMMA  "90")
 
 
 set(DOXYGEN_FORMULA_FONTSIZE "14")
-set(DOXYGEN_USE_MATHJAX "YES")
+set(DOXYGEN_USE_MATHJAX "NO")
 
 set(DOXYGEN_PROJECT_NAME   "Toolkit for Adaptive Stochastic Modeling and Non-Intrusive ApproximatioN: ${PROJECT_NAME} v${Tasmanian_VERSION_MAJOR}.${Tasmanian_VERSION_MINOR}${Tasmanian_version_comment}")
 set(DOXYGEN_PROJECT_NUMBER "") # if project number is given, the rendered font is too small

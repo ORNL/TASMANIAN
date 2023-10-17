@@ -51,6 +51,7 @@ Optional features:
 | ESSL    | 6.2                 | 6.2              |
 | CUDA    | 10.0 - 12           | 12.1             |
 | ROCm    | 5.5 -5.7            | any              |
+| DPC++   | 2021 - 2023         | 2023             |
 | libiomp | 5.0                 | 5.0              |
 | MAGMA   | 2.5.1 - 2.6.1       | 2.6.1            |
 | Doxygen | 1.8.13              | 1.8.13           |
