@@ -812,51 +812,81 @@ void GridSequence::recomputeSurpluses(){
     int num_points = points.getNumIndexes();
     surpluses = Data2D<double>(num_outputs, num_points, std::vector<double>(values.begin(), values.end()));
 
-    std::vector<int> level = MultiIndexManipulations::computeLevels(points);
-    int top_level = *std::max_element(level.begin(), level.end());
+    int num_levels = 1 + *std::max_element(points.begin(), points.end());
 
-    Data2D<int> parents = MultiIndexManipulations::computeDAGup(points);
+    // construct matrix of basis values at nodes
+    std::vector<double> vmatrix(num_levels * num_levels, 0);
 
-    std::vector<std::vector<int>> indexses_for_levels((size_t) top_level+1);
-    for(int i=0; i<num_points; i++)
-        if (level[i] > 0) indexses_for_levels[level[i]].push_back(i);
+    #pragma omp parallel for
+    for(int i=0; i<num_levels; i++) {
+        double basis = 1.0; // different basis functions
+        double x = nodes[i]; // row = i-th output
+        vmatrix[i * num_levels] = 1.0;
+        for(int j=1; j<i; j++) { // loop over rows
+            basis *= (x - nodes[j-1]); // numerator of next function
+            vmatrix[i * num_levels + j] = basis / coeff[j];
+        }
+    }
 
-    for(int l=1; l<=top_level; l++){
-        int level_size = (int) indexses_for_levels[l].size();
-        #pragma omp parallel for schedule(dynamic)
-        for(int s=0; s<level_size; s++){
-            int i = indexses_for_levels[l][s];
+    auto match_outside_dim = [&](int d, int const*a, int const *b) -> bool {
+            for(int j=0; j<d; j++)
+                if (a[j] != b[j]) return false;
+            for(int j=d+1; j<num_dimensions; j++)
+                if (a[j] != b[j]) return false;
+            return true;
+        };
 
-            const int* p = points.getIndex(i);
-            double *surpi = surpluses.getStrip(i);
+    std::vector<std::vector<int>> map(num_dimensions, std::vector<int>(num_points));
+    std::vector<std::vector<int>> job_indexes(num_dimensions);
+    for(auto &ji : job_indexes) ji.reserve(num_levels + 1);
 
-            std::vector<int> monkey_count(top_level + 1);
-            std::vector<int> monkey_tail(top_level + 1);
-            std::vector<bool> used(num_points, false);
-
-            int current = 0;
-
-            monkey_count[0] = 0;
-            monkey_tail[0] = i;
-
-            while(monkey_count[0] < num_dimensions){
-                if (monkey_count[current] < num_dimensions){
-                    int branch = parents.getStrip(monkey_tail[current])[monkey_count[current]];
-                    if ((branch == -1) || (used[branch])){
-                        monkey_count[current]++;
-                    }else{
-                        const double *branch_surp = surpluses.getStrip(branch);;
-                        double basis_value = evalBasis(points.getIndex(branch), p);
-                        for(int k=0; k<num_outputs; k++){
-                                surpi[k] -= basis_value * branch_surp[k];
-                        }
-                        used[branch] = true;
-
-                        monkey_count[++current] = 0;
-                        monkey_tail[current] = branch;
+    #pragma omp parallel for
+    for(int d=0; d<num_dimensions; d++) {
+        // for each dimension, use the map to group points together
+        std::iota(map[d].begin(), map[d].end(), 0);
+        if (d != num_dimensions - 1) {
+            std::sort(map[d].begin(), map[d].end(), [&](int a, int b)->bool{
+                const int * idxa = points.getIndex(a);
+                const int * idxb = points.getIndex(b);
+                for(int j=0; j<num_dimensions; j++) {
+                    if (j != d){
+                        if (idxa[j] < idxb[j]) return true;
+                        if (idxa[j] > idxb[j]) return false;
                     }
-                }else{
-                    monkey_count[--current]++;
+                }
+                // lexigographical order, dimension d is the fastest moving one
+                if (idxa[d] < idxb[d]) return true;
+                if (idxa[d] > idxb[d]) return false;
+                return false;
+            });
+        }
+
+        if (num_dimensions == 1) {
+            job_indexes[d].push_back(0);
+            job_indexes[d].push_back(num_points);
+        } else {
+            int const *c_index = points.getIndex(map[d][0]);
+            job_indexes[d].push_back(0);
+            for(int i=1; i<num_points; i++) {
+                if (not match_outside_dim(d, c_index, points.getIndex(map[d][i]))) {
+                    job_indexes[d].push_back(i);
+                    c_index = points.getIndex(map[d][i]);
+                }
+            }
+            job_indexes[d].push_back(num_points);
+        }
+    }
+
+    for(int d=num_dimensions-1; d>=0; d--) {
+        #pragma omp parallel for
+        for(int job = 0; job < static_cast<int>(job_indexes[d].size() - 1); job++) {
+            const int offset = job_indexes[d][job] * num_levels + job_indexes[d][job];
+            for(int i=job_indexes[d][job]+1; i<job_indexes[d][job+1]; i++) {
+                double * istrip = surpluses.getStrip(map[d][i]);
+                for(int j=job_indexes[d][job]; j<i; j++) {
+                    double * jstrip = surpluses.getStrip(map[d][j]);
+                    for(int k=0; k<num_outputs; k++)
+                        istrip[k] -= vmatrix[i * num_levels + j - offset] * jstrip[k];
                 }
             }
         }
