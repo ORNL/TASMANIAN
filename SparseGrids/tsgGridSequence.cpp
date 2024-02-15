@@ -822,60 +822,16 @@ void GridSequence::recomputeSurpluses(){
         double basis = 1.0; // different basis functions
         double x = nodes[i]; // row = i-th output
         vmatrix[i * num_levels] = 1.0;
-        for(int j=1; j<i; j++) { // loop over rows
+        for(int j=1; j<i; j++) { // loop over columns (along the row)
             basis *= (x - nodes[j-1]); // numerator of next function
             vmatrix[i * num_levels + j] = basis / coeff[j];
         }
     }
 
-    auto match_outside_dim = [&](int d, int const*a, int const *b) -> bool {
-            for(int j=0; j<d; j++)
-                if (a[j] != b[j]) return false;
-            for(int j=d+1; j<num_dimensions; j++)
-                if (a[j] != b[j]) return false;
-            return true;
-        };
+    std::vector<std::vector<int>> map;
+    std::vector<std::vector<int>> job_indexes;
 
-    std::vector<std::vector<int>> map(num_dimensions, std::vector<int>(num_points));
-    std::vector<std::vector<int>> job_indexes(num_dimensions);
-    for(auto &ji : job_indexes) ji.reserve(num_levels + 1);
-
-    #pragma omp parallel for
-    for(int d=0; d<num_dimensions; d++) {
-        // for each dimension, use the map to group points together
-        std::iota(map[d].begin(), map[d].end(), 0);
-        if (d != num_dimensions - 1) {
-            std::sort(map[d].begin(), map[d].end(), [&](int a, int b)->bool{
-                const int * idxa = points.getIndex(a);
-                const int * idxb = points.getIndex(b);
-                for(int j=0; j<num_dimensions; j++) {
-                    if (j != d){
-                        if (idxa[j] < idxb[j]) return true;
-                        if (idxa[j] > idxb[j]) return false;
-                    }
-                }
-                // lexigographical order, dimension d is the fastest moving one
-                if (idxa[d] < idxb[d]) return true;
-                if (idxa[d] > idxb[d]) return false;
-                return false;
-            });
-        }
-
-        if (num_dimensions == 1) {
-            job_indexes[d].push_back(0);
-            job_indexes[d].push_back(num_points);
-        } else {
-            int const *c_index = points.getIndex(map[d][0]);
-            job_indexes[d].push_back(0);
-            for(int i=1; i<num_points; i++) {
-                if (not match_outside_dim(d, c_index, points.getIndex(map[d][i]))) {
-                    job_indexes[d].push_back(i);
-                    c_index = points.getIndex(map[d][i]);
-                }
-            }
-            job_indexes[d].push_back(num_points);
-        }
-    }
+    MultiIndexManipulations::resortIndexes(points, map, job_indexes);
 
     for(int d=num_dimensions-1; d>=0; d--) {
         #pragma omp parallel for
