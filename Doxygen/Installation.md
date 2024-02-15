@@ -208,12 +208,15 @@ Tasmanian is included in the Python Pip index: [https://pypi.org/project/Tasmani
 
 The Tasmanian module is not a regular Python-only project but a wrapper around the C++ libraries, note the following:
 * The compiled binaries are cached by pip and `--no-cache-dir` option must be used to change the options.
-* Pip versions prior to 1.10 require that dependencies are installed manually.
 * Only user installations are supported, installation for all users is possible with CMake but not Pip.
 * Python virtual environments are supported, as well as Linux, Mac and Windows operating systems.
+* By default, Tasmanian will install with `Tasmanian_ENABLE_RECOMMENDED=ON` which will safe-auto-enable BLAS and OpenMP
+    * environment variable (see below) can be used to disable the recommended options and switch to manual enable/disable
 * The Pip installer will accept Tasmanian options specified in the environment variables:
 ```
 Environment Option will translate to               CMake Options
+export Tasmanian_ENABLE_RECOMMENDED=OFF            -D Tasmanian_ENABLE_RECOMMENDED=OFF
+
 export Tasmanian_ENABLE_BLAS=<blas-lapack-libs>    -D Tasmanian_ENABLE_BLAS=ON
                                                    -D BLAS_LIBRARIES=<blas-lapack-libs>
                                                    -D LAPACK_LIBRARIES=<blas-lapack-libs>
