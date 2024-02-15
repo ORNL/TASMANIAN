@@ -335,6 +335,20 @@ MultiIndexSet generateNonNestedPoints(const MultiIndexSet &tensors, const OneDim
 /*!
  * \internal
  * \ingroup TasmanianMultiIndexManipulations
+ * \brief Creates a map with sorted indexes dimension by dimension.
+ *
+ * \param iset is a non-empty set of indexes
+ * \param map (output) the i-th index in the order with d as the fastest changing (contiguous) dimension is map[d][i]
+ * \param lines1d for each dimension d the indexes that match in all but d-dimension will be between
+ *        lines1d[d][i] and lines1d[d][i+1] (not including the last entry)
+ *        This is similar to the pntr index of row-compressed sparse matrix
+ * \endinternal
+ */
+void resortIndexes(const MultiIndexSet &iset, std::vector<std::vector<int>> &map, std::vector<std::vector<int>> &lines1d);
+
+/*!
+ * \internal
+ * \ingroup TasmanianMultiIndexManipulations
  * \brief Find the indexes of all points associated with the tensor with \b levels within the global \b points set.
  *
  * The order in which the tensors are formed here must match the order in which they will be used,

@@ -429,63 +429,94 @@ MultiIndexSet generateNonNestedPoints(const MultiIndexSet &tensors, const OneDim
     return unionSets(point_tensors);
 }
 
+void resortIndexes(const MultiIndexSet &iset, std::vector<std::vector<int>> &map, std::vector<std::vector<int>> &lines1d) {
+    int num_dimensions = iset.getNumDimensions();
+    int num_tensors = iset.getNumIndexes();
+
+    int num_levels = 1 + *std::max_element(iset.begin(), iset.end());
+
+    auto match_outside_dim = [&](int d, int const*a, int const *b) -> bool {
+        for(int j=0; j<d; j++)
+            if (a[j] != b[j]) return false;
+        for(int j=d+1; j<num_dimensions; j++)
+            if (a[j] != b[j]) return false;
+        return true;
+    };
+
+    map = std::vector<std::vector<int>>(num_dimensions, std::vector<int>(num_tensors));
+    lines1d = std::vector<std::vector<int>>(num_dimensions);
+    for(auto &ji : lines1d) ji.reserve(num_levels);
+
+    #pragma omp parallel for
+    for(int d=0; d<num_dimensions; d++) {
+        // for each dimension, use the map to group indexes together
+        std::iota(map[d].begin(), map[d].end(), 0);
+        if (d != num_dimensions - 1) {
+            std::sort(map[d].begin(), map[d].end(), [&](int a, int b)->bool{
+                const int * idxa = iset.getIndex(a);
+                const int * idxb = iset.getIndex(b);
+                for(int j=0; j<num_dimensions; j++) {
+                    if (j != d){
+                        if (idxa[j] < idxb[j]) return true;
+                        if (idxa[j] > idxb[j]) return false;
+                    }
+                }
+                // lexigographical order, dimension d is the fastest moving one
+                if (idxa[d] < idxb[d]) return true;
+                if (idxa[d] > idxb[d]) return false;
+                return false;
+            });
+        }
+
+        if (num_dimensions == 1) {
+            lines1d[d].push_back(0);
+            lines1d[d].push_back(num_tensors);
+        } else {
+            int const *c_index = iset.getIndex(map[d][0]);
+            lines1d[d].push_back(0);
+            for(int i=1; i<num_tensors; i++) {
+                if (not match_outside_dim(d, c_index, iset.getIndex(map[d][i]))) {
+                    lines1d[d].push_back(i);
+                    c_index = iset.getIndex(map[d][i]);
+                }
+            }
+            lines1d[d].push_back(num_tensors);
+        }
+    }
+}
+
 std::vector<int> computeTensorWeights(MultiIndexSet const &mset){
-    size_t num_dimensions = (size_t) mset.getNumDimensions();
+    int num_dimensions = mset.getNumDimensions();
     int num_tensors = mset.getNumIndexes();
 
-    std::vector<int> level = computeLevels(mset);
-    int max_level = *std::max_element(level.begin(), level.end());
+    if (num_dimensions == 1) {
+        std::vector<int> weights(num_tensors, 0);
+        weights.back() = 1;
+        return weights;
+    }
+
+    std::vector<std::vector<int>> map;
+    std::vector<std::vector<int>> lines1d;
+
+    resortIndexes(mset, map, lines1d);
 
     Data2D<int> dag_down(num_dimensions, num_tensors);
 
-    std::vector<int> weights((size_t) num_tensors);
+    std::vector<int> weights(num_tensors, 0);
 
-    #pragma omp parallel for schedule(static)
-    for(int i=0; i<num_tensors; i++){
-        std::vector<int> kid(num_dimensions);
-        std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
+    // the row with contiguous indexes has a trivial solution
+    auto const& last_jobs = lines1d[num_dimensions-1];
+    for(int i=0; i<static_cast<int>(last_jobs.size() - 1); i++)
+        weights[last_jobs[i+1] - 1] = 1;
 
-        int *ref_kids = dag_down.getStrip(i);
-        for(size_t j=0; j<num_dimensions; j++){
-            kid[j]++;
-            ref_kids[j] = mset.getSlot(kid);
-            kid[j]--;
-        }
-
-        if (level[i] == max_level) weights[i] = 1;
-    }
-
-    for(int l=max_level-1; l>=0; l--){
-        #pragma omp parallel for schedule(dynamic)
-        for(int i=0; i<num_tensors; i++){
-            if (level[i] == l){
-                std::vector<int> monkey_tail(max_level-l+1);
-                std::vector<int> monkey_count(max_level-l+1);
-                std::vector<bool> used(num_tensors, false);
-
-                int current = 0;
-                monkey_count[0] = 0;
-                monkey_tail[0] = i;
-
-                int sum = 0;
-
-                while(monkey_count[0] < (int) num_dimensions){
-                    if (monkey_count[current] < (int) num_dimensions){
-                        int branch = dag_down.getStrip(monkey_tail[current])[monkey_count[current]];
-                        if ((branch == -1) || (used[branch])){
-                            monkey_count[current]++;
-                        }else{
-                            used[branch] = true;
-                            sum += weights[branch];
-                            monkey_count[++current] = 0;
-                            monkey_tail[current] = branch;
-                        }
-                    }else{
-                        monkey_count[--current]++;
-                    }
+    for(int d=num_dimensions-2; d>=0; d--) {
+        #pragma omp parallel for
+        for(int job = 0; job < static_cast<int>(lines1d[d].size() - 1); job++) {
+            for(int i=lines1d[d][job+1]-2; i>=lines1d[d][job]; i--) {
+                int &val = weights[map[d][i]];
+                for(int j=i+1; j<lines1d[d][job+1]; j++) {
+                    val -= weights[map[d][j]];
                 }
-
-                weights[i] = 1 - sum;
             }
         }
     }
