@@ -763,9 +763,10 @@ void GridLocalPolynomial::build_van_matrix1d(std::vector<int> &vpntr, std::vecto
 void GridLocalPolynomial::recomputeSurpluses(){
     surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::vector<double>(values.begin(), values.end()));
 
-    Data2D<int> dagUp = HierarchyManipulations::computeDAGup(points, rule.get());
+    bool is_complete = true;
+    Data2D<int> dagUp = HierarchyManipulations::computeDAGup(points, rule.get(), is_complete);
 
-    if (not HierarchyManipulations::checkComplete(points, dagUp, rule.get())) {
+    if (not is_complete) {
         // incomplete hierarchy, must use the slow algorithm
         std::vector<int> level = HierarchyManipulations::computeLevels(points, rule.get());
         updateSurpluses(points, top_level, level, dagUp);

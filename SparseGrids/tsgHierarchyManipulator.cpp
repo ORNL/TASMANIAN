@@ -94,6 +94,90 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomia
         return parents;
     }
 }
+Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule, bool &is_complete){
+    size_t num_dimensions = mset.getNumDimensions();
+    int num_points = mset.getNumIndexes();
+    if (rule->getMaxNumParents() > 1){ // allow for multiple parents and level 0 may have more than one node
+        int max_parents = rule->getMaxNumParents() * (int) num_dimensions;
+        Data2D<int> parents(max_parents, num_points, -1);
+        int level0_offset = rule->getNumPoints(0);
+        int any_fail = 0; // count if there are failures
+        #pragma omp parallel
+        {
+            int fail = 0; // local thread count fails
+
+            #pragma omp for schedule(static)
+            for(int i=0; i<num_points; i++){
+                const int *p = mset.getIndex(i);
+                std::vector<int> dad(num_dimensions);
+                std::copy_n(p, num_dimensions, dad.data());
+                int *pp = parents.getStrip(i);
+                for(size_t j=0; j<num_dimensions; j++){
+                    if (dad[j] >= level0_offset){
+                        int current = p[j];
+                        dad[j] = rule->getParent(current);
+                        pp[2*j] = mset.getSlot(dad);
+                        if (pp[2*j] == -1)
+                            fail = 1;
+                        while ((dad[j] >= level0_offset) && (pp[2*j] == -1)){
+                            current = dad[j];
+                            dad[j] = rule->getParent(current);
+                            pp[2*j] = mset.getSlot(dad);
+                        }
+                        dad[j] = rule->getStepParent(current);
+                        if (dad[j] != -1){
+                            pp[2*j + 1] = mset.getSlot(dad);
+                            if (pp[2*j + 1] == -1)
+                                fail = 1;
+                        }
+                        dad[j] = p[j];
+                    }
+                }
+            }
+
+            #pragma omp atomic
+            any_fail += fail;
+        }
+        is_complete = (any_fail == 0);
+        return parents;
+    }else{ // this assumes that level zero has only one node
+        Data2D<int> parents((int) num_dimensions, num_points);
+        int any_fail = 0; // count if there are failures
+        #pragma omp parallel
+        {
+            int fail = 0; // local thread count fails
+
+            #pragma omp for schedule(static)
+            for(int i=0; i<num_points; i++){
+                const int *p = mset.getIndex(i);
+                std::vector<int> dad(num_dimensions);
+                std::copy_n(p, num_dimensions, dad.data());
+                int *pp = parents.getStrip(i);
+                for(size_t j=0; j<num_dimensions; j++){
+                    if (dad[j] == 0){
+                        pp[j] = -1;
+                    }else{
+                        dad[j] = rule->getParent(dad[j]);
+                        pp[j] = mset.getSlot(dad.data());
+                        if (pp[j] == -1)
+                            fail = 1;
+                        while((dad[j] != 0) && (pp[j] == -1)){
+                            dad[j] = rule->getParent(dad[j]);
+                            pp[j] = mset.getSlot(dad);
+                        }
+                        dad[j] = p[j];
+                    }
+                }
+            }
+
+            #pragma omp atomic
+            any_fail += fail;
+        }
+        is_complete = (any_fail == 0);
+        return parents;
+    }
+}
+
 bool checkComplete(MultiIndexSet const &mset, Data2D<int> const &dagUp, const BaseRuleLocalPolynomial *rule){
     int const num_no_parents = rule->getNumPoints(0);
     int const num_dimensions = mset.getNumDimensions();
