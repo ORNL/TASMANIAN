@@ -731,14 +731,87 @@ void GridLocalPolynomial::evaluateHierarchicalFunctions(const double x[], int nu
     }
 }
 
+void GridLocalPolynomial::build_van_matrix1d(std::vector<int> &vpntr, std::vector<int> &vindx, std::vector<double> &vvals) {
+    vindx.clear();
+    vvals.clear();
+
+    //int max_level = *std::max_element(points.begin(), points.end());
+
+    // up to top-level
+    //int num_nodes = rule->getNumPoints(max_level);
+    int num_nodes = 1 + *std::max_element(points.begin(), points.end());
+    vpntr.resize(num_nodes + 1);
+
+    // TODO: switch to a graph-based algorithm
+    for(int i=0; i<num_nodes; i++) {
+        vpntr[i] = static_cast<int>(vindx.size());
+        double x = rule->getNode(i);
+        for(int j=0; j<i; j++) {
+            bool supported;
+            double v = rule->evalSupport(j, x, supported);
+            if (supported) {
+                vindx.push_back(j);
+                vvals.push_back(v);
+            }
+        }
+        vindx.push_back(i);
+        vvals.push_back(1.0);
+    }
+    vpntr.back() = static_cast<int>(vindx.size());
+}
+
 void GridLocalPolynomial::recomputeSurpluses(){
     surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::vector<double>(values.begin(), values.end()));
 
     Data2D<int> dagUp = HierarchyManipulations::computeDAGup(points, rule.get());
 
-    std::vector<int> level = HierarchyManipulations::computeLevels(points, rule.get());
+    if (not HierarchyManipulations::checkComplete(points, dagUp, rule.get())) {
+        // incomplete hierarchy, must use the slow algorithm
+        std::vector<int> level = HierarchyManipulations::computeLevels(points, rule.get());
+        updateSurpluses(points, top_level, level, dagUp);
+        return;
+    }
 
-    updateSurpluses(points, top_level, level, dagUp);
+    std::vector<int> vpntr, vindx;
+    std::vector<double> vvals;
+    build_van_matrix1d(vpntr, vindx, vvals);
+
+    std::vector<std::vector<int>> map;
+    std::vector<std::vector<int>> lines1d;
+    MultiIndexManipulations::resortIndexes(points, map, lines1d);
+
+    for(int d=num_dimensions-1; d>=0; d--) {
+        #pragma omp parallel for
+        for(int job = 0; job < static_cast<int>(lines1d[d].size() - 1); job++) {
+            for(int i=lines1d[d][job]+1; i<lines1d[d][job+1]; i++) {
+                double *row_strip = surpluses.getStrip(map[d][i]);
+
+                int row = points.getIndex(map[d][i])[d];
+                int im  = vpntr[row];
+                int ijx = lines1d[d][job];
+                int ix  = points.getIndex(map[d][ijx])[d];
+
+                while(vindx[im] < row or ix < row) {
+                    if (vindx[im] < ix) {
+                        ++im; // move the index of the matrix pattern (missing entry)
+                    } else if (ix < vindx[im]) {
+                        // entry not connected, move to the next one
+                        ++ijx;
+                        ix = points.getIndex(map[d][ijx])[d];
+                    } else {
+                        double const *col_strip = surpluses.getStrip(map[d][ijx]);
+                        double const v = vvals[im];
+                        for(int k=0; k<num_outputs; k++)
+                            row_strip[k] -= v * col_strip[k];
+
+                        ++im;
+                        ++ijx;
+                        ix = points.getIndex(map[d][ijx])[d];
+                    }
+                }
+            }
+        }
+    }
 }
 
 void GridLocalPolynomial::updateSurpluses(MultiIndexSet const &work, int max_level, std::vector<int> const &level, Data2D<int> const &dagUp){

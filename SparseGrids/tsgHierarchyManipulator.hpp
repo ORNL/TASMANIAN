@@ -89,6 +89,16 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomia
 /*!
  * \internal
  * \ingroup TasmanianHierarchyManipulations
+ * \brief Using the cached indexes from computeDAGup() asserts if there are missing parents
+ *
+ * Checks for the completeness of the hierarchy.
+ * \endinternal
+ */
+bool checkComplete(MultiIndexSet const &mset, Data2D<int> const &dagUp, const BaseRuleLocalPolynomial *rule);
+
+/*!
+ * \internal
+ * \ingroup TasmanianHierarchyManipulations
  * \brief Cache the indexes slot numbers of the children of the multi-indexes in \b mset.
  *
  * Each node defined by a multi-index in \b mset can have one or more children in each direction,
