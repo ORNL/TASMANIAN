@@ -178,24 +178,6 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomia
     }
 }
 
-bool checkComplete(MultiIndexSet const &mset, Data2D<int> const &dagUp, const BaseRuleLocalPolynomial *rule){
-    int const num_no_parents = rule->getNumPoints(0);
-    int const num_dimensions = mset.getNumDimensions();
-    int const max_parents    = rule->getMaxNumParents();
-
-    for(int i=0; i<mset.getNumIndexes(); i++) {
-        for(int d=0; d<num_dimensions; d++) {
-            if (mset.getIndex(i)[d] >= num_no_parents) { // expect a parent
-                for(int j=0; j<max_parents; j++)
-                    if (dagUp.getStrip(i)[d * max_parents + j] == -1)
-                        return false;
-            }
-        }
-    }
-
-    return true;
-}
-
 Data2D<int> computeDAGDown(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule){
     size_t num_dimensions = mset.getNumDimensions();
     int max_1d_kids = rule->getMaxNumKids();
