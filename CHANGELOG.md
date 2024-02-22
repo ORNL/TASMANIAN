@@ -1,3 +1,12 @@
+Changelog for version 8.1
+--------------
+
+* implemented a new algorithm for global sparse Kronecker
+    * significant speedup when loading needed values
+
+* dropped support for defunct python 2
+    * wasn't tested before and it was partially or fully broken already
+
 Changelog for version 8.0
 --------------
 
