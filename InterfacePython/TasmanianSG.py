@@ -251,16 +251,10 @@ class TasmanianSparseGrid:
         pLibTSG.tsgDestructTasmanianSparseGrid(self.pGrid)
 
     def stringBufferToString(self, pName, iNumChars):
-        if (sys.version_info.major == 3):
-            S = [s for s in pName]
-            sName = ""
-            for iI in range(iNumChars):
-                sName += str(S[iI], encoding='utf8')
-        else:
-            S = [s for s in pName]
-            sName = ""
-            for iI in range(iNumChars):
-                sName += S[iI]
+        S = [s for s in pName]
+        sName = ""
+        for iI in range(iNumChars):
+            sName += str(S[iI], encoding='utf8')
         return sName
 
     def getVersion(self):
@@ -268,20 +262,14 @@ class TasmanianSparseGrid:
         returns the hardcoded version string from the library
 
         '''
-        sVersion = pLibTSG.tsgGetVersion()
-        if (sys.version_info.major == 3):
-            sVersion = str(sVersion, encoding='utf8')
-        return sVersion
+        return str(pLibTSG.tsgGetVersion(), encoding='utf8')
 
     def getLicense(self):
         '''
         returns the hardcoded license string from the library
 
         '''
-        sLicense = pLibTSG.tsgGetLicense()
-        if (sys.version_info.major == 3):
-            sLicense = str(sLicense, encoding='utf8')
-        return sLicense
+        return str(pLibTSG.tsgGetLicense(), encoding='utf8')
 
     def getVersionMajor(self):
         '''
@@ -334,8 +322,7 @@ class TasmanianSparseGrid:
                        check the CLI output for an error message
 
         '''
-        effective_filename = bytes(sFilename, encoding='utf8') if sys.version_info.major == 3 else sFilename
-        if pLibTSG.tsgRead(self.pGrid, c_char_p(effective_filename)) == 0:
+        if pLibTSG.tsgRead(self.pGrid, bytes(sFilename, encoding='utf8')) == 0:
             raise TasmanianInputError("sFilename", "ERROR: {0:1s} does not appear to be a valid Tasmanian file.".format(sFilename))
 
     def write(self, sFilename, bUseBinaryFormat = True):
@@ -350,12 +337,10 @@ class TasmanianSparseGrid:
                 False: write to an ASCII file
 
         '''
-        if (sys.version_info.major == 3):
-            sFilename = bytes(sFilename, encoding='utf8')
         if (bUseBinaryFormat):
-            pLibTSG.tsgWriteBinary(self.pGrid, c_char_p(sFilename))
+            pLibTSG.tsgWriteBinary(self.pGrid, bytes(sFilename, encoding='utf8'))
         else:
-            pLibTSG.tsgWrite(self.pGrid, c_char_p(sFilename))
+            pLibTSG.tsgWrite(self.pGrid, bytes(sFilename, encoding='utf8'))
 
     def makeGlobalGrid(self, iDimension, iOutputs, iDepth, sType, sRule, liAnisotropicWeights=[], fAlpha=0.0, fBeta=0.0, sCustomFilename="", liLevelLimits=[]):
         '''
@@ -472,15 +457,7 @@ class TasmanianSparseGrid:
                 aAWeights = np.array([liAnisotropicWeights[i] for i in range(iNumWeights)], np.int32)
                 pAnisoWeights = np.ctypeslib.as_ctypes(aAWeights)
 
-        if (sys.version_info.major == 3):
-            sType = bytes(sType, encoding='utf8')
-            sRule = bytes(sRule, encoding='utf8')
-            if (sCustomFilename):
-                sCustomFilename = bytes(sCustomFilename, encoding='utf8')
-
-        pCustomRule = None
-        if (sCustomFilename):
-            pCustomRule = c_char_p(sCustomFilename)
+        pCustomRule = bytes(sCustomFilename, encoding='utf8') if sCustomFilename else None
 
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
@@ -490,7 +467,7 @@ class TasmanianSparseGrid:
             for iI in range(iDimension):
                 pLevelLimits[iI] = liLevelLimits[iI]
 
-        pLibTSG.tsgMakeGlobalGrid(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), c_char_p(sRule), pAnisoWeights, c_double(fAlpha), c_double(fBeta), pCustomRule, pLevelLimits)
+        pLibTSG.tsgMakeGlobalGrid(self.pGrid, iDimension, iOutputs, iDepth, bytes(sType, encoding='utf8'), bytes(sRule, encoding='utf8'), pAnisoWeights, c_double(fAlpha), c_double(fBeta), pCustomRule, pLevelLimits)
 
     def makeSequenceGrid(self, iDimension, iOutputs, iDepth, sType, sRule, liAnisotropicWeights=[], liLevelLimits=[]):
         '''
@@ -561,11 +538,7 @@ class TasmanianSparseGrid:
             for iI in range(iDimension):
                 pLevelLimits[iI] = liLevelLimits[iI]
 
-        if (sys.version_info.major == 3):
-            sType = bytes(sType, encoding='utf8')
-            sRule = bytes(sRule, encoding='utf8')
-
-        pLibTSG.tsgMakeSequenceGrid(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), c_char_p(sRule), pAnisoWeights, pLevelLimits)
+        pLibTSG.tsgMakeSequenceGrid(self.pGrid, iDimension, iOutputs, iDepth, bytes(sType, encoding='utf8'), bytes(sRule, encoding='utf8'), pAnisoWeights, pLevelLimits)
 
     def makeLocalPolynomialGrid(self, iDimension, iOutputs, iDepth, iOrder=1, sRule="localp", liLevelLimits=[]):
         '''
@@ -613,10 +586,7 @@ class TasmanianSparseGrid:
             for iI in range(iDimension):
                 pLevelLimits[iI] = liLevelLimits[iI]
 
-        if (sys.version_info.major == 3):
-            sRule = bytes(sRule, encoding='utf8')
-
-        pLibTSG.tsgMakeLocalPolynomialGrid(self.pGrid, iDimension, iOutputs, iDepth, iOrder, c_char_p(sRule), pLevelLimits)
+        pLibTSG.tsgMakeLocalPolynomialGrid(self.pGrid, iDimension, iOutputs, iDepth, iOrder, bytes(sRule, encoding='utf8'), pLevelLimits)
 
     def makeWaveletGrid(self, iDimension, iOutputs, iDepth, iOrder=1, liLevelLimits=[]):
         '''
@@ -692,6 +662,7 @@ class TasmanianSparseGrid:
             raise TasmanianInputError("iDepth", "ERROR: depth should be a non-negative integer")
         if (sType not in lsTsgGlobalTypes):
             raise TasmanianInputError("sType", "ERROR: invalid type, see TasmanianSG.lsTsgGlobalTypes for list of accepted types")
+
         pAnisoWeights = None
         if (len(liAnisotropicWeights) > 0):
             if (sType in lsTsgCurvedTypes):
@@ -713,10 +684,7 @@ class TasmanianSparseGrid:
             for iI in range(iDimension):
                 pLevelLimits[iI] = liLevelLimits[iI]
 
-        if (sys.version_info.major == 3):
-            sType = bytes(sType, encoding='utf8')
-
-        pLibTSG.tsgMakeFourierGrid(self.pGrid, iDimension, iOutputs, iDepth, c_char_p(sType), pAnisoWeights, pLevelLimits)
+        pLibTSG.tsgMakeFourierGrid(self.pGrid, iDimension, iOutputs, iDepth, bytes(sType, encoding='utf8'), pAnisoWeights, pLevelLimits)
 
     def makeGlobalGridCustom(self, iDimension, iOutputs, iDepth, sType, pCustomTabulated, liAnisotropicWeights=[], liLevelLimits=[]):
         '''
@@ -741,9 +709,9 @@ class TasmanianSparseGrid:
             pLevelLimits = (c_int*iDimension)()
             for iI in range(iDimension):
                 pLevelLimits[iI] = liLevelLimits[iI]
-        effective_sType = bytes(sType, encoding='utf8') if (sys.version_info.major == 3) else sType;
+
         pLibTSG.tsgMakeGridFromCustomTabulated(c_void_p(self.pGrid), c_int(iDimension), c_int(iOutputs), c_int(iDepth),
-                                               c_char_p(effective_sType), c_void_p(pCustomTabulated.pCustomTabulated),
+                                               bytes(sType, encoding='utf8'), c_void_p(pCustomTabulated.pCustomTabulated),
                                                pAnisoWeights, pLevelLimits)
 
     def copyGrid(self, pGrid, iOutputsBegin = 0, iOutputsEnd = -1):
@@ -810,9 +778,6 @@ class TasmanianSparseGrid:
                 for iI in range(iNumWeights):
                     pAnisoWeights[iI] = liAnisotropicWeights[iI]
 
-        if (sys.version_info.major == 3):
-            sType = bytes(sType, encoding='utf8')
-
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
             if (len(liLevelLimits) != iDimension):
@@ -821,7 +786,7 @@ class TasmanianSparseGrid:
             for iI in range(iDimension):
                 pLevelLimits[iI] = liLevelLimits[iI]
 
-        pLibTSG.tsgUpdateGlobalGrid(self.pGrid, iDepth, sType, pAnisoWeights, pLevelLimits)
+        pLibTSG.tsgUpdateGlobalGrid(self.pGrid, iDepth, bytes(sType, encoding='utf8'), pAnisoWeights, pLevelLimits)
 
     def updateSequenceGrid(self, iDepth, sType, liAnisotropicWeights=[], liLevelLimits=[]):
         '''
@@ -859,9 +824,6 @@ class TasmanianSparseGrid:
                 for iI in range(iNumWeights):
                     pAnisoWeights[iI] = liAnisotropicWeights[iI]
 
-        if (sys.version_info.major == 3):
-            sType = bytes(sType, encoding='utf8')
-
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
             if (len(liLevelLimits) != iDimension):
@@ -870,7 +832,7 @@ class TasmanianSparseGrid:
             for iI in range(iDimension):
                 pLevelLimits[iI] = liLevelLimits[iI]
 
-        pLibTSG.tsgUpdateSequenceGrid(self.pGrid, iDepth, sType, pAnisoWeights, pLevelLimits)
+        pLibTSG.tsgUpdateSequenceGrid(self.pGrid, iDepth, bytes(sType, encoding='utf8'), pAnisoWeights, pLevelLimits)
 
     def updateFourierGrid(self, iDepth, sType, liAnisotropicWeights=[], liLevelLimits=[]):
         '''
@@ -908,9 +870,6 @@ class TasmanianSparseGrid:
                 for iI in range(iNumWeights):
                     pAnisoWeights[iI] = liAnisotropicWeights[iI]
 
-        if (sys.version_info.major == 3):
-            sType = bytes(sType, encoding='utf8')
-
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
             if (len(liLevelLimits) != iDimension):
@@ -919,7 +878,7 @@ class TasmanianSparseGrid:
             for iI in range(iDimension):
                 pLevelLimits[iI] = liLevelLimits[iI]
 
-        pLibTSG.tsgUpdateFourierGrid(self.pGrid, iDepth, sType, pAnisoWeights, pLevelLimits)
+        pLibTSG.tsgUpdateFourierGrid(self.pGrid, iDepth, bytes(sType, encoding='utf8'), pAnisoWeights, pLevelLimits)
 
     def getAlpha(self):
         '''
@@ -982,13 +941,7 @@ class TasmanianSparseGrid:
         if not using a custom grid, returns ""
 
         '''
-        if ("custom-tabulated" in self.getRule()):
-            sRule = pLibTSG.tsgGetCustomRuleDescription(self.pGrid)
-            if (sys.version_info.major == 3):
-                sRule = str(sRule, encoding='utf8')
-            return sRule
-        else:
-            return ""
+        return str(pLibTSG.tsgGetCustomRuleDescription(self.pGrid), encoding='utf8') if "custom-tabulated" in self.getRule() else ""
 
     def getNumLoaded(self):
         '''
@@ -1539,9 +1492,7 @@ class TasmanianSparseGrid:
             for iI in range(iDimension):
                 pLevelLimits[iI] = liLevelLimits[iI]
 
-        if (sys.version_info.major == 3):
-            sType = bytes(sType, encoding='utf8')
-        pLibTSG.tsgSetAnisotropicRefinement(self.pGrid, c_char_p(sType), iMinGrowth, iOutput, pLevelLimits)
+        pLibTSG.tsgSetAnisotropicRefinement(self.pGrid, bytes(sType, encoding='utf8'), iMinGrowth, iOutput, pLevelLimits)
 
     def getAnisotropicRefinement(self, sType, iMinGrowth, iOutput, liLevelLimits = []):
         '''
@@ -1589,11 +1540,9 @@ class TasmanianSparseGrid:
         iNumCoeffs = self.getNumDimensions()
         if ("curved" in sType):
             iNumCoeffs = iNumCoeffs * 2
-        if (sys.version_info.major == 3):
-            sType = bytes(sType, encoding='utf8')
 
         aCoeff = np.empty([iNumCoeffs], np.int32)
-        pLibTSG.tsgEstimateAnisotropicCoefficientsStatic(self.pGrid, c_char_p(sType), iOutput, np.ctypeslib.as_ctypes(aCoeff))
+        pLibTSG.tsgEstimateAnisotropicCoefficientsStatic(self.pGrid, bytes(sType, encoding='utf8'), iOutput, np.ctypeslib.as_ctypes(aCoeff))
 
         return aCoeff
 
@@ -1675,9 +1624,8 @@ class TasmanianSparseGrid:
                 raise TasmanianInputError("sCriteria", "ERROR: sCriteria cannot be used for sequence grids")
             if (not sCriteria in lsTsgRefineTypes):
                 raise TasmanianInputError("sCriteria", "ERROR: invalid criteria, see TasmanianSG.lsTsgRefineTypes for the list of accepted types")
-            if (sys.version_info.major == 3):
-                sCriteria = bytes(sCriteria, encoding='utf8')
-            pLibTSG.tsgSetLocalSurplusRefinement(self.pGrid, c_double(fTolerance), c_char_p(sCriteria), iOutput, pLevelLimits, pScaleCorrection)
+
+            pLibTSG.tsgSetLocalSurplusRefinement(self.pGrid, c_double(fTolerance), bytes(sCriteria, encoding='utf8'), iOutput, pLevelLimits, pScaleCorrection)
 
     def getSurplusRefinement(self, fTolerance, iOutput, sCriteria = "", liLevelLimits = [], llfScaleCorrection = []):
         '''
@@ -1734,8 +1682,7 @@ class TasmanianSparseGrid:
         pAnisoWeights = None
         iOutput = -1
 
-        if (((sys.version_info.major == 3) and isinstance(liAnisotropicWeightsOrOutput, int))
-            or ((sys.version_info.major == 2) and isinstance(liAnisotropicWeightsOrOutput, (int, long)))):
+        if (isinstance(liAnisotropicWeightsOrOutput, int)):
             iOutput = liAnisotropicWeightsOrOutput
         elif (isinstance(liAnisotropicWeightsOrOutput, (list, np.ndarray))):
             if (len(liAnisotropicWeightsOrOutput) > 0):
@@ -1759,10 +1706,7 @@ class TasmanianSparseGrid:
             for iI in range(iNumDims):
                 pLevelLimits[iI] = liLevelLimits[iI]
 
-        if (sys.version_info.major == 3):
-            sType = bytes(sType, encoding='utf8')
-
-        pVector = pLibTSG.tsgGetCandidateConstructionPointsVoidPntr(self.pGrid, c_char_p(sType), iOutput, pAnisoWeights, pLevelLimits)
+        pVector = pLibTSG.tsgGetCandidateConstructionPointsVoidPntr(self.pGrid, bytes(sType, encoding='utf8'), iOutput, pAnisoWeights, pLevelLimits)
 
         iNumPoints = pLibTSG.tsgGetCandidateConstructionPointsPythonGetNP(self.pGrid, pVector)
         if (iNumPoints == 0):
@@ -1785,8 +1729,6 @@ class TasmanianSparseGrid:
 
         if (not sRefinementType in lsTsgRefineTypes):
             raise TasmanianInputError("sRefinementType", "ERROR: calling getCandidateConstructionPointsSurplus() called with incorrect type, see TasmanianSG.lsTsgRefineTypes")
-        if (sys.version_info.major == 3):
-            sRefinementType = bytes(sRefinementType, encoding='utf8')
 
         pLevelLimits = None
         if (len(liLevelLimits) > 0):
@@ -1800,7 +1742,7 @@ class TasmanianSparseGrid:
         if (len(aScaleCorrection) > 0):
             pScale = np.ctypeslib.as_ctypes(aScaleCorrection.reshape([np.prod(aScaleCorrection.shape),]))
 
-        pVector = pLibTSG.tsgGetCandidateConstructionPointsSurplusVoidPntr(self.pGrid, c_double(fTolerance), c_char_p(sRefinementType), iOutput, pLevelLimits, pScale)
+        pVector = pLibTSG.tsgGetCandidateConstructionPointsSurplusVoidPntr(self.pGrid, c_double(fTolerance), bytes(sRefinementType, encoding='utf8'), iOutput, pLevelLimits, pScale)
 
         iNumPoints = pLibTSG.tsgGetCandidateConstructionPointsPythonGetNP(self.pGrid, pVector)
         if (iNumPoints == 0):
@@ -2196,23 +2138,19 @@ class TasmanianSparseGrid:
         '''
         if (sAccelerationType not in lsTsgAccelTypes):
             raise TasmanianInputError("sAccelerationType", "ERROR: invalid acceleration type")
-        if (sys.version_info.major == 3):
-            sAccelerationType = bytes(sAccelerationType, encoding='utf8')
+
         if (iGPUID is None):
-            pLibTSG.tsgEnableAcceleration(self.pGrid, c_char_p(sAccelerationType))
+            pLibTSG.tsgEnableAcceleration(self.pGrid, bytes(sAccelerationType, encoding='utf8'))
         else:
             if ((iGPUID < 0) or (iGPUID >= self.getNumGPUs())):
                 raise TasmanianInputError("iGPUID", "ERROR: invalid GPU ID number")
-            pLibTSG.tsgEnableAcceleration(self.pGrid, c_char_p(sAccelerationType), iGPUID)
+            pLibTSG.tsgEnableAcceleration(self.pGrid, bytes(sAccelerationType, encoding='utf8'), iGPUID)
 
     def getAccelerationType(self):
         '''
         returns the type of acceleration set by enableAcceleration
         '''
-        sAccType = pLibTSG.tsgGetAccelerationType(self.pGrid)
-        if (sys.version_info.major == 3):
-            sAccType = str(sAccType, encoding='utf8')
-        return sAccType
+        return str(pLibTSG.tsgGetAccelerationType(self.pGrid), encoding='utf8')
 
     def isAccelerationAvailable(self, sAccelerationType):
         '''
@@ -2224,9 +2162,8 @@ class TasmanianSparseGrid:
         '''
         if (sAccelerationType not in lsTsgAccelTypes):
             raise TasmanianInputError("sAccelerationType", "ERROR: invalid acceleration type")
-        if (sys.version_info.major == 3):
-            sAccelerationType = bytes(sAccelerationType, encoding='utf8')
-        return (pLibTSG.tsgIsAccelerationAvailable(sAccelerationType) != 0)
+
+        return (pLibTSG.tsgIsAccelerationAvailable(bytes(sAccelerationType, encoding='utf8')) != 0)
 
     def setGPUID(self, iGPUID):
         '''
@@ -2499,8 +2436,7 @@ class CustomTabulated:
             True: the read was successful
             False: the read failed, check the CLI output for an error message
         '''
-        effective_filename = bytes(sFilename, encoding='utf8') if sys.version_info.major == 3 else sFilename
-        if pLibTSG.tsgReadCustomTabulated(self.pCustomTabulated, c_char_p(effective_filename)) == 0:
+        if pLibTSG.tsgReadCustomTabulated(self.pCustomTabulated, bytes(sFilename, encoding='utf8')) == 0:
             raise TasmanianInputError("sFilename", "ERROR: {0:1s} does not appear to be a valid Tasmanian file.".format(sFilename))
 
     def write(self, sFilename):
@@ -2509,8 +2445,7 @@ class CustomTabulated:
 
         sFilename: string indicating a location where the CustomTabulated instance will be written to.
         '''
-        effective_filename = bytes(sFilename, encoding='utf8') if sys.version_info.major == 3 else sFilename
-        pLibTSG.tsgWriteCustomTabulated(self.pCustomTabulated, c_char_p(effective_filename))
+        pLibTSG.tsgWriteCustomTabulated(self.pCustomTabulated, bytes(sFilename, encoding='utf8'))
 
     def getNumLevels(self):
         return pLibTSG.tsgGetNumLevelsCustomTabulated(self.pCustomTabulated)
@@ -2578,7 +2513,6 @@ def makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights
         check_np_arr("nodes["+str(i)+"]", nodes[i], num_nodes[i], 1);
         check_np_arr("weights["+str(i)+"]", weights[i], num_nodes[i], 1);
     ct = CustomTabulated()
-    effective_description = bytes(description, encoding='utf8') if sys.version_info.major == 3 else description
     # create the C arrays for num_nodes, precision, nodes, and weights by copying.
     pNumNodes, pPrecision, pNodes, pWeights = None, None, None, None
     if (num_levels > 0):
@@ -2601,7 +2535,7 @@ def makeCustomTabulatedFromData(num_levels, num_nodes, precision, nodes, weights
                 pWeights[weight_idx] = fK
                 weight_idx += 1
     ct.pCustomTabulated = pLibTSG.tsgMakeCustomTabulatedFromData(c_int(num_levels), pNumNodes, pPrecision, pNodes, pWeights,
-                                                                 c_char_p(effective_description))
+                                                                 bytes(description, encoding='utf8'))
     return ct
 
 def makeCustomTabulatedSubset(pCustomTabulated, iStartIndex, iStride, sDescription):
@@ -2623,8 +2557,7 @@ def makeCustomTabulatedSubset(pCustomTabulated, iStartIndex, iStride, sDescripti
     if (iStride <= 0):
         raise TasmanianInputError("iStride", "ERROR: iStride must be positive")
     ct = CustomTabulated()
-    effective_description = bytes(sDescription, encoding='utf8') if sys.version_info.major == 3 else sDescription
     ct.pCustomTabulated = pLibTSG.tsgGetSubrules(c_void_p(pCustomTabulated.pCustomTabulated), c_int(iStartIndex), c_int(iStride),
-                                                 c_char_p(effective_description))
+                                                 bytes(sDescription, encoding='utf8'))
     return(ct)
 

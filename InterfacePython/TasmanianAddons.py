@@ -360,14 +360,7 @@ def constructSurplusSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxSampl
         for iI in range(iNumDims):
             pLevelLimits[iI] = liLevelLimits[iI]
 
-    if (sys.version_info.major == 3):
-        sRefinementType = bytes(sRefinementType, encoding='utf8')
-        if (sCheckpointFilename):
-            sCheckpointFilename = bytes(sCheckpointFilename, encoding='utf8')
-
-    pCPFname = None
-    if (sCheckpointFilename):
-        pCPFname = c_char_p(sCheckpointFilename)
+    pCPFname = bytes(sCheckpointFilename, encoding='utf8') if sCheckpointFilename else None
 
     pErrorCode = (c_int * 1)()
 
@@ -375,12 +368,12 @@ def constructSurplusSurrogate(callableModel, iMaxPoints, iMaxParallel, iMaxSampl
         pLibCTSG.tsgConstructSurrogateWiIGSurplus(
             type_icsmodel(lambda nx, nd, x, f, ny, y, tid, err : tsgIcsModelWrapper(callableModel, nx, nd, x, f, ny, y, tid, err)),
             iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
-            fTolerance, c_char_p(sRefinementType), iOutput, pLevelLimits, pCPFname, pErrorCode)
+            fTolerance, bytes(sRefinementType, encoding='utf8'), iOutput, pLevelLimits, pCPFname, pErrorCode)
     else:
         pLibCTSG.tsgConstructSurrogateNoIGSurplus(
             type_scsmodel(lambda nx, nd, x, ny, y, tid, err : tsgScsModelWrapper(callableModel, nx, nd, x, ny, y, tid, err)),
             iMaxPoints, iMaxParallel, iMaxSamplesPerCall, grid.pGrid,
-            fTolerance, c_char_p(sRefinementType), iOutput, pLevelLimits, pCPFname, pErrorCode)
+            fTolerance, bytes(sRefinementType, encoding='utf8'), iOutput, pLevelLimits, pCPFname, pErrorCode)
 
     if pErrorCode[0] != 0:
         raise TasmanianInputError("constructSurplusSurrogate", "An error occurred during the call to Tasmanian.")
@@ -423,10 +416,9 @@ def createExoticQuadratureFromGrid(level, shift, ref_grid, description, is_symme
     '''
     if not hasattr(ref_grid, "TasmanianSparseGridObject"):
         raise TasmanianInputError("ref_grid", "ERROR: ref_grid must be an instance of TasmanianSparseGrid")
-    effective_description = bytes(description, encoding='utf8') if sys.version_info.major == 3 else description
     ct = TasmanianSG.CustomTabulated()
     pLibCTSG.tsgCreateExoticQuadratureFromGrid(c_void_p(ct.pCustomTabulated), c_int(level), c_double(shift), c_void_p(ref_grid.pGrid),
-                                               c_char_p(effective_description), c_int(is_symmetric))
+                                               bytes(description, encoding='utf8'), c_int(is_symmetric))
     return ct
 
 def createExoticQuadratureFromFunction(level, shift, weight_fn, nref, description, is_symmetric = False):
@@ -444,8 +436,7 @@ def createExoticQuadratureFromFunction(level, shift, weight_fn, nref, descriptio
 
     output:       a Python CustomTabulated object.
     '''
-    effective_description = bytes(description, encoding='utf8') if sys.version_info.major == 3 else description
     ct = TasmanianSG.CustomTabulated()
     pLibCTSG.tsgCreateExoticQuadratureFromFunction(c_void_p(ct.pCustomTabulated), c_int(level), c_double(shift), type_1Dfunc(weight_fn),
-                                                   c_int(nref), c_char_p(effective_description), c_int(is_symmetric))
+                                                   c_int(nref), bytes(description, encoding='utf8'), c_int(is_symmetric))
     return ct

@@ -36,27 +36,26 @@
 // without this MSVC++ does not accepts keywords such as "not" and "or"
 #include <iso646.h>
 #endif
-#include <cstdint>
-#include <map>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <string>
-#include <vector>
+
+#include <algorithm>
+#include <array>
+#include <cassert>
 #include <cmath>
+#include <complex>
+#include <cstdint>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <map>
+#include <memory>
 #include <numeric>
 #include <stdexcept>
-#include <algorithm>
+#include <string>
 #include <type_traits>
 #include <utility>
-#include <complex>
-#include <memory>
-#include <type_traits>
-#include <cassert>
-#include <limits>
-#include <array>
+#include <vector>
 
-#include <chrono>
 
 #include "TasmanianConfig.hpp" // contains build options passed down from CMake
 #include "tsgUtils.hpp" // contains small utilities
