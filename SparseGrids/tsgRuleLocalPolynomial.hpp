@@ -70,6 +70,9 @@ public:
     virtual double getArea(int point, std::vector<double> const &w, std::vector<double> const &x) const = 0;
     // integrate the function associated with the point, constant to cubic are known analytically, higher order need a 1-D quadrature rule
 
+    // constructs a Vandemond matrix for the first num_rows points
+    virtual void van_matrix(int num_rows, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) = 0;
+
 protected:
     int max_order;
 };
@@ -359,6 +362,278 @@ public:
             double sum = 0.0;
             for(size_t i=0; i<w.size(); i++) sum += w[i] * evalPWPower(point, x[i]);
             return sum * getSupport(point);
+        }
+    }
+
+    void van_matrix(int num_rows, std::vector<int> &pntr, std::vector<int> &indx, std::vector<double> &vals) override{
+        int max_level = getLevel(num_rows);
+
+        if (isZeroOrder) {
+            switch(num_rows) {
+                case 0:
+                    indx = {0,};
+                    vals = {1.0,};
+                    pntr = {0, 1};
+                    break;
+                case 1:
+                    indx = {0, 0, 1};
+                    vals = {1.0, 1.0, 1.0};
+                    pntr = {0, 1, 3};
+                    break;
+                case 2:
+                    indx = {0, 0, 1, 0, 2};
+                    vals = {1.0, 1.0, 1.0, 1.0, 1.0};
+                    pntr = {0, 1, 3, 5};
+                    break;
+                default:
+                    indx.clear();
+                    indx.reserve(num_rows * max_level);
+                    vals.clear();
+                    vals.reserve(num_rows * max_level);
+                    pntr = std::vector<int>(num_rows + 1, 0);
+                    for(auto i : std::array<int, 5>{0, 0, 1, 0, 2})
+                        indx.push_back(i);
+                    for(size_t i=0; i<5; i++)
+                        vals.push_back(1.0);
+                    pntr[1] = 1;
+                    pntr[2] = 3;
+                    {
+                        std::vector<int> ancestors;
+                        ancestors.reserve(max_level);
+                        for(int r=3; r<num_rows; r++) {
+                            pntr[r] = static_cast<int>(indx.size());
+                            ancestors.clear();
+                            int kid = r;
+                            int dad = kid / 3;
+                            while(dad != 0) {
+                                if (dad % 2 == 0) {
+                                    if (kid != 3 * dad)
+                                        ancestors.push_back(dad);
+                                } else {
+                                    if (kid != 3 * dad + 2)
+                                        ancestors.push_back(dad);
+                                }
+                                kid = dad;
+                                dad = kid / 3;
+                            }
+                            indx.push_back(0);
+                            indx.insert(indx.end(), ancestors.rbegin(), ancestors.rend());
+                            indx.push_back(r);
+                            for(size_t i=0; i<ancestors.size() + 2; i++)
+                                vals.push_back(1.0);
+                        }
+                        pntr.back() = static_cast<int>(indx.size());
+                    }
+                    break;
+            };
+        } else {
+            if (rule == rule_localp) {
+                switch(num_rows) {
+                    case 0:
+                        indx = {0,};
+                        vals = {1.0,};
+                        pntr = {0, 1};
+                        break;
+                    default:
+                        indx.clear();
+                        indx.reserve(num_rows * max_level);
+                        vals.clear();
+                        vals.reserve(num_rows * max_level);
+                        pntr = std::vector<int>(num_rows + 1, 0);
+                        indx.push_back(0);
+                        vals.push_back(1.0);
+                        {
+                            std::vector<int> ancestors;
+                            std::vector<double> ancestors_vals;
+                            ancestors.reserve(max_level);
+                            ancestors_vals.reserve(max_level);
+                            for(int r=1; r<num_rows; r++) {
+                                double x = getNode(r);
+                                pntr[r] = static_cast<int>(indx.size());
+                                ancestors.clear();
+                                ancestors_vals.clear();
+                                int kid = r;
+                                int dad = (kid + 1) / 2;
+                                if (kid < 4) dad--;
+                                while(dad != 0) {
+                                    ancestors.push_back(dad);
+                                    ancestors_vals.push_back( evalRaw(dad, x) );
+                                    kid = dad;
+                                    dad = (kid + 1) / 2;
+                                    if (kid < 4) dad--;
+                                }
+                                indx.push_back(0);
+                                indx.insert(indx.end(), ancestors.rbegin(), ancestors.rend());
+                                indx.push_back(r);
+                                vals.push_back(1.0);
+                                vals.insert(vals.end(), ancestors_vals.rbegin(), ancestors_vals.rend());
+                                vals.push_back(1.0);
+                            }
+                            pntr.back() = static_cast<int>(indx.size());
+                        }
+                        break;
+                };
+            } else if (rule == rule_semilocalp) {
+                switch(num_rows) {
+                    case 0:
+                        indx = {0,};
+                        vals = {1.0,};
+                        pntr = {0, 1};
+                        break;
+                    case 1:
+                        indx = {0, 0, 1};
+                        vals = {1.0, 1.0, 1.0};
+                        pntr = {0, 1, 3};
+                        break;
+                    case 2:
+                        indx = {0, 0, 1, 0, 2};
+                        vals = {1.0, 1.0, 1.0, 1.0, 1.0};
+                        pntr = {0, 1, 3, 5};
+                        break;
+                    default:
+                        indx.clear();
+                        indx.reserve(num_rows * max_level);
+                        vals.clear();
+                        vals.reserve(num_rows * max_level);
+                        pntr = std::vector<int>(num_rows + 1, 0);
+                        for(auto i : std::array<int, 5>{0, 0, 1, 0, 2})
+                            indx.push_back(i);
+                        for(int i=0; i<5; i++)
+                            vals.push_back(1.0);
+                        pntr[1] = 1;
+                        pntr[2] = 3;
+                        {
+                            std::vector<int> ancestors;
+                            std::vector<double> ancestors_vals;
+                            ancestors.reserve(max_level);
+                            ancestors_vals.reserve(max_level);
+                            for(int r=3; r<num_rows; r++) {
+                                pntr[r] = static_cast<int>(indx.size());
+                                double x = getNode(r);
+                                ancestors.clear();
+                                ancestors_vals.clear();
+                                int kid = r;
+                                int dad = (kid + 1) / 2;
+                                while(dad > 2) {
+                                    ancestors.push_back(dad);
+                                    ancestors_vals.push_back( evalRaw(dad, x) );
+                                    kid = dad;
+                                    dad = (kid + 1) / 2;
+                                }
+                                indx.push_back(0);
+                                indx.push_back(1);
+                                indx.push_back(2);
+                                indx.insert(indx.end(), ancestors.rbegin(), ancestors.rend());
+                                indx.push_back(r);
+                                vals.push_back(1.0);
+                                vals.push_back( evalRaw(1, x) );
+                                vals.push_back( evalRaw(2, x) );
+                                vals.insert(vals.end(), ancestors_vals.rbegin(), ancestors_vals.rend());
+                                vals.push_back(1.0);
+                            }
+                            pntr.back() = static_cast<int>(indx.size());
+                        }
+                        break;
+                };
+            } else if (rule == rule_localp0) {
+                switch(num_rows) {
+                    case 0:
+                        indx = {0,};
+                        vals = {1.0,};
+                        pntr = {0, 1};
+                        break;
+                    default:
+                        indx.clear();
+                        indx.reserve(num_rows * max_level);
+                        vals.clear();
+                        vals.reserve(num_rows * max_level);
+                        pntr = std::vector<int>(num_rows + 1, 0);
+                        indx.push_back(0);
+                        vals.push_back(1.0);
+                        {
+                            std::vector<int> ancestors;
+                            std::vector<double> ancestors_vals;
+                            ancestors.reserve(max_level);
+                            ancestors_vals.reserve(max_level);
+                            for(int r=1; r<num_rows; r++) {
+                                double x = getNode(r);
+                                pntr[r] = static_cast<int>(indx.size());
+                                ancestors.clear();
+                                ancestors_vals.clear();
+                                int kid = r;
+                                int dad = (kid - 1) / 2;
+                                while(dad != 0) {
+                                    ancestors.push_back(dad);
+                                    ancestors_vals.push_back( evalRaw(dad, x) );
+                                    kid = dad;
+                                    dad = (kid - 1) / 2;
+                                }
+                                indx.push_back(0);
+                                indx.insert(indx.end(), ancestors.rbegin(), ancestors.rend());
+                                indx.push_back(r);
+                                vals.push_back( evalRaw(0, x) );
+                                vals.insert(vals.end(), ancestors_vals.rbegin(), ancestors_vals.rend());
+                                vals.push_back(1.0);
+                            }
+                            pntr.back() = static_cast<int>(indx.size());
+                        }
+                        break;
+                };
+            } else { // if (rule == rule_localpb) {
+                switch(num_rows) {
+                    case 0:
+                        indx = {0,};
+                        vals = {1.0,};
+                        pntr = {0, 1};
+                        break;
+                    case 1:
+                        indx = {0, 1};
+                        vals = {1.0, 1.0};
+                        pntr = {0, 1, 2};
+                        break;
+                    default:
+                        indx.clear();
+                        indx.reserve(num_rows * max_level);
+                        vals.clear();
+                        vals.reserve(num_rows * max_level);
+                        pntr = std::vector<int>(num_rows + 1, 0);
+                        indx.push_back(0);
+                        indx.push_back(1);
+                        vals.push_back(1.0);
+                        vals.push_back(1.0);
+                        pntr[1] = 1;
+                        {
+                            std::vector<int> ancestors;
+                            std::vector<double> ancestors_vals;
+                            ancestors.reserve(max_level);
+                            ancestors_vals.reserve(max_level);
+                            for(int r=2; r<num_rows; r++) {
+                                pntr[r] = static_cast<int>(indx.size());
+                                double x = getNode(r);
+                                ancestors.clear();
+                                ancestors_vals.clear();
+                                int kid = r;
+                                int dad = (kid + 1) / 2;
+                                while(dad > 1) {
+                                    ancestors.push_back(dad);
+                                    ancestors_vals.push_back( evalRaw(dad, x) );
+                                    kid = dad;
+                                    dad = (kid + 1) / 2;
+                                }
+                                indx.push_back(0);
+                                indx.push_back(1);
+                                indx.insert(indx.end(), ancestors.rbegin(), ancestors.rend());
+                                indx.push_back(r);
+                                vals.push_back( evalRaw(0, x) );
+                                vals.push_back( evalRaw(1, x) );
+                                vals.insert(vals.end(), ancestors_vals.rbegin(), ancestors_vals.rend());
+                                vals.push_back(1.0);
+                            }
+                            pntr.back() = static_cast<int>(indx.size());
+                        }
+                        break;
+                };
+            }
         }
     }
 

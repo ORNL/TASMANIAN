@@ -142,6 +142,7 @@ protected:
     //! \brief Looks for a batch of constructed points and processes all that will result in a connected graph.
     void loadConstructedPoints();
 
+    //! \brief Fast algorithm, uses global Kronecker algorithm to recompute all surpluses
     void recomputeSurpluses();
 
     /*!
@@ -155,6 +156,9 @@ protected:
      * - \b dagUp must have been computed using \b MultiIndexManipulations::computeDAGup(\b work, \b rule, \b dagUp)
      *
      * Note: adjusting the \b level vector allows to update the surpluses for only a portion of the graph.
+     *
+     * Note: see the comments inside recomputeSurpluses() for the performance comparison between different algorithms
+     *       also note that this method can be used to partially update, i.e., update the surpluses for some of the indexes
      */
     void updateSurpluses(MultiIndexSet const &work, int max_level, std::vector<int> const &level, Data2D<int> const &dagUp);
 

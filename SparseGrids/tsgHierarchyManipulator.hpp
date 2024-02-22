@@ -85,6 +85,17 @@ namespace HierarchyManipulations{
  * \endinternal
  */
 Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule);
+/*!
+ * \internal
+ * \ingroup TasmanianHierarchyManipulations
+ * \brief Variant that also check if all points have all parents
+ *
+ * This is merged together so it will do only one pass over the data.
+ *
+ * On exit, \b is_complete will indicate whether there are points with missing parents.
+ * \endinternal
+ */
+Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule, bool &is_complete);
 
 /*!
  * \internal

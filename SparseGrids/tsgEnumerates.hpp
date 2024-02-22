@@ -54,6 +54,9 @@
 #include <type_traits>
 #include <cassert>
 #include <limits>
+#include <array>
+
+#include <chrono>
 
 #include "TasmanianConfig.hpp" // contains build options passed down from CMake
 #include "tsgUtils.hpp" // contains small utilities

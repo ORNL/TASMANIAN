@@ -734,11 +734,93 @@ void GridLocalPolynomial::evaluateHierarchicalFunctions(const double x[], int nu
 void GridLocalPolynomial::recomputeSurpluses(){
     surpluses = Data2D<double>(num_outputs, points.getNumIndexes(), std::vector<double>(values.begin(), values.end()));
 
-    Data2D<int> dagUp = HierarchyManipulations::computeDAGup(points, rule.get());
+    // There are two available algorithms here:
+    // - global sparse Kronecker (kron), implemented here in recomputeSurpluses()
+    // - sparse matrix in matrix-free form (mat), implemented in updateSurpluses()
+    //
+    // (kron) has the additional restriction that it will only work when the hierarchy is complete
+    // i.e., all point (multi-indexes) have all of their parents
+    // this is guaranteed for a full-tensor grid, non-adaptive grid, or a grid adapted with the stable refinement strategy
+    // other refinement strategies or using dynamic refinement (even with a stable refinement strategy)
+    // may yield a hierarchy-complete grid, but this is not mathematically guaranteed
+    //
+    // computing the dagUp allows us to check (at runtime) if the grid is_complete, and exclude (kron) if incomplete
+    //    the completeness check can be done on the fly but it does incur cost
+    //
+    // approximate computational cost, let n be the number of points and d be the number of dimensions
+    // (kron) d n n^(1/d) due to standard Kronecker reasons, except it is hard to find the "effective" n due to sparsity
+    // (mat) d^2 n log(n) since there are d log(n) ancestors and basis functions are product of d one dimensional functions
+    //    naturally, there are constants and those also depend on the system, e.g., number of threads, thread scheduling, cache ...
+    //    (mat) has a more even load per thread and parallelizes better
+    //
+    // for d = 1, the algorithms are the same, except (kron) explicitly forms the matrix and the matrix free (mat) version is much better
+    // for d = 2, the (mat) algorithm is still faster
+    // for d = 3, and sufficiently large size the (mat) algorithm still wins
+    //            the breaking point depends on n, the order and system
+    // for d = 4 and above, the (kron) algorithm is much faster
+    //           it is possible that for sufficiently large n (mat) will win again
+    //           but tested on 12 cores CPUs (Intel and AMD) up to n = 3.5 million, the (kron) method is over 2x faster
+    // higher dimensions will favor (kron) even more
 
-    std::vector<int> level = HierarchyManipulations::computeLevels(points, rule.get());
+    if (num_dimensions <= 2 or (num_dimensions == 3 and points.getNumIndexes() > 2000000)) {
+        Data2D<int> dagUp = HierarchyManipulations::computeDAGup(points, rule.get());
+        std::vector<int> level = HierarchyManipulations::computeLevels(points, rule.get());
+        updateSurpluses(points, top_level, level, dagUp);
+        return;
+    }
 
-    updateSurpluses(points, top_level, level, dagUp);
+    bool is_complete = true;
+    Data2D<int> dagUp = HierarchyManipulations::computeDAGup(points, rule.get(), is_complete);
+
+    if (not is_complete) {
+        // incomplete hierarchy, must use the slow algorithm
+        std::vector<int> level = HierarchyManipulations::computeLevels(points, rule.get());
+        updateSurpluses(points, top_level, level, dagUp);
+        return;
+    }
+
+    int num_nodes = 1 + *std::max_element(points.begin(), points.end());
+
+    std::vector<int> vpntr, vindx;
+    std::vector<double> vvals;
+    rule->van_matrix(num_nodes, vpntr, vindx, vvals);
+
+    std::vector<std::vector<int>> map;
+    std::vector<std::vector<int>> lines1d;
+    MultiIndexManipulations::resortIndexes(points, map, lines1d);
+
+    for(int d=num_dimensions-1; d>=0; d--) {
+        #pragma omp parallel for schedule(dynamic)
+        for(int job = 0; job < static_cast<int>(lines1d[d].size() - 1); job++) {
+            for(int i=lines1d[d][job]+1; i<lines1d[d][job+1]; i++) {
+                double *row_strip = surpluses.getStrip(map[d][i]);
+
+                int row = points.getIndex(map[d][i])[d];
+                int im  = vpntr[row];
+                int ijx = lines1d[d][job];
+                int ix  = points.getIndex(map[d][ijx])[d];
+
+                while(vindx[im] < row or ix < row) {
+                    if (vindx[im] < ix) {
+                        ++im; // move the index of the matrix pattern (missing entry)
+                    } else if (ix < vindx[im]) {
+                        // entry not connected, move to the next one
+                        ++ijx;
+                        ix = points.getIndex(map[d][ijx])[d];
+                    } else {
+                        double const *col_strip = surpluses.getStrip(map[d][ijx]);
+                        double const v = vvals[im];
+                        for(int k=0; k<num_outputs; k++)
+                            row_strip[k] -= v * col_strip[k];
+
+                        ++im;
+                        ++ijx;
+                        ix = points.getIndex(map[d][ijx])[d];
+                    }
+                }
+            }
+        }
+    }
 }
 
 void GridLocalPolynomial::updateSurpluses(MultiIndexSet const &work, int max_level, std::vector<int> const &level, Data2D<int> const &dagUp){
