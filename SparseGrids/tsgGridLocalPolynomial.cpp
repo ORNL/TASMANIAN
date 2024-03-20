@@ -1287,17 +1287,20 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
 
                 Data2D<double> vals(active_outputs, nump);
 
-                for(int i=0; i<nump; i++){
-                    const double* v = values.getValues(pnts[i]);
-                    const int *p = points.getIndex(pnts[i]);
-                    if (output == -1){
-                        std::copy(v, v + num_outputs, vals.getStrip(i));
-                    }else{
-                        vals.getStrip(i)[0] = v[output];
+                if (output == -1) {
+                    for(int i=0; i<nump; i++){
+                        std::copy_n(values.getValues(pnts[i]), num_outputs, vals.getStrip(i));
+                        global_to_pnts[pnts[i]] = i;
+                        levels[i] = rule->getLevel(points.getIndex(pnts[i])[d]);
+                        if (max_level < levels[i]) max_level = levels[i];
                     }
-                    global_to_pnts[pnts[i]] = i;
-                    levels[i] = rule->getLevel(p[d]);
-                    if (max_level < levels[i]) max_level = levels[i];
+                } else {
+                    for(int i=0; i<nump; i++){
+                        vals.getStrip(i)[0] = values.getValues(pnts[i])[output];
+                        global_to_pnts[pnts[i]] = i;
+                        levels[i] = rule->getLevel(points.getIndex(pnts[i])[d]);
+                        if (max_level < levels[i]) max_level = levels[i];
+                    }
                 }
 
                 for(int l=1; l<=max_level; l++){
