@@ -91,6 +91,7 @@ add_executable(Tasmanian_benchmarksgrid  Benchmarks/benchCommon.hpp
                                          Benchmarks/benchLoadNeeded.hpp
                                          Benchmarks/benchDifferentiate.hpp
                                          Benchmarks/benchEvaluate.hpp
+                                         Benchmarks/benchRefine.hpp
                                          Benchmarks/bench_main.cpp)
 
 if (Tasmanian_ENABLE_CUDA)

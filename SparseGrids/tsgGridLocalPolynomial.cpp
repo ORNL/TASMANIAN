@@ -1273,7 +1273,6 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
             int nump = split.getJobNumPoints(j);
             const int *pnts = split.getJobPoints(j);
 
-            
             std::vector<int> levels(nump);
 
             int max_level = 0;
