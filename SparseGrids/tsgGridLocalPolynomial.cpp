@@ -1391,27 +1391,39 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
 
     int num_points = points.getNumIndexes();
 
-    if (level_limits.empty()){
-        for(int i=0; i<num_points; i++){
-            const int *map = pmap.getStrip(i);
-            for(int j=0; j<num_dimensions; j++){
-                if (map[j] == 1){ // if this dimension needs to be refined
-                    if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
-                        addChild(points.getIndex(i), j, points, refined);
+    #pragma omp parallel
+    {
+        Data2D<int> lrefined(num_dimensions, 0);
+
+        if (level_limits.empty()){
+            #pragma omp for
+            for(int i=0; i<num_points; i++){
+                const int *map = pmap.getStrip(i);
+                for(int j=0; j<num_dimensions; j++){
+                    if (map[j] == 1){ // if this dimension needs to be refined
+                        if (!(useParents && addParent(points.getIndex(i), j, points, lrefined))){
+                            addChild(points.getIndex(i), j, points, lrefined);
+                        }
+                    }
+                }
+            }
+        }else{
+            #pragma omp for
+            for(int i=0; i<num_points; i++){
+                const int *map = pmap.getStrip(i);
+                for(int j=0; j<num_dimensions; j++){
+                    if (map[j] == 1){ // if this dimension needs to be refined
+                        if (!(useParents && addParent(points.getIndex(i), j, points, lrefined))){
+                            addChildLimited(points.getIndex(i), j, points, level_limits, lrefined);
+                        }
                     }
                 }
             }
         }
-    }else{
-        for(int i=0; i<num_points; i++){
-            const int *map = pmap.getStrip(i);
-            for(int j=0; j<num_dimensions; j++){
-                if (map[j] == 1){ // if this dimension needs to be refined
-                    if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
-                        addChildLimited(points.getIndex(i), j, points, level_limits, refined);
-                    }
-                }
-            }
+
+        #pragma omp critical
+        {
+            refined.append(lrefined);
         }
     }
 

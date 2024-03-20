@@ -192,6 +192,12 @@ public:
         num_strips++;
     }
 
+    //! \brief Uses std::vector::insert to append all the data from the other to this
+    void append(Data2D<T> const &other) {
+        vec.insert(vec.end(), other.vec.begin(), other.vec.end());
+        num_strips += other.num_strips;
+    }
+
 private:
     size_t stride, num_strips;
     std::vector<T> vec;
