@@ -12,7 +12,8 @@ enum BenchFuction{
     bench_evaluate,
     bench_evaluate_mixed,
     bench_differentiate,
-    bench_iweights
+    bench_iweights,
+    bench_refine
 };
 
 BenchFuction getTest(std::string const &s){
@@ -22,7 +23,8 @@ BenchFuction getTest(std::string const &s){
         {"differentiate", bench_differentiate},
         {"loadneeded", bench_loadneeded},
         {"makegrid", bench_make},
-        {"iweights", bench_iweights}
+        {"iweights", bench_iweights},
+        {"refine", bench_refine}
     };
 
     try{
@@ -68,6 +70,11 @@ template<typename StringListIterator>
 void readEntry(StringListIterator &iter, int &val){
     val = std::stoi(*iter++);
 }
+//! \brief Convert a string to double and advance the iterator.
+template<typename StringListIterator>
+void readEntry(StringListIterator &iter, double &val){
+    val = std::stod(*iter++);
+}
 //! \brief Convert a string to TypeDepth and advance the iterator.
 template<typename StringListIterator>
 void readEntry(StringListIterator &iter, TypeDepth &val){
@@ -77,6 +84,11 @@ void readEntry(StringListIterator &iter, TypeDepth &val){
 template<typename StringListIterator>
 void readEntry(StringListIterator &iter, TypeOneDRule &val){
     val = IO::getRuleString(*iter++);
+}
+//! \brief Convert a string to TypeRefinement and advance the iterator.
+template<typename StringListIterator>
+void readEntry(StringListIterator &iter, TypeRefinement &val){
+    val = IO::getTypeRefinementString(*iter++);
 }
 //! \brief Convert a string to TypeAcceleration and advance the iterator.
 template<typename StringListIterator>
