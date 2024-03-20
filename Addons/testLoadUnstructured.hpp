@@ -88,9 +88,10 @@ inline double coefficientDifference(TasmanianSparseGrid const &gA, TasmanianSpar
     size_t num_coeffs = Utils::size_mult(gA.getNumOutputs(), gA.getNumPoints());
     double const *c1 = gA.getHierarchicalCoefficients();
     double const *c2 = gB.getHierarchicalCoefficients();
-    return std::inner_product(c1, c1 + num_coeffs, c2, 0.0,
-                              [](double a, double b)->double{ return std::max(a, b); },
-                              [](double a, double b)->double{ return std::abs(a - b); });
+    double err = 0.0;
+    for(size_t i=0; i<num_coeffs; i++)
+        err = std::max(std::abs(c1[i] - c2[i]), err);
+    return err;
 }
 
 /*!
@@ -102,16 +103,18 @@ inline double evalDifference(std::vector<double> const&x, TasmanianSparseGrid co
     gA.evaluateBatch(x, yA);
     gB.evaluateBatch(x, yB);
 
-    return std::inner_product(yA.begin(), yA.end(), yB.begin(), 0.0,
-                              [](double a, double b)->double{ return std::max(a, b); },
-                              [](double a, double b)->double{ return std::abs(a - b); });
+    double err = 0.0;
+    for(size_t i=0; i<yA.size(); i++)
+        err = std::max(std::abs(yA[i] - yB[i]), err);
+    return err;
 }
 
 inline double vecDifference(std::vector<double> const &x, std::vector<double> const &y){
     if (x.size() != y.size()) return 1.E+20;
-    return std::inner_product(x.begin(), x.end(), y.begin(), 0.0,
-                              [](double a, double b)->double{ return std::max(a, b); },
-                              [](double a, double b)->double{ return std::abs(a - b); });
+    double err = 0.0;
+    for(size_t i=0; i<x.size(); i++)
+        err = std::max(std::abs(x[i] - y[i]), err);
+    return err;
 }
 
 /*!

@@ -346,8 +346,11 @@ template<> double getValue<rule_mindeltaodd>(CurrentNodes<rule_mindeltaodd> cons
     auto lag       = evalLagrange(current.nodes, current.coeff, x);
     auto lag_less1 = evalLagrange(current.nodes_less1, current.coeff_less1, x);
 
-    return std::abs(lag.back()) + std::inner_product(lag_less1.begin(), lag_less1.end(), lag.begin(), 0.0,
-                                     std::plus<double>(), [](double a, double b)->double{ return std::abs(a - b); });
+    double result = std::abs(lag.back());
+    for(size_t i=0; i<lag_less1.size(); i++) {
+        result += std::abs(lag_less1[i] - lag[i]);
+    }
+    return result;
 }
 
 /*!
