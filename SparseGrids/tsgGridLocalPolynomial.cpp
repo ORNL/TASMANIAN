@@ -1273,9 +1273,14 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
             std::vector<int> global_to_pnts(num_points);
             std::vector<int> levels(max_nump);
 
-            std::vector<int> monkey_count(top_level + 1);
-            std::vector<int> monkey_tail(top_level + 1);
-            std::vector<bool> used(max_nump, false);
+            std::vector<int> monkey_count;
+            std::vector<int> monkey_tail;
+            std::vector<bool> used;
+            if (max_1D_parents > 1) {
+                monkey_count.resize(top_level + 1);
+                monkey_tail.resize(top_level + 1);
+                used.resize(max_nump, false);
+            }
 
             #pragma omp for
             for(int j=0; j<split.getNumJobs(); j++){ // split.getNumJobs() gives the number of 1D interpolants to construct
@@ -1303,34 +1308,54 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
                     }
                 }
 
-                for(int l=1; l<=max_level; l++){
-                    for(int i=0; i<nump; i++){
-                        if (levels[i] == l){
-                            double x = rule->getNode(points.getIndex(pnts[i])[d]);
-                            double *valsi = vals.getStrip(i);
+                if (max_1D_parents == 1) {
+                    for(int l=1; l<=max_level; l++){
+                        for(int i=0; i<nump; i++){
+                            if (levels[i] == l){
+                                double x = rule->getNode(points.getIndex(pnts[i])[d]);
+                                double *valsi = vals.getStrip(i);
 
-                            int current = 0;
-                            monkey_count[0] = d * max_1D_parents;
-                            monkey_tail[0] = pnts[i]; // uses the global indexes
-                            std::fill_n(used.begin(), nump, false);
+                                int branch = dagUp.getStrip(pnts[i])[d];
+                                while(branch != -1) {
+                                    const int *branch_point = points.getIndex(branch);
+                                    double basis_value = rule->evalRaw(branch_point[d], x);
+                                    const double *branch_vals = vals.getStrip(global_to_pnts[branch]);
+                                    for(int k=0; k<active_outputs; k++) valsi[k] -= basis_value * branch_vals[k];
+                                    branch = dagUp.getStrip(branch)[d];
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    for(int l=1; l<=max_level; l++){
+                        for(int i=0; i<nump; i++){
+                            if (levels[i] == l){
+                                double x = rule->getNode(points.getIndex(pnts[i])[d]);
+                                double *valsi = vals.getStrip(i);
 
-                            while(monkey_count[0] < (d+1) * max_1D_parents){
-                                if (monkey_count[current] < (d+1) * max_1D_parents){
-                                    int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
-                                    if ((branch == -1) || (used[global_to_pnts[branch]])){
-                                        monkey_count[current]++;
+                                int current = 0;
+                                monkey_count[0] = d * max_1D_parents;
+                                monkey_tail[0] = pnts[i]; // uses the global indexes
+                                std::fill_n(used.begin(), nump, false);
+
+                                while(monkey_count[0] < (d+1) * max_1D_parents){
+                                    if (monkey_count[current] < (d+1) * max_1D_parents){
+                                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
+                                        if ((branch == -1) || (used[global_to_pnts[branch]])){
+                                            monkey_count[current]++;
+                                        }else{
+                                            const int *branch_point = points.getIndex(branch);
+                                            double basis_value = rule->evalRaw(branch_point[d], x);
+                                            const double *branch_vals = vals.getStrip(global_to_pnts[branch]);
+                                            for(int k=0; k<active_outputs; k++) valsi[k] -= basis_value * branch_vals[k];
+
+                                            used[global_to_pnts[branch]] = true;
+                                            monkey_count[++current] = d * max_1D_parents;
+                                            monkey_tail[current] = branch;
+                                        }
                                     }else{
-                                        const int *branch_point = points.getIndex(branch);
-                                        double basis_value = rule->evalRaw(branch_point[d], x);
-                                        const double *branch_vals = vals.getStrip(global_to_pnts[branch]);
-                                        for(int k=0; k<active_outputs; k++) valsi[k] -= basis_value * branch_vals[k];
-
-                                        used[global_to_pnts[branch]] = true;
-                                        monkey_count[++current] = d * max_1D_parents;
-                                        monkey_tail[current] = branch;
+                                        monkey_count[--current]++;
                                     }
-                                }else{
-                                    monkey_count[--current]++;
                                 }
                             }
                         }
