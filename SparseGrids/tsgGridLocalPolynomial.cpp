@@ -1266,14 +1266,14 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
         int max_1D_parents = rule->getMaxNumParents();
 
         HierarchyManipulations::SplitDirections split(points);
-
-        #pragma omp parallel for
+        std::vector<int> global_to_pnts(num_points);
+        #pragma omp parallel for firstprivate(global_to_pnts)
         for(int j=0; j<split.getNumJobs(); j++){ // split.getNumJobs() gives the number of 1D interpolants to construct
             int d = split.getJobDirection(j);
             int nump = split.getJobNumPoints(j);
             const int *pnts = split.getJobPoints(j);
 
-            std::vector<int> global_to_pnts(num_points);
+            
             std::vector<int> levels(nump);
 
             int max_level = 0;
