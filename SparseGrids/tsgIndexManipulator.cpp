@@ -48,7 +48,7 @@ namespace MultiIndexManipulations{
  * The process is repeated until the new set is empty.
  * \endinternal
  */
-template<bool use_parents>
+template<bool use_parents_direction>
 void repeatAddIndexes(std::function<bool(const std::vector<int> &index)> inside, std::vector<MultiIndexSet> &level_sets){
     size_t num_dimensions = level_sets.back().getNumDimensions();
     bool adding = true;
@@ -60,14 +60,14 @@ void repeatAddIndexes(std::function<bool(const std::vector<int> &index)> inside,
             std::vector<int> point(num_dimensions);
             std::copy_n(level_sets.back().getIndex(i), num_dimensions, point.data());
             for(auto &p : point){
-                p += (use_parents) ? -1 : 1; // parents have lower index, children have higher indexes
-                if ( (!use_parents || (p >= 0)) && inside(point) ){
+                p += (use_parents_direction) ? -1 : 1; // parents have lower index, children have higher indexes
+                if ( (not use_parents_direction or p >= 0) and inside(point) ){
                     #pragma omp critical
                     {
                         level.appendStrip(point);
                     }
                 }
-                p -= (use_parents) ? -1 : 1; // restore p
+                p -= (use_parents_direction) ? -1 : 1; // restore p
             }
         }
 
@@ -122,7 +122,8 @@ void completeSetToLower(MultiIndexSet &set){
     if (completion.getNumStrips() > 0){
         std::vector<MultiIndexSet> level_sets = { MultiIndexSet(completion) };
 
-        repeatAddIndexes<true>([&](std::vector<int> const &p) -> bool{ return set.missing(p); }, level_sets);
+        constexpr bool use_parents = true;
+        repeatAddIndexes<use_parents>([&](std::vector<int> const &p) -> bool{ return set.missing(p); }, level_sets);
 
         set += unionSets(level_sets);
     }
@@ -138,7 +139,8 @@ void completeSetToLower(MultiIndexSet &set){
 inline MultiIndexSet generateGeneralMultiIndexSet(size_t num_dimensions, std::function<bool(const std::vector<int> &index)> criteria){
     std::vector<MultiIndexSet> level_sets = { MultiIndexSet(num_dimensions, std::vector<int>(num_dimensions, 0)) };
 
-    repeatAddIndexes<false>(criteria, level_sets);
+    constexpr bool use_parents = false;
+    repeatAddIndexes<use_parents>(criteria, level_sets);
 
     MultiIndexSet set = unionSets(level_sets);
 
