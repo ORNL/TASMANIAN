@@ -1391,6 +1391,7 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
 
     int num_points = points.getNumIndexes();
 
+    #ifdef _OPENMP
     #pragma omp parallel
     {
         Data2D<int> lrefined(num_dimensions, 0);
@@ -1426,6 +1427,31 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
             refined.append(lrefined);
         }
     }
+    #else
+    if (level_limits.empty()){
+        for(int i=0; i<num_points; i++){
+            const int *map = pmap.getStrip(i);
+            for(int j=0; j<num_dimensions; j++){
+                if (map[j] == 1){ // if this dimension needs to be refined
+                    if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
+                        addChild(points.getIndex(i), j, points, refined);
+                    }
+                }
+            }
+        }
+    }else{
+        for(int i=0; i<num_points; i++){
+            const int *map = pmap.getStrip(i);
+            for(int j=0; j<num_dimensions; j++){
+                if (map[j] == 1){ // if this dimension needs to be refined
+                    if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
+                        addChildLimited(points.getIndex(i), j, points, level_limits, refined);
+                    }
+                }
+            }
+        }
+    }
+    #endif
 
     MultiIndexSet result(refined);
     if (criteria == refine_stable)
