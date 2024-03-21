@@ -25,9 +25,10 @@ Recommended additional features:
 * [OpenMP](https://en.wikipedia.org/wiki/OpenMP) implementation (usually included with the compiler)
 
 Optional features:
+* Acceleration using [OpenMP](https://www.openmp.org/) multicore algorithms (CPU only), the OpenMP standard is supported on most major compilers.
 * Acceleration using Nvidia [linear algebra libraries](https://developer.nvidia.com/cublas) and custom [CUDA kernels](https://developer.nvidia.com/cuda-zone)
 * Acceleration using AMD ROCm [linear algebra libraries](https://rocsparse.readthedocs.io/en/master/) and custom [HIP kernels](https://rocmdocs.amd.com/en/latest/ROCm_API_References/HIP-API.html)
-* Acceleration using Intel OneAPI [oneMKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/components/onemkl.html) and custom [DPC++ kernels](https://software.intel.com/content/www/us/en/develop/tools/oneapi.html)
+* Acceleration using Intel OneAPI [oneMKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/components/onemkl.html) and custom [SYCL kernels](https://software.intel.com/content/www/us/en/develop/tools/oneapi.html)
 * GPU out-of-core algorithms using the [UTK MAGMA library](http://icl.cs.utk.edu/magma/)
 * Basic [Python matplotlib](https://matplotlib.org/) support
 * Fully featured [MATLAB/Octave](https://www.gnu.org/software/octave/) interface via wrappers around the command-line tool
@@ -100,7 +101,11 @@ ROCm capabilities require CMake 3.21.
 ```
 
 * Acceleration options:
-    * OpenMP allows Tasmanian to use more than one CPU core, which greatly increases the performance
+    * OpenMP allows Tasmanian to use more than one CPU core, which greatly increases the performance.
+      While many of the Tasmanian algorithms have been parallelized, the buildin C++ algorithms are usually sequential.
+      This is most notable in the case of `std::sort` but affects others as well.
+      Some compilers support parallel standard algorithms but those in turn reuqire additional compiler flags.
+        * for GCC add `-D_GLIBCXX_PARALLEL` to the `CMAKE_CXX_FLAGS`
     * Basic Linear Algebra Subroutines (BLAS) is a standard with many implementations,
       e.g., [https://www.openblas.net/](https://www.openblas.net/); optimized BLAS improves the
       performance when using evaluate commands on grids with many points or working with models with many outputs
