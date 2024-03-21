@@ -320,12 +320,53 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset){
 
 MultiIndexSet selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits){
     size_t num_dimensions = mset.getNumDimensions();
+    int n = mset.getNumIndexes();
 
-    Data2D<int> children_unsorted(mset.getNumDimensions(), 0);
+    Data2D<int> children_unsorted(num_dimensions, 0);
 
+    #ifdef _OPENMP
+    #pragma omp parallel
+    {
+        Data2D<int> lrefined(num_dimensions, 0);
+        std::vector<int> kid(num_dimensions);
+
+        if (level_limits.empty()){
+            #pragma omp for
+            for(int i=0; i<n; i++){
+                if (flagged[i]){
+                    std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
+                    for(auto &k : kid){
+                        k++;
+                        if (mset.missing(kid)) lrefined.appendStrip(kid);
+                        k--;
+                    }
+                }
+            }
+        }else{
+            #pragma omp for
+            for(int i=0; i<n; i++){
+                if (flagged[i]){
+                    std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
+                    auto ill = level_limits.begin();
+                    for(auto &k : kid){
+                        k++;
+                        if (((*ill == -1) || (k <= *ill)) && mset.missing(kid))
+                            lrefined.appendStrip(kid);
+                        k--;
+                        ill++;
+                    }
+                }
+            }
+        }
+
+        #pragma omp critical
+        {
+            children_unsorted.append(lrefined);
+        }
+    }
+    #else
     std::vector<int> kid(num_dimensions);
 
-    int n = mset.getNumIndexes();
     if (level_limits.empty()){
         for(int i=0; i<n; i++){
             if (flagged[i]){
@@ -352,6 +393,7 @@ MultiIndexSet selectFlaggedChildren(const MultiIndexSet &mset, const std::vector
             }
         }
     }
+    #endif
 
     return MultiIndexSet(children_unsorted);
 }
