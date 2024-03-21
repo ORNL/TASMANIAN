@@ -48,7 +48,7 @@ namespace MultiIndexManipulations{
  * The process is repeated until the new set is empty.
  * \endinternal
  */
-template<bool use_parents>
+template<bool use_parents_direction>
 void repeatAddIndexes(std::function<bool(const std::vector<int> &index)> inside, std::vector<MultiIndexSet> &level_sets){
     size_t num_dimensions = level_sets.back().getNumDimensions();
     bool adding = true;
@@ -60,14 +60,14 @@ void repeatAddIndexes(std::function<bool(const std::vector<int> &index)> inside,
             std::vector<int> point(num_dimensions);
             std::copy_n(level_sets.back().getIndex(i), num_dimensions, point.data());
             for(auto &p : point){
-                p += (use_parents) ? -1 : 1; // parents have lower index, children have higher indexes
-                if ( (!use_parents || (p >= 0)) && inside(point) ){
+                p += (use_parents_direction) ? -1 : 1; // parents have lower index, children have higher indexes
+                if ( (not use_parents_direction or p >= 0) and inside(point) ){
                     #pragma omp critical
                     {
                         level.appendStrip(point);
                     }
                 }
-                p -= (use_parents) ? -1 : 1; // restore p
+                p -= (use_parents_direction) ? -1 : 1; // restore p
             }
         }
 
@@ -122,7 +122,8 @@ void completeSetToLower(MultiIndexSet &set){
     if (completion.getNumStrips() > 0){
         std::vector<MultiIndexSet> level_sets = { MultiIndexSet(completion) };
 
-        repeatAddIndexes<true>([&](std::vector<int> const &p) -> bool{ return set.missing(p); }, level_sets);
+        constexpr bool use_parents = true;
+        repeatAddIndexes<use_parents>([&](std::vector<int> const &p) -> bool{ return set.missing(p); }, level_sets);
 
         set += unionSets(level_sets);
     }
@@ -138,7 +139,8 @@ void completeSetToLower(MultiIndexSet &set){
 inline MultiIndexSet generateGeneralMultiIndexSet(size_t num_dimensions, std::function<bool(const std::vector<int> &index)> criteria){
     std::vector<MultiIndexSet> level_sets = { MultiIndexSet(num_dimensions, std::vector<int>(num_dimensions, 0)) };
 
-    repeatAddIndexes<false>(criteria, level_sets);
+    constexpr bool use_parents = false;
+    repeatAddIndexes<use_parents>(criteria, level_sets);
 
     MultiIndexSet set = unionSets(level_sets);
 
@@ -320,12 +322,53 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset){
 
 MultiIndexSet selectFlaggedChildren(const MultiIndexSet &mset, const std::vector<bool> &flagged, const std::vector<int> &level_limits){
     size_t num_dimensions = mset.getNumDimensions();
+    int n = mset.getNumIndexes();
 
-    Data2D<int> children_unsorted(mset.getNumDimensions(), 0);
+    Data2D<int> children_unsorted(num_dimensions, 0);
 
+    #ifdef _OPENMP
+    #pragma omp parallel
+    {
+        Data2D<int> lrefined(num_dimensions, 0);
+        std::vector<int> kid(num_dimensions);
+
+        if (level_limits.empty()){
+            #pragma omp for
+            for(int i=0; i<n; i++){
+                if (flagged[i]){
+                    std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
+                    for(auto &k : kid){
+                        k++;
+                        if (mset.missing(kid)) lrefined.appendStrip(kid);
+                        k--;
+                    }
+                }
+            }
+        }else{
+            #pragma omp for
+            for(int i=0; i<n; i++){
+                if (flagged[i]){
+                    std::copy_n(mset.getIndex(i), num_dimensions, kid.data());
+                    auto ill = level_limits.begin();
+                    for(auto &k : kid){
+                        k++;
+                        if (((*ill == -1) || (k <= *ill)) && mset.missing(kid))
+                            lrefined.appendStrip(kid);
+                        k--;
+                        ill++;
+                    }
+                }
+            }
+        }
+
+        #pragma omp critical
+        {
+            children_unsorted.append(lrefined);
+        }
+    }
+    #else
     std::vector<int> kid(num_dimensions);
 
-    int n = mset.getNumIndexes();
     if (level_limits.empty()){
         for(int i=0; i<n; i++){
             if (flagged[i]){
@@ -352,6 +395,7 @@ MultiIndexSet selectFlaggedChildren(const MultiIndexSet &mset, const std::vector
             }
         }
     }
+    #endif
 
     return MultiIndexSet(children_unsorted);
 }

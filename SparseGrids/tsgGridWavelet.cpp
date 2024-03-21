@@ -933,6 +933,43 @@ MultiIndexSet GridWavelet::getRefinementCanidates(double tolerance, TypeRefineme
 
     int num_points = points.getNumIndexes();
 
+    #ifdef _OPENMP
+    #pragma omp parallel
+    {
+        Data2D<int> lrefined(num_dimensions, 0);
+
+        if (level_limits.empty()){
+            #pragma omp for
+            for(int i=0; i<num_points; i++){
+                const int *map = pmap.getStrip(i);
+                for(int j=0; j<num_dimensions; j++){
+                    if (map[j] == 1){ // if this dimension needs to be refined
+                        if (!(useParents && addParent(points.getIndex(i), j, lrefined))){
+                            addChild(points.getIndex(i), j, lrefined);
+                        }
+                    }
+                }
+            }
+        }else{
+            #pragma omp for
+            for(int i=0; i<num_points; i++){
+                const int *map = pmap.getStrip(i);
+                for(int j=0; j<num_dimensions; j++){
+                    if (map[j] == 1){ // if this dimension needs to be refined
+                        if (!(useParents && addParent(points.getIndex(i), j, lrefined))){
+                            addChildLimited(points.getIndex(i), j, level_limits, lrefined);
+                        }
+                    }
+                }
+            }
+        }
+
+        #pragma omp critical
+        {
+            refined.append(lrefined);
+        }
+    }
+    #else
     if (level_limits.empty()){
         for(int i=0; i<num_points; i++){
             int *p = pmap.getStrip(i);
@@ -956,6 +993,7 @@ MultiIndexSet GridWavelet::getRefinementCanidates(double tolerance, TypeRefineme
             }
         }
     }
+    #endif
 
     MultiIndexSet result = (refined.getNumStrips() > 0) ? MultiIndexSet(refined) : MultiIndexSet();
 
