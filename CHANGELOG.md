@@ -1,6 +1,10 @@
 Changelog for version 8.1
 --------------
 
+* added more multicore cpu support
+    * parallelized setting surplus refinement
+    * compatibility with gcc parallel STL algorithms
+
 * implemented a new algorithm for global sparse Kronecker
     * significant speedup when loading needed values
 
