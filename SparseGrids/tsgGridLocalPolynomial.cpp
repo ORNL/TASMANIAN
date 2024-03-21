@@ -1266,83 +1266,117 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
         int max_1D_parents = rule->getMaxNumParents();
 
         HierarchyManipulations::SplitDirections split(points);
-        std::vector<int> global_to_pnts(num_points);
-        #pragma omp parallel for firstprivate(global_to_pnts)
-        for(int j=0; j<split.getNumJobs(); j++){ // split.getNumJobs() gives the number of 1D interpolants to construct
-            int d = split.getJobDirection(j);
-            int nump = split.getJobNumPoints(j);
-            const int *pnts = split.getJobPoints(j);
 
-            std::vector<int> levels(nump);
+        #pragma omp parallel
+        {
+            int max_nump = split.getMaxNumPoints();
+            std::vector<int> global_to_pnts(num_points);
+            std::vector<int> levels(max_nump);
 
-            int max_level = 0;
-
-            Data2D<double> vals(active_outputs, nump);
-
-            for(int i=0; i<nump; i++){
-                const double* v = values.getValues(pnts[i]);
-                const int *p = points.getIndex(pnts[i]);
-                if (output == -1){
-                    std::copy(v, v + num_outputs, vals.getStrip(i));
-                }else{
-                    vals.getStrip(i)[0] = v[output];
-                }
-                global_to_pnts[pnts[i]] = i;
-                levels[i] = rule->getLevel(p[d]);
-                if (max_level < levels[i]) max_level = levels[i];
+            std::vector<int> monkey_count;
+            std::vector<int> monkey_tail;
+            std::vector<bool> used;
+            if (max_1D_parents > 1) {
+                monkey_count.resize(top_level + 1);
+                monkey_tail.resize(top_level + 1);
+                used.resize(max_nump, false);
             }
 
-            std::vector<int> monkey_count(max_level + 1);
-            std::vector<int> monkey_tail(max_level + 1);
+            #pragma omp for
+            for(int j=0; j<split.getNumJobs(); j++){ // split.getNumJobs() gives the number of 1D interpolants to construct
+                int d = split.getJobDirection(j);
+                int nump = split.getJobNumPoints(j);
+                const int *pnts = split.getJobPoints(j);
 
-            for(int l=1; l<=max_level; l++){
-                for(int i=0; i<nump; i++){
-                    if (levels[i] == l){
-                        double x = rule->getNode(points.getIndex(pnts[i])[d]);
-                        double *valsi = vals.getStrip(i);
+                int max_level = 0;
 
-                        int current = 0;
-                        monkey_count[0] = d * max_1D_parents;
-                        monkey_tail[0] = pnts[i]; // uses the global indexes
-                        std::vector<bool> used(nump, false);
+                Data2D<double> vals(active_outputs, nump);
 
-                        while(monkey_count[0] < (d+1) * max_1D_parents){
-                            if (monkey_count[current] < (d+1) * max_1D_parents){
-                                int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
-                                if ((branch == -1) || (used[global_to_pnts[branch]])){
-                                    monkey_count[current]++;
-                                }else{
+                if (output == -1) {
+                    for(int i=0; i<nump; i++){
+                        std::copy_n(values.getValues(pnts[i]), num_outputs, vals.getStrip(i));
+                        global_to_pnts[pnts[i]] = i;
+                        levels[i] = rule->getLevel(points.getIndex(pnts[i])[d]);
+                        if (max_level < levels[i]) max_level = levels[i];
+                    }
+                } else {
+                    for(int i=0; i<nump; i++){
+                        vals.getStrip(i)[0] = values.getValues(pnts[i])[output];
+                        global_to_pnts[pnts[i]] = i;
+                        levels[i] = rule->getLevel(points.getIndex(pnts[i])[d]);
+                        if (max_level < levels[i]) max_level = levels[i];
+                    }
+                }
+
+                if (max_1D_parents == 1) {
+                    for(int l=1; l<=max_level; l++){
+                        for(int i=0; i<nump; i++){
+                            if (levels[i] == l){
+                                double x = rule->getNode(points.getIndex(pnts[i])[d]);
+                                double *valsi = vals.getStrip(i);
+
+                                int branch = dagUp.getStrip(pnts[i])[d];
+                                while(branch != -1) {
                                     const int *branch_point = points.getIndex(branch);
                                     double basis_value = rule->evalRaw(branch_point[d], x);
                                     const double *branch_vals = vals.getStrip(global_to_pnts[branch]);
                                     for(int k=0; k<active_outputs; k++) valsi[k] -= basis_value * branch_vals[k];
-
-                                    used[global_to_pnts[branch]] = true;
-                                    monkey_count[++current] = d * max_1D_parents;
-                                    monkey_tail[current] = branch;
+                                    branch = dagUp.getStrip(branch)[d];
                                 }
-                            }else{
-                                monkey_count[--current]++;
+                            }
+                        }
+                    }
+                } else {
+                    for(int l=1; l<=max_level; l++){
+                        for(int i=0; i<nump; i++){
+                            if (levels[i] == l){
+                                double x = rule->getNode(points.getIndex(pnts[i])[d]);
+                                double *valsi = vals.getStrip(i);
+
+                                int current = 0;
+                                monkey_count[0] = d * max_1D_parents;
+                                monkey_tail[0] = pnts[i]; // uses the global indexes
+                                std::fill_n(used.begin(), nump, false);
+
+                                while(monkey_count[0] < (d+1) * max_1D_parents){
+                                    if (monkey_count[current] < (d+1) * max_1D_parents){
+                                        int branch = dagUp.getStrip(monkey_tail[current])[monkey_count[current]];
+                                        if ((branch == -1) || (used[global_to_pnts[branch]])){
+                                            monkey_count[current]++;
+                                        }else{
+                                            const int *branch_point = points.getIndex(branch);
+                                            double basis_value = rule->evalRaw(branch_point[d], x);
+                                            const double *branch_vals = vals.getStrip(global_to_pnts[branch]);
+                                            for(int k=0; k<active_outputs; k++) valsi[k] -= basis_value * branch_vals[k];
+
+                                            used[global_to_pnts[branch]] = true;
+                                            monkey_count[++current] = d * max_1D_parents;
+                                            monkey_tail[current] = branch;
+                                        }
+                                    }else{
+                                        monkey_count[--current]++;
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // at this point, vals contains the one directional surpluses
-            for(int i=0; i<nump; i++){
-                const double *s = surpluses.getStrip(pnts[i]);
-                const double *c = scale.getStrip(pnts[i]);
-                const double *v = vals.getStrip(i);
-                bool small = true;
-                if (output == -1){
-                    for(int k=0; k<num_outputs; k++){
-                        small = small && (((c[k] * std::abs(s[k]) / norm[k]) <= tolerance) || ((c[k] * std::abs(v[k]) / norm[k]) <= tolerance));
+                // at this point, vals contains the one directional surpluses
+                for(int i=0; i<nump; i++){
+                    const double *s = surpluses.getStrip(pnts[i]);
+                    const double *c = scale.getStrip(pnts[i]);
+                    const double *v = vals.getStrip(i);
+                    bool small = true;
+                    if (output == -1){
+                        for(int k=0; k<num_outputs; k++){
+                            small = small && (((c[k] * std::abs(s[k]) / norm[k]) <= tolerance) || ((c[k] * std::abs(v[k]) / norm[k]) <= tolerance));
+                        }
+                    }else{
+                        small = ((c[0] * std::abs(s[output]) / norm[output]) <= tolerance) || ((c[0] * std::abs(v[0]) / norm[output]) <= tolerance);
                     }
-                }else{
-                    small = ((c[0] * std::abs(s[output]) / norm[output]) <= tolerance) || ((c[0] * std::abs(v[0]) / norm[output]) <= tolerance);
+                    pmap.getStrip(pnts[i])[d] = (small) ? 0 : 1;;
                 }
-                pmap.getStrip(pnts[i])[d] = (small) ? 0 : 1;;
             }
         }
     }
@@ -1357,27 +1391,39 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
 
     int num_points = points.getNumIndexes();
 
-    if (level_limits.empty()){
-        for(int i=0; i<num_points; i++){
-            const int *map = pmap.getStrip(i);
-            for(int j=0; j<num_dimensions; j++){
-                if (map[j] == 1){ // if this dimension needs to be refined
-                    if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
-                        addChild(points.getIndex(i), j, points, refined);
+    #pragma omp parallel
+    {
+        Data2D<int> lrefined(num_dimensions, 0);
+
+        if (level_limits.empty()){
+            #pragma omp for
+            for(int i=0; i<num_points; i++){
+                const int *map = pmap.getStrip(i);
+                for(int j=0; j<num_dimensions; j++){
+                    if (map[j] == 1){ // if this dimension needs to be refined
+                        if (!(useParents && addParent(points.getIndex(i), j, points, lrefined))){
+                            addChild(points.getIndex(i), j, points, lrefined);
+                        }
+                    }
+                }
+            }
+        }else{
+            #pragma omp for
+            for(int i=0; i<num_points; i++){
+                const int *map = pmap.getStrip(i);
+                for(int j=0; j<num_dimensions; j++){
+                    if (map[j] == 1){ // if this dimension needs to be refined
+                        if (!(useParents && addParent(points.getIndex(i), j, points, lrefined))){
+                            addChildLimited(points.getIndex(i), j, points, level_limits, lrefined);
+                        }
                     }
                 }
             }
         }
-    }else{
-        for(int i=0; i<num_points; i++){
-            const int *map = pmap.getStrip(i);
-            for(int j=0; j<num_dimensions; j++){
-                if (map[j] == 1){ // if this dimension needs to be refined
-                    if (!(useParents && addParent(points.getIndex(i), j, points, refined))){
-                        addChildLimited(points.getIndex(i), j, points, level_limits, refined);
-                    }
-                }
-            }
+
+        #pragma omp critical
+        {
+            refined.append(lrefined);
         }
     }
 

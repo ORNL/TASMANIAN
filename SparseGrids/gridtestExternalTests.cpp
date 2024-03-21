@@ -1041,10 +1041,11 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
     std::vector<double> xpnts = genRandom(10, grid.getNumDimensions());
     grid.evaluateBatch(xpnts, res1);
     grid2.evaluateBatch(xpnts, res2);
-    double err = std::inner_product(res1.begin(), res1.end(), res2.begin(), 0.0,
-                                   [](double a, double b)->double{ return std::max(a, b); },
-                                   [](double a, double b)->double{ return std::abs(a - b); });
-    if (err > Maths::num_tol){ cout << "ERROR: failed evaluate after loading batch points." << endl; return false; }
+    double err = 0.0;
+    for(size_t i=0; i<res1.size(); i++)
+        err = std::max(std::abs(res1[i] - res2[i]), err);
+
+    if (err > Maths::num_tol){ cout << "ERROR: failed evaluate after loading batch points. " << endl; return false; }
     return true;
 }
 

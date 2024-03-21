@@ -309,6 +309,9 @@ public:
     int getJobNumPoints(int job) const{ return (int) job_pnts[job].size(); }
     //! \brief Return the indexes of the points associated with the job.
     const int* getJobPoints(int job) const{ return job_pnts[job].data(); }
+    //! \brief Return the max number of points for any job.
+    int getMaxNumPoints() const { return (job_pnts.size() > 0) ? (int) std::max_element(job_pnts.begin(), job_pnts.end(),
+        [&](std::vector<int> const &a, std::vector<int> const& b)->bool{ return (a.size() < b.size()); })->size() : 0; }
 
 private:
     std::vector<int> job_directions;
