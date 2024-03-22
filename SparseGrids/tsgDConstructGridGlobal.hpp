@@ -201,6 +201,21 @@ std::vector<double> listToNodes(std::forward_list<NodeData> const &node_list, si
         ix = MultiIndexManipulations::indexesToNodes(t.point, rule, ix);
     return result;
 }
+/*!
+ * \internal
+ * \ingroup TasmanianRefinement
+ * \brief Using MultiIndexManipulations::indexesToNodes() convert the \b node_list to actual points according to the rule.
+ *
+ * \endinternal
+ */
+template<typename callable_method>
+std::vector<double> listToLocalNodes(std::forward_list<NodeData> const &node_list, size_t num_dimensions, callable_method rule){
+    std::vector<double> result(Utils::size_mult(std::distance(node_list.begin(), node_list.end()), num_dimensions));
+    auto ix = result.begin();
+    for(auto const &t : node_list)
+        ix = std::transform(t.point.begin(), t.point.end(), ix, rule);
+    return result;
+}
 
 /*!
  * \internal

@@ -37,13 +37,14 @@ namespace TasGrid{
 
 namespace HierarchyManipulations{
 
-Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule){
+template<RuleLocal::erule effrule>
+Data2D<int> computeDAGup(MultiIndexSet const &mset){
     size_t num_dimensions = mset.getNumDimensions();
     int num_points = mset.getNumIndexes();
-    if (rule->getMaxNumParents() > 1){ // allow for multiple parents and level 0 may have more than one node
-        int max_parents = rule->getMaxNumParents() * (int) num_dimensions;
+    if (RuleLocal::getMaxNumParents<effrule>() > 1){ // allow for multiple parents and level 0 may have more than one node
+        int max_parents = RuleLocal::getMaxNumParents<effrule>() * (int) num_dimensions;
         Data2D<int> parents(max_parents, num_points, -1);
-        int level0_offset = rule->getNumPoints(0);
+        int level0_offset = RuleLocal::getNumPoints<effrule>(0);
         #pragma omp parallel for schedule(static)
         for(int i=0; i<num_points; i++){
             const int *p = mset.getIndex(i);
@@ -53,14 +54,14 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomia
             for(size_t j=0; j<num_dimensions; j++){
                 if (dad[j] >= level0_offset){
                     int current = p[j];
-                    dad[j] = rule->getParent(current);
+                    dad[j] = RuleLocal::getParent<effrule>(current);
                     pp[2*j] = mset.getSlot(dad);
                     while ((dad[j] >= level0_offset) && (pp[2*j] == -1)){
                         current = dad[j];
-                        dad[j] = rule->getParent(current);
+                        dad[j] = RuleLocal::getParent<effrule>(current);
                         pp[2*j] = mset.getSlot(dad);
                     }
-                    dad[j] = rule->getStepParent(current);
+                    dad[j] = RuleLocal::getStepParent<effrule>(current);
                     if (dad[j] != -1){
                         pp[2*j + 1] = mset.getSlot(dad);
                     }
@@ -81,10 +82,10 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomia
                 if (dad[j] == 0){
                     pp[j] = -1;
                 }else{
-                    dad[j] = rule->getParent(dad[j]);
+                    dad[j] = RuleLocal::getParent<effrule>(dad[j]);
                     pp[j] = mset.getSlot(dad.data());
                     while((dad[j] != 0) && (pp[j] == -1)){
-                        dad[j] = rule->getParent(dad[j]);
+                        dad[j] = RuleLocal::getParent<effrule>(dad[j]);
                         pp[j] = mset.getSlot(dad);
                     }
                     dad[j] = p[j];
@@ -94,13 +95,36 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomia
         return parents;
     }
 }
-Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule, bool &is_complete){
+
+template Data2D<int> computeDAGup<RuleLocal::erule::pwc>(MultiIndexSet const &mset);
+template Data2D<int> computeDAGup<RuleLocal::erule::localp>(MultiIndexSet const &mset);
+template Data2D<int> computeDAGup<RuleLocal::erule::semilocalp>(MultiIndexSet const &mset);
+template Data2D<int> computeDAGup<RuleLocal::erule::localp0>(MultiIndexSet const &mset);
+template Data2D<int> computeDAGup<RuleLocal::erule::localpb>(MultiIndexSet const &mset);
+
+Data2D<int> computeDAGup(MultiIndexSet const &mset, RuleLocal::erule effrule) {
+    switch(effrule) {
+        case RuleLocal::erule::pwc:
+            return computeDAGup<RuleLocal::erule::pwc>(mset);
+        case RuleLocal::erule::localp:
+            return computeDAGup<RuleLocal::erule::localp>(mset);
+        case RuleLocal::erule::semilocalp:
+            return computeDAGup<RuleLocal::erule::semilocalp>(mset);
+        case RuleLocal::erule::localp0:
+            return computeDAGup<RuleLocal::erule::localp0>(mset);
+        default: // case RuleLocal::erule::localpb:
+            return computeDAGup<RuleLocal::erule::localpb>(mset);
+    };
+}
+
+template<RuleLocal::erule effrule>
+Data2D<int> computeDAGup(MultiIndexSet const &mset, bool &is_complete){
     size_t num_dimensions = mset.getNumDimensions();
     int num_points = mset.getNumIndexes();
-    if (rule->getMaxNumParents() > 1){ // allow for multiple parents and level 0 may have more than one node
-        int max_parents = rule->getMaxNumParents() * (int) num_dimensions;
+    if (RuleLocal::getMaxNumParents<effrule>() > 1){ // allow for multiple parents and level 0 may have more than one node
+        int max_parents = RuleLocal::getMaxNumParents<effrule>() * (int) num_dimensions;
         Data2D<int> parents(max_parents, num_points, -1);
-        int level0_offset = rule->getNumPoints(0);
+        int level0_offset = RuleLocal::getNumPoints<effrule>(0);
         int any_fail = 0; // count if there are failures
         #pragma omp parallel
         {
@@ -115,16 +139,16 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomia
                 for(size_t j=0; j<num_dimensions; j++){
                     if (dad[j] >= level0_offset){
                         int current = p[j];
-                        dad[j] = rule->getParent(current);
+                        dad[j] = RuleLocal::getParent<effrule>(current);
                         pp[2*j] = mset.getSlot(dad);
                         if (pp[2*j] == -1)
                             fail = 1;
                         while ((dad[j] >= level0_offset) && (pp[2*j] == -1)){
                             current = dad[j];
-                            dad[j] = rule->getParent(current);
+                            dad[j] = RuleLocal::getParent<effrule>(current);
                             pp[2*j] = mset.getSlot(dad);
                         }
-                        dad[j] = rule->getStepParent(current);
+                        dad[j] = RuleLocal::getStepParent<effrule>(current);
                         if (dad[j] != -1){
                             pp[2*j + 1] = mset.getSlot(dad);
                             if (pp[2*j + 1] == -1)
@@ -157,12 +181,12 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomia
                     if (dad[j] == 0){
                         pp[j] = -1;
                     }else{
-                        dad[j] = rule->getParent(dad[j]);
+                        dad[j] = RuleLocal::getParent<effrule>(dad[j]);
                         pp[j] = mset.getSlot(dad.data());
                         if (pp[j] == -1)
                             fail = 1;
                         while((dad[j] != 0) && (pp[j] == -1)){
-                            dad[j] = rule->getParent(dad[j]);
+                            dad[j] = RuleLocal::getParent<effrule>(dad[j]);
                             pp[j] = mset.getSlot(dad);
                         }
                         dad[j] = p[j];
@@ -178,9 +202,16 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomia
     }
 }
 
-Data2D<int> computeDAGDown(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule){
+template Data2D<int> computeDAGup<RuleLocal::erule::pwc>(MultiIndexSet const &mset, bool &is_complete);
+template Data2D<int> computeDAGup<RuleLocal::erule::localp>(MultiIndexSet const &mset, bool &is_complete);
+template Data2D<int> computeDAGup<RuleLocal::erule::semilocalp>(MultiIndexSet const &mset, bool &is_complete);
+template Data2D<int> computeDAGup<RuleLocal::erule::localp0>(MultiIndexSet const &mset, bool &is_complete);
+template Data2D<int> computeDAGup<RuleLocal::erule::localpb>(MultiIndexSet const &mset, bool &is_complete);
+
+template<RuleLocal::erule effrule>
+Data2D<int> computeDAGDown(MultiIndexSet const &mset){
     size_t num_dimensions = mset.getNumDimensions();
-    int max_1d_kids = rule->getMaxNumKids();
+    int max_1d_kids = RuleLocal::getMaxNumKids<effrule>();
     int num_points = mset.getNumIndexes();
     Data2D<int> kids(Utils::size_mult(max_1d_kids, num_dimensions), num_points);
 
@@ -193,7 +224,7 @@ Data2D<int> computeDAGDown(MultiIndexSet const &mset, const BaseRuleLocalPolynom
         for(size_t j=0; j<num_dimensions; j++){
             int current = kid[j];
             for(int k=0; k<max_1d_kids; k++){
-                kid[j] = rule->getKid(current, k);
+                kid[j] = RuleLocal::getKid<effrule>(current, k);
                 *family++ = (kid[j] == -1) ? -1 : mset.getSlot(kid);
             }
             kid[j] = current;
@@ -203,23 +234,53 @@ Data2D<int> computeDAGDown(MultiIndexSet const &mset, const BaseRuleLocalPolynom
     return kids;
 }
 
-std::vector<int> computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule){
+template Data2D<int> computeDAGDown<RuleLocal::erule::pwc>(MultiIndexSet const &mset);
+template Data2D<int> computeDAGDown<RuleLocal::erule::localp>(MultiIndexSet const &mset);
+template Data2D<int> computeDAGDown<RuleLocal::erule::semilocalp>(MultiIndexSet const &mset);
+template Data2D<int> computeDAGDown<RuleLocal::erule::localp0>(MultiIndexSet const &mset);
+template Data2D<int> computeDAGDown<RuleLocal::erule::localpb>(MultiIndexSet const &mset);
+
+
+template<RuleLocal::erule effrule>
+std::vector<int> computeLevels(MultiIndexSet const &mset){
     size_t num_dimensions = mset.getNumDimensions();
     int num_points = mset.getNumIndexes();
     std::vector<int> level((size_t) num_points);
     #pragma omp parallel for schedule(static)
     for(int i=0; i<num_points; i++){
         const int *p = mset.getIndex(i);
-        int current_level = rule->getLevel(p[0]);
+        int current_level = RuleLocal::getLevel<effrule>(p[0]);
         for(size_t j=1; j<num_dimensions; j++){
-            current_level += rule->getLevel(p[j]);
+            current_level += RuleLocal::getLevel<effrule>(p[j]);
         }
         level[i] = current_level;
     }
     return level;
 }
 
-void completeToLower(MultiIndexSet const &mset, MultiIndexSet &refined, BaseRuleLocalPolynomial const *rule){
+template std::vector<int> computeLevels<RuleLocal::erule::pwc>(MultiIndexSet const &mset);
+template std::vector<int> computeLevels<RuleLocal::erule::localp>(MultiIndexSet const &mset);
+template std::vector<int> computeLevels<RuleLocal::erule::semilocalp>(MultiIndexSet const &mset);
+template std::vector<int> computeLevels<RuleLocal::erule::localp0>(MultiIndexSet const &mset);
+template std::vector<int> computeLevels<RuleLocal::erule::localpb>(MultiIndexSet const &mset);
+
+std::vector<int> computeLevels(MultiIndexSet const &mset, RuleLocal::erule effrule) {
+    switch(effrule) {
+        case RuleLocal::erule::pwc:
+            return computeLevels<RuleLocal::erule::pwc>(mset);
+        case RuleLocal::erule::localp:
+            return computeLevels<RuleLocal::erule::localp>(mset);
+        case RuleLocal::erule::semilocalp:
+            return computeLevels<RuleLocal::erule::semilocalp>(mset);
+        case RuleLocal::erule::localp0:
+            return computeLevels<RuleLocal::erule::localp0>(mset);
+        default: // case RuleLocal::erule::localpb:
+            return computeLevels<RuleLocal::erule::localpb>(mset);
+    };
+}
+
+template<RuleLocal::erule effrule>
+void completeToLower(MultiIndexSet const &mset, MultiIndexSet &refined){
     size_t num_dimensions = mset.getNumDimensions();
     size_t num_added = 1; // set to 1 to start the loop
     while(num_added > 0){
@@ -230,10 +291,10 @@ void completeToLower(MultiIndexSet const &mset, MultiIndexSet &refined, BaseRule
             std::vector<int> parent(refined.getIndex(i), refined.getIndex(i) + num_dimensions);
             for(auto &p : parent){
                 int r = p;
-                p = rule->getParent(r);
+                p = RuleLocal::getParent<effrule>(r);
                 if ((p != -1) && refined.missing(parent) && mset.missing(parent))
                     addons.appendStrip(parent);
-                p = rule->getStepParent(r);
+                p = RuleLocal::getStepParent<effrule>(r);
                 if ((p != -1) && refined.missing(parent) && mset.missing(parent))
                     addons.appendStrip(parent);
                 p = r;
@@ -244,6 +305,12 @@ void completeToLower(MultiIndexSet const &mset, MultiIndexSet &refined, BaseRule
         if (num_added > 0) refined += addons;
     }
 }
+
+template void completeToLower<RuleLocal::erule::pwc>(MultiIndexSet const &mset, MultiIndexSet &refined);
+template void completeToLower<RuleLocal::erule::localp>(MultiIndexSet const &mset, MultiIndexSet &refined);
+template void completeToLower<RuleLocal::erule::semilocalp>(MultiIndexSet const &mset, MultiIndexSet &refined);
+template void completeToLower<RuleLocal::erule::localp0>(MultiIndexSet const &mset, MultiIndexSet &refined);
+template void completeToLower<RuleLocal::erule::localpb>(MultiIndexSet const &mset, MultiIndexSet &refined);
 
 SplitDirections::SplitDirections(const MultiIndexSet &points){
     // split the points into "jobs", where each job represents a batch of
