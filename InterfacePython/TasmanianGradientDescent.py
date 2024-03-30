@@ -29,7 +29,7 @@
 # RESPONSIBILITY FOR ALL LIABILITIES, PENALTIES, FINES, CLAIMS, CAUSES OF ACTION, AND COSTS AND EXPENSES, CAUSED BY, RESULTING
 # FROM OR ARISING OUT OF, IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 
-from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, cdll, cast, CFUNCTYPE, Structure
+from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, CDLL, cast, CFUNCTYPE, Structure, RTLD_GLOBAL
 from numpy.ctypeslib import as_ctypes
 import numpy as np
 import sys
@@ -48,7 +48,7 @@ optimization_status._fields_ = [("performed_iterations", c_int), ("residual", c_
 def clean_status(input_status):
     return dict((field, getattr(input_status, field)) for field, _ in input_status._fields_)
 
-pLibDTSG = cdll.LoadLibrary(__path_libdream__)
+pLibDTSG = CDLL(__path_libdream__, mode = RTLD_GLOBAL)
 
 pLibDTSG.tsgGradientDescentState_Construct.restype = c_void_p
 pLibDTSG.tsgGradientDescentState_Construct.argtypes = [c_int, POINTER(c_double), c_double]

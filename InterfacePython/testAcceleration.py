@@ -105,7 +105,6 @@ class TestTasClass(unittest.TestCase):
                    'grid.makeWaveletGrid(2, 1, 3, 1)',
                    'grid.makeWaveletGrid(2, 1, 3, 3)',
                    'grid.makeFourierGrid(2, 1, 3, "level")' ]
-        lTests = ['grid.makeLocalPolynomialGrid(2, 3, 4, 1, "localp")']
 
         iNumGPUs = grid.getNumGPUs()
         lsAccelTypes = ["none", "cpu-blas", "gpu-cuda", "gpu-cublas", "gpu-magma"]

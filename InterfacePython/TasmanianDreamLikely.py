@@ -28,14 +28,14 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, cdll, create_string_buffer
+from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, CDLL, create_string_buffer, RTLD_GLOBAL
 import numpy as np
 import sys
 
 from TasmanianConfig import __path_libdream__
 from TasmanianConfig import TasmanianInputError as InputError
 
-pLibDTSG = cdll.LoadLibrary(__path_libdream__)
+pLibDTSG = CDLL(__path_libdream__, mode = RTLD_GLOBAL)
 
 pLibDTSG.tsgGetNumOutputsLikelihood.restype = c_int
 

@@ -28,7 +28,7 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-from ctypes import c_int, c_double, c_char_p, c_void_p, POINTER, CFUNCTYPE, cdll
+from ctypes import c_int, c_double, c_char_p, c_void_p, POINTER, CFUNCTYPE, CDLL, RTLD_GLOBAL
 import numpy as np
 import sys
 
@@ -36,7 +36,7 @@ import TasmanianConfig
 import TasmanianSG
 TasmanianInputError = TasmanianConfig.TasmanianInputError
 
-pLibCTSG = cdll.LoadLibrary(TasmanianConfig.__path_libcaddons__)
+pLibCTSG = CDLL(TasmanianConfig.__path_libcaddons__, mode = RTLD_GLOBAL)
 
 type_1Dfunc = CFUNCTYPE(c_double, c_double)
 type_lpnmodel = CFUNCTYPE(None, c_int, POINTER(c_double), c_int, POINTER(c_double), c_int, POINTER(c_int))
