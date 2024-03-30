@@ -28,7 +28,7 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, cdll, CFUNCTYPE
+from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, CDLL, CFUNCTYPE, RTLD_GLOBAL
 import numpy as np
 import sys
 
@@ -47,10 +47,11 @@ type_dream_iupdate = CFUNCTYPE(None, c_int, POINTER(c_double), POINTER(c_int))
 type_dream_dupdate = CFUNCTYPE(c_double)
 type_dream_random  = CFUNCTYPE(c_double)
 
-pLibDTSG = cdll.LoadLibrary(__path_libdream__)
+pLibDTSG = CDLL(__path_libdream__, mode = RTLD_GLOBAL)
 
-pLibDTSG.tsgGenUniformSamples.argtypes  = [c_int, c_int, POINTER(c_double), POINTER(c_double), c_char_p, c_int, type_dream_random]
-pLibDTSG.tsgGenGaussianSamples.argtypes = [c_int, c_int, POINTER(c_double), POINTER(c_double), c_char_p, c_int, type_dream_random]
+pLibDTSG.tsgGenUniformSamples.argtypes  = [c_int, c_int, POINTER(c_double), POINTER(c_double), c_char_p, c_int, type_dream_random, POINTER(c_double)]
+pLibDTSG.tsgGenGaussianSamples.argtypes = [c_int, c_int, POINTER(c_double), POINTER(c_double), c_char_p, c_int, type_dream_random, POINTER(c_double)]
+
 
 pLibDTSG.tsgDreamSample.argtypes = [c_int, c_int, c_int,
                                     type_dream_pdf, c_void_p,

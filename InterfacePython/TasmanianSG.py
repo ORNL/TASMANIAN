@@ -28,12 +28,12 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, cdll, create_string_buffer
+from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, CDLL, create_string_buffer, RTLD_GLOBAL
 import numpy as np
 import sys
 
 from TasmanianConfig import TasmanianInputError, __path_libsparsegrid__
-pLibTSG = cdll.LoadLibrary(__path_libsparsegrid__)
+pLibTSG = CDLL(__path_libsparsegrid__, mode = RTLD_GLOBAL)
 
 # The ctypes library requires that we manually specify the return types of functions. In C, this is done by header files, so the
 # declarations below serve as a header.
@@ -62,8 +62,6 @@ pLibTSG.tsgGetSubrules.restype = c_void_p
 pLibTSG.tsgGetLoadedPoints.restype = POINTER(c_double)
 pLibTSG.tsgGetNeededPoints.restype = POINTER(c_double)
 pLibTSG.tsgGetPoints.restype = POINTER(c_double)
-pLibTSG.tsgGetQuadratureWeights.restype = POINTER(c_double)
-pLibTSG.tsgGetInterpolationWeights.restype = POINTER(c_double)
 pLibTSG.tsgBatchGetInterpolationWeights.restype = POINTER(c_double)
 pLibTSG.tsgIsSetDomainTransfrom.restype = c_int
 pLibTSG.tsgIsSetConformalTransformASIN.restype = c_int
@@ -110,9 +108,7 @@ pLibTSG.tsgGetPoints.argtypes = [c_void_p]
 pLibTSG.tsgGetLoadedPointsStatic.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgGetNeededPointsStatic.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgGetPointsStatic.argtypes = [c_void_p, POINTER(c_double)]
-pLibTSG.tsgGetQuadratureWeights.argtypes = [c_void_p, POINTER(c_double)]
-pLibTSG.tsgGetQuadratureWeightsStatic.argtypes = [c_void_p]
-pLibTSG.tsgGetInterpolationWeights.argtypes = [c_void_p, POINTER(c_double)]
+pLibTSG.tsgGetQuadratureWeightsStatic.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgGetInterpolationWeightsStatic.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
 pLibTSG.tsgLoadNeededValues.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgGetLoadedValuesStatic.argtypes = [c_void_p, POINTER(c_double)]
