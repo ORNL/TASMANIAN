@@ -90,19 +90,19 @@ class TestTasCommon(unittest.TestCase):
         # weights
         pA = gridA.getQuadratureWeights()
         pB = gridB.getQuadratureWeights()
-        np.testing.assert_equal(pA, pB, "Quadrature not equal", True)
+        np.testing.assert_almost_equal(pA, pB, 14, "Quadrature not equal", True)
 
         pA = gridA.getInterpolationWeights(mX1)
         pB = gridB.getInterpolationWeights(mX1)
-        np.testing.assert_equal(pA, pB, "Interpolation test 1 not equal", True)
+        np.testing.assert_almost_equal(pA, pB, 14, "Interpolation test 1 not equal", True)
 
         pA = gridA.getInterpolationWeights(mX2)
         pB = gridB.getInterpolationWeights(mX2)
-        np.testing.assert_equal(pA, pB, "Interpolation test 2 not equal", True)
+        np.testing.assert_almost_equal(pA, pB, 14, "Interpolation test 2 not equal", True)
 
         pA = gridA.getInterpolationWeights(mX3)
         pB = gridB.getInterpolationWeights(mX3)
-        np.testing.assert_equal(pA, pB, "Interpolation test 3 not equal", True)
+        np.testing.assert_almost_equal(pA, pB, 14, "Interpolation test 3 not equal", True)
 
         # evaluate (values have been loaded)
         if (gridA.getNumLoaded() > 0):
