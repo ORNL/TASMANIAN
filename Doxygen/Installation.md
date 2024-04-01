@@ -282,6 +282,17 @@ Tasmanian has been tested with MS Visual Studio 2019.
 * Both Debug and Release are supported config modes, but do not use them simultaneously,
   pick only one Release or Debug.
 
+### Install on Mac platform
+
+Apple with Intel CPU will handle Tasmanian in the same way as Linux.
+
+Using Apple silicon M chips, the python interface is broken prior to 8.1, which is still in development.
+The development version can be downloaded from the main branch on github
+or a beta pre-release is available through Python PIP:
+```
+  python -m pip install Tasmanian==8.1b1 --user
+```
+
 ### Install folder structure
 
 Tasmanian follows standard Linux conventions, the install path could
@@ -356,7 +367,7 @@ All available components will be included even if the component is not explicitl
 Requesting components can help catch errors early in the build process
 and/or print useful log messages. For example:
 ```
-  find_package(Tasmanian 7.0 REQUIRED SHARED PYTHON CUDA OPTIONAL_COMPONENTS OPENMP)
+  find_package(Tasmanian 8.0 REQUIRED SHARED PYTHON CUDA OPTIONAL_COMPONENTS OPENMP)
 ```
 In the above example:
 * an error will be generated if Tasmanian was build with static libraries, no CUDA or no Python support
@@ -366,6 +377,9 @@ In the above example:
 ### Known Issues
 
 Several known issues and work-around fixes:
+* Apple OSX has poor support for OpenMP, especially when using M-chips (apple silicon)
+    * OpenMP is not supported by the default compiler (xcode)
+    * gcc with OpenMP support can be installed through Homebrew, but the performance gains from multi-threading are low
 * the automated MAGMA download reports the wrong GPU architecture enabled
     * ignore the MAGMA message the build correctly respects `CMAKE_CUDA_ARCHITECTURES`
 * The addon tests sometime fail due to thread scheduling
