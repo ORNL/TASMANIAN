@@ -1,6 +1,9 @@
 Changelog for version 8.1
 --------------
 
+* added support for Apple silicon M chips
+    * python required some work-arounds and bug-fixes, C++ was good before
+
 * added more multicore cpu support
     * parallelized setting surplus refinement
     * compatibility with gcc parallel STL algorithms
