@@ -55,19 +55,32 @@ void repeatAddIndexes(std::function<bool(const std::vector<int> &index)> inside,
     while(adding){
         Data2D<int> level((int) num_dimensions, 0);
         int num_indexes = level_sets.back().getNumIndexes();
-        #pragma omp parallel for
-        for(int i=0; i<num_indexes; i++){
+        #pragma omp parallel
+        {
             std::vector<int> point(num_dimensions);
-            std::copy_n(level_sets.back().getIndex(i), num_dimensions, point.data());
-            for(auto &p : point){
-                p += (use_parents_direction) ? -1 : 1; // parents have lower index, children have higher indexes
-                if ( (not use_parents_direction or p >= 0) and inside(point) ){
-                    #pragma omp critical
-                    {
-                        level.appendStrip(point);
+            Data2D<int> mlevel((int) num_dimensions, 0);
+
+            #pragma omp for
+            for(int i=0; i<num_indexes; i++){
+                std::copy_n(level_sets.back().getIndex(i), num_dimensions, point.data());
+                for(auto &p : point){
+                    p += (use_parents_direction) ? -1 : 1; // parents have lower index, children have higher indexes
+                    if (not use_parents_direction or p >= 0) {
+                        bool is_inside = false;
+                        #pragma omp critical(level_append)
+                        {
+                            is_inside = inside(point);
+                        }
+                        if (is_inside)
+                            mlevel.appendStrip(point);
                     }
+                    p -= (use_parents_direction) ? -1 : 1; // restore p
                 }
-                p -= (use_parents_direction) ? -1 : 1; // restore p
+            }
+
+            #pragma omp critical
+            {
+                level.append(mlevel);
             }
         }
 
