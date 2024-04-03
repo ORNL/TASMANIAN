@@ -50,13 +50,17 @@ public:
 
     template<bool iomode> void write(std::ostream &os) const;
 
-    TypeOneDRule getRule() const override{ return rule->getType(); }
+    TypeOneDRule getRule() const override{ return RuleLocal::getRule(effective_rule); }
     int getOrder() const{ return order; }
 
+    template<RuleLocal::erule, typename points_mode>
+    void getPoints(double *x) const;
     void getLoadedPoints(double *x) const override;
     void getNeededPoints(double *x) const override;
     void getPoints(double *x) const override; // returns the loaded points unless no points are loaded, then returns the needed points
 
+    template<RuleLocal::erule effrule>
+    void getQuadratureWeights(double weights[]) const;
     void getQuadratureWeights(double weights[]) const override;
     void getInterpolationWeights(const double x[], double weights[]) const override;
     void getDifferentiationWeights(const double x[], double weights[]) const override;
@@ -102,8 +106,14 @@ public:
     void beginConstruction() override;
     void writeConstructionData(std::ostream &os, bool) const override;
     void readConstructionData(std::istream &is, bool) override;
+    template<RuleLocal::erule effrule>
     std::vector<double> getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits, double const *scale_correction);
+    std::vector<double> getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output, std::vector<int> const &level_limits, double const *scale_correction);
+    template<RuleLocal::erule effrule>
+    void loadConstructedPoint(const double x[], const std::vector<double> &y);
     void loadConstructedPoint(const double x[], const std::vector<double> &y) override;
+    template<RuleLocal::erule effrule>
+    void loadConstructedPoint(const double x[], int numx, const double y[]);
     void loadConstructedPoint(const double x[], int numx, const double y[]) override;
     void finishConstruction() override;
 
@@ -131,18 +141,25 @@ protected:
     void buildTree();
 
     //! \brief Returns a list of indexes of the nodes in \b points that are descendants of the \b point.
+    template<RuleLocal::erule effrule>
     std::vector<int> getSubGraph(std::vector<int> const &point) const;
 
     //! \brief Add the \b point to the grid using the \b values.
+    template<RuleLocal::erule effrule>
     void expandGrid(std::vector<int> const &point, std::vector<double> const &value);
 
     //! \brief Return the multi-index of canonical point \b x.
+    template<RuleLocal::erule effrule>
     std::vector<int> getMultiIndex(const double x[]);
 
     //! \brief Looks for a batch of constructed points and processes all that will result in a connected graph.
+    template<RuleLocal::erule effrule>
     void loadConstructedPoints();
 
     //! \brief Fast algorithm, uses global Kronecker algorithm to recompute all surpluses
+    template<RuleLocal::erule effrule>
+    void recomputeSurpluses();
+
     void recomputeSurpluses();
 
     /*!
@@ -160,13 +177,44 @@ protected:
      * Note: see the comments inside recomputeSurpluses() for the performance comparison between different algorithms
      *       also note that this method can be used to partially update, i.e., update the surpluses for some of the indexes
      */
+    template<RuleLocal::erule effrule>
     void updateSurpluses(MultiIndexSet const &work, int max_level, std::vector<int> const &level, Data2D<int> const &dagUp);
 
     // Same idea as in GridSequence::applyTransformationTransposed().
-    template<int mode> void applyTransformationTransposed(double weights[], const MultiIndexSet &work, const std::vector<int> &active_points) const;
+    template<int mode>
+    void applyTransformationTransposed(double weights[], const MultiIndexSet &work, const std::vector<int> &active_points) const;
+    template<int mode, RuleLocal::erule effrule>
+    void applyTransformationTransposed(double weights[], const MultiIndexSet &work, const std::vector<int> &active_points) const;
 
     void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, std::vector<int> &numnz,
                                     std::vector<std::vector<int>> &tindx, std::vector<std::vector<double>> &tvals) const;
+
+    template<RuleLocal::erule eff_rule>
+    double evalBasisSupported(const int point[], const double x[], bool &isSupported) const{
+        double f = RuleLocal::evalSupport<eff_rule>(order, point[0], x[0], isSupported);
+        if (!isSupported) return 0.0;
+        for(int j=1; j<num_dimensions; j++){
+            f *= RuleLocal::evalSupport<eff_rule>(order, point[j], x[j], isSupported);
+            if (!isSupported) return 0.0;
+        }
+        return f;
+    }
+    template<RuleLocal::erule effrule>
+    void diffBasisSupported(const int point[], const double x[], double diff_values[], bool &isSupported) const{
+        isSupported = false;
+        for(int i=0; i<num_dimensions; i++) diff_values[i] = 1.0;
+        bool isDimSupported = false;
+        for(int k=0; k<num_dimensions; k++) {
+            double fval = RuleLocal::evalSupport<effrule>(order, point[k], x[k], isDimSupported);
+            isSupported = isDimSupported or isSupported;
+            for(int j=0; j<k; j++) diff_values[j] *= fval;
+            for(int j=k+1; j<num_dimensions; j++) diff_values[j] *= fval;
+        }
+        for (int k=0; k<num_dimensions; k++) {
+            diff_values[k] *= RuleLocal::diffSupport<effrule>(order, point[k], x[k], isDimSupported);
+            isSupported = isDimSupported or isSupported;
+        }
+    }
 
     /*!
      * \brief Walk through all the nodes of the tree and touches only the nodes supported at \b x.
@@ -183,17 +231,21 @@ protected:
      *
      * In all cases, \b work is the \b points or \b needed set that has been used to construct the tree.
      */
-    template<int mode>
+    template<int mode, RuleLocal::erule effrule>
     void walkTree(const MultiIndexSet &work, const double x[], std::vector<int> &sindx, std::vector<double> &svals, double *y) const{
         std::vector<int> monkey_count(top_level+1); // traverse the tree, counts the branches of the current node
         std::vector<int> monkey_tail(top_level+1); // traverse the tree, keeps track of the previous node (history)
 
+        bool isSupported;
+        double basis_value;
+        std::vector<double> basis_derivative(num_dimensions);
+
         for(const auto &r : roots){
-            bool isSupported;
-            double basis_value = (mode == 3 or mode == 4) ? 0.0 : evalBasisSupported(work.getIndex(r), x, isSupported);
-            std::vector<double> basis_derivative(num_dimensions);
-            if (mode == 3 or mode == 4)
-                diffBasisSupported(work.getIndex(r), x, basis_derivative.data(), isSupported);
+            if (mode == 3 or mode == 4) {
+                diffBasisSupported<effrule>(work.getIndex(r), x, basis_derivative.data(), isSupported);
+            } else {
+                basis_value = evalBasisSupported<effrule>(work.getIndex(r), x, isSupported);
+            }
 
             if (isSupported){
                 if (mode == 0){
@@ -222,9 +274,9 @@ protected:
                     if (monkey_count[current] < pntr[monkey_tail[current]+1]){
                         int p = indx[monkey_count[current]];
                         if (mode == 3 or mode == 4){
-                            diffBasisSupported(work.getIndex(p), x, basis_derivative.data(), isSupported);
+                            diffBasisSupported<effrule>(work.getIndex(p), x, basis_derivative.data(), isSupported);
                         }else{
-                            basis_value = evalBasisSupported(work.getIndex(p), x, isSupported);
+                            basis_value = evalBasisSupported<effrule>(work.getIndex(p), x, isSupported);
                         }
                         if (isSupported){
                             if (mode == 0){
@@ -271,18 +323,47 @@ protected:
             std::transform(map.begin(), map.end(), svals.begin(), [&](int i)->double{ return vls[i]; });
         }
     }
+    // Explicitly instantiates based on the effective_rule
+    template<int mode>
+    void walkTree(const MultiIndexSet &work, const double x[], std::vector<int> &sindx, std::vector<double> &svals, double *y) const{
+        switch(effective_rule) {
+            case RuleLocal::erule::pwc:
+                walkTree<mode, RuleLocal::erule::pwc>(work,x, sindx, svals, y);
+                break;
+            case RuleLocal::erule::localp:
+                walkTree<mode, RuleLocal::erule::localp>(work,x, sindx, svals, y);
+                break;
+            case RuleLocal::erule::semilocalp:
+                walkTree<mode, RuleLocal::erule::semilocalp>(work,x, sindx, svals, y);
+                break;
+            case RuleLocal::erule::localp0:
+                walkTree<mode, RuleLocal::erule::localp0>(work,x, sindx, svals, y);
+                break;
+            default: // case RuleLocal::erule::localpb:
+                walkTree<mode, RuleLocal::erule::localpb>(work,x, sindx, svals, y);
+                break;
+        };
+    }
 
-    double evalBasisRaw(const int point[], const double x[]) const;
-    double evalBasisSupported(const int point[], const double x[], bool &isSupported) const;
-    void diffBasisSupported(const int point[], const double x[], double diff_values[], bool &isSupported) const;
+    template<RuleLocal::erule effrule>
+    double evalBasisRaw(const int point[], const double x[]) const {
+        double f = RuleLocal::evalRaw<effrule>(order, point[0], x[0]);
+        for(int j=1; j<num_dimensions; j++) f *= RuleLocal::evalRaw<effrule>(order, point[j], x[j]);
+        return f;
+    }
 
     std::vector<double> getNormalization() const;
 
+    template<RuleLocal::erule effrule>
     Data2D<int> buildUpdateMap(double tolerance, TypeRefinement criteria, int output, const double *scale_correction) const;
+    template<RuleLocal::erule effrule>
     MultiIndexSet getRefinementCanidates(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const double *scale_correction) const;
 
+    template<RuleLocal::erule effrule>
     bool addParent(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const;
+    template<RuleLocal::erule effrule>
     void addChild(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const;
+    template<RuleLocal::erule effrule>
     void addChildLimited(const int point[], int direction, const MultiIndexSet &exclude, const std::vector<int> &level_limits, Data2D<int> &destination) const;
 
     void clearGpuSurpluses();
@@ -300,7 +381,7 @@ private:
     std::vector<int> pntr;
     std::vector<int> indx;
 
-    std::unique_ptr<BaseRuleLocalPolynomial> rule;
+    RuleLocal::erule effective_rule;
 
     std::unique_ptr<SimpleConstructData> dynamic_values;
 
@@ -312,8 +393,23 @@ private:
             const int* p = work.getIndex(i);
             T *s = cpu_support.getStrip(i);
             for(int j=0; j<num_dimensions; j++){
-                s[j] = static_cast<T>(rule->getSupport(p[j]));
-                if (ord != 0){
+                if (ord == 0){
+                    s[j] = static_cast<T>(RuleLocal::getSupport<RuleLocal::erule::pwc>(p[j]));
+                } else {
+                    switch(crule) {
+                        case rule_localp:
+                            s[j] = static_cast<T>(RuleLocal::getSupport<RuleLocal::erule::localp>(p[j]));
+                            break;
+                        case rule_semilocalp:
+                            s[j] = static_cast<T>(RuleLocal::getSupport<RuleLocal::erule::semilocalp>(p[j]));
+                            break;
+                        case rule_localp0:
+                            s[j] = static_cast<T>(RuleLocal::getSupport<RuleLocal::erule::localp0>(p[j]));
+                            break;
+                        case rule_localpb:
+                            s[j] = static_cast<T>(RuleLocal::getSupport<RuleLocal::erule::localpb>(p[j]));
+                            break;
+                    };
                     if (ord == 2) s[j] *= s[j];
                     if ((crule == rule_localp) || (crule == rule_semilocalp)) if (p[j] == 0) s[j] = static_cast<T>(-1.0); // constant function
                     if ((crule == rule_localp) && (ord == 2)){
@@ -354,7 +450,7 @@ template<> struct GridReaderVersion5<GridLocalPolynomial>{
             grid->order = IO::readNumber<iomode, int>(is);
             grid->top_level = IO::readNumber<iomode, int>(is);
             TypeOneDRule rule = IO::readRule<iomode>(is);
-            grid->rule = makeRuleLocalPolynomial(rule, grid->order);
+            grid->effective_rule = RuleLocal::getEffectiveRule(grid->order, rule);
 
             if (IO::readFlag<iomode>(is)) grid->points = MultiIndexSet(is, iomode());
             if (std::is_same<iomode, IO::mode_ascii_type>::value){ // backwards compatible: surpluses and needed, or needed and surpluses
@@ -366,8 +462,19 @@ template<> struct GridReaderVersion5<GridLocalPolynomial>{
                 if (IO::readFlag<iomode>(is))
                     grid->surpluses = IO::readData2D<iomode, double>(is, grid->num_outputs, grid->points.getNumIndexes());
             }
+            int max_parents = [&]()->int {
+                    switch(grid->effective_rule) {
+                        case RuleLocal::erule::pwc: return RuleLocal::getMaxNumParents<RuleLocal::erule::pwc>();
+                        case RuleLocal::erule::localp: return RuleLocal::getMaxNumParents<RuleLocal::erule::localp>();
+                        case RuleLocal::erule::semilocalp: return RuleLocal::getMaxNumParents<RuleLocal::erule::semilocalp>();
+                        case RuleLocal::erule::localp0: return RuleLocal::getMaxNumParents<RuleLocal::erule::localp0>();
+                        default: // case RuleLocal::erule::localpb:
+                            return RuleLocal::getMaxNumParents<RuleLocal::erule::localpb>();
+                    };
+                }();
+
             if (IO::readFlag<iomode>(is))
-                grid->parents = IO::readData2D<iomode, int>(is, grid->rule->getMaxNumParents() * grid->num_dimensions, grid->points.getNumIndexes());
+                grid->parents = IO::readData2D<iomode, int>(is, max_parents * grid->num_dimensions, grid->points.getNumIndexes());
 
             size_t num_points = (size_t) ((grid->points.empty()) ? grid->needed.getNumIndexes() : grid->points.getNumIndexes());
             grid->roots = std::vector<int>((size_t) IO::readNumber<iomode, int>(is));

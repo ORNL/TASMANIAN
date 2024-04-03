@@ -84,7 +84,17 @@ namespace HierarchyManipulations{
  * (or -1 if the parent is missing from \b mset).
  * \endinternal
  */
-Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule);
+template<RuleLocal::erule effrule>
+Data2D<int> computeDAGup(MultiIndexSet const &mset);
+/*!
+ * \internal
+ * \ingroup TasmanianHierarchyManipulations
+ * \brief Cache the indexes slot numbers of the parents of the multi-indexes in \b mset.
+ *
+ * The effective rule is passed in at runtime and a switch statement finds the correct template.
+ * \endinternal
+ */
+Data2D<int> computeDAGup(MultiIndexSet const &mset, RuleLocal::erule effrule);
 /*!
  * \internal
  * \ingroup TasmanianHierarchyManipulations
@@ -95,7 +105,8 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomia
  * On exit, \b is_complete will indicate whether there are points with missing parents.
  * \endinternal
  */
-Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule, bool &is_complete);
+template<RuleLocal::erule effrule>
+Data2D<int> computeDAGup(MultiIndexSet const &mset, bool &is_complete);
 
 /*!
  * \internal
@@ -108,7 +119,8 @@ Data2D<int> computeDAGup(MultiIndexSet const &mset, const BaseRuleLocalPolynomia
  * (or -1 if the kid is missing from \b mset).
  * \endinternal
  */
-Data2D<int> computeDAGDown(MultiIndexSet const &mset, const BaseRuleLocalPolynomial *rule);
+template<RuleLocal::erule effrule>
+Data2D<int> computeDAGDown(MultiIndexSet const &mset);
 
 /*!
  * \internal
@@ -116,7 +128,15 @@ Data2D<int> computeDAGDown(MultiIndexSet const &mset, const BaseRuleLocalPolynom
  * \ingroup TasmanianHierarchyManipulations
  * \endinternal
  */
-std::vector<int> computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule);
+template<RuleLocal::erule effrule>
+std::vector<int> computeLevels(MultiIndexSet const &mset);
+/*!
+ * \internal
+ * \brief Overload that turns switch statement into template instantiations
+ * \ingroup TasmanianHierarchyManipulations
+ * \endinternal
+ */
+std::vector<int> computeLevels(MultiIndexSet const &mset, RuleLocal::erule effrule);
 
 /*!
  * \internal
@@ -124,7 +144,8 @@ std::vector<int> computeLevels(MultiIndexSet const &mset, BaseRuleLocalPolynomia
  * \brief Complete \b refined so that the union of \b refined and \b mset is lower w.r.t. the \b rule.
  * \endinternal
  */
-void completeToLower(MultiIndexSet const &mset, MultiIndexSet &refined, BaseRuleLocalPolynomial const *rule);
+template<RuleLocal::erule effrule>
+void completeToLower(MultiIndexSet const &mset, MultiIndexSet &refined);
 
 /*!
  * \internal
@@ -132,20 +153,21 @@ void completeToLower(MultiIndexSet const &mset, MultiIndexSet &refined, BaseRule
  * \ingroup TasmanianHierarchyManipulations
  * \endinternal
  */
-inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet const &mset, BaseRuleLocalPolynomial const *rule, std::function<void(int i)> apply){
-    int max_kids = rule->getMaxNumKids();
+template<RuleLocal::erule effrule, typename callable_method>
+void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet const &mset, callable_method apply){
+    int max_kids = RuleLocal::getMaxNumKids<effrule>();
     for(auto &v : point){
         int save = v; // replace one by one each index of p with either parent or kid
 
         // check the parents
-        v = rule->getParent(save);
+        v = RuleLocal::getParent<effrule>(save);
         if (v > -1){
             int parent_index = mset.getSlot(point);
             if (parent_index > -1)
                 apply(parent_index);
         }
 
-        v = rule->getStepParent(save);
+        v = RuleLocal::getStepParent<effrule>(save);
         if (v > -1){
             int parent_index = mset.getSlot(point);
             if (parent_index > -1)
@@ -153,7 +175,7 @@ inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet co
         }
 
         for(int k=0; k<max_kids; k++){
-            v = rule->getKid(save, k);
+            v = RuleLocal::getKid<effrule>(save, k);
             if (v > -1){
                 int kid_index = mset.getSlot(point);
                 if (kid_index > -1)
@@ -172,9 +194,10 @@ inline void touchAllImmediateRelatives(std::vector<int> &point, MultiIndexSet co
  *
  * \endinternal
  */
-inline MultiIndexSet getLevelZeroPoints(size_t num_dimensions, BaseRuleLocalPolynomial const *rule){
+template<RuleLocal::erule effrule>
+MultiIndexSet getLevelZeroPoints(size_t num_dimensions){
     int num_parents = 0;
-    while(rule->getParent(num_parents) == -1) num_parents++;
+    while(RuleLocal::getParent<effrule>(num_parents) == -1) num_parents++;
     return MultiIndexManipulations::generateFullTensorSet(std::vector<int>(num_dimensions, num_parents));
 }
 
@@ -185,12 +208,13 @@ inline MultiIndexSet getLevelZeroPoints(size_t num_dimensions, BaseRuleLocalPoly
  *
  * \endinternal
  */
-inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiIndexSet const &candidates, BaseRuleLocalPolynomial const *rule){
+template<RuleLocal::erule effrule>
+MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiIndexSet const &candidates){
     if (candidates.empty()) return MultiIndexSet();
     auto num_dimensions = candidates.getNumDimensions();
 
     // always consider the points without parents
-    MultiIndexSet level_zero = getLevelZeroPoints(num_dimensions, rule);
+    MultiIndexSet level_zero = getLevelZeroPoints<effrule>(num_dimensions);
 
     MultiIndexSet result; // keep track of the cumulative result
     MultiIndexSet total = current; // forms a working copy of the entire merged graph
@@ -212,8 +236,8 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
 
     if (total.empty()) return MultiIndexSet(); // current was empty and no roots could be added
 
-    int max_kids      = rule->getMaxNumKids();
-    int max_relatives = rule->getMaxNumParents() + max_kids;
+    int max_kids      = RuleLocal::getMaxNumKids<effrule>();
+    int max_relatives = RuleLocal::getMaxNumParents<effrule>() + max_kids;
     Data2D<int> update;
     do{
         update = Data2D<int>(num_dimensions, 0);
@@ -223,7 +247,8 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
             for(auto &r : relative){
                 int k = r; // save the value
                 for(int j=0; j<max_relatives; j++){
-                    r = (j < max_kids) ? rule->getKid(k, j) : ((j - max_kids == 0) ? rule->getParent(k) : rule->getStepParent(k));
+                    r = (j < max_kids) ? RuleLocal::getKid<effrule>(k, j)
+                                       : ((j - max_kids == 0) ? RuleLocal::getParent<effrule>(k) : RuleLocal::getStepParent<effrule>(k));
                     if ((r != -1) && !candidates.missing(relative) && total.missing(relative))
                         update.appendStrip(relative);
                 }
@@ -240,6 +265,7 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
 
     return result;
 }
+
 
 /*!
  * \internal
