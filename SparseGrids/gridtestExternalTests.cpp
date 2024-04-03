@@ -1485,7 +1485,7 @@ bool ExternalTester::testAllRefinement() const{
         int np[10] = { 10, 12, 17, 24, 32, 34, 41, 42, 57, 59 };
         double errs[10] = { 9.48e-03, 9.50e-03, 6.85e-03, 5.11e-04, 6.26e-05, 7.11e-06, 5.07e-06, 5.19e-06, 1.17e-08, 1.86e-08 };
         if (!testAnisotropicRefinement(f, grid, type_ipcurved, 1, np, errs, 7)){
-            cout << "ERROR: failed anisotropic refinement using leja ipcurved nodes for " << f->getDescription() << endl;  pass2 = false;
+            cout << "ERROR: failed anisotropic refinement (global) using leja ipcurved nodes for " << f->getDescription() << endl;  pass2 = false;
         }
     }{
         const BaseFunction *f = &f21curved;
@@ -1502,7 +1502,7 @@ bool ExternalTester::testAllRefinement() const{
         int np[10] = { 10, 12, 17, 24, 32, 34, 41, 42, 57, 59 };
         double errs[10] = { 9.48e-03, 9.50e-03, 6.85e-03, 5.11e-04, 6.26e-05, 7.11e-06, 5.07e-06, 5.19e-06, 1.17e-08, 1.86e-08 };
         if (!testAnisotropicRefinement(f, grid, type_ipcurved, 1, np, errs, 7)){
-            cout << "ERROR: failed anisotropic refinement using leja ipcurved nodes for " << f->getDescription() << endl;  pass2 = false;
+            cout << "ERROR: failed anisotropic refinement (sequence) using leja ipcurved nodes for " << f->getDescription() << endl;  pass2 = false;
         }
     }{
         const BaseFunction *f = &f21c1c2periodic;
