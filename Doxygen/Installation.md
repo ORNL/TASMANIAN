@@ -290,8 +290,13 @@ Using Apple silicon M chips, the python interface is broken prior to 8.1, which 
 The development version can be downloaded from the main branch on github
 or a beta pre-release is available through Python PIP:
 ```
-  python -m pip install Tasmanian==8.1b1 --user
+  python -m pip install Tasmanian==8.1b2 --user
 ```
+
+The compiler selected by the pip installer can be adjusted with the `CXX` environment variable.
+If the compiler is set to gcc (using either regular CMake or pip), then the Release mode will not add
+the optimization flags, e.g., `-O3`.
+The flags can be set with the standard CMake installation and the `CMAKE_CXX_FLAGS`
 
 ### Install folder structure
 
