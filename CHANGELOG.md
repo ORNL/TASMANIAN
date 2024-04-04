@@ -5,6 +5,7 @@ Changelog for version 8.1
     * python required some work-arounds and bug-fixes, C++ was good before
 
 * added more multicore cpu support
+    * parallelized curved tensor selection and large beta, e.g., ipcurved
     * parallelized setting surplus refinement
     * compatibility with gcc parallel STL algorithms
 
