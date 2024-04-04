@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$classTasDREAM_1_1TasmanianLikelihood.html" title="Interface for the likelihood classes." alt="" coords="5,46,227,73"/>
+<area shape="rect" id="node2" href="$classTasDREAM_1_1LikelihoodGaussAnisotropic.html" title="Implements likelihood under the assumption of anisotropic white noise." alt="" coords="275,5,471,47"/>
+<area shape="rect" id="node3" href="$classTasDREAM_1_1LikelihoodGaussIsotropic.html" title="Implements likelihood under the assumption of isotropic white noise." alt="" coords="275,71,471,112"/>
+</map>

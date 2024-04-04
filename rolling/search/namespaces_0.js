@@ -1,0 +1,21 @@
+var searchData=
+[
+  ['accelerationmeta_962',['AccelerationMeta',['../namespaceTasGrid_1_1AccelerationMeta.html',1,'TasGrid']]],
+  ['acchandle_963',['AccHandle',['../namespaceTasGrid_1_1AccHandle.html',1,'TasGrid']]],
+  ['hierarchymanipulations_964',['HierarchyManipulations',['../namespaceTasGrid_1_1HierarchyManipulations.html',1,'TasGrid']]],
+  ['io_965',['IO',['../namespaceTasDREAM_1_1IO.html',1,'TasDREAM::IO'],['../namespaceTasGrid_1_1IO.html',1,'TasGrid::IO']]],
+  ['maths_966',['Maths',['../namespaceTasGrid_1_1Maths.html',1,'TasGrid']]],
+  ['multiindexmanipulations_967',['MultiIndexManipulations',['../namespaceTasGrid_1_1MultiIndexManipulations.html',1,'TasGrid']]],
+  ['onedimensionalmeta_968',['OneDimensionalMeta',['../namespaceTasGrid_1_1OneDimensionalMeta.html',1,'TasGrid']]],
+  ['onedimensionalnodes_969',['OneDimensionalNodes',['../namespaceTasGrid_1_1OneDimensionalNodes.html',1,'TasGrid']]],
+  ['tasblas_970',['TasBLAS',['../namespaceTasBLAS.html',1,'']]],
+  ['tasdream_971',['TasDREAM',['../namespaceTasDREAM.html',1,'']]],
+  ['tasgpu_972',['TasGpu',['../namespaceTasGrid_1_1TasGpu.html',1,'TasGrid']]],
+  ['tasgrid_973',['TasGrid',['../namespaceTasGrid.html',1,'']]],
+  ['tasmaniandensesolver_974',['TasmanianDenseSolver',['../namespaceTasGrid_1_1TasmanianDenseSolver.html',1,'TasGrid']]],
+  ['tasmanianfouriertransform_975',['TasmanianFourierTransform',['../namespaceTasGrid_1_1TasmanianFourierTransform.html',1,'TasGrid']]],
+  ['tasmaniantridiagonalsolver_976',['TasmanianTridiagonalSolver',['../namespaceTasGrid_1_1TasmanianTridiagonalSolver.html',1,'TasGrid']]],
+  ['tasoptimization_977',['TasOptimization',['../namespaceTasOptimization.html',1,'']]],
+  ['tassparse_978',['TasSparse',['../namespaceTasGrid_1_1TasSparse.html',1,'TasGrid']]],
+  ['utils_979',['Utils',['../namespaceTasDREAM_1_1Utils.html',1,'TasDREAM::Utils'],['../namespaceTasGrid_1_1Utils.html',1,'TasGrid::Utils']]]
+];

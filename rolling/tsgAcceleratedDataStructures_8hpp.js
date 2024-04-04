@@ -1,0 +1,28 @@
+var tsgAcceleratedDataStructures_8hpp =
+[
+    [ "dtrans2can", "tsgAcceleratedDataStructures_8hpp.html#ga3c89329c287d2522df71a20a3bbae23e", null ],
+    [ "devalpwpoly", "tsgAcceleratedDataStructures_8hpp.html#gae750dc3c7f0899aa232eb5433190a596", null ],
+    [ "devalpwpoly_sparse", "tsgAcceleratedDataStructures_8hpp.html#gae55651774510905f35fa0e869b0624e0", null ],
+    [ "devalseq", "tsgAcceleratedDataStructures_8hpp.html#ga031cdb94ce58389fd9e683cba4b46f9d", null ],
+    [ "devalfor", "tsgAcceleratedDataStructures_8hpp.html#ga4fc88f7780471d621d3cb4179c2c2d41", null ],
+    [ "devalglo", "tsgAcceleratedDataStructures_8hpp.html#ga793e602f9a4b2f4ec1498ae7ba34585a", null ],
+    [ "fillDataGPU", "tsgAcceleratedDataStructures_8hpp.html#gaba15de779c5dd1f43e86f0b6dc6b7108", null ],
+    [ "load_n", "tsgAcceleratedDataStructures_8hpp.html#ga4280a137e21e74c570dfb496b1dc504f", null ],
+    [ "load_n", "tsgAcceleratedDataStructures_8hpp.html#gad200f571051b4ffa48f3155167b6950b", null ],
+    [ "getIOAccelerationString", "tsgAcceleratedDataStructures_8hpp.html#ga7ae184192f6d2bca2a9887d36db62668", null ],
+    [ "getStringToAccelerationMap", "tsgAcceleratedDataStructures_8hpp.html#a117c760d9c64910ea4ce7ec8d5e804ff", null ],
+    [ "getIOAccelerationString", "tsgAcceleratedDataStructures_8hpp.html#gac2e20edfabde6a82e74b40fb6bac1047", null ],
+    [ "getIOAccelerationInt", "tsgAcceleratedDataStructures_8hpp.html#ga10839c9ae1b3663b8746b56d83fc081f", null ],
+    [ "getIOIntAcceleration", "tsgAcceleratedDataStructures_8hpp.html#ga685cda2cf2d7660ee8f630fa8f2ca647", null ],
+    [ "isAccTypeGPU", "tsgAcceleratedDataStructures_8hpp.html#ga61e7f9cea7355424ac39b404657a30bc", null ],
+    [ "isAvailable", "tsgAcceleratedDataStructures_8hpp.html#a1eadc41b4c14c8dffa89e8ab0e0c26ee", null ],
+    [ "getAvailableFallback", "tsgAcceleratedDataStructures_8hpp.html#gae5a698d63fdc95b913db1ea966dda5eb", null ],
+    [ "getNumGpuDevices", "tsgAcceleratedDataStructures_8hpp.html#gadd959b2d8f086c3760da496c6e6655e6", null ],
+    [ "setDefaultGpuDevice", "tsgAcceleratedDataStructures_8hpp.html#ga226791709ac881da40ec0d95a9e5b52e", null ],
+    [ "getTotalGPUMemory", "tsgAcceleratedDataStructures_8hpp.html#gaecd328232c62eeba7fc02f84bc8ac62c", null ],
+    [ "getGpuDeviceName", "tsgAcceleratedDataStructures_8hpp.html#ga2ccbafb2d036aaac105412937b93303b", null ],
+    [ "recvGpuArray", "tsgAcceleratedDataStructures_8hpp.html#ga716e7bc1f30c7cd6102a830e1ac6afc2", null ],
+    [ "delGpuArray", "tsgAcceleratedDataStructures_8hpp.html#ga5064429c0228616c61506e4936e416e9", null ],
+    [ "createCublasHandle", "tsgAcceleratedDataStructures_8hpp.html#ga9c3026accc87a8033e8f64436fbee6bb", null ],
+    [ "deleteCublasHandle", "tsgAcceleratedDataStructures_8hpp.html#gac4100c3ef9cd49043058f09385015dd2", null ]
+];
