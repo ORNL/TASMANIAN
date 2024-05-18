@@ -440,14 +440,19 @@ MultiIndexSet createPolynomialSpace(const MultiIndexSet &tensors, std::function<
  * \ingroup TasmanianMultiIndexManipulations
  * \brief Assuming that \b mset is lower complete, return \b true if adding the \b point will preserve completeness.
  *
+ * \param point is the new point to add to an existing set
+ * \param mset is an existing lower complete set
+ * \param scratch is scratch space, must have size equal to point.size() and will be used for temporary storage
+ *                the scratch reduces allocations
+ *
  * \endinternal
  */
-inline bool isLowerComplete(std::vector<int> const &point, MultiIndexSet const &mset){
-    auto dad = point;
-    for(auto &d : dad){
+inline bool isLowerComplete(std::vector<int> const &point, MultiIndexSet const &mset, std::vector<int> &scratch){
+    std::copy(point.begin(), point.end(), scratch.begin());
+    for(int &d : scratch){
         if (d > 0){
             d--;
-            if (mset.missing(dad)) return false;
+            if (mset.missing(scratch)) return false;
             d++;
         }
     }
@@ -473,6 +478,7 @@ inline MultiIndexSet getLargestCompletion(MultiIndexSet const &current, MultiInd
         }
     }
 
+    std::vector<int> scratch(num_dimensions);
     bool loopon = true;
     while(loopon){
         Data2D<int> update(num_dimensions, 0);
@@ -481,9 +487,9 @@ inline MultiIndexSet getLargestCompletion(MultiIndexSet const &current, MultiInd
         if (!result.empty()) total += result;
         for(int i=0; i<total.getNumIndexes(); i++){
             std::vector<int> kid(total.getIndex(i), total.getIndex(i) + num_dimensions);
-            for(auto &k : kid){
+            for(int &k : kid){
                 k++; // construct the kid in the new direction
-                if (!candidates.missing(kid) && result.missing(kid) && isLowerComplete(kid, total))
+                if (!candidates.missing(kid) && result.missing(kid) && isLowerComplete(kid, total, scratch))
                     update.appendStrip(kid);
                 k--;
             }
@@ -508,6 +514,7 @@ template<bool limited>
 MultiIndexSet addExclusiveChildren(const MultiIndexSet &tensors, const MultiIndexSet &exclude, const std::vector<int> level_limits){
     int num_dimensions = (int) tensors.getNumDimensions();
     Data2D<int> tens(num_dimensions, 0);
+    std::vector<int> scratch(num_dimensions);
     for(int i=0; i<tensors.getNumIndexes(); i++){ // add the new tensors (so long as they are not included in the initial grid)
         const int *t = tensors.getIndex(i);
         std::vector<int> kid(t, t + num_dimensions);
@@ -515,7 +522,7 @@ MultiIndexSet addExclusiveChildren(const MultiIndexSet &tensors, const MultiInde
         for(auto &k : kid){
             k++;
             if (exclude.missing(kid) && tensors.missing(kid)){ // if the kid is not to be excluded and if not included in the current set
-                if (isLowerComplete(kid, tensors)){
+                if (isLowerComplete(kid, tensors, scratch)){
                     if (limited){
                         if ((*ilimit == -1) || (k <= *ilimit))
                             tens.appendStrip(kid);
