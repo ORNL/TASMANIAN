@@ -351,9 +351,10 @@ std::vector<int> GridSequence::getMultiIndex(const double x[]){
     return p;
 }
 void GridSequence::loadConstructedPoint(const double x[], const std::vector<double> &y){
-    auto p = getMultiIndex(x);
+    std::vector<int> p = getMultiIndex(x);
+    std::vector<int> scratch(num_dimensions);
 
-    if (MultiIndexManipulations::isLowerComplete(p, points)){
+    if (MultiIndexManipulations::isLowerComplete(p, points, scratch)){
         std::vector<double> approx_value(num_outputs), surplus(num_outputs);;
         if (!points.empty()){
             evaluate(x, approx_value.data());
