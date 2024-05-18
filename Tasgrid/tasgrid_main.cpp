@@ -65,7 +65,7 @@ int main(int argc, const char ** argv){
         show_log();
         return 0;
     }
-    if(args.front() == "-cmakelog"){
+    if(args.front() == "-cmakelog" or args.front() == "--cmakelog" or args.front() == "-cmake"){
         show_cmake_log();
         return 0;
     }
@@ -436,6 +436,9 @@ void printHelp(TypeHelp ht, TypeCommand com){
 
 Commands                Shorthand    Action
  -help                  -h,--help    show verbose help options
+ -version               -v,-info     show version and general info of enabled capabilities
+ -log                                show the install log
+ -cmakelog              -cmake       show the verbose list of cmake options
  -listtypes             -lt          list accepted grid types and 1-D rules
  -test                               perform a number of internal tests
  -makeglobal            -mg          make a grid from a global rule
