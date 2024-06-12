@@ -1,12 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-# This is a very fragile script, be VERY careful when you run it
-# in short, this script takes ../SparseGrids/TasmanianSparseGrid.hpp/cpp files
-# parses them and outputs corresponding .h, windows.h, and windows.hpp files
-# thus, only the ../SparseGrids/TasmanianSparseGrid.hpp/cpp are ever edited
-# while with one go of the script the windows and C headers are generated
-# the output is written to this folder, careful not to overwrite things
-
+# this script takes TasmanianSparseGridWrapC.cpp and parces out
+# all the methods, then puts them in TasmanianSparseGrid.h
+# methods must be defined on a single line and start with type + tsg
+# e.g., void tsg... or void *tsg
 
 with open("../../SparseGrids/TasmanianSparseGrid.hpp") as tsghpp:
     lTsgHpp = tsghpp.readlines()

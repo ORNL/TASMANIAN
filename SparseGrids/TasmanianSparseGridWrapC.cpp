@@ -108,8 +108,7 @@ void tsgMakeFourierGrid(void *grid, int dimensions, int outputs, int depth, cons
     if (depth_type == type_none){ depth_type = type_level; }
     ((TasmanianSparseGrid*) grid)->makeFourierGrid(dimensions, outputs, depth, depth_type, anisotropic_weights, limit_levels);
 }
-void tsgMakeGridFromCustomTabulated(void *grid, int dimension, int outputs, int depth, const char *sType, void *custom_tabulated,
-                                    const int *anisotropic_weights, const int *limit_levels) {
+void tsgMakeGridFromCustomTabulated(void *grid, int dimension, int outputs, int depth, const char *sType, void *custom_tabulated, const int *anisotropic_weights, const int *limit_levels) {
     TypeDepth depth_type = IO::getDepthTypeString(sType);
     #ifndef NDEBUG
     if (depth_type == type_none){ cerr << "WARNING: incorrect depth type: " << sType << ", defaulting to type_iptotal." << endl; }
@@ -521,8 +520,7 @@ void tsgGetWeightsNodesStaticCustomTabulated(void* ct, int level, double* w, dou
 }
 
 // Note: cnodes and cweights are passed as 1D arrays, but represent a list of vectors.
-void* tsgMakeCustomTabulatedFromData(const int cnum_levels, const int* cnum_nodes, const int* cprecision, const double* cnodes,
-                                     const double* cweights, char* cdescription) {
+void* tsgMakeCustomTabulatedFromData(const int cnum_levels, const int* cnum_nodes, const int* cprecision, const double* cnodes, const double* cweights, char* cdescription) {
     std::vector<std::vector<double>> vec_cnodes(cnum_levels), vec_cweights(cnum_levels);
     int ptr_idx = 0;
     for (int l=0; l<cnum_levels; l++) {
