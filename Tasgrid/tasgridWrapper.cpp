@@ -34,6 +34,8 @@
 #include "tsgExoticQuadrature.hpp"
 #include "tasgridWrapper.hpp"
 
+template<size_t inum>
+using CArr = std::array<TypeCommand, inum>;
 
 // helper class
 struct internal_sparse_matrix{
@@ -143,7 +145,8 @@ bool TasgridWrapper::isCreateCommand(TypeCommand com){
 
 struct command_tester{
     TypeCommand command;
-    bool inside(std::vector<TypeCommand> const &command_list1, std::vector<TypeCommand> const &command_list2 = {}){
+    template<size_t inum, typename vec2_t = std::vector<TypeCommand>>
+    bool inside(std::array<TypeCommand, inum> const &command_list1, vec2_t const &command_list2 = {}){
         return (std::any_of(command_list1.begin(), command_list1.end(), [&](TypeCommand c)->bool{ return (c == command); })
             or std::any_of(command_list2.begin(), command_list2.end(), [&](TypeCommand c)->bool{ return (c == command); }));
     }
@@ -169,16 +172,16 @@ bool TasgridWrapper::checkSane() const{
     }
 
     command_tester com{command};
-    std::vector<TypeCommand> makecoms = {command_makeglobal, command_makesequence, command_makelocalp, command_makewavelet, command_makefourier};
+    CArr<5> makecoms = {command_makeglobal, command_makesequence, command_makelocalp, command_makewavelet, command_makefourier};
 
     test_result_wrapper test;
     // adopt the signature for the checks, problem and commands that have the problem
     // e.g., num_dimensions < 1 is problem when using make-grid command or make quadrature
-    test.fail_if(num_dimensions < 1 and com.inside(makecoms, {command_makequadrature}),
+    test.fail_if(num_dimensions < 1 and com.inside(makecoms, CArr<1>{command_makequadrature}),
                  "must specify number of dimensions (e.g., number of model inputs)");
     test.fail_if(num_outputs < 1 and com.inside(makecoms),
                  "must specify number of outputs (could be zero)");
-    test.fail_if(depth < 0 and com.inside(makecoms, {command_makequadrature, command_makeexoquad, command_update}),
+    test.fail_if(depth < 0 and com.inside(makecoms, CArr<3>{command_makequadrature, command_makeexoquad, command_update}),
                  "must specify depth (e.g., level or polynomial degree)");
     test.fail_if(order < -1 and (command == command_makelocalp
                                  or (command == command_makequadrature and OneDimensionalMeta::isLocalPolynomial(rule))),
@@ -188,11 +191,11 @@ bool TasgridWrapper::checkSane() const{
                  "the wavelet order must be either 1 or 3");
 
     test.fail_if(depth_type == type_none and
-                 (com.inside({command_makeglobal, command_makesequence, command_makefourier,
+                 (com.inside(CArr<6>{command_makeglobal, command_makesequence, command_makefourier,
                               command_update, command_getanisocoeff, command_getpoly})
                   or (command == command_makequadrature and (OneDimensionalMeta::isGlobal(rule) or OneDimensionalMeta::isFourier(rule)))),
                  "must specify depth_type (e.g., select levels or polynomial basis)");
-    test.fail_if(rule == rule_none and com.inside({command_makeglobal, command_makesequence, command_makelocalp, command_makequadrature}),
+    test.fail_if(rule == rule_none and com.inside(CArr<4>{command_makeglobal, command_makesequence, command_makelocalp, command_makequadrature}),
                  "must specify rule to use (e.g., clenshaw-curtis or localp)");
 
     if (command == command_makeglobal or command == command_makequadrature){
@@ -221,7 +224,7 @@ bool TasgridWrapper::checkSane() const{
                  "no means of output are specified, you should specify -gridfile, -outfile or -print");
     // cannot output to gridfile and outfile and print are not set
     test.fail_if(outfilename.empty() and not printCout
-                 and com.inside({command_makequadrature, command_makeexoquad, command_getinterweights, command_evaluate,
+                 and com.inside(CArr<16>{command_makequadrature, command_makeexoquad, command_getinterweights, command_evaluate,
                                  command_evalhierarchical_dense, command_evalhierarchical_sparse, command_differentiate,
                                  command_get_candidate_construction, command_getquadrature, command_getpoints,
                                  command_getneeded, command_getcoefficients, command_gethsupport, command_integrate,
@@ -236,14 +239,14 @@ bool TasgridWrapper::checkSane() const{
     test.fail_if(conformalfilename.empty() and command == command_setconformal,
                  "must specify valid -conformalfile");
 
-    test.fail_if(gridfilename.empty() and not com.inside(makecoms, {command_makequadrature, command_makeexoquad}),
+    test.fail_if(gridfilename.empty() and not com.inside(makecoms, CArr<2>{command_makequadrature, command_makeexoquad}),
                  "must specify valid -gridfile");
     test.fail_if(xfilename.empty()
-                 and com.inside({command_getinterweights, command_evaluate, command_evalhierarchical_dense,
+                 and com.inside(CArr<6>{command_getinterweights, command_evaluate, command_evalhierarchical_dense,
                                  command_evalhierarchical_sparse, command_differentiate, command_load_construction}),
                  "must specify valid -pointsfile");
 
-    test.fail_if(valsfilename.empty() and com.inside({command_loadvalues, command_setcoefficients, command_load_construction}),
+    test.fail_if(valsfilename.empty() and com.inside(CArr<3>{command_loadvalues, command_setcoefficients, command_load_construction}),
                  "must specify valid -valsfile");
 
     // handle special cases per command
@@ -287,20 +290,20 @@ bool TasgridWrapper::checkSanePostRead() const{
     test_result_wrapper test;
 
     test.fail_if(grid.getNumLoaded() == 0 and
-                 com.inside({command_evaluate, command_differentiate, command_integrate, command_getanisocoeff,
+                 com.inside(CArr<8>{command_evaluate, command_differentiate, command_integrate, command_getanisocoeff,
                              command_getcoefficients, command_refine, command_refine_aniso, command_refine_surp}),
                  "the grid has no loaded data");
     test.fail_if(grid.getNumOutputs() == 0 and
-                 com.inside({command_evaluate, command_differentiate, command_integrate, command_getanisocoeff,
+                 com.inside(CArr<9>{command_evaluate, command_differentiate, command_integrate, command_getanisocoeff,
                              command_getcoefficients, command_refine, command_refine_aniso, command_refine_surp,
                              command_get_candidate_construction}),
                  "the grid has no outputs");
 
     test.fail_if(ref_output >= grid.getNumOutputs() and
-                 com.inside({command_getanisocoeff, }),
+                 com.inside(CArr<1>{command_getanisocoeff, }),
                  "-refout outside of the range, note the outputs are indexed from zero");
     test.fail_if(ref_output == -1 and grid.getNumOutputs() > 1 and grid.isGlobal() and
-                 com.inside({command_getanisocoeff}),
+                 com.inside(CArr<1>{command_getanisocoeff}),
                  "-refout cannot use -1 when working with Global grids");
 
     test.fail_if((grid.isLocalPolynomial() or grid.isWavelet()) and command == command_refine_aniso,
@@ -314,7 +317,7 @@ bool TasgridWrapper::checkSanePostRead() const{
                      "anisotropic refinement can be applied only to Global, Sequence and Fourier grids");
         test.fail_if(depth_type == type_none, "anisotropic refinement requires depth type with -tt");
         test.fail_if(ref_output == -1 and grid.getNumOutputs() > 1 and grid.isGlobal() and
-                     com.inside({command_getanisocoeff}),
+                     com.inside(CArr<1>{command_getanisocoeff}),
                      "-refout cannot use -1 when working with Global grids");
 
         test.worry_if(set_tolerance, "anisotropic refinement (and grids Global, Sequence, Fourier) ignores the -tolerance option");
@@ -358,16 +361,17 @@ bool TasgridWrapper::executeCommand(){
     }
 
     command_tester com{command};
-    std::vector<TypeCommand> makecoms = {command_makeglobal, command_makesequence, command_makelocalp, command_makewavelet,
-                                         command_makefourier, command_makequadrature};
-    std::vector<TypeCommand> constcoms = {
+    CArr<6> makecoms = {command_makeglobal, command_makesequence, command_makelocalp, command_makewavelet,
+                        command_makefourier, command_makequadrature};
+    CArr<2> quadcoms = {command_makequadrature, command_getquadrature};
+    CArr<17> constcoms = {
         command_getquadrature, command_getinterweights, command_getdiffweights, command_getpoints,
         command_getneeded, command_evaluate, command_integrate, command_differentiate, command_getanisocoeff,
         command_getpoly, command_summary, command_getcoefficients, command_evalhierarchical_sparse,
         command_evalhierarchical_dense, command_gethsupport, command_getpointsindex, command_getneededindex
     };
     // read grid or make a new grid
-    if (not com.inside(makecoms, {command_makeexoquad})){
+    if (not com.inside(makecoms, CArr<1>{command_makeexoquad})){
         if (not readGridfile()) return false;
     }
 
@@ -456,9 +460,9 @@ bool TasgridWrapper::executeCommand(){
             break;
     }
 
-    if (com.inside(makecoms) or command == command_getpoints)
+    if ((com.inside(makecoms) or command == command_getpoints) and not com.inside(quadcoms))
         outputPoints(output_points_mode::regular);
-    if (com.inside({command_getneeded, command_refine, command_refine_aniso, command_refine_surp}))
+    if (com.inside(std::array<TypeCommand, 4>{command_getneeded, command_refine, command_refine_aniso, command_refine_surp}))
         outputPoints(output_points_mode::needed);
     if (command == command_makequadrature or command == command_getquadrature)
         outputQuadrature();
