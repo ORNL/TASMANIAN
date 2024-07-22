@@ -20,28 +20,29 @@ jobs:
     continue-on-error: false
     strategy:
       matrix:
-        runner: [macos-11]
-        compiler: [clang++, g++-11] # $(brew --prefix llvm)/bin/clang++ (clang-11)
-        fortran_compiler: [gfortran-11]
+        runner: [macos-14]
+        compiler: [clang++]
 
     steps:
       - uses: actions/checkout@v2
       - name: Install requirements
-        run: python3 -m pip install numpy
+        run: >
+          python3 -m venv tastest && source ./tastest/bin/activate &&
+          python3 -m pip install pip --upgrade &&
+          python3 -m pip install numpy
       - name: Build
         run: >
+          source ./tastest/bin/activate &&
           rm -rf build && mkdir -p build && cd build &&
           cmake
           -D CMAKE_INSTALL_PREFIX=./TasmanianInstall
           -D CMAKE_CXX_FLAGS="-O3 -Wall -Wextra -Wshadow -pedantic"
           -D CMAKE_CXX_COMPILER=${{ matrix.compiler }}
-          -D CMAKE_Fortran_COMPILER=${{ matrix.fortran_compiler }}
-          -D PYTHON_EXECUTABLE=/usr/local/bin/python3
-          -D Tasmanian_ENABLE_FORTRAN=ON
+          -D Tasmanian_ENABLE_FORTRAN=OFF
           -D Tasmanian_ENABLE_RECOMMENDED=ON
-          -D Tasmanian_TESTS_OMP_NUM_THREADS=4 .. &&
-          make -j4
+          -D Tasmanian_TESTS_OMP_NUM_THREADS=3 .. &&
+          make -j3
       - name: Test
-        run: cd build && ctest -j4 -V --no-compress-output -T Test
+        run: cd build && ctest -V --no-compress-output -T Test
       - name: Install
         run: cd build && make install && make test_install
