@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # The hash-bang is used only but the GNU Make build system
-# The CMake build system uses the PYTHON_EXECUTABLE and ignores the hash-bang.
+# The CMake build system ignores the hash-bang and uses the executable from find_package().
 
 import unittest
 import TasmanianSG

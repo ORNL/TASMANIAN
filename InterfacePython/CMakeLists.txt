@@ -34,7 +34,7 @@ unset(_tsg_opt)
 ########################################################################
 # Stage 1: Build folder paths
 ########################################################################
-set(Tasmanian_string_python_hashbang "${PYTHON_EXECUTABLE}")
+set(Tasmanian_string_python_hashbang "${Python_EXECUTABLE}")
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 # windows puts the temp .dll files in Release or Debug subfolder, as opposed to directly in ${CMAKE_CURRENT_BINARY_DIR}

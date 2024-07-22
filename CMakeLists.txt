@@ -30,7 +30,7 @@ set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some
 #    -D Tasmanian_EXTRA_LINK_DIRS:PATH="appends more link paths"
 #
 # Selecting specific packages for find_package()
-#     -D PYTHON_EXECUTABLE:PATH
+#     -D Python_ROOT_DIR:PATH
 #     -D CMAKE_CUDA_COMPILER:PATH
 #     -D Tasmanian_MAGMA_ROOT:PATH (or just MAGMA_ROOT)
 #     -D MPI_CXX_COMPILER

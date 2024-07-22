@@ -56,7 +56,7 @@ CMAKE_CUDA_FLAGS_DEBUG             @CMAKE_CUDA_FLAGS_DEBUG@
 CMAKE_CUDA_FLAGS_RELEASE           @CMAKE_CUDA_FLAGS_RELEASE@
 Tasmanian_cudamathlibs             @Tasmanian_cudamathlibs@
 Tasmanian_cudaruntime              @Tasmanian_cudaruntime@
-PYTHON_EXECUTABLE                  @PYTHON_EXECUTABLE@
+Python_EXECUTABLE                  @Python_EXECUTABLE@
 BUILD_SHARED_LIBS                  @BUILD_SHARED_LIBS@
 BLAS_LIBRARIES                     @BLAS_LIBRARIES@
 LAPACK_LIBRARIES                   @LAPACK_LIBRARIES@

@@ -36,7 +36,6 @@ jobs:
           -D CMAKE_CXX_FLAGS="-O3 -Wall -Wextra -Wshadow -pedantic"
           -D CMAKE_CXX_COMPILER=${{ matrix.compiler }}
           -D CMAKE_Fortran_COMPILER=${{ matrix.fortran_compiler }}
-          -D PYTHON_EXECUTABLE=/usr/bin/python3
           -D Tasmanian_ENABLE_RECOMMENDED=ON
           -D Tasmanian_ENABLE_FORTRAN=ON
           -D Tasmanian_TESTS_OMP_NUM_THREADS=4 .. &&
