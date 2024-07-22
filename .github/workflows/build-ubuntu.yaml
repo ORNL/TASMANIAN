@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install requirements
-        run: python3 -m pip install numpy
+        run: python3 -m pip install numpy --user
       - name: Build
         run: >
           rm -rf build && mkdir -p build && cd build &&
