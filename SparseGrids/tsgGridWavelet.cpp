@@ -395,6 +395,7 @@ void GridWavelet::buildInterpolationMatrix() const{
 
     if (order == 1 and TasSparse::WaveletBasisMatrix::useDense(acceleration, num_points)
                    and acceleration->useKernels()){ // using the GPU algorithm
+        acceleration->setDevice();
         std::vector<double> pnts(Utils::size_mult(num_dimensions, num_points));
         getPoints(pnts.data());
         GpuVector<double> gpu_pnts(acceleration, pnts);
@@ -1040,6 +1041,8 @@ void GridWavelet::updateAccelerationData(AccelerationContext::ChangeType change)
         case AccelerationContext::change_gpu_device:
             gpu_cache.reset();
             gpu_cachef.reset();
+            if (inter_matrix.getNumRows() > 0)
+                inter_matrix = TasSparse::WaveletBasisMatrix();
             break;
         case AccelerationContext::change_sparse_dense:
             if ((acceleration->algorithm_select == AccelerationContext::algorithm_dense and inter_matrix.isSparse())

@@ -2140,7 +2140,7 @@ class TasmanianSparseGrid:
         else:
             if ((iGPUID < 0) or (iGPUID >= self.getNumGPUs())):
                 raise TasmanianInputError("iGPUID", "ERROR: invalid GPU ID number")
-            pLibTSG.tsgEnableAcceleration(self.pGrid, bytes(sAccelerationType, encoding='utf8'), iGPUID)
+            pLibTSG.tsgEnableAccelerationGPU(self.pGrid, bytes(sAccelerationType, encoding='utf8'), iGPUID)
 
     def getAccelerationType(self):
         '''
