@@ -40,19 +40,16 @@ Optional features:
 
 | Feature | Tested versions     | Recommended      |
 |----|----|----|
-| gcc     | 9 - 11              | any              |
-| clang   | 10 - 15             | any              |
-| icc     | 18.1                | 18.1             |
-| xl      | 16.1                | 16.1             |
-| pgi     | 19.10 - 20.4        | 20.4             |
+| gcc     | 11 - 13             | any              |
+| clang   | 14 - 18             | any              |
 | cmake   | 3.19 - 3.25         | 3.22             |
-| python  | 3.8 - 3.10          | any              |
+| python  | 3.10 - 3.12         | any              |
 | anaconda| 5.3                 | 5.3              |
 | OpenBlas| 0.2.18 - 3.08       | any              |
 | ESSL    | 6.2                 | 6.2              |
-| CUDA    | 10.0 - 12           | 12.1             |
-| ROCm    | 5.5 -5.7            | any              |
-| DPC++   | 2021 - 2023         | 2023             |
+| CUDA    | 11.8 - 12.0         | 12.2             |
+| ROCm    | 5.7 - 6.2           | any              |
+| DPC++   | 2024.2              | 2024             |
 | libiomp | 5.0                 | 5.0              |
 | MAGMA   | 2.5.1 - 2.6.1       | 2.6.1            |
 | Doxygen | 1.8.13              | 1.8.13           |
@@ -92,11 +89,11 @@ ROCm capabilities require CMake 3.21.
   -D Tasmanian_ENABLE_RECOMMENDED:BOOL=<ON/OFF> (enable the above and the -O3 flag)
   -D Tasmanian_ENABLE_CUDA:BOOL=<ON/OFF>        (stable)
   -D Tasmanian_ENABLE_HIP:BOOL=<ON/OFF>         (stable)
-  -D Tasmanian_ENABLE_DPCPP:BOOL=<ON/OFF>       (mostly stable)
+  -D Tasmanian_ENABLE_DPCPP:BOOL=<ON/OFF>       (stable)
   -D Tasmanian_ENABLE_MAGMA:BOOL=<ON/OFF>       (stable)
   -D Tasmanian_MATLAB_WORK_FOLDER:PATH=""       (stable)
   -D Tasmanian_ENABLE_DOXYGEN:BOOL=<ON/OFF>     (stable)
-  -D Tasmanian_ENABLE_FORTRAN:BOOL=<ON/OFF>     (mostly stable)
+  -D Tasmanian_ENABLE_FORTRAN:BOOL=<ON/OFF>     (stable)
   -D Tasmanian_ENABLE_MPI:BOOL=<ON/OFF>         (stable)
 ```
 
@@ -284,19 +281,7 @@ Tasmanian has been tested with MS Visual Studio 2019.
 
 ### Install on Mac platform
 
-Apple with Intel CPU will handle Tasmanian in the same way as Linux.
-
-Using Apple silicon M chips, the python interface is broken prior to 8.1, which is still in development.
-The development version can be downloaded from the main branch on github
-or a beta pre-release is available through Python PIP:
-```
-  python -m pip install Tasmanian==8.1b2 --user
-```
-
-The compiler selected by the pip installer can be adjusted with the `CXX` environment variable.
-If the compiler is set to gcc (using either regular CMake or pip), then the Release mode will not add
-the optimization flags, e.g., `-O3`.
-The flags can be set with the standard CMake installation and the `CMAKE_CXX_FLAGS`
+As of Tasmanian 8.1, the Mac OSX installation handles the same as Linux regardless for both Intel and M-chips.
 
 ### Install folder structure
 
@@ -340,7 +325,7 @@ Additional notes:
 
 Tasmanian will install CMake package-config files in `<install-path>/lib/Tasmanian`, the files will contain all necessary information to import the Tasmanian targets into other CMake projects using the CMake command:
 ```
-  find_package(Tasmanian 7.0 PATHS "<install-path>")
+  find_package(Tasmanian 8.1 PATHS "<install-path>")
 ```
 See the included `CMakeLists.txt` in `<install-path>/share/Tasmanian/examples`.
 
@@ -372,7 +357,7 @@ All available components will be included even if the component is not explicitl
 Requesting components can help catch errors early in the build process
 and/or print useful log messages. For example:
 ```
-  find_package(Tasmanian 8.0 REQUIRED SHARED PYTHON CUDA OPTIONAL_COMPONENTS OPENMP)
+  find_package(Tasmanian 8.1 REQUIRED SHARED PYTHON CUDA OPTIONAL_COMPONENTS OPENMP)
 ```
 In the above example:
 * an error will be generated if Tasmanian was build with static libraries, no CUDA or no Python support
@@ -396,9 +381,5 @@ Several known issues and work-around fixes:
     * use shared libraries only, i.e., `-D BUILD_SHARED_LIBS=ON` in CMake
 * Some older versions of the PGI compiler fails when using optimization `-O2`
     * use the `-O1` instead, or the newest version of the compiler
-* XL compiler with OpenMP segfaults if the OMP_NUM_THREADS is not set correctly
-* XL Fortran needs to use the default halt level which is unnecessarily modified by CMake
-    * overwrite the CMake flags using `-DCMAKE_Fortran_FLAGS=-qthreaded`
-    * see [the github discussion for details](https://github.com/xsdk-project/xsdk-issues/issues/94#issuecomment-916890894)
-* Older versions of CUDA do not work with newer versions of some compilers, e.g., `gcc`
-    * consult the CUDA manual for a list of acceptable compilers
+* CUDA 12.3 and 12.4 seem to have a bug in cuSparse
+    * whenever possible, avoid those versions of CUDA
