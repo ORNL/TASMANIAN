@@ -1,3 +1,8 @@
+Changelog for version 8.2
+--------------
+
+* begin work on the next version
+
 Changelog for version 8.1
 --------------
 

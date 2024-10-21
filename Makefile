@@ -101,7 +101,7 @@ Tasmanian.py: libtasmaniancaddons.so
 	@echo " -- building the Python module"
 	cp ./InterfacePython/TasmanianConfig.in.py TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_VERSION_MAJOR@|'8'|g' ./TasmanianConfig.py
-	sed -i -e 's|@Tasmanian_VERSION_MINOR@|'1'|g' ./TasmanianConfig.py
+	sed -i -e 's|@Tasmanian_VERSION_MINOR@|'2'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_license@|'BSD\ 3-Clause\ with\ UT-Battelle\ disclaimer'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_git_hash@|'Tasmanian\ git\ hash\ is\ not\ available\ here'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_libsparsegrid_path@|'`pwd`/libtasmaniansparsegrid.so'|g' ./TasmanianConfig.py
