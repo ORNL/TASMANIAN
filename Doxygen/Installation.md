@@ -47,7 +47,7 @@ Optional features:
 | anaconda| 5.3                 | 5.3              |
 | OpenBlas| 0.2.18 - 3.08       | any              |
 | ESSL    | 6.2                 | 6.2              |
-| CUDA    | 11.8 - 12.0         | 12.2             |
+| CUDA    | 11.8 - 12.6         | avoid 12.3-12.4  |
 | ROCm    | 5.7 - 6.2           | any              |
 | DPC++   | 2024.2              | 2024             |
 | libiomp | 5.0                 | 5.0              |
@@ -261,7 +261,7 @@ Additional notes:
 
 Tasmanian is also included in Spack: [https://spack.io/](https://spack.io/)
 ```
- spack install tasmanian@8.0+openmp+blas+cuda+magma+python+fortran
+ spack install tasmanian+openmp+blas+cuda+magma+python+fortran
 ```
 
 ### Install on MS Windows platform
