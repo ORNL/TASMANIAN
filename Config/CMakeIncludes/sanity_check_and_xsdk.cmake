@@ -46,7 +46,12 @@ endif()
 # check for Fortran, note that enable_language always gives FATAL_ERROR if the compiler is missing
 if (Tasmanian_ENABLE_FORTRAN)
     enable_language(Fortran)
+    # check old and new Fortran compilers
     Tasmanian_compiler_type(COMPILER ${CMAKE_Fortran_COMPILER} TYPE "ifort" RESULT Tasmanian_ifort_compiler)
+    Tasmanian_compiler_type(COMPILER ${CMAKE_Fortran_COMPILER} TYPE "ifx" RESULT Tasmanian_ifx_compiler)
+    if (Tasmanian_ifort_compiler OR Tasmanian_ifx_compiler)
+        set(Tasmanian_ifort_compiler ON)
+    endif()
 endif()
 
 # swig requires Fortran and cannot handle both types of libs
