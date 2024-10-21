@@ -1,0 +1,45 @@
+<map id="DREAM/tsgDreamEnumerates.hpp" name="DREAM/tsgDreamEnumerates.hpp">
+<area shape="rect" id="node1" title="The enumerated types used in the DREAM module." alt="" coords="1546,5,1773,32"/>
+<area shape="rect" id="node2" href="$tsgDreamState_8hpp.html" title="The container class holding the DREAM history." alt="" coords="1341,87,1529,114"/>
+<area shape="rect" id="node41" href="$tsgDreamCorePDF_8hpp.html" title="Gives the unscaled formulas for several probability distributions." alt="" coords="1554,87,1765,114"/>
+<area shape="rect" id="node42" href="$tsgDreamLikelihoodCore_8hpp.html" title="The interface mother&#45;class for the likelihood classes." alt="" coords="1789,80,1980,121"/>
+<area shape="rect" id="node3" href="$tsgDreamSample_8hpp.html" title="Core sampling templates." alt="" coords="1536,169,1737,196"/>
+<area shape="rect" id="node4" href="$TasmanianDREAM_8hpp.html" title="DiffeRential Evolution Adaptive Metropolis methods." alt="" coords="1655,244,1867,271"/>
+<area shape="rect" id="node5" href="$tsgOptimizationUtils_8hpp.html" title="Utility functions and aliases in the optimization module." alt="" coords="1676,319,1845,360"/>
+<area shape="rect" id="node6" href="$tsgParticleSwarm_8hpp.html" title="Particle swarm state and algorithm." alt="" coords="1591,408,1746,449"/>
+<area shape="rect" id="node40" href="$tsgGradientDescent_8hpp.html" title="Gradient descent state and algorithm." alt="" coords="1771,408,1937,449"/>
+<area shape="rect" id="node7" href="$TasmanianOptimization_8hpp.html" title="Optimization states and methods." alt="" coords="1667,497,1854,539"/>
+<area shape="rect" id="node8" href="$tsgAddonsCommon_8hpp.html" title="Common includes and methods for all addons." alt="" coords="1655,587,1866,613"/>
+<area shape="rect" id="node9" href="$tsgExoticQuadrature_8hpp.html" title="Header to include the exotic quadrature templates." alt="" coords="1435,811,1649,837"/>
+<area shape="rect" id="node32" href="$tsgCandidateManager_8hpp.html" title="Manager for manipulations of candidate construction points." alt="" coords="1533,661,1754,688"/>
+<area shape="rect" id="node36" href="$tsgMPIScatterGrid_8hpp.html" title="Sparse Grids send/receive through MPI." alt="" coords="1778,661,1981,688"/>
+<area shape="rect" id="node38" href="$tsgLoadNeededValues_8hpp.html" title="Templates for non&#45;adaptive sampling from lambda models." alt="" coords="2005,661,2231,688"/>
+<area shape="rect" id="node10" href="$TasmanianAddons_8hpp.html" title="Header to include add addon templates." alt="" coords="1691,975,1894,1001"/>
+<area shape="rect" id="node11" href="$Tasmanian_8hpp.html" title="Master header to include all modules." alt="" coords="1717,1049,1869,1076"/>
+<area shape="rect" id="node12" href="$example__sparse__grids__01_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="5,1124,161,1180"/>
+<area shape="rect" id="node13" href="$example__sparse__grids__02_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="185,1124,341,1180"/>
+<area shape="rect" id="node14" href="$example__sparse__grids__03_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="365,1124,521,1180"/>
+<area shape="rect" id="node15" href="$example__sparse__grids__04_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="545,1124,701,1180"/>
+<area shape="rect" id="node16" href="$example__sparse__grids__05_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="725,1124,881,1180"/>
+<area shape="rect" id="node17" href="$example__sparse__grids__06_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="905,1124,1061,1180"/>
+<area shape="rect" id="node18" href="$example__sparse__grids__07_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="1085,1124,1241,1180"/>
+<area shape="rect" id="node19" href="$example__sparse__grids__08_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="1265,1124,1421,1180"/>
+<area shape="rect" id="node20" href="$example__sparse__grids__09_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="1445,1124,1601,1180"/>
+<area shape="rect" id="node21" href="$example__sparse__grids__10_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="1625,1124,1781,1180"/>
+<area shape="rect" id="node22" href="$example__sparse__grids__11_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="1805,1124,1961,1180"/>
+<area shape="rect" id="node23" href="$example__dream_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="1986,1131,2173,1173"/>
+<area shape="rect" id="node24" href="$example__dream__01_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="2197,1131,2383,1173"/>
+<area shape="rect" id="node25" href="$example__dream__02_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="2407,1131,2594,1173"/>
+<area shape="rect" id="node26" href="$example__dream__03_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="2618,1131,2805,1173"/>
+<area shape="rect" id="node27" href="$example__dream__04_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="2829,1131,3015,1173"/>
+<area shape="rect" id="node28" href="$example__dream__05_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="3039,1131,3226,1173"/>
+<area shape="rect" id="node29" href="$example__optimization_8cpp.html" title="Examples for the Tasmanian Optimization module." alt="" coords="3250,1131,3437,1173"/>
+<area shape="rect" id="node30" href="$example__optimization__01_8cpp.html" title="Examples for the Tasmanian Optimization module." alt="" coords="3461,1131,3647,1173"/>
+<area shape="rect" id="node31" href="$example__optimization__02_8cpp.html" title="Examples for the Tasmanian Optimization module." alt="" coords="3671,1131,3858,1173"/>
+<area shape="rect" id="node33" href="$tsgConstructSurrogate_8hpp.html" title="Automated parallel construction procedure." alt="" coords="1531,736,1758,763"/>
+<area shape="rect" id="node34" href="$tsgMPIConstructGrid_8hpp.html" title="Sparse Grids construction through sampling and MPI." alt="" coords="1683,811,1902,837"/>
+<area shape="rect" id="node35" href="$tsgMPISampleDream_8hpp.html" title="DREAM posterior sampling using MPI." alt="" coords="1683,893,1903,919"/>
+<area shape="rect" id="node37" href="$tsgMPIScatterDream_8hpp.html" title="DREAM objects send/receive through MPI." alt="" coords="1782,736,2001,763"/>
+<area shape="rect" id="node39" href="$tsgLoadUnstructuredPoints_8hpp.html" title="Templates for using unstructured data." alt="" coords="1945,885,2136,927"/>
+<area shape="rect" id="node43" href="$tsgDreamLikelyGaussian_8hpp.html" title="Several likelihood implementations based on Gaussian noise." alt="" coords="1761,169,2008,196"/>
+</map>

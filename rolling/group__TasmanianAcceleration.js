@@ -1,0 +1,118 @@
+var group__TasmanianAcceleration =
+[
+    [ "tsgAcceleratedDataStructures.hpp", "tsgAcceleratedDataStructures_8hpp.html", null ],
+    [ "tsgCacheLagrange.hpp", "tsgCacheLagrange_8hpp.html", null ],
+    [ "HandleDeleter", "structTasGrid_1_1HandleDeleter.html", [
+      [ "HandleDeleter", "structTasGrid_1_1HandleDeleter.html#a5d732fea59ebf34b8af9256ada679f32", null ],
+      [ "operator()", "structTasGrid_1_1HandleDeleter.html#aecd1ab7ad2c19c93166ccf77b9dbe826", null ],
+      [ "own", "structTasGrid_1_1HandleDeleter.html#a27d569a233268c88f50c480376bcd3dc", null ]
+    ] ],
+    [ "GpuVector", "classTasGrid_1_1GpuVector.html", [
+      [ "value_type", "classTasGrid_1_1GpuVector.html#a7fa07acb68a5f6ec44f03d7108529422", null ],
+      [ "GpuVector", "classTasGrid_1_1GpuVector.html#a44cfbb0ea40e7974c4952c6a3e794ea5", null ],
+      [ "GpuVector", "classTasGrid_1_1GpuVector.html#af0c8f4245f0a35cd13ea5cf511318f80", null ],
+      [ "GpuVector", "classTasGrid_1_1GpuVector.html#a71c7007442c80132473721101dd83da2", null ],
+      [ "GpuVector", "classTasGrid_1_1GpuVector.html#a7a20e6acaf1a8654c47c037c459bb4dd", null ],
+      [ "GpuVector", "classTasGrid_1_1GpuVector.html#a79e1e5b54a35774dd8bfcca01929b756", null ],
+      [ "GpuVector", "classTasGrid_1_1GpuVector.html#aea2b611674a9b827e42ef5b1c0e61b7f", null ],
+      [ "GpuVector", "classTasGrid_1_1GpuVector.html#aef9b6ec121cf9a7157464d8ad457c3c9", null ],
+      [ "GpuVector", "classTasGrid_1_1GpuVector.html#a3b6f1faf83538b3240bc1c8f39cb5de0", null ],
+      [ "~GpuVector", "classTasGrid_1_1GpuVector.html#a17d660aa13a0691bcdae489da8ff2467", null ],
+      [ "operator=", "classTasGrid_1_1GpuVector.html#a7d6580a44a4f842883293df26d902a3b", null ],
+      [ "operator=", "classTasGrid_1_1GpuVector.html#ae3f32e400e36643e3f4907d4b05a25c3", null ],
+      [ "size", "classTasGrid_1_1GpuVector.html#aca8729d4b5263e66b93a2b294a9db834", null ],
+      [ "data", "classTasGrid_1_1GpuVector.html#a5ca711f96bb10c3f1a4fb0c94c40bdda", null ],
+      [ "data", "classTasGrid_1_1GpuVector.html#a2caa0923ad92092894c842de34a343f5", null ],
+      [ "resize", "classTasGrid_1_1GpuVector.html#ace5f8f14121929bf188809563b54db3c", null ],
+      [ "clear", "classTasGrid_1_1GpuVector.html#a8a0a971203770c980322965b071f1b79", null ],
+      [ "empty", "classTasGrid_1_1GpuVector.html#a30a12f8a4e2fd25e336eaad8714f5abb", null ],
+      [ "load", "classTasGrid_1_1GpuVector.html#aff1858df62ebdabeff039509372ce0c9", null ],
+      [ "load", "classTasGrid_1_1GpuVector.html#a73f2f74d65c2bddf033b01df1ffb8ed6", null ],
+      [ "load", "classTasGrid_1_1GpuVector.html#a65ede0c4440c95d189e7dd5ba67ee9b6", null ],
+      [ "load", "classTasGrid_1_1GpuVector.html#a7e34a2da9c2a01c7437e4b2e226eee5c", null ],
+      [ "load", "classTasGrid_1_1GpuVector.html#a2b759f859478f9774ae5df87d335ff1e", null ],
+      [ "unload", "classTasGrid_1_1GpuVector.html#a3aa244600bacf3473461105df4d1c540", null ],
+      [ "unload", "classTasGrid_1_1GpuVector.html#a0eded21ba403129d586fab40747409c6", null ],
+      [ "unload", "classTasGrid_1_1GpuVector.html#a76c088d5cab5af75b78ec33d68126064", null ],
+      [ "unload", "classTasGrid_1_1GpuVector.html#a7eb27e5d8ab2dd53638d0fa8c26f6368", null ],
+      [ "eject", "classTasGrid_1_1GpuVector.html#a5c253dab8ffe2877059892a28109048d", null ]
+    ] ],
+    [ "GpuEngine", "structTasGrid_1_1GpuEngine.html", [
+      [ "setCuBlasHandle", "structTasGrid_1_1GpuEngine.html#a879c6d42ee3d19c6642f251dd4c10304", null ],
+      [ "setCuSparseHandle", "structTasGrid_1_1GpuEngine.html#a8e19fe02f0ed0c7f0bb544a3b16d21f7", null ],
+      [ "setCuSolverDnHandle", "structTasGrid_1_1GpuEngine.html#a5ed45dcfdd21d261267bd43f41fc6dd0", null ],
+      [ "cublas_handle", "structTasGrid_1_1GpuEngine.html#adb4bd74e3be266a1287ac90a9071f881", null ],
+      [ "cusparse_handle", "structTasGrid_1_1GpuEngine.html#ae27a8c9efaeb614585d3d190d19692b2", null ],
+      [ "cusolver_handle", "structTasGrid_1_1GpuEngine.html#a6398ed891ff5cde16214dbd77c4804d0", null ],
+      [ "called_magma_init", "structTasGrid_1_1GpuEngine.html#a4b9a3c5cef434b8fb70f6b26f066e810", null ]
+    ] ],
+    [ "AccelerationDomainTransform", "classTasGrid_1_1AccelerationDomainTransform.html", [
+      [ "AccelerationDomainTransform", "classTasGrid_1_1AccelerationDomainTransform.html#a2ef27b1b2821a0993531df93d0e2b4a3", null ],
+      [ "getCanonicalPoints", "classTasGrid_1_1AccelerationDomainTransform.html#ac69a1ab71b15be5ba151fd51c2bc7714", null ]
+    ] ],
+    [ "AccelerationContext", "structTasGrid_1_1AccelerationContext.html", [
+      [ "AlgorithmPreference", "structTasGrid_1_1AccelerationContext.html#a53a783fc0489f79846b6821e923c8e79", [
+        [ "algorithm_dense", "structTasGrid_1_1AccelerationContext.html#a53a783fc0489f79846b6821e923c8e79a51b9e7153e8a0716ea4ee1a471ba53cf", null ],
+        [ "algorithm_sparse", "structTasGrid_1_1AccelerationContext.html#a53a783fc0489f79846b6821e923c8e79a5469418e85ca2c279419f6ccbd905f8d", null ],
+        [ "algorithm_autoselect", "structTasGrid_1_1AccelerationContext.html#a53a783fc0489f79846b6821e923c8e79ae1986fb4e2460b6aa84d101d02c31173", null ]
+      ] ],
+      [ "ChangeType", "structTasGrid_1_1AccelerationContext.html#ad302f79a6257d40fdefe04fece42a791", [
+        [ "change_none", "structTasGrid_1_1AccelerationContext.html#ad302f79a6257d40fdefe04fece42a791a1322a611aa768eafffae052e354dbf31", null ],
+        [ "change_gpu_device", "structTasGrid_1_1AccelerationContext.html#ad302f79a6257d40fdefe04fece42a791a40cf2d540db24487c13db9115e18e312", null ],
+        [ "change_gpu_enabled", "structTasGrid_1_1AccelerationContext.html#ad302f79a6257d40fdefe04fece42a791af81b321d7d6e45b8cc06b74176b6d1c1", null ],
+        [ "change_cpu_blas", "structTasGrid_1_1AccelerationContext.html#ad302f79a6257d40fdefe04fece42a791ae6ad4ede142d33d3f66fcdb35260523e", null ],
+        [ "change_sparse_dense", "structTasGrid_1_1AccelerationContext.html#ad302f79a6257d40fdefe04fece42a791a326a48a24468e43f962aeffc712c3e05", null ]
+      ] ],
+      [ "AccelerationContext", "structTasGrid_1_1AccelerationContext.html#ae494ad0f0a8fa3726c08ab6b18ae1928", null ],
+      [ "favorSparse", "structTasGrid_1_1AccelerationContext.html#a316d48c2b352e1d6ffd515116cc2f231", null ],
+      [ "blasCompatible", "structTasGrid_1_1AccelerationContext.html#a5dccd97775df83119efbe7df2394203c", null ],
+      [ "useKernels", "structTasGrid_1_1AccelerationContext.html#ae8b76133de2929f0ded27a70f5c0159e", null ],
+      [ "testEnable", "structTasGrid_1_1AccelerationContext.html#a0208aa90595f787b1e30bf205ca13be7", null ],
+      [ "enable", "structTasGrid_1_1AccelerationContext.html#a1d7f15ca32c8c0290203ab9768a4fed2", null ],
+      [ "setDevice", "structTasGrid_1_1AccelerationContext.html#aba125b99ee199c2d8dd333a7ca709eb4", null ],
+      [ "operator GpuEngine *", "structTasGrid_1_1AccelerationContext.html#a2b7aeb7721982c93b7d865338923884a", null ],
+      [ "on_gpu", "structTasGrid_1_1AccelerationContext.html#a3435f12aef1889583c7d4c37e2b6aaf6", null ],
+      [ "mode", "structTasGrid_1_1AccelerationContext.html#a33963b2a069ed5cbe7b7ae805a873a9a", null ],
+      [ "algorithm_select", "structTasGrid_1_1AccelerationContext.html#a0d785115fafc503381eb59f2108b6b07", null ],
+      [ "device", "structTasGrid_1_1AccelerationContext.html#a6f8018d24842d218774d3cbb0d724306", null ],
+      [ "engine", "structTasGrid_1_1AccelerationContext.html#a468b793ec851615ec522879d9ea344e6", null ]
+    ] ],
+    [ "CacheLagrange", "classTasGrid_1_1CacheLagrange.html", [
+      [ "CacheLagrange", "classTasGrid_1_1CacheLagrange.html#a9b0742ca6698f353f76364d7f147d1e3", null ],
+      [ "~CacheLagrange", "classTasGrid_1_1CacheLagrange.html#a98034c9378785a4514d71b4dc4549938", null ],
+      [ "getLagrange", "classTasGrid_1_1CacheLagrange.html#a451e542cff0aae71f15dad2dea89b495", null ],
+      [ "cache", "classTasGrid_1_1CacheLagrange.html#a148bc4b65e8609b3c95acf65d03278ba", null ],
+      [ "offsets", "classTasGrid_1_1CacheLagrange.html#a1a76c10c05122d7a25be82c5bc6cd7ef", null ]
+    ] ],
+    [ "CacheLagrangeDerivative", "classTasGrid_1_1CacheLagrangeDerivative.html", [
+      [ "CacheLagrangeDerivative", "classTasGrid_1_1CacheLagrangeDerivative.html#ad15da813da10d7db85e85d1fc1174a3e", null ],
+      [ "~CacheLagrangeDerivative", "classTasGrid_1_1CacheLagrangeDerivative.html#a8be6acd35df80b6e15624847e59be436", null ],
+      [ "getLagrangeDerivative", "classTasGrid_1_1CacheLagrangeDerivative.html#abe723149f9e0c71b8836aa181ec5d8bf", null ],
+      [ "cache", "classTasGrid_1_1CacheLagrangeDerivative.html#ad2dce8f87e317a40606b97110b66dce8", null ],
+      [ "offsets", "classTasGrid_1_1CacheLagrangeDerivative.html#a369ec1e79102cfcaf29026cea333f51a", null ]
+    ] ],
+    [ "deleteHandle", "group__TasmanianAcceleration.html#gaf7fc50157cfb3edd7fa9bd3bee442e85", null ],
+    [ "dtrans2can", "group__TasmanianAcceleration.html#ga3c89329c287d2522df71a20a3bbae23e", null ],
+    [ "devalpwpoly", "group__TasmanianAcceleration.html#gae750dc3c7f0899aa232eb5433190a596", null ],
+    [ "devalpwpoly_sparse", "group__TasmanianAcceleration.html#gae55651774510905f35fa0e869b0624e0", null ],
+    [ "devalseq", "group__TasmanianAcceleration.html#ga031cdb94ce58389fd9e683cba4b46f9d", null ],
+    [ "devalfor", "group__TasmanianAcceleration.html#ga4fc88f7780471d621d3cb4179c2c2d41", null ],
+    [ "devalglo", "group__TasmanianAcceleration.html#ga793e602f9a4b2f4ec1498ae7ba34585a", null ],
+    [ "fillDataGPU", "group__TasmanianAcceleration.html#gaba15de779c5dd1f43e86f0b6dc6b7108", null ],
+    [ "load_n", "group__TasmanianAcceleration.html#ga4280a137e21e74c570dfb496b1dc504f", null ],
+    [ "load_n", "group__TasmanianAcceleration.html#gad200f571051b4ffa48f3155167b6950b", null ],
+    [ "getIOAccelerationString", "group__TasmanianAcceleration.html#ga7ae184192f6d2bca2a9887d36db62668", null ],
+    [ "getIOAccelerationString", "group__TasmanianAcceleration.html#gac2e20edfabde6a82e74b40fb6bac1047", null ],
+    [ "getIOAccelerationInt", "group__TasmanianAcceleration.html#ga10839c9ae1b3663b8746b56d83fc081f", null ],
+    [ "getIOIntAcceleration", "group__TasmanianAcceleration.html#ga685cda2cf2d7660ee8f630fa8f2ca647", null ],
+    [ "isAccTypeGPU", "group__TasmanianAcceleration.html#ga61e7f9cea7355424ac39b404657a30bc", null ],
+    [ "getAvailableFallback", "group__TasmanianAcceleration.html#gae5a698d63fdc95b913db1ea966dda5eb", null ],
+    [ "getNumGpuDevices", "group__TasmanianAcceleration.html#gadd959b2d8f086c3760da496c6e6655e6", null ],
+    [ "setDefaultGpuDevice", "group__TasmanianAcceleration.html#ga226791709ac881da40ec0d95a9e5b52e", null ],
+    [ "getTotalGPUMemory", "group__TasmanianAcceleration.html#gaecd328232c62eeba7fc02f84bc8ac62c", null ],
+    [ "getGpuDeviceName", "group__TasmanianAcceleration.html#ga2ccbafb2d036aaac105412937b93303b", null ],
+    [ "recvGpuArray", "group__TasmanianAcceleration.html#ga716e7bc1f30c7cd6102a830e1ac6afc2", null ],
+    [ "delGpuArray", "group__TasmanianAcceleration.html#ga5064429c0228616c61506e4936e416e9", null ],
+    [ "createCublasHandle", "group__TasmanianAcceleration.html#ga9c3026accc87a8033e8f64436fbee6bb", null ],
+    [ "deleteCublasHandle", "group__TasmanianAcceleration.html#gac4100c3ef9cd49043058f09385015dd2", null ]
+];
