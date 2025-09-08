@@ -228,6 +228,7 @@ inline void trsm(cublasHandle_t handle, cublasSideMode_t side, cublasFillMode_t 
                         reinterpret_cast<cuDoubleComplex const*>(A), lda, reinterpret_cast<cuDoubleComplex*>(B), ldb), "cublasZtrsm()");
 }
 
+#if (CUDART_VERSION < 13000)
 /*
  * cuSparse section
  */
@@ -257,6 +258,7 @@ inline void sparse_gemvi(cusparseHandle_t handle, cusparseOperation_t  transa,
     GpuVector<double> buff(nullptr, size_sparse_gemvi<double>(handle, transa, M, N, nnz) );
     cucheck( cusparseDgemvi(handle, transa, M, N, &alpha, A, lda, nnz, x, indx, &beta, y, CUSPARSE_INDEX_BASE_ZERO, buff.data()), "cusparseDgemvi()");
 }
+#endif
 
 #if (CUDART_VERSION < 11000)
 //! \brief Wrapper around sgemv().
@@ -563,7 +565,17 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
             sparse_gemv(cusparseh, N, K, (int) indx.size(), alpha, vals.data(), pntr.data(), indx.data(), A.data(), 0.0, C);
         }
     }else{
+        #if (CUDART_VERSION < 13000)
         sparse_gemvi(cusparseh, CUSPARSE_OPERATION_NON_TRANSPOSE, M, K, alpha, A.data(), M, (int) indx.size(), vals.data(), indx.data(), 0.0, C);
+        #else
+        GpuVector<scalar_type> tempC(nullptr, M, N);
+        int nnz = static_cast<int>(indx.size());
+        GpuVector<int> temp_pntr(nullptr, std::vector<int>{0, nnz});
+        sparse_gemm(cusparseh, N, M, K, (int) indx.size(), alpha, vals.data(), temp_pntr.data(), indx.data(), A.data(), M, 0.0, tempC.data(), N);
+
+        cublasHandle_t cublash = getCuBlasHandle(acceleration);
+        geam(cublash, CUBLAS_OP_T, CUBLAS_OP_T, M, N, 1.0, tempC.data(), N, 0.0, tempC.data(), N, C, M);
+        #endif
     }
 }
 #endif
