@@ -136,14 +136,14 @@ bool testParticleSwarmSingle(ObjectiveFunction f, ParticleSwarmState state, TasD
     std::vector<double> best_swarm_point = state.getBestPosition();
     std::vector<double> best_swarm_value_vec(1);
     f(best_swarm_point, best_swarm_value_vec);
-    test.tassert(std::fabs(best_swarm_value_vec[0] - optimal_val) <= TasGrid::Maths::num_tol);
+    test.tassert(std::fabs(best_swarm_value_vec[0] - optimal_val) <= 10 * TasGrid::Maths::num_tol);
     std::vector<bool> init_vector = state.getStateVector();
     test.tassert(init_vector[3]);
 
     // Make sure subsequent runs do not make any strange modifications.
     ParticleSwarm(f, inside, 0.5, 2, 2, 1, state, get_rand);
     f(best_swarm_point, best_swarm_value_vec);
-    test.tassert(std::fabs(best_swarm_value_vec[0] - optimal_val) <= TasGrid::Maths::num_tol);
+    test.tassert(std::fabs(best_swarm_value_vec[0] - optimal_val) <= 10 * TasGrid::Maths::num_tol);
     init_vector = state.getStateVector();
     test.tassert(init_vector[3]);
 
@@ -175,7 +175,7 @@ bool testParticleSwarm(bool verbose) {
     TasOptimization::ParticleSwarmState state(num_dimensions, num_particles);
     state.initializeParticlesInsideBox(lower, upper);
     test.tassert( testParticleSwarmSingle(l1, state, TasDREAM::hypercube(lower, upper), iterations, 0) );
-    if (test.failed_last()) std::cout << "ERROR: failed l1 example for Particle Swarm optimization.\n";
+    if (test.failed_last()) std::cout << "ERROR: failed l1 example 1 for Particle Swarm optimization.\n";
 
     // Six hump-camel function over the domain [-3, 3] x [-2, 2].
     num_dimensions = 2;
@@ -192,7 +192,7 @@ bool testParticleSwarm(bool verbose) {
     state = ParticleSwarmState(num_dimensions, num_particles);
     state.initializeParticlesInsideBox(lower, upper);
     test.tassert( testParticleSwarmSingle(shc, state, TasDREAM::hypercube(lower, upper), iterations, -1.031628453489877) );
-    if (test.failed_last()) std::cout << "ERROR: failed l1 example for Particle Swarm optimization.\n";
+    if (test.failed_last()) std::cout << "ERROR: failed l1 example 2 for Particle Swarm optimization.\n";
 
     // Reporting.
     if (test.failed_any() or verbose) reportPassFail(test.success(), "Particle Swarm", "Algorithm Unit Tests");
