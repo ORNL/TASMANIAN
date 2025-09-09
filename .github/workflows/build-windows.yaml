@@ -20,7 +20,7 @@ jobs:
     continue-on-error: false
     strategy:
       matrix:
-        runner: [windows-2019, windows-2022]
+        runner: [windows-2022, windows-latest]
 
     steps:
       - uses: actions/checkout@v2
@@ -31,12 +31,12 @@ jobs:
           md build -ea 0 && cd build && Get-ChildItem * -Recurse | Remove-Item &&
           cmake
           -D CMAKE_INSTALL_PREFIX=./TasmanianInstall
-          -D CMAKE_CXX_FLAGS="/O2"
+          -D CMAKE_CXX_FLAGS="/O2 /EHs"
           -D Tasmanian_ENABLE_RECOMMENDED=ON
           -D BUILD_SHARED_LIBS=ON
           -D Tasmanian_TESTS_OMP_NUM_THREADS=4 .. &&
           cmake --build . --config Release --parallel 4
       - name: Test
-        run: cd build && ctest -C Release
+        run: cd build && ctest -C Release --rerun-failed --output-on-failure
       - name: Install
         run: cd build && cmake --build . --config Release --target install

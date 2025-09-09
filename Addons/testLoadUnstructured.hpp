@@ -177,11 +177,11 @@ void testApproxL2(TasmanianSparseGrid &&grid, CallableModel model, int num_sampl
  * \brief Prepare a list of tests.
  */
 std::vector<std::function<void(void)>> makeTests(TypeAcceleration acc, int gpu_id){
-    auto model31 = [](double const x[], double y[], int)->
+    auto model31 = [](double const x[], double y[], size_t)->
                    void{
                        y[0] = std::exp(-(x[0] - 0.1) * (x[1] - 0.3) * (x[1] - 0.3) * (x[2] + 0.4));
                    };
-    auto model33 = [](double const x[], double y[], int)->
+    auto model33 = [](double const x[], double y[], size_t)->
                    void{
                        y[0] = std::exp(-(x[0] - 0.1) * (x[1] - 0.3) * (x[1] - 0.3) * (x[2] + 0.4));
                        y[1] = std::exp(-(x[0] - 0.1) * (x[1] - 0.2) * (x[2] + 0.3));
