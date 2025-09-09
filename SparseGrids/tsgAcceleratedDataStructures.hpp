@@ -635,13 +635,23 @@ struct AccelerationContext{
 
     //! \brief Sets algorithm affinity in the direction of sparse.
     ChangeType favorSparse(bool favor){
-        AlgorithmPreference new_preference = [=]()->AlgorithmPreference{
+        #if __cplusplus > 201103L
+        AlgorithmPreference new_preference = [as=algorithm_select, favor]()->AlgorithmPreference{
+            if (favor){
+                return (as == algorithm_dense) ? algorithm_autoselect : algorithm_sparse;
+            }else{
+                return (as == algorithm_sparse) ? algorithm_autoselect : algorithm_dense;
+            }
+        }();
+        #else
+        AlgorithmPreference new_preference = [&]()->AlgorithmPreference{
             if (favor){
                 return (algorithm_select == algorithm_dense) ? algorithm_autoselect : algorithm_sparse;
             }else{
                 return (algorithm_select == algorithm_sparse) ? algorithm_autoselect : algorithm_dense;
             }
         }();
+        #endif
         if (new_preference != algorithm_select){
             algorithm_select = new_preference;
             return change_sparse_dense;
