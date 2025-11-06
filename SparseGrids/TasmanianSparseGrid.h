@@ -80,6 +80,8 @@ void tsgGetQuadratureWeightsStatic(void *grid, double *weights);
 double* tsgGetQuadratureWeights(void *grid);
 void tsgGetInterpolationWeightsStatic(void *grid, const double *x, double *weights);
 double* tsgGetInterpolationWeights(void *grid, const double *x);
+void tsgGetDifferentiationWeightsStatic(void *grid, const double *x, double *weights);
+double* tsgGetDifferentiationWeights(void *grid, const double *x);
 void tsgLoadNeededPoints(void *grid, const double *vals);
 void tsgLoadNeededValues(void *grid, const double *vals);
 const double* tsgGetLoadedValues(void *grid);

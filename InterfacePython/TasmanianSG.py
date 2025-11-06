@@ -1083,6 +1083,30 @@ class TasmanianSparseGrid:
             np.ctypeslib.as_ctypes(aWeights.reshape([iNumX * iNumPoints])))
         return aWeights
 
+    def getDifferentiationWeights(self, lfX):
+        '''
+        returns the differentiation weights associated with the points
+        in getPoints()
+
+        lfX: a 1-D numpy.ndarray with length iDimensions
+             the entries indicate the points for evaluating the weights
+
+        output: a 1-D numpy.ndarray of length getNumPoints()
+            the order of the weights matches the order in getPoints()
+
+        TODO: This, and the C++ call, would probably benefit from using a
+        sparse matrix data structure.
+        '''
+        iNumX = len(lfX)
+        if (iNumX != self.getNumDimensions()):
+            raise TasmanianInputError("lfX", "ERROR: len(lfX) should equal {0:1d} instead it equals {1:1d}".format(self.getNumDimensions(), iNumX))
+        iNumPoints = self.getNumPoints()
+        if (iNumPoints == 0):
+            return np.empty([0,0], np.float64)
+        aWeights = np.empty([iNumPoints * iNumX], np.float64)
+        pLibTSG.tsgGetDifferentiationWeightsStatic(self.pGrid, np.ctypeslib.as_ctypes(lfX), np.ctypeslib.as_ctypes(aWeights))
+        return aWeights.reshape([iNumPoints, iNumX])
+
     def loadNeededValues(self, llfVals):
         '''
         loads the values of the target function at the needed points
