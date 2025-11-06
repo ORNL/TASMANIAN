@@ -202,10 +202,21 @@ double* tsgGetQuadratureWeights(void *grid){
     ((TasmanianSparseGrid*) grid)->getQuadratureWeights(w);
     return w;
 }
+
 void tsgGetInterpolationWeightsStatic(void *grid, const double *x, double *weights){ ((TasmanianSparseGrid*) grid)->getInterpolationWeights(x, weights); }
 double* tsgGetInterpolationWeights(void *grid, const double *x){
     double *w = (double*) malloc(((TasmanianSparseGrid*) grid)->getNumPoints() * sizeof(double));
     ((TasmanianSparseGrid*) grid)->getInterpolationWeights(x, w);
+    return w;
+}
+
+void tsgGetDifferentiationWeightsStatic(void *grid, const double *x, double *weights){ ((TasmanianSparseGrid*) grid)->getDifferentiationWeights(x, weights); }
+double* tsgGetDifferentiationWeights(void *grid, const double *x){
+    double *w = (double*) malloc( ((TasmanianSparseGrid*) grid)->getNumPoints()
+                                * ((TasmanianSparseGrid*) grid)->getNumDimensions()
+                                * sizeof(double)
+                                );
+    ((TasmanianSparseGrid*) grid)->getDifferentiationWeights(x, w);
     return w;
 }
 
