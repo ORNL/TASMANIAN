@@ -209,6 +209,8 @@ class TestTasClass(unittest.TestCase):
                    ["grid1 = Tasmanian.SparseGrid(); grid1.setGPUID(grid1.getNumGPUs());", "iGPUID"],
                    ["grid.makeLocalPolynomialGrid(1, 1, 1, 1, 'localp'); Tasmanian.loadNeededPoints(lambda x, tid : x, grid, 1);", "notError"],
                    ["grid.makeLocalPolynomialGrid(1, 1, 1, 1, 'localp'); Tasmanian.loadNeededPoints(lambda x, tid : np.ones((2,)) * x, grid, 1);", "loadNeededValues"],
+                   ["grid.makeLocalPolynomialGrid(1, 1, 1, 1, 'localp'); grid.getDifferentiationWeights((1, 2));", "lfX"],
+                   ["grid.makeLocalPolynomialGrid(2, 0, 2, 1, 'localp'); grid.getDifferentiationWeights(np.array((1.0, 2.0)));", "notError"],
                    ]
 
     def getCustomTabulatedTests(self):

@@ -116,6 +116,11 @@ class TestTasClass(unittest.TestCase):
         aA = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, -0.707106781186548], [0.0, 0.0, 0.707106781186548], [0.0, -0.707106781186548, 0.0], [0.0, 0.707106781186548, 0.0], [-0.707106781186548, 0.0, 0.0], [0.707106781186548, 0.0, 0.0]])
         np.testing.assert_almost_equal(aA, grid.getPoints(), 14, "Original equal", True)
 
+        grid = Tasmanian.makeLocalPolynomialGrid(2, 1, 1, 2, "localp")
+        aW = grid.getDifferentiationWeights(np.array((0.5, 0.5)))
+        aA = np.array(((-1.0, -1.0), (0.0, 0.0), (0.0, 1.0), (0.0, 0.0), (1.0, 0.0)))
+        np.testing.assert_almost_equal(aA, aW, 14, "Differentiation weights", True)
+
         # number of points
         grid = Tasmanian.makeLocalPolynomialGrid(2, 1, 2, 2, "localp")
         iNN = grid.getNumNeeded()
