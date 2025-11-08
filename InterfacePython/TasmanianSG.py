@@ -110,6 +110,7 @@ pLibTSG.tsgGetNeededPointsStatic.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgGetPointsStatic.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgGetQuadratureWeightsStatic.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgGetInterpolationWeightsStatic.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
+pLibTSG.tsgGetDifferentiationWeightsStatic.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
 pLibTSG.tsgLoadNeededValues.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgGetLoadedValuesStatic.argtypes = [c_void_p, POINTER(c_double)]
 pLibTSG.tsgEvaluate.argtypes = [c_void_p, POINTER(c_double), POINTER(c_double)]
@@ -1091,11 +1092,11 @@ class TasmanianSparseGrid:
         lfX: a 1-D numpy.ndarray with length iDimensions
              the entries indicate the points for evaluating the weights
 
-        output: a 1-D numpy.ndarray of length getNumPoints()
+        output: a 2-D numpy.ndarray of size (getNumPoints(), iDimensions)
             the order of the weights matches the order in getPoints()
 
-        TODO: This, and the C++ call, would probably benefit from using a
-        sparse matrix data structure.
+        Similar to the other Weights methods, those are generally slower than
+        the internal alternatives, e.g., differentiate() or evaluate().
         '''
         iNumX = len(lfX)
         if (iNumX != self.getNumDimensions()):

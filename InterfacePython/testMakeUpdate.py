@@ -94,7 +94,7 @@ class TestTasClass(unittest.TestCase):
         aW1 = grid.getInterpolationWeights(aX1)
         aW2 = grid.getInterpolationWeights(aX2)
         aW3 = grid.getInterpolationWeights(aX3)
-        aWW = np.row_stack([aW1, aW2, aW3])
+        aWW = np.vstack([aW1, aW2, aW3])
         np.testing.assert_equal(aW, aWW, "Batch weights", True)
 
         grid.makeGlobalGrid(3, 0, 1, 'level', 'chebyshev')
@@ -115,6 +115,11 @@ class TestTasClass(unittest.TestCase):
         grid.clearConformalTransform()
         aA = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, -0.707106781186548], [0.0, 0.0, 0.707106781186548], [0.0, -0.707106781186548, 0.0], [0.0, 0.707106781186548, 0.0], [-0.707106781186548, 0.0, 0.0], [0.707106781186548, 0.0, 0.0]])
         np.testing.assert_almost_equal(aA, grid.getPoints(), 14, "Original equal", True)
+
+        grid = Tasmanian.makeLocalPolynomialGrid(2, 1, 1, 2, "localp")
+        aW = grid.getDifferentiationWeights(np.array((0.5, 0.5)))
+        aA = np.array(((-1.0, -1.0), (0.0, 0.0), (0.0, 1.0), (0.0, 0.0), (1.0, 0.0)))
+        np.testing.assert_almost_equal(aA, aW, 14, "Differentiation weights", True)
 
         # number of points
         grid = Tasmanian.makeLocalPolynomialGrid(2, 1, 2, 2, "localp")
