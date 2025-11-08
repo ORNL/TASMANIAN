@@ -94,7 +94,7 @@ class TestTasClass(unittest.TestCase):
         aW1 = grid.getInterpolationWeights(aX1)
         aW2 = grid.getInterpolationWeights(aX2)
         aW3 = grid.getInterpolationWeights(aX3)
-        aWW = np.row_stack([aW1, aW2, aW3])
+        aWW = np.vstack([aW1, aW2, aW3])
         np.testing.assert_equal(aW, aWW, "Batch weights", True)
 
         grid.makeGlobalGrid(3, 0, 1, 'level', 'chebyshev')
