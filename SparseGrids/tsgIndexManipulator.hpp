@@ -478,6 +478,7 @@ inline MultiIndexSet getLargestCompletion(MultiIndexSet const &current, MultiInd
         }
     }
 
+    std::vector<int> kid(num_dimensions);
     std::vector<int> scratch(num_dimensions);
     bool loopon = true;
     while(loopon){
@@ -486,7 +487,7 @@ inline MultiIndexSet getLargestCompletion(MultiIndexSet const &current, MultiInd
         MultiIndexSet total = current;
         if (!result.empty()) total += result;
         for(int i=0; i<total.getNumIndexes(); i++){
-            std::vector<int> kid(total.getIndex(i), total.getIndex(i) + num_dimensions);
+            std::copy_n(total.getIndex(i), num_dimensions, kid.begin());
             for(int &k : kid){
                 k++; // construct the kid in the new direction
                 if (!candidates.missing(kid) && result.missing(kid) && isLowerComplete(kid, total, scratch))
