@@ -5,6 +5,8 @@ project(Tasmanian VERSION 8.2.0 LANGUAGES CXX)
 set(Tasmanian_version_comment " (release candidate)") # e.g., " (release candidate)", " (development)", ""
 set(Tasmanian_license "BSD 3-Clause with UT-Battelle disclaimer") # used in some headers and python modules (only human readable)
 
+include(GNUInstallDirs) # allows management of install paths
+
 ########################################################################
 #  User specified options:
 #    -D Tasmanian_ENABLE_RECOMMENDED:BOOL=OFF (includes some flags)

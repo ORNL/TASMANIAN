@@ -47,8 +47,4 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/../configured/tasgridLogs.hpp"
         DESTINATION include
         PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ)
 
-install(TARGETS Tasmanian_tasgrid
-        EXPORT "${Tasmanian_export_name}"
-        RUNTIME DESTINATION "bin"
-        LIBRARY DESTINATION "lib"
-        ARCHIVE DESTINATION "lib")
+install(TARGETS Tasmanian_tasgrid EXPORT "${Tasmanian_export_name}")

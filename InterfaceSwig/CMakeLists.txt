@@ -88,11 +88,7 @@ macro(Tasmanian_macro_add_libdfortran03)
     Tasmanian_set_fortran_props(TARGET Tasmanian_libfortran03 OUTPUT_NAME "tasmanianfortran")
     Tasmanian_rpath_target(TARGET Tasmanian_libfortran03)
 
-    install(TARGETS Tasmanian_libfortran03
-            EXPORT "${Tasmanian_export_name}"
-            RUNTIME DESTINATION "bin"
-            LIBRARY DESTINATION "lib"
-            ARCHIVE DESTINATION "lib")
+    install(TARGETS Tasmanian_libfortran03 EXPORT "${Tasmanian_export_name}")
 
     if (Tasmanian_ENABLE_MPI)
         file(READ "${Tasmanian_GENERATE_DIR}/tasmanian_mpi_swig.f90" Tasmanian_generated_f90)
@@ -108,11 +104,8 @@ macro(Tasmanian_macro_add_libdfortran03)
         Tasmanian_rpath_target(TARGET Tasmanian_libfortranmpi03)
         target_link_libraries(Tasmanian_libfortranmpi03  Tasmanian_libfortran03)
 
-        install(TARGETS Tasmanian_libfortranmpi03
-                EXPORT "${Tasmanian_export_name}"
-                RUNTIME DESTINATION "bin"
-                LIBRARY DESTINATION "lib"
-                ARCHIVE DESTINATION "lib")
+        install(TARGETS Tasmanian_libfortranmpi03 EXPORT "${Tasmanian_export_name}")
+
         install(FILES "${CMAKE_CURRENT_BINARY_DIR}/tasmanian_mpi.mod"
                 DESTINATION include
                 PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
