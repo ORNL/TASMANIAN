@@ -123,11 +123,7 @@ if (Tasmanian_ENABLE_OPENMP)
     target_compile_options(Tasmanian_libsparsegrid PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${OpenMP_CXX_FLAGS}>)
 endif()
 
-install(TARGETS Tasmanian_libsparsegrid
-        EXPORT  "${Tasmanian_export_name}"
-        RUNTIME DESTINATION "bin"
-        LIBRARY DESTINATION "lib"
-        ARCHIVE DESTINATION "lib")
+install(TARGETS Tasmanian_libsparsegrid EXPORT "${Tasmanian_export_name}")
 
 foreach(_tsgtarget gridtest benchmarksgrid)
     target_link_libraries(Tasmanian_${_tsgtarget} Tasmanian_libsparsegrid)

@@ -23,23 +23,19 @@ target_include_directories(Tasmanian_addons INTERFACE $<BUILD_INTERFACE:${CMAKE_
 target_link_libraries(Tasmanian_addons INTERFACE Tasmanian_libdream)
 
 if (Tasmanian_ENABLE_PYTHON) # the C addons are used by Python
-    add_library(Tasmanian_caddons SHARED tsgCExoticQuadrature.cpp 
-                                         tsgCLoadNeededValues.cpp 
-                                         tsgCConstructSurrogate.cpp 
+    add_library(Tasmanian_caddons SHARED tsgCExoticQuadrature.cpp
+                                         tsgCLoadNeededValues.cpp
+                                         tsgCConstructSurrogate.cpp
                                          tsgCLoadUnstructuredPoints.cpp)
 
-    target_link_libraries(Tasmanian_caddons  Tasmanian_addons)
+    target_link_libraries(Tasmanian_caddons Tasmanian_addons)
 
     set_target_properties(Tasmanian_caddons PROPERTIES OUTPUT_NAME "tasmaniancaddons"
                                                        INSTALL_RPATH "${Tasmanian_rpath}"
                                                        SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                        VERSION   ${PROJECT_VERSION})
 
-    install(TARGETS Tasmanian_caddons
-            EXPORT  "${Tasmanian_export_name}"
-            RUNTIME DESTINATION "bin"
-            LIBRARY DESTINATION "lib"
-            ARCHIVE DESTINATION "lib")
+    install(TARGETS Tasmanian_caddons EXPORT "${Tasmanian_export_name}")
 endif()
 
 # The Tasmanian MPI capabilities are templated into the Addons

@@ -33,11 +33,7 @@ if (Tasmanian_ENABLE_OPENMP)
     target_compile_options(Tasmanian_libdream PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${OpenMP_CXX_FLAGS}>)
 endif()
 
-install(TARGETS Tasmanian_libdream
-        EXPORT  "${Tasmanian_export_name}"
-        RUNTIME DESTINATION "bin"
-        LIBRARY DESTINATION "lib"
-        ARCHIVE DESTINATION "lib")
+install(TARGETS Tasmanian_libdream EXPORT "${Tasmanian_export_name}")
 
 
 ########################################################################
