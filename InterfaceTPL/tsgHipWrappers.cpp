@@ -60,7 +60,7 @@ template<typename T> void GpuVector<T>::clear(){
         TasGpu::hipcheck( hipFree(gpu_data), "hipFree()");
     gpu_data = nullptr;
 }
-template<typename T> void GpuVector<T>::load(AccelerationContext const*, size_t count, const T* cpu_data){
+template<typename T> void GpuVector<T>::load_internal(AccelerationContext const*, size_t count, const T* cpu_data){
     resize(nullptr, count);
     TasGpu::hipcheck( hipMemcpy(gpu_data, cpu_data, num_entries * sizeof(T), hipMemcpyHostToDevice), "hipMemcpy() to device");
 }
@@ -70,22 +70,22 @@ template<typename T> void GpuVector<T>::unload(AccelerationContext const*, size_
 
 template void GpuVector<double>::resize(AccelerationContext const*, size_t);
 template void GpuVector<double>::clear();
-template void GpuVector<double>::load(AccelerationContext const*, size_t, const double*);
+template void GpuVector<double>::load_internal(AccelerationContext const*, size_t, const double*);
 template void GpuVector<double>::unload(AccelerationContext const*, size_t, double*) const;
 
 template void GpuVector<std::complex<double>>::resize(AccelerationContext const*, size_t);
 template void GpuVector<std::complex<double>>::clear();
-template void GpuVector<std::complex<double>>::load(AccelerationContext const*, size_t, const std::complex<double>*);
+template void GpuVector<std::complex<double>>::load_internal(AccelerationContext const*, size_t, const std::complex<double>*);
 template void GpuVector<std::complex<double>>::unload(AccelerationContext const*, size_t, std::complex<double>*) const;
 
 template void GpuVector<float>::resize(AccelerationContext const*, size_t);
 template void GpuVector<float>::clear();
-template void GpuVector<float>::load(AccelerationContext const*, size_t, const float*);
+template void GpuVector<float>::load_internal(AccelerationContext const*, size_t, const float*);
 template void GpuVector<float>::unload(AccelerationContext const*, size_t, float*) const;
 
 template void GpuVector<int>::resize(AccelerationContext const*, size_t);
 template void GpuVector<int>::clear();
-template void GpuVector<int>::load(AccelerationContext const*, size_t, const int*);
+template void GpuVector<int>::load_internal(AccelerationContext const*, size_t, const int*);
 template void GpuVector<int>::unload(AccelerationContext const*, size_t, int*) const;
 
 template<> void deleteHandle<AccHandle::Rocblas>(int *p){ rocblas_destroy_handle(reinterpret_cast<rocblas_handle>(p)); }
@@ -364,14 +364,14 @@ template void sparseMultiply<float>(AccelerationContext const*, int, int, int, f
 template void sparseMultiply<double>(AccelerationContext const*, int, int, int, double, GpuVector<double> const &A,
                                      GpuVector<int> const &pntr, GpuVector<int> const &indx, GpuVector<double> const &vals, double C[]);
 
-template<typename T> void load_n(AccelerationContext const*, T const *cpu_data, size_t num_entries, T *gpu_data){
+template<typename T> void load_n_internal(AccelerationContext const*, T const *cpu_data, size_t num_entries, T *gpu_data){
     TasGpu::hipcheck( hipMemcpy(gpu_data, cpu_data, num_entries * sizeof(T), hipMemcpyHostToDevice), "hipMemcpy() load_n to device");
 }
 
-template void load_n<int>(AccelerationContext const*, int const*, size_t, int*);
-template void load_n<float>(AccelerationContext const*, float const*, size_t, float*);
-template void load_n<double>(AccelerationContext const*, double const*, size_t, double*);
-template void load_n<std::complex<double>>(AccelerationContext const*, std::complex<double> const*, size_t, std::complex<double>*);
+template void load_n_internal<int>(AccelerationContext const*, int const*, size_t, int*);
+template void load_n_internal<float>(AccelerationContext const*, float const*, size_t, float*);
+template void load_n_internal<double>(AccelerationContext const*, double const*, size_t, double*);
+template void load_n_internal<std::complex<double>>(AccelerationContext const*, std::complex<double> const*, size_t, std::complex<double>*);
 
 }
 }

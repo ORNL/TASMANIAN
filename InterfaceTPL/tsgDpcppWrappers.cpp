@@ -68,7 +68,7 @@ template<typename T> void GpuVector<T>::clear(){
     }
     gpu_data = nullptr;
 }
-template<typename T> void GpuVector<T>::load(AccelerationContext const *acc, size_t count, const T* cpu_data){
+template<typename T> void GpuVector<T>::load_internal(AccelerationContext const *acc, size_t count, const T* cpu_data){
     resize(acc, count);
     sycl::queue *q = getSyclQueue(acc);
     q->memcpy(gpu_data, cpu_data, count * sizeof(T)).wait();
@@ -80,27 +80,27 @@ template<typename T> void GpuVector<T>::unload(AccelerationContext const *acc, s
 
 template void GpuVector<double>::resize(AccelerationContext const*, size_t);
 template void GpuVector<double>::clear();
-template void GpuVector<double>::load(AccelerationContext const*, size_t, const double*);
+template void GpuVector<double>::load_internal(AccelerationContext const*, size_t, const double*);
 template void GpuVector<double>::unload(AccelerationContext const*, size_t, double*) const;
 
 template void GpuVector<std::complex<double>>::resize(AccelerationContext const*, size_t);
 template void GpuVector<std::complex<double>>::clear();
-template void GpuVector<std::complex<double>>::load(AccelerationContext const*, size_t, const std::complex<double>*);
+template void GpuVector<std::complex<double>>::load_internal(AccelerationContext const*, size_t, const std::complex<double>*);
 template void GpuVector<std::complex<double>>::unload(AccelerationContext const*, size_t, std::complex<double>*) const;
 
 template void GpuVector<float>::resize(AccelerationContext const*, size_t);
 template void GpuVector<float>::clear();
-template void GpuVector<float>::load(AccelerationContext const*, size_t, const float*);
+template void GpuVector<float>::load_internal(AccelerationContext const*, size_t, const float*);
 template void GpuVector<float>::unload(AccelerationContext const*, size_t, float*) const;
 
 template void GpuVector<int>::resize(AccelerationContext const*, size_t);
 template void GpuVector<int>::clear();
-template void GpuVector<int>::load(AccelerationContext const*, size_t, const int*);
+template void GpuVector<int>::load_internal(AccelerationContext const*, size_t, const int*);
 template void GpuVector<int>::unload(AccelerationContext const*, size_t, int*) const;
 
 template void GpuVector<std::int64_t>::resize(AccelerationContext const*, size_t);
 template void GpuVector<std::int64_t>::clear();
-template void GpuVector<std::int64_t>::load(AccelerationContext const*, size_t, const std::int64_t*);
+template void GpuVector<std::int64_t>::load_internal(AccelerationContext const*, size_t, const std::int64_t*);
 template void GpuVector<std::int64_t>::unload(AccelerationContext const*, size_t, std::int64_t*) const;
 
 template<> void deleteHandle<AccHandle::Syclqueue>(int *p){
@@ -320,15 +320,15 @@ template void sparseMultiply<float>(AccelerationContext const*, int, int, int, f
 template void sparseMultiply<double>(AccelerationContext const*, int, int, int, double, GpuVector<double> const &A,
                                      GpuVector<int> const &pntr, GpuVector<int> const &indx, GpuVector<double> const &vals, double C[]);
 
-template<typename T> void load_n(AccelerationContext const *acc, T const *cpu_data, size_t num_entries, T *gpu_data){
+template<typename T> void load_n_internal(AccelerationContext const *acc, T const *cpu_data, size_t num_entries, T *gpu_data){
     sycl::queue *q = getSyclQueue(acc);
     q->memcpy(gpu_data, cpu_data, num_entries * sizeof(T)).wait();
 }
 
-template void load_n<int>(AccelerationContext const*, int const*, size_t, int*);
-template void load_n<float>(AccelerationContext const*, float const*, size_t, float*);
-template void load_n<double>(AccelerationContext const*, double const*, size_t, double*);
-template void load_n<std::complex<double>>(AccelerationContext const*, std::complex<double> const*, size_t, std::complex<double>*);
+template void load_n_internal<int>(AccelerationContext const*, int const*, size_t, int*);
+template void load_n_internal<float>(AccelerationContext const*, float const*, size_t, float*);
+template void load_n_internal<double>(AccelerationContext const*, double const*, size_t, double*);
+template void load_n_internal<std::complex<double>>(AccelerationContext const*, std::complex<double> const*, size_t, std::complex<double>*);
 
 }
 }

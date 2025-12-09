@@ -202,12 +202,12 @@ private:
                 transpoints.getStrip(j)[i] = work->getIndex(i)[j];
             }
         }
-        ccache->points.load(acceleration, transpoints.begin(), transpoints.end());
+        ccache->points.load(acceleration, transpoints.totalSize(), transpoints.data());
     }
     template<typename T> void loadGpuSurpluses() const{
         auto& ccache = getGpuCache<T>();
         if (!ccache) ccache = Utils::make_unique<CudaSequenceData<T>>();
-        if (ccache->surpluses.empty()) ccache->surpluses.load(acceleration, surpluses.begin(), surpluses.end());
+        if (ccache->surpluses.empty()) ccache->surpluses.load(acceleration, surpluses.totalSize(), surpluses.data());
     }
     mutable std::unique_ptr<CudaSequenceData<double>> gpu_cache;
     mutable std::unique_ptr<CudaSequenceData<float>> gpu_cachef;

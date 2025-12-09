@@ -623,7 +623,7 @@ void GridGlobal::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_n
 template<typename T> void GridGlobal::loadGpuValues() const{
     auto& ccache = getGpuCache<T>();
     if (!ccache) ccache = Utils::make_unique<CudaGlobalData<T>>();
-    if (ccache->values.empty()) ccache->values.load(acceleration, values.begin(), values.end());
+    if (ccache->values.empty()) ccache->values.load(acceleration, values.totalSize(), values.data());
 }
 void GridGlobal::clearGpuValues() const{ if (gpu_cache) gpu_cache->values.clear(); }
 template<typename T> void GridGlobal::loadGpuNodes() const{
@@ -654,7 +654,7 @@ template<typename T> void GridGlobal::loadGpuNodes() const{
     std::transform(active_w.begin(), active_w.end(), tweights.begin(), [](int i)->double{ return static_cast<double>(i); });
     ccache->tensor_weights.load(acceleration, tweights);
 
-    ccache->active_tensors.load(acceleration, active_tensors.begin(), active_tensors.end());
+    ccache->active_tensors.load(acceleration, active_tensors.totalSize(), active_tensors.data());
 
     std::vector<int> active_num_points(active_tensors.totalSize());
     std::transform(active_tensors.begin(), active_tensors.end(), active_num_points.begin(), [&](int i)->int{ return wrapper.getNumPoints(i); });

@@ -141,13 +141,6 @@ private:
 
 /*!
  * \ingroup TasmanianUtils
- * \brief Equivalent to C++14 enable_if_t<condition, void>
- */
-template<bool condition>
-using use_if = typename std::enable_if<condition, void>::type;
-
-/*!
- * \ingroup TasmanianUtils
  * \brief Equivalent to C++14 exchange, but works with simpler types (int, double, float*).
  */
 template<typename T, typename U> T exchange(T& x, U new_x){

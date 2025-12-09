@@ -291,8 +291,8 @@ template<typename T> void GridWavelet::loadGpuBasis() const{
         for(int j=0; j<num_dimensions; j++)
             rule1D.getShiftScale(p[j], scale[j], shift[j]);
     }
-    ccache->nodes.load(acceleration, cpu_scale.begin(), cpu_scale.end());
-    ccache->support.load(acceleration, cpu_shift.begin(), cpu_shift.end());
+    ccache->nodes.load(acceleration, cpu_scale.totalSize(), cpu_scale.data());
+    ccache->support.load(acceleration, cpu_shift.totalSize(), cpu_shift.data());
 }
 void GridWavelet::clearGpuBasis() const{
     if (gpu_cache) gpu_cache->clearNodes();
@@ -301,7 +301,7 @@ void GridWavelet::clearGpuBasis() const{
 template<typename T> void GridWavelet::loadGpuCoefficients() const{
     auto &ccache = getGpuCache<T>();
     if (!ccache) ccache = Utils::make_unique<CudaWaveletData<T>>();
-    if (ccache->coefficients.empty()) ccache->coefficients.load(acceleration, coefficients.begin(), coefficients.end());
+    if (ccache->coefficients.empty()) ccache->coefficients.load(acceleration, coefficients.totalSize(), coefficients.data());
 }
 void GridWavelet::clearGpuCoefficients() const{
     if (gpu_cache) gpu_cache->coefficients.clear();

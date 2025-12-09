@@ -135,7 +135,10 @@ public:
     //! \brief Construct a vector and load with date provided on to the cpu.
     GpuVector(AccelerationContext const *acc, int dim1, int dim2, T const *cpu_data) : num_entries(0), gpu_data(nullptr){ load(acc, Utils::size_mult(dim1, dim2), cpu_data); }
     //! \brief Construct a vector by loading from a given range.
-    template<typename IteratorLike> GpuVector(AccelerationContext const *acc, IteratorLike ibegin, IteratorLike iend) : GpuVector(){ load(acc, ibegin, iend); }
+    template<typename IteratorLike>
+    GpuVector(AccelerationContext const *acc, IteratorLike ibegin, IteratorLike iend) : GpuVector(){
+        load(acc, std::distance(ibegin, iend), std::addressof(*ibegin));
+    }
     //! \brief Destructor, release all allocated memory.
     ~GpuVector(){ clear(); }
 
@@ -153,45 +156,34 @@ public:
     //! \brief Return \b true if the \b size() is zero.
     bool empty() const{ return (num_entries == 0); }
 
-    //! \brief Copy the content of \b cpu_data to the GPU device, all pre-existing data is deleted and the vector is resized to match \b cpu_data.
-    void load(AccelerationContext const *acc, const std::vector<T> &cpu_data){ load(acc, cpu_data.size(), cpu_data.data()); }
-
-    //! \brief Load from a range defined by the begin and end, converts if necessary.
-    template<typename IteratorLike>
-    void load(AccelerationContext const *acc, IteratorLike ibegin, IteratorLike iend){
-        load(acc, std::distance(ibegin, iend), &*ibegin);
-    }
-
     /*!
-     * \brief Takes a vector with entries of different precision, converts and loads.
-     *
-     * Used when the CPU vectors are stored in double-precision format while the GPU entries are prepared to work with single-precision.
+     * \brief Takes a vector with entries of possibly different precision, maybe converts and loads.
      */
     template<typename U>
-    Utils::use_if<!std::is_same<U, T>::value> load(AccelerationContext const *acc, const std::vector<U> &cpu_data){
+    void load(AccelerationContext const *acc, const std::vector<U> &cpu_data){
         load(acc, cpu_data.size(), cpu_data.data());
     }
 
     /*!
-     * \brief Copy the first \b count entries of \b cpu_data to the GPU device.
+     * \brief Takes a vector with entries of possibly different precision, maybe converts and always loads.
      *
      * If \b count does not match the current size, the current array will be deleted and new array will be allocated
      * (even if \b size() exceeds \b count).
      * The final vector size will match \b count.
      * However, if \b count matches \b size(), the data is overwritten but no arrays will be allocated, deleted, or de-aliased.
      */
-    void load(AccelerationContext const *acc, size_t count, const T* cpu_data);
-    /*!
-     * \brief Takes a vector with entries of different precision, converts and loads.
-     *
-     * Used when the CPU data is stored in double-precision format while the GPU entries are prepared to work with single-precision.
-     */
     template<typename U>
-    Utils::use_if<!std::is_same<U, T>::value> load(AccelerationContext const *acc, size_t count, const U* cpu_data){
-        std::vector<T> converted(count);
-        std::transform(cpu_data, cpu_data + count, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
-        load(acc, converted);
+    void load(AccelerationContext const *acc, size_t count, const U* cpu_data) {
+        if constexpr (std::is_same_v<U, T>) {
+            load_internal(acc, count, cpu_data);
+        } else {
+            // need to convert the array
+            std::vector<T> converted(count);
+            std::transform(cpu_data, cpu_data + count, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
+            load_internal(acc, count, converted.data());
+        }
     }
+
     //! \brief Copy the data from the GPU array to \b cpu_data, the \b cpu_data will be resized and overwritten.
     void unload(AccelerationContext const *acc, std::vector<T> &cpu_data) const{
         cpu_data.resize(num_entries);
@@ -220,6 +212,16 @@ public:
     using value_type = T;
 
 private:
+    /*!
+     * \brief Copy the first \b count entries of \b cpu_data to the GPU device.
+     *
+     * If \b count does not match the current size, the current array will be deleted and new array will be allocated
+     * (even if \b size() exceeds \b count).
+     * The final vector size will match \b count.
+     * However, if \b count matches \b size(), the data is overwritten but no arrays will be allocated, deleted, or de-aliased.
+     */
+    void load_internal(AccelerationContext const *acc, size_t count, const T* cpu_data);
+
     size_t num_entries; // keep track of the size, update on every call that changes the gpu_data
     T *gpu_data; // the GPU array
     #ifdef Tasmanian_ENABLE_DPCPP
@@ -412,17 +414,21 @@ namespace TasGpu{
      * \ingroup TasmanianAcceleration
      * \brief Similar to copy_n, copies the data from the CPU to the GPU.
      */
-    template<typename T> void load_n(AccelerationContext const *acc, T const *cpu_data, size_t num_entries, T *gpu_data);
+    template<typename T> void load_n_internal(AccelerationContext const *acc, T const *cpu_data, size_t num_entries, T *gpu_data);
 
     /*!
      * \ingroup TasmanianAcceleration
      * \brief Similar to copy_n, copies the data from the CPU to the GPU.
      */
     template<typename T, typename U>
-    Utils::use_if<!std::is_same<U, T>::value> load_n(AccelerationContext const *acc, U const *cpu_data, size_t num_entries, T *gpu_data){
-        std::vector<T> converted(num_entries);
-        std::transform(cpu_data, cpu_data + num_entries, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
-        load_n(acc, converted.data(), num_entries, gpu_data);
+    void load_n(AccelerationContext const *acc, U const *cpu_data, size_t num_entries, T *gpu_data){
+        if constexpr (std::is_same_v<U, T>) {
+            load_n_internal(acc, cpu_data, num_entries, gpu_data);
+        } else {
+            std::vector<T> converted(num_entries);
+            std::transform(cpu_data, cpu_data + num_entries, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
+            load_n_internal(acc, converted.data(), num_entries, gpu_data);
+        }
     }
 
     // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas

@@ -646,7 +646,7 @@ template<typename T> void GridFourier::loadGpuNodes() const{
     for(int i=0; i<num_points; i++)
         for(int j=0; j<num_dimensions; j++)
             transpoints.getStrip(j)[i] = work.getIndex(i)[j];
-    ccache->points.load(acceleration, transpoints.begin(), transpoints.end());
+    ccache->points.load(acceleration, transpoints.totalSize(), transpoints.data());
 }
 void GridFourier::clearGpuNodes() const{
     if (gpu_cache){

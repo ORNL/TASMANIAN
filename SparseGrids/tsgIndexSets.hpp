@@ -153,6 +153,8 @@ public:
     T* data(){ return vec.data(); }
     //! \brief Returns a const reference to the internal data.
     T const* data() const{ return vec.data(); }
+    //! \brief Returns the total number of entries in the 2D data-structure
+    size_t totalSize() const{ return vec.size(); }
     //! \brief Clear all used data.
     void clear(){
         stride = 0;
@@ -277,6 +279,10 @@ public:
     inline std::vector<int>::const_iterator begin() const{ return indexes.cbegin(); }
     //! \brief Returns a const iterator to the end of the internal data
     inline std::vector<int>::const_iterator end() const{ return indexes.cend(); }
+    //! \brief Returns a reference to the internal data.
+    int* data(){ return indexes.data(); }
+    //! \brief Returns a const reference to the internal data.
+    int const* data() const{ return indexes.data(); }
     //! \brief Returns the number of dimensions times the number of indexes.
     inline size_t totalSize() const{ return indexes.size(); }
 
@@ -402,6 +408,13 @@ public:
      * Note that the two multi-index sets cannot have repeated entries.
      */
     void addValues(const MultiIndexSet &old_set, const MultiIndexSet &new_set, const double new_vals[]);
+
+    //! \brief Returns a reference to the internal data.
+    double* data(){ return values.data(); }
+    //! \brief Returns a const reference to the internal data.
+    double const* data() const{ return values.data(); }
+    //! \brief Returns the total number of entries in the 2D data-structure
+    size_t totalSize() const{ return values.size(); }
 
 private:
     size_t num_outputs, num_values; // kept as size_t to avoid conversions in products, but each one is small individually
