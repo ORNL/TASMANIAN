@@ -1,0 +1,76 @@
+\_form#0=154x65:$
+    \left( \begin{array}{rrrr}
+    1 & 2 & 3 & 4 \\
+    5 & 6 & 7 & 8 \\
+    9 & 10 & 11 & 12 \\
+    \end{array} \right)
+$
+\_form#1=95x18:$ \xi_1, \xi_2, \cdots, \xi_d $
+\_form#2=98x12:$ \eta_1, \eta_2, \cdots, \eta_d $
+\_form#3=11x9:$ \alpha $
+\_form#4=33x19:$ \rho(x) $
+\_form#5=12x18:$ \beta $
+\_form#6=9x14:$ d $
+\_form#7=11x12:$ \eta $
+\_form#8=11x18:$ \xi $
+\_form#9=105x23:$ \int_\Gamma f(x) \rho(x) dx $
+\_form#10=12x14:$ \Gamma $
+\_form#11=33x19:$ f(x) $
+\_form#12=44x19:$ [0, \infty) $
+\_form#13=46x19:$ [a, \infty) $
+\_form#14=68x19:$ (-\infty, \infty) $
+\_form#15=252x33:$ \left\{ (i_1, i_2, \cdots, i_d) : \sum_{k=1}^d \xi_k i_k \leq L \right\} $
+\_form#16=422x33:$ \left\{ (i_1, i_2, \cdots, i_d) : \sum_{k=1}^d \xi_k i_k + \sum_{k=1}^d \eta_k \log(i_k + 1) \leq L \right\} $
+\_form#17=289x33:$ \left\{ (i_1, i_2, \cdots, i_d) : \prod_{k=1}^d (i_k + 1)^{\xi_k} \leq L \right\} $
+\_form#18=219x33:$ \left\{ \prod_{k=1}^d x^{i_k} : \sum_{k=1}^d \xi_k i_k \leq L \right\} $
+\_form#19=389x33:$ \left\{ \prod_{k=1}^d x^{i_k} : \sum_{k=1}^d \xi_k i_k +  \sum_{k=1}^d \eta_k \log(i_k + 1) \leq L \right\} $
+\_form#20=256x33:$ \left\{ \prod_{k=1}^d x^{i_k} : \prod_{k=1}^d (i_k + 1)^{\xi_k} \leq L \right\} $
+\_form#21=226x33:$ \left\{ \prod_{k=1}^d x^{i_k} : i_k \leq \xi_k \mbox{ for all } k \right\} $
+\_form#22=207x26:$ \int_{a}^{b} f(x) / \sqrt{(b - x)(x - a)} dx $
+\_form#23=198x26:$ \int_{a}^{b} f(x) \sqrt{(b - x)(x - a)} dx $
+\_form#24=201x26:$ \int_{a}^{b} f(x) (b - x)^\alpha (x - a)^\alpha dx $
+\_form#25=200x26:$ \int_{a}^{b} f(x) (b - x)^\alpha (x - a)^\beta dx $
+\_form#26=270x23:$ \int_{a}^{\infty} f(x) (x - a)^\alpha \exp \left(-b (x - a) \right) dx $
+\_form#27=287x23:$ \int_{-\infty}^{\infty} f(x) (x - a)^\alpha \exp \left(-b (x - a)^2 \right) dx $
+\_form#28=119x19:$ \min_x \| A x - b \|_2 $
+\_form#29=124x19:$ \min_x \| A x - B \|_2 $
+\_form#30=67x21:$ \int \mu(x) dx$
+\_form#31=68x19:$ mu(x) dx$
+\_form#32=67x16:$ A^T x = b $
+\_form#33=68x14:$ A X = B $
+\_form#34=149x19:$ x = s_i + w ( s_k - s_j) $
+\_form#35=95x21:$ \exp( -0.5 x^2 ) $
+\_form#36=53x16:$ -0.5 x^2 $
+\_form#37=203x21:$ y = \exp(- 0.5 (x - M)^2 / V) $
+\_form#38=179x19:$ y = \exp(- R * (x - x_0)) $
+\_form#39=221x21:$ y = (x - x_0)^{\alpha - 1} (x_1 - x_0)^{\beta - 1} $
+\_form#40=254x21:$ y = (x - x_0)^{\alpha - 1} \exp(-\beta (x - x_0)) $
+\_form#41=406x23:$ L(y | d_1 \cdots d_n) = \exp\left( 0.5 sum_{i=1}^n (y - d_i)^T \Sigma^{-1} (y - d_i) \right)$
+\_form#42=14x18:$ d_i $
+\_form#43=12x14:$ \Sigma $
+\_form#44=75x12:$ x_1,\ldots,x_k $
+\_form#45=214x19:$ {\rm f\_single}(x_1),\ldots, {\rm f\_single}(x_k) $
+\_form#46=193x21:$ -\inf_{\|d\| = 1, d\in T_C(x)} f'(x;d) $
+\_form#47=229x26:$ f'(x;d)=\lim_{t \to 0} \frac{ f(x+td)-f(x) }{ t }, $
+\_form#48=14x14:$C$
+\_form#49=11x18:$f$
+\_form#50=46x19:$T_C(x)$
+\_form#51=11x9:$x$
+\_form#52=114x26:$ \int_{-1}^{1} f(x) \rho(x) dx $
+\_form#53=131x26:$ \int_{-1}^{1} | \rho(x) | dx < \infty $
+\_form#54=119x19:$ \rho(x) \geq c > -\infty $
+\_form#55=95x19:$ \rho(x) + c \geq 0 $
+\_form#56=46x19:$ \sin(x) $
+\_form#57=65x19:$ \sin(x) / x $
+\_form#58=47x19:$ \cos(x) $
+\_form#59=145x19:$ \min_c \| G_c(x) - Y \|_2 $
+\_form#60=91x19:$ G_c(x) = H c $
+\_form#61=121x18:$ C = \alpha A B + \beta C $
+\_form#62=75x19:$ C = C Q^T $
+\_form#63=124x21:$ min_x \| A x - B \|^2_2 $
+\_form#64=77x14:$ A = P L U $
+\_form#65=75x14:$ C = \alpha A B $
+\_form#66=224x26:$ \int_{-1}^{+1} \int_{-1}^{+1} \exp(-x^2) \cos(y) dy dx $
+\_form#67=224x26:$ \int_{-5}^{+5} \int_{-2}^{+3} \exp(-x^2) \cos(y) dy dx $
+\_form#68=464x26:$ \int_{-5}^{+5} \int_{-5}^{+5} \int_{-2}^{+3} \int_{-2}^{+3} \exp(-x_1^2 -x_2^2) \cos(x_3) \cos(x_4) dx_4 dx_3 dx_2 dx_1 $
+\_form#69=392x21:$  f(x,y) = ( 4 - 2.1 x^2 + x^4 / 3) x^2 + x y + ( - 4 + 4 y^2) y^2 $
