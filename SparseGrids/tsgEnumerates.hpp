@@ -50,6 +50,7 @@
 #include <map>
 #include <memory>
 #include <numeric>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>

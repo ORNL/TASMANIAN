@@ -296,8 +296,12 @@ struct GpuEngine{
 //! \b Note: Conformal mapping and the non-linear Gauss-Hermite and Gauss-Laguerre transforms are not supported.
 class AccelerationDomainTransform{
 public:
+    //! construct an empty acceleration transform
+    AccelerationDomainTransform() = default;
     //! \brief Constructor, load the transform data to the GPU, the vectors are the same as used in the \b TasmanianSparseGrid class.
-    AccelerationDomainTransform(AccelerationContext const *, std::vector<double> const &transform_a, std::vector<double> const &transform_b);
+    AccelerationDomainTransform(AccelerationContext const *acc, std::vector<double> const &transform_a, std::vector<double> const &transform_b){
+        set(acc, transform_a, transform_b);
+    }
 
     /*!
      * \brief Transform a set of points, used in the calls to \b evaluateHierarchicalFunctionsGPU()
@@ -308,12 +312,24 @@ public:
      */
     template<typename T>
     void getCanonicalPoints(bool use01, T const gpu_transformed_x[], int num_x, GpuVector<T> &gpu_canonical_x);
+    //! check if the transform has been set
+    operator bool () const { return (acceleration != nullptr); }
+    //! set the domain transform
+    void set(AccelerationContext const *, std::vector<double> const &transform_a, std::vector<double> const &transform_b);
+    //! resets the transform, used when changing the compute device
+    void clear() {
+        gpu_trans_a.clear();
+        gpu_trans_b.clear();
+        num_dimensions = 0;
+        padded_size = 0;
+        acceleration = nullptr;
+    }
 
 private:
     // these actually store the rate and shift and not the hard upper/lower limits
     GpuVector<double> gpu_trans_a, gpu_trans_b;
-    int num_dimensions, padded_size;
-    AccelerationContext const *acceleration;
+    int num_dimensions = 0, padded_size = 0;
+    AccelerationContext const *acceleration = nullptr;
 };
 
 //! \internal
@@ -591,6 +607,15 @@ namespace AccelerationMeta{
  * \endinternal
  */
 struct AccelerationContext{
+    //! Cannot copy the context
+    AccelerationContext(AccelerationContext const &) = delete;
+    //! Cannot copy the context
+    AccelerationContext &operator = (AccelerationContext const &) = delete;
+    //! Can move the context
+    AccelerationContext(AccelerationContext &&) = default;
+    //! Can move the context
+    AccelerationContext &operator = (AccelerationContext &&) = default;
+
     //! \brief Defines the sparse-dense algorithm flavors, whenever applicable.
     enum AlgorithmPreference{
         //! \brief Use dense algorithm.
@@ -628,7 +653,7 @@ struct AccelerationContext{
     int device;
 
     //! \brief Holds the context to the GPU TPL handles, e.g., MAGMA queue.
-    mutable std::unique_ptr<GpuEngine> engine;
+    mutable std::optional<GpuEngine> engine;
 
     //! \brief Returns the default acceleration mode, cpu_blas if BLAS is enabled and none otherwise.
     inline static constexpr TypeAcceleration getDefaultAccMode() {
@@ -721,7 +746,7 @@ struct AccelerationContext{
             // if the new mode is GPU-based, make an engine or reset the engine if the device has changed
             // if the engine exists and the device is not changed, then keep the existing engine
             if (!engine or new_gpu_id != device)
-                engine = Utils::make_unique<GpuEngine>();
+                engine.emplace();
         }else{
             engine.reset();
         }
@@ -733,7 +758,7 @@ struct AccelerationContext{
     //! \brief Set default device.
     void setDevice() const{ AccelerationMeta::setDefaultGpuDevice(device); }
     //! \brief Custom convert to \b GpuEngine
-    operator GpuEngine* () const{ return engine.get(); }
+    operator GpuEngine* () const{ return std::addressof(engine.value()); }
     //! \brief Returns true if any of the GPU-based acceleration modes have been enabled.
     bool on_gpu() const{ return !!engine; }
 };

@@ -72,10 +72,10 @@ bool TasmanianSparseGrid::isDpcppEnabled(){
     #endif
 }
 
-TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(Utils::make_unique<AccelerationContext>()), using_dynamic_construction(false){}
+TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(std::make_unique<AccelerationContext>()), using_dynamic_construction(false){}
 
 TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) :
-        acceleration(Utils::make_unique<AccelerationContext>()), using_dynamic_construction(false){
+        acceleration(std::make_unique<AccelerationContext>()), using_dynamic_construction(false){
     copyGrid(&source);
 }
 
@@ -92,7 +92,7 @@ void TasmanianSparseGrid::clear(){
     llimits = std::vector<int>();
     using_dynamic_construction = false;
 #ifdef Tasmanian_ENABLE_GPU
-    acc_domain.reset();
+    acc_domain.clear();
 #endif // Tasmanian_ENABLE_GPU
 }
 
@@ -513,7 +513,7 @@ void TasmanianSparseGrid::setDomainTransform(const double a[], const double b[])
     domain_transform_a.resize(num_dimensions); std::copy(a, a + num_dimensions, domain_transform_a.data());
     domain_transform_b.resize(num_dimensions); std::copy(b, b + num_dimensions, domain_transform_b.data());
     #ifdef Tasmanian_ENABLE_GPU
-    acc_domain.reset();
+    acc_domain.clear();
     #endif
 }
 bool TasmanianSparseGrid::isSetDomainTransfrom() const{
@@ -523,7 +523,7 @@ void TasmanianSparseGrid::clearDomainTransform(){
     domain_transform_a.resize(0);
     domain_transform_b.resize(0);
     #ifdef Tasmanian_ENABLE_GPU
-    acc_domain.reset();
+    acc_domain.clear();
     #endif
 }
 void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
@@ -542,7 +542,7 @@ void TasmanianSparseGrid::setDomainTransform(const std::vector<double> &a, const
     domain_transform_a = a; // copy assignment
     domain_transform_b = b;
     #ifdef Tasmanian_ENABLE_GPU
-    acc_domain.reset();
+    acc_domain.clear();
     #endif
 }
 void TasmanianSparseGrid::getDomainTransform(std::vector<double> &a, std::vector<double> &b) const{
@@ -853,8 +853,8 @@ template<typename T>
 const T* TasmanianSparseGrid::formCanonicalPointsGPU(const T *gpu_x, int num_x, GpuVector<T> &gpu_x_temp) const{
     if (!domain_transform_a.empty()){
         if (!acc_domain)
-            acc_domain = Utils::make_unique<AccelerationDomainTransform>(acceleration.get(), domain_transform_a, domain_transform_b);
-        acc_domain->getCanonicalPoints(isFourier(), gpu_x, num_x, gpu_x_temp);
+            acc_domain.set(acceleration.get(), domain_transform_a, domain_transform_b);
+        acc_domain.getCanonicalPoints(isFourier(), gpu_x, num_x, gpu_x_temp);
         return gpu_x_temp.data();
     }else{
         return gpu_x;
@@ -1624,7 +1624,7 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
     AccelerationContext::ChangeType change = acceleration->testEnable(acc, acceleration->device);
     if (not empty()) base->updateAccelerationData(change);
     if (change == AccelerationContext::change_gpu_device)
-        acc_domain.reset();
+        acc_domain.clear();
     acceleration->enable(acc, acceleration->device);
 }
 
@@ -1632,7 +1632,7 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc, int new_gpu_i
     AccelerationContext::ChangeType change = acceleration->testEnable(acc, new_gpu_id);
     if (not empty()) base->updateAccelerationData(change);
     if (change == AccelerationContext::change_gpu_device)
-        acc_domain.reset();
+        acc_domain.clear();
     acceleration->enable(acc, new_gpu_id);
 }
 void TasmanianSparseGrid::favorSparseAcceleration(bool favor){
@@ -1725,7 +1725,7 @@ void TasmanianSparseGrid::setGPUID(int new_gpu_id){
         if (not empty()) base->updateAccelerationData(change);
         #ifdef Tasmanian_ENABLE_GPU
         if (change == AccelerationContext::change_gpu_device)
-            acc_domain.reset();
+            acc_domain.clear();
         #endif
         acceleration->enable(acceleration->mode, new_gpu_id);
     }

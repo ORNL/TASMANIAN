@@ -2228,7 +2228,8 @@ protected:
     #endif // __TASMANIAN_DOXYGEN_SKIP_INTERNAL
 
 private:
-    std::unique_ptr<AccelerationContext> acceleration; // must be destroyed last for sycl
+    // must not invalidate aliases when the grid is moved, must be destroyed last for sycl
+    std::unique_ptr<AccelerationContext> acceleration;
 
     std::unique_ptr<BaseCanonicalGrid> base;
 
@@ -2238,7 +2239,7 @@ private:
 
     bool using_dynamic_construction;
 
-    mutable std::unique_ptr<AccelerationDomainTransform> acc_domain;
+    mutable AccelerationDomainTransform acc_domain;
 };
 
 /*!

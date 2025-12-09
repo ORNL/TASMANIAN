@@ -155,7 +155,8 @@ TypeAcceleration AccelerationMeta::getAvailableFallback(TypeAcceleration accel){
     return accel;
 }
 
-AccelerationDomainTransform::AccelerationDomainTransform(AccelerationContext const *acc, std::vector<double> const &transform_a, std::vector<double> const &transform_b) : acceleration(acc){
+void AccelerationDomainTransform::set(AccelerationContext const *acc, std::vector<double> const &transform_a, std::vector<double> const &transform_b) {
+    acceleration = acc;
     // The points are stored contiguously in a vector with stride equal to num_dimensions
     // Using the contiguous memory in a contiguous fashion on the GPU implies that thread 0 works on dimension 0, thread 1 on dim 1 ...
     // But the number of dimensions is often way less than the number of threads
