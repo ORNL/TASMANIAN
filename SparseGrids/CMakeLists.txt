@@ -99,7 +99,7 @@ if (Tasmanian_ENABLE_CUDA)
     # must be labeled as "CUDA" source files and compiled with the nvcc compiler.
     # Beware that the nvcc compiler seems to struggle with some STL algorithms, transitive inclusion of <cuda.h> must be minimized.
     set_source_files_properties(${Tasmanian_source_libsparsegrid_cuda} PROPERTIES LANGUAGE CUDA)
-    set_property(TARGET Tasmanian_libsparsegrid PROPERTY CUDA_STANDARD 11)
+    set_property(TARGET Tasmanian_libsparsegrid PROPERTY CUDA_STANDARD 17)
 elseif(Tasmanian_ENABLE_HIP)
     set_source_files_properties(${Tasmanian_source_libsparsegrid_hip} PROPERTIES LANGUAGE HIP)
 elseif(Tasmanian_ENABLE_DPCPP)

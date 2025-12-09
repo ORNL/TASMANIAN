@@ -17,6 +17,7 @@
 
 Minimum requirements to use Tasmanian:
 * a C/C++ compiler and either [CMake](https://cmake.org/) or [GNU Make](https://www.gnu.org/software/make/) build engines.
+    * as of v8.3, Tasmanian requires C++-17 capable compiler
 
 Recommended additional features:
 * [Python](https://www.python.org/) with with [NumPy](http://www.numpy.org/) 1.10 (or newer) and [CTypes](https://docs.python.org/3/library/ctypes.html) packages

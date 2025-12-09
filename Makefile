@@ -10,7 +10,7 @@ endif
 
 # Default C++ compiler
 CC = g++
-CXXFLAGS = -O3 -std=c++11 $(OPENMPFLAGS) -fPIC
+CXXFLAGS = -O3 -std=c++17 $(OPENMPFLAGS) -fPIC
 
 IADD = -I./include -I./SparseGrids/ -I./InterfaceTPL/ -I./DREAM/ -I./DREAM/Optimization/ -I./Addons/ -I./
 LADD = -L./

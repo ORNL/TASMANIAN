@@ -1968,17 +1968,10 @@ public:
                 };
             }else{
                 size_t dims = (size_t) getNumDimensions();
-                #if __cplusplus > 201103L
                 return [dta=domain_transform_a, dims](std::vector<double> const &x)->bool{
                     for(size_t i=0; i<dims; i++) if (x[i] < dta[i]) return false;
                     return true;
                 };
-                #else
-                return [=](std::vector<double> const &x)->bool{
-                    for(size_t i=0; i<dims; i++) if (x[i] < domain_transform_a[i]) return false;
-                    return true;
-                };
-                #endif
             }
         }else{
             if (domain_transform_a.empty()){
@@ -1995,19 +1988,11 @@ public:
                 }
             }else{
                 size_t dims = (size_t) getNumDimensions();
-                #if __cplusplus > 201103L
                 return [dta=domain_transform_a, dtb=domain_transform_b, dims](std::vector<double> const &x)->bool{
                     for(size_t i=0; i<dims; i++)
                         if (x[i] < dta[i] or x[i] > dtb[i]) return false;
                     return true;
                 };
-                #else
-                return [=](std::vector<double> const &x)->bool{
-                    for(size_t i=0; i<dims; i++)
-                        if (x[i] < domain_transform_a[i] or x[i] > domain_transform_b[i]) return false;
-                    return true;
-                };
-                #endif
             }
         }
     }
