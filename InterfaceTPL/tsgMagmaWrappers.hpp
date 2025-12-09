@@ -55,7 +55,7 @@ namespace TasGpu{
 inline void initMagma(AccelerationContext const *acceleration){
     if (not acceleration->engine->called_magma_init){
         magma_init();
-        acceleration->engine->called_magma_init = std::unique_ptr<int>(new int(1));
+        acceleration->engine->called_magma_init = true;
     }
     magma_setdevice(acceleration->device);
 }

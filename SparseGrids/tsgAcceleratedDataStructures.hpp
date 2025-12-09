@@ -236,6 +236,17 @@ private:
  * The class also manages the required handles and queues and holds the context of the active GPU device.
  */
 struct GpuEngine{
+    //! Default construction, does not use any GPU acceleration, will set handles on-the-fly
+    GpuEngine() = default;
+    //! Do not copy, even if no GPU backend is enabled
+    GpuEngine(GpuEngine const &) = delete;
+    //! Do not copy, even if no GPU backend is enabled
+    GpuEngine &operator = (GpuEngine const &) = delete;
+    //! Moving the engine is allowed, unique pointers will be moved
+    GpuEngine(GpuEngine &&) = default;
+    //! Moving the engine is allowed, unique pointers will be moved
+    GpuEngine &operator = (GpuEngine &&) = default;
+
     #ifdef Tasmanian_ENABLE_CUDA
     //! \brief Manually sets the cuBlas handle, handle must be a valid cublasHandle_t associated with this CUDA device.
     void setCuBlasHandle(void *handle);
@@ -272,7 +283,7 @@ struct GpuEngine{
     #endif
 
     //! \brief Avoids an empty engine when no acceleration is enabled, allows for default constructor/move/copy, skips extraneous calls to MAGMA init.
-    std::unique_ptr<int> called_magma_init;
+    bool called_magma_init = false;
 };
 
 //! \internal
