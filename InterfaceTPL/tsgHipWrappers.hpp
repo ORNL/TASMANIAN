@@ -166,7 +166,7 @@ struct rocsparseMatInfo{
     //! \brief Use locally and internally, do not copy or move.
     rocsparseMatInfo(rocsparseMatInfo const&) = delete;
     //! \brief Move constructor is allowed
-    rocsparseMatInfo(rocsparseMatInfo &&other) : mat_info(Utils::exchange(other.mat_info, nullptr)){}
+    rocsparseMatInfo(rocsparseMatInfo &&other) : mat_info(std::exchange(other.mat_info, nullptr)){}
     //! \brief Release all used memory.
     ~rocsparseMatInfo(){
         if (mat_info != nullptr)

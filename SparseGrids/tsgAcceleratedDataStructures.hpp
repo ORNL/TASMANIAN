@@ -100,7 +100,7 @@ public:
     GpuVector<T>& operator =(GpuVector<T> const &) = delete;
 
     //! \brief Allow for move-construction.
-    GpuVector(GpuVector<T> &&other) : num_entries(Utils::exchange(other.num_entries, 0)), gpu_data(Utils::exchange(other.gpu_data, nullptr))
+    GpuVector(GpuVector<T> &&other) : num_entries(std::exchange(other.num_entries, 0)), gpu_data(std::exchange(other.gpu_data, nullptr))
     #ifdef Tasmanian_ENABLE_DPCPP
         , sycl_queue(other.sycl_queue)
     #endif

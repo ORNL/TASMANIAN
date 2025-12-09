@@ -141,16 +141,6 @@ private:
 
 /*!
  * \ingroup TasmanianUtils
- * \brief Equivalent to C++14 exchange, but works with simpler types (int, double, float*).
- */
-template<typename T, typename U> T exchange(T& x, U new_x){
-    T old_x = x;
-    x = static_cast<T>(new_x);
-    return old_x;
-}
-
-/*!
- * \ingroup TasmanianUtils
  * \brief Equivalent to C++14 make_unique.
  */
 template<typename T, typename... Args>
