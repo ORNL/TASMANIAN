@@ -1,7 +1,10 @@
 Changelog for version 8.2
 --------------
 
-* begin work on the next version
+* support for CMake GNUInstallDir
+* added differentiation weights method in Python
+* added support for CUDA 13 and C++-20 compatibility
+* removed deprecated Fortrain 90 module
 
 Changelog for version 8.1
 --------------
