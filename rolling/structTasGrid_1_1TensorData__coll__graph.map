@@ -1,0 +1,5 @@
+<map id="TasGrid::TensorData" name="TasGrid::TensorData">
+<area shape="rect" id="Node000001" title="Holds the description of a single tensor candidate for inclusion into the grid." alt="" coords="11,93,154,119"/>
+<area shape="rect" id="Node000002" href="$classTasGrid_1_1MultiIndexSet.html" title="Class that stores multi&#45;indexes in sorted (lexicographical) order." alt="" coords="5,5,160,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="85,45,85,93,80,93,80,45"/>
+</map>

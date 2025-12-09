@@ -1,0 +1,49 @@
+<map id="Addons/tsgLoadNeededValues.hpp" name="Addons/tsgLoadNeededValues.hpp">
+<area shape="rect" id="Node000001" title="Templates for non&#45;adaptive sampling from lambda models." alt="" coords="1957,5,2182,31"/>
+<area shape="rect" id="Node000002" href="$tsgLoadUnstructuredPoints_8hpp.html" title="Templates for using unstructured data." alt="" coords="1974,79,2165,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="2072,44,2072,79,2067,79,2067,44"/>
+<area shape="rect" id="Node000003" href="$TasmanianAddons_8hpp.html" title="Header to include add addon templates." alt="" coords="1968,167,2171,192"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="2072,132,2072,166,2067,166,2067,132"/>
+<area shape="rect" id="Node000004" href="$Tasmanian_8hpp.html" title="Master header to include all modules." alt="" coords="1993,240,2145,265"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="2072,206,2072,240,2067,240,2067,206"/>
+<area shape="rect" id="Node000005" href="$example__dream_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="5,321,192,361"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="1980,257,1615,260,1102,269,584,287,368,300,204,316,166,323,165,318,204,311,367,294,583,281,1102,264,1615,255,1980,252"/>
+<area shape="rect" id="Node000006" href="$example__dream__01_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="216,321,403,361"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="1980,257,1652,262,1200,272,746,289,558,301,415,316,377,323,376,318,414,311,557,296,746,284,1200,266,1652,257,1979,252"/>
+<area shape="rect" id="Node000007" href="$example__dream__02_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="427,321,613,361"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="1980,258,1299,275,910,292,748,303,626,316,588,323,587,318,625,311,748,298,909,286,1299,269,1979,253"/>
+<area shape="rect" id="Node000008" href="$example__dream__03_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="637,321,824,361"/>
+<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="1980,259,1399,277,1074,294,939,305,836,316,799,323,798,318,836,311,938,299,1073,289,1399,272,1980,253"/>
+<area shape="rect" id="Node000009" href="$example__dream__04_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="848,321,1035,361"/>
+<area shape="poly" id="edge8_Node000004_Node000009" title=" " alt="" coords="1980,256,1807,259,1575,267,1312,285,1178,299,1047,316,1010,323,1009,318,1046,311,1177,293,1311,280,1574,262,1807,253,1980,251"/>
+<area shape="rect" id="Node000010" href="$example__dream__05_8cpp.html" title="Examples for the Tasmanian DREAM module." alt="" coords="1059,321,1245,361"/>
+<area shape="poly" id="edge9_Node000004_Node000010" title=" " alt="" coords="1980,258,1840,263,1660,273,1459,290,1258,316,1221,323,1220,318,1257,311,1459,285,1660,268,1840,258,1980,253"/>
+<area shape="rect" id="Node000011" href="$example__optimization_8cpp.html" title="Examples for the Tasmanian Optimization module." alt="" coords="1269,321,1456,361"/>
+<area shape="poly" id="edge10_Node000004_Node000011" title=" " alt="" coords="1980,261,1747,280,1608,295,1468,316,1433,323,1432,318,1468,311,1607,290,1747,275,1979,256"/>
+<area shape="rect" id="Node000012" href="$example__optimization__01_8cpp.html" title="Examples for the Tasmanian Optimization module." alt="" coords="1480,321,1667,361"/>
+<area shape="poly" id="edge11_Node000004_Node000012" title=" " alt="" coords="1980,268,1838,288,1679,316,1646,323,1645,318,1678,311,1837,283,1979,263"/>
+<area shape="rect" id="Node000013" href="$example__optimization__02_8cpp.html" title="Examples for the Tasmanian Optimization module." alt="" coords="1691,321,1877,361"/>
+<area shape="poly" id="edge12_Node000004_Node000013" title=" " alt="" coords="2019,272,1848,323,1846,318,2017,267"/>
+<area shape="rect" id="Node000014" href="$example__sparse__grids__01_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="1902,313,2058,368"/>
+<area shape="poly" id="edge13_Node000004_Node000014" title=" " alt="" coords="2049,277,2009,315,2005,311,2046,273"/>
+<area shape="rect" id="Node000015" href="$example__sparse__grids__02_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="2082,313,2238,368"/>
+<area shape="poly" id="edge14_Node000004_Node000015" title=" " alt="" coords="2093,273,2134,311,2131,315,2090,277"/>
+<area shape="rect" id="Node000016" href="$example__sparse__grids__03_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="2262,313,2418,368"/>
+<area shape="poly" id="edge15_Node000004_Node000016" title=" " alt="" coords="2120,267,2263,312,2261,317,2118,272"/>
+<area shape="rect" id="Node000017" href="$example__sparse__grids__04_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="2442,313,2598,368"/>
+<area shape="poly" id="edge16_Node000004_Node000017" title=" " alt="" coords="2159,263,2288,283,2431,311,2442,313,2441,319,2430,316,2287,288,2159,268"/>
+<area shape="rect" id="Node000018" href="$example__sparse__grids__05_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="2622,313,2778,368"/>
+<area shape="poly" id="edge17_Node000004_Node000018" title=" " alt="" coords="2159,256,2367,275,2489,290,2611,311,2622,313,2621,318,2610,316,2489,295,2366,280,2159,262"/>
+<area shape="rect" id="Node000019" href="$example__sparse__grids__06_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="2802,313,2958,368"/>
+<area shape="poly" id="edge18_Node000004_Node000019" title=" " alt="" coords="2160,253,2285,258,2443,268,2617,285,2791,311,2802,313,2801,318,2790,316,2616,290,2442,273,2284,263,2159,258"/>
+<area shape="rect" id="Node000020" href="$example__sparse__grids__07_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="2982,313,3138,368"/>
+<area shape="poly" id="edge19_Node000004_Node000020" title=" " alt="" coords="2159,251,2313,253,2516,262,2743,280,2859,293,2971,311,2982,313,2981,318,2970,316,2858,299,2743,285,2516,267,2313,258,2159,256"/>
+<area shape="rect" id="Node000021" href="$example__sparse__grids__08_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="3162,313,3318,368"/>
+<area shape="poly" id="edge20_Node000004_Node000021" title=" " alt="" coords="2159,254,2668,272,2947,289,3063,299,3151,311,3162,313,3161,318,3150,316,3062,304,2947,294,2668,278,2159,259"/>
+<area shape="rect" id="Node000022" href="$example__sparse__grids__09_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="3342,313,3498,368"/>
+<area shape="poly" id="edge21_Node000004_Node000022" title=" " alt="" coords="2159,253,2416,258,2754,269,3088,286,3226,298,3331,311,3342,313,3341,318,3330,316,3225,303,3087,292,2754,275,2415,264,2159,258"/>
+<area shape="rect" id="Node000023" href="$example__sparse__grids__10_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="3522,313,3678,368"/>
+<area shape="poly" id="edge22_Node000004_Node000023" title=" " alt="" coords="2159,252,2449,257,2839,266,3227,284,3389,296,3511,311,3522,313,3521,318,3510,316,3388,301,3227,289,2839,272,2448,262,2159,258"/>
+<area shape="rect" id="Node000024" href="$example__sparse__grids__11_8cpp.html" title="Examples for the Tasmanian Sparse Grid module." alt="" coords="3702,313,3858,368"/>
+<area shape="poly" id="edge23_Node000004_Node000024" title=" " alt="" coords="2159,252,2481,255,2924,264,3367,281,3551,294,3691,311,3702,313,3701,318,3690,316,3551,300,3367,287,2923,269,2481,260,2159,257"/>
+</map>

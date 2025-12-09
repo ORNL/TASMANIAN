@@ -1,0 +1,5 @@
+<map id="TasGrid::SimpleConstructData" name="TasGrid::SimpleConstructData">
+<area shape="rect" id="Node000001" title="Holds a std::forward_list of pairs of points indexes and values, and a MultiIndexSet of initial nodes..." alt="" coords="5,93,205,119"/>
+<area shape="rect" id="Node000002" href="$classTasGrid_1_1MultiIndexSet.html" title="Class that stores multi&#45;indexes in sorted (lexicographical) order." alt="" coords="28,5,183,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="108,45,108,93,103,93,103,45"/>
+</map>

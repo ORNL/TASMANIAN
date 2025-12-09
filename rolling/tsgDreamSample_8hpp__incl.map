@@ -1,0 +1,112 @@
+<map id="DREAM/tsgDreamSample.hpp" name="DREAM/tsgDreamSample.hpp">
+<area shape="rect" id="Node000001" title="Core sampling templates." alt="" coords="915,5,1117,31"/>
+<area shape="rect" id="Node000002" href="$tsgDreamState_8hpp.html" title="The container class holding the DREAM history." alt="" coords="778,79,913,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="990,33,887,76,885,71,988,28"/>
+<area shape="rect" id="Node000052" href="$tsgDreamCoreRandom_8hpp.html" title="Core random sampling methods." alt="" coords="1119,79,1300,104"/>
+<area shape="poly" id="edge58_Node000001_Node000052" title=" " alt="" coords="1048,28,1166,71,1164,76,1046,33"/>
+<area shape="rect" id="Node000053" href="$tsgDreamCorePDF_8hpp.html" title="Gives the unscaled formulas for several probability distributions." alt="" coords="937,79,1095,104"/>
+<area shape="poly" id="edge59_Node000001_Node000053" title=" " alt="" coords="1019,31,1019,65,1013,65,1013,31"/>
+<area shape="rect" id="Node000003" href="$tsgDreamEnumerates_8hpp.html" title="The enumerated types used in the DREAM module." alt="" coords="843,152,1018,177"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="861,102,908,141,905,145,857,106"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="826,225,891,251"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="921,180,882,218,878,214,917,176"/>
+<area shape="rect" id="Node000005" href="$TasmanianSparseGrid_8hpp.html" title="Main header for the Sparse Grid module." alt="" coords="915,225,1090,251"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="944,176,983,214,979,218,941,180"/>
+<area shape="rect" id="Node000006" href="$tsgGridGlobal_8hpp_source.html" title=" " alt="" coords="686,299,813,324"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="963,253,804,297,803,292,961,248"/>
+<area shape="rect" id="Node000048" href="$tsgGridLocalPolynomial_8hpp_source.html" title=" " alt="" coords="847,372,1031,397"/>
+<area shape="poly" id="edge51_Node000005_Node000048" title=" " alt="" coords="1000,252,952,361,947,358,995,250"/>
+<area shape="rect" id="Node000049" href="$tsgGridWavelet_8hpp_source.html" title=" " alt="" coords="995,299,1131,324"/>
+<area shape="poly" id="edge53_Node000005_Node000049" title=" " alt="" coords="1015,249,1046,286,1042,290,1011,253"/>
+<area shape="rect" id="Node000051" href="$tsgGridFourier_8hpp_source.html" title=" " alt="" coords="1163,299,1291,324"/>
+<area shape="poly" id="edge56_Node000005_Node000051" title=" " alt="" coords="1039,248,1178,292,1177,297,1038,253"/>
+<area shape="rect" id="Node000007" href="$tsgGridSequence_8hpp_source.html" title=" " alt="" coords="676,372,823,397"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="752,324,752,358,747,358,747,324"/>
+<area shape="rect" id="Node000047" href="$tsgCacheLagrange_8hpp.html" title="Cache data structure for evaluate with Global grids." alt="" coords="495,372,651,397"/>
+<area shape="poly" id="edge49_Node000006_Node000047" title=" " alt="" coords="722,326,616,369,614,364,720,322"/>
+<area shape="rect" id="Node000008" href="$tsgGridCore_8hpp.html" title="Definition for the base grid class." alt="" coords="880,445,997,471"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="781,395,896,438,894,443,779,400"/>
+<area shape="rect" id="Node000009" href="$tsgDConstructGridGlobal_8hpp.html" title="Class and data types used for dynamic construction of Global grids." alt="" coords="626,519,819,544"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="905,473,771,517,770,512,903,468"/>
+<area shape="rect" id="Node000044" href="$tsgCudaLoadStructures_8hpp_source.html" title=" " alt="" coords="969,739,1153,764"/>
+<area shape="poly" id="edge43_Node000008_Node000044" title=" " alt="" coords="979,468,1015,487,1032,501,1046,517,1060,543,1069,571,1076,629,1075,683,1069,725,1064,725,1070,683,1071,629,1063,572,1055,545,1042,520,1029,504,1012,491,976,473"/>
+<area shape="rect" id="Node000045" href="$tsgHierarchyManipulator_8hpp.html" title="Algorithms for manipulating multi&#45;indexes defined by hierarchy rules." alt="" coords="845,519,1032,544"/>
+<area shape="poly" id="edge45_Node000008_Node000045" title=" " alt="" coords="941,471,941,505,936,505,936,471"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="527,592,617,617"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="700,546,610,588,608,584,697,542"/>
+<area shape="rect" id="Node000011" href="$tsgIndexManipulator_8hpp.html" title="Algorithms for manipulating sets of multi&#45;indexes." alt="" coords="641,592,804,617"/>
+<area shape="poly" id="edge10_Node000009_Node000011" title=" " alt="" coords="725,544,725,578,720,578,720,544"/>
+<area shape="rect" id="Node000012" href="$tsgIndexSets_8hpp.html" title="Data structures for storing multi&#45;indexes and floating point values." alt="" coords="530,812,654,837"/>
+<area shape="poly" id="edge11_Node000011_Node000012" title=" " alt="" coords="677,620,639,638,622,651,608,667,593,699,587,735,587,769,590,798,585,799,581,769,582,734,588,698,603,664,618,647,636,633,675,615"/>
+<area shape="rect" id="Node000037" href="$tsgOneDimensionalWrapper_8hpp.html" title="Cache for one dimensional rules." alt="" coords="617,665,825,691"/>
+<area shape="poly" id="edge33_Node000011_Node000037" title=" " alt="" coords="725,618,724,652,719,652,720,618"/>
+<area shape="rect" id="Node000013" href="$tsgIOHelpers_8hpp.html" title="Templates to simply file I/O." alt="" coords="618,885,742,911"/>
+<area shape="poly" id="edge12_Node000012_Node000013" title=" " alt="" coords="608,835,657,874,653,879,604,839"/>
+<area shape="rect" id="Node000014" href="$tsgEnumerates_8hpp.html" title="Omnipresent enumerate types." alt="" coords="726,1105,861,1131"/>
+<area shape="poly" id="edge13_Node000013_Node000014" title=" " alt="" coords="680,911,675,940,673,977,678,1019,684,1038,694,1056,718,1080,748,1097,745,1102,715,1084,690,1059,679,1040,673,1020,668,978,670,939,675,911"/>
+<area shape="rect" id="Node000036" title=" " alt="" coords="691,959,770,984"/>
+<area shape="poly" id="edge32_Node000013_Node000036" title=" " alt="" coords="691,909,717,946,712,949,686,913"/>
+<area shape="rect" id="Node000015" title=" " alt="" coords="5,1179,80,1204"/>
+<area shape="poly" id="edge14_Node000014_Node000015" title=" " alt="" coords="726,1125,453,1141,276,1158,94,1181,93,1176,276,1152,453,1136,726,1119"/>
+<area shape="rect" id="Node000016" title=" " alt="" coords="104,1179,155,1204"/>
+<area shape="poly" id="edge15_Node000014_Node000016" title=" " alt="" coords="726,1124,483,1139,328,1156,168,1182,168,1176,327,1151,483,1134,726,1119"/>
+<area shape="rect" id="Node000017" title=" " alt="" coords="179,1179,245,1204"/>
+<area shape="poly" id="edge16_Node000014_Node000017" title=" " alt="" coords="726,1127,521,1145,392,1161,259,1181,258,1176,391,1156,520,1140,725,1121"/>
+<area shape="rect" id="Node000018" title=" " alt="" coords="269,1179,328,1204"/>
+<area shape="poly" id="edge17_Node000014_Node000018" title=" " alt="" coords="726,1128,556,1147,342,1181,341,1176,555,1142,725,1123"/>
+<area shape="rect" id="Node000019" title=" " alt="" coords="353,1179,423,1204"/>
+<area shape="poly" id="edge18_Node000014_Node000019" title=" " alt="" coords="726,1132,597,1152,437,1181,436,1176,596,1147,725,1127"/>
+<area shape="rect" id="Node000020" title=" " alt="" coords="448,1179,509,1204"/>
+<area shape="poly" id="edge19_Node000014_Node000020" title=" " alt="" coords="738,1133,523,1181,522,1176,737,1128"/>
+<area shape="rect" id="Node000021" title=" " alt="" coords="533,1179,600,1204"/>
+<area shape="poly" id="edge20_Node000014_Node000021" title=" " alt="" coords="758,1133,614,1178,612,1173,756,1128"/>
+<area shape="rect" id="Node000022" title=" " alt="" coords="624,1179,691,1204"/>
+<area shape="poly" id="edge21_Node000014_Node000022" title=" " alt="" coords="773,1133,693,1175,690,1170,770,1128"/>
+<area shape="rect" id="Node000023" title=" " alt="" coords="715,1179,787,1204"/>
+<area shape="poly" id="edge22_Node000014_Node000023" title=" " alt="" coords="789,1132,767,1168,762,1166,784,1130"/>
+<area shape="rect" id="Node000024" title=" " alt="" coords="811,1179,864,1204"/>
+<area shape="poly" id="edge23_Node000014_Node000024" title=" " alt="" coords="803,1130,825,1166,821,1168,798,1132"/>
+<area shape="rect" id="Node000025" title=" " alt="" coords="889,1179,935,1204"/>
+<area shape="poly" id="edge24_Node000014_Node000025" title=" " alt="" coords="814,1128,882,1169,879,1174,811,1133"/>
+<area shape="rect" id="Node000026" title=" " alt="" coords="960,1179,1029,1204"/>
+<area shape="poly" id="edge25_Node000014_Node000026" title=" " alt="" coords="827,1128,950,1171,948,1177,825,1133"/>
+<area shape="rect" id="Node000027" title=" " alt="" coords="1054,1179,1122,1204"/>
+<area shape="poly" id="edge26_Node000014_Node000027" title=" " alt="" coords="842,1128,1041,1176,1040,1181,841,1133"/>
+<area shape="rect" id="Node000028" title=" " alt="" coords="1146,1179,1225,1204"/>
+<area shape="poly" id="edge27_Node000014_Node000028" title=" " alt="" coords="862,1128,1133,1176,1132,1181,861,1133"/>
+<area shape="rect" id="Node000029" title=" " alt="" coords="1249,1179,1303,1204"/>
+<area shape="poly" id="edge28_Node000014_Node000029" title=" " alt="" coords="861,1123,1028,1142,1130,1157,1236,1176,1235,1182,1129,1162,1027,1147,861,1128"/>
+<area shape="rect" id="Node000030" title=" " alt="" coords="1328,1179,1411,1204"/>
+<area shape="poly" id="edge29_Node000014_Node000030" title=" " alt="" coords="861,1122,1060,1142,1315,1176,1314,1181,1059,1148,860,1128"/>
+<area shape="rect" id="Node000031" title=" " alt="" coords="1435,1179,1488,1204"/>
+<area shape="poly" id="edge30_Node000014_Node000031" title=" " alt="" coords="861,1119,1105,1134,1261,1151,1422,1176,1421,1182,1260,1157,1104,1140,861,1124"/>
+<area shape="rect" id="Node000032" title=" " alt="" coords="1512,1179,1571,1204"/>
+<area shape="poly" id="edge31_Node000014_Node000032" title=" " alt="" coords="861,1118,979,1123,1136,1133,1315,1150,1499,1176,1498,1181,1314,1155,1136,1138,979,1128,861,1124"/>
+<area shape="rect" id="Node000038" href="$tsgHardCodedTabulatedRules_8hpp.html" title="Hard&#45;coded nodes and weights." alt="" coords="640,739,861,764"/>
+<area shape="poly" id="edge34_Node000037_Node000038" title=" " alt="" coords="729,690,743,725,738,727,724,692"/>
+<area shape="rect" id="Node000039" href="$tsgCoreOneDimensional_8hpp.html" title="Algorithms and meta&#45;data for the Gauuss, Chebyshev and custom rules." alt="" coords="713,812,903,837"/>
+<area shape="poly" id="edge35_Node000038_Node000039" title=" " alt="" coords="762,763,792,799,788,803,758,766"/>
+<area shape="poly" id="edge36_Node000039_Node000013" title=" " alt="" coords="789,840,714,881,712,876,786,835"/>
+<area shape="rect" id="Node000040" href="$tsgLinearSolvers_8hpp.html" title="Linear solvers." alt="" coords="863,885,1007,911"/>
+<area shape="poly" id="edge37_Node000039_Node000040" title=" " alt="" coords="830,835,903,876,901,881,827,840"/>
+<area shape="rect" id="Node000043" href="$tsgSequenceOptimizer_8hpp.html" title="Algorithms for computing greedy sequences." alt="" coords="704,1032,883,1057"/>
+<area shape="poly" id="edge41_Node000039_Node000043" title=" " alt="" coords="810,838,798,1018,792,1018,805,838"/>
+<area shape="rect" id="Node000041" href="$tsgAcceleratedDataStructures_8hpp.html" title="Data structures for interacting with CUDA and MAGMA environments." alt="" coords="887,959,1110,984"/>
+<area shape="poly" id="edge38_Node000040_Node000041" title=" " alt="" coords="947,909,981,947,977,950,943,913"/>
+<area shape="rect" id="Node000042" href="$tsgAcceleratedHandles_8hpp_source.html" title=" " alt="" coords="907,1032,1090,1057"/>
+<area shape="poly" id="edge39_Node000041_Node000042" title=" " alt="" coords="1001,984,1001,1018,996,1018,996,984"/>
+<area shape="poly" id="edge40_Node000042_Node000014" title=" " alt="" coords="967,1060,840,1103,839,1098,965,1055"/>
+<area shape="poly" id="edge42_Node000043_Node000014" title=" " alt="" coords="796,1058,796,1092,791,1092,791,1058"/>
+<area shape="poly" id="edge44_Node000044_Node000041" title=" " alt="" coords="1061,765,1021,911,1010,946,1005,945,1016,910,1056,764"/>
+<area shape="poly" id="edge48_Node000045_Node000011" title=" " alt="" coords="905,547,771,590,770,585,903,541"/>
+<area shape="rect" id="Node000046" href="$tsgRuleLocalPolynomial_8hpp_source.html" title=" " alt="" coords="849,665,1036,691"/>
+<area shape="poly" id="edge46_Node000045_Node000046" title=" " alt="" coords="942,544,945,652,939,652,936,545"/>
+<area shape="poly" id="edge47_Node000046_Node000039" title=" " alt="" coords="936,692,875,766,834,805,830,801,871,762,932,689"/>
+<area shape="poly" id="edge50_Node000047_Node000008" title=" " alt="" coords="633,395,867,440,866,445,632,400"/>
+<area shape="poly" id="edge52_Node000048_Node000008" title=" " alt="" coords="941,398,941,432,936,432,936,398"/>
+<area shape="rect" id="Node000050" href="$tsgRuleWavelet_8hpp_source.html" title=" " alt="" coords="1055,372,1193,397"/>
+<area shape="poly" id="edge54_Node000049_Node000050" title=" " alt="" coords="1075,323,1107,360,1103,363,1071,326"/>
+<area shape="poly" id="edge55_Node000050_Node000008" title=" " alt="" coords="1095,400,982,443,981,438,1093,395"/>
+<area shape="poly" id="edge57_Node000051_Node000008" title=" " alt="" coords="1230,325,1227,361,1220,382,1207,399,1174,418,1125,432,1012,452,1011,446,1123,427,1172,413,1204,395,1215,379,1221,360,1225,324"/>
+<area shape="poly" id="edge60_Node000053_Node000003" title=" " alt="" coords="1004,106,957,145,953,141,1001,102"/>
+</map>

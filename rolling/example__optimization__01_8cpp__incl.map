@@ -1,0 +1,112 @@
+<map id="DREAM/Examples/example_optimization_01.cpp" name="DREAM/Examples/example_optimization_01.cpp">
+<area shape="rect" id="Node000001" title="Examples for the Tasmanian Optimization module." alt="" coords="317,5,503,45"/>
+<area shape="rect" id="Node000002" href="$Tasmanian_8hpp.html" title="Master header to include all modules." alt="" coords="355,93,465,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="413,46,413,79,407,79,407,46"/>
+<area shape="rect" id="Node000003" href="$TasmanianAddons_8hpp.html" title="Header to include add addon templates." alt="" coords="333,167,487,192"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="413,119,413,153,407,153,407,119"/>
+<area shape="rect" id="Node000004" href="$tsgLoadUnstructuredPoints_8hpp.html" title="Templates for using unstructured data." alt="" coords="79,240,285,265"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="374,195,233,238,231,233,373,189"/>
+<area shape="rect" id="Node000073" href="$tsgMPISampleDream_8hpp.html" title="DREAM posterior sampling using MPI." alt="" coords="324,240,496,265"/>
+<area shape="poly" id="edge51_Node000003_Node000073" title=" " alt="" coords="413,192,413,226,407,226,407,192"/>
+<area shape="rect" id="Node000079" href="$tsgExoticQuadrature_8hpp.html" title="Header to include the exotic quadrature templates." alt="" coords="527,313,693,339"/>
+<area shape="poly" id="edge59_Node000003_Node000079" title=" " alt="" coords="432,190,509,238,589,302,585,306,506,242,429,194"/>
+<area shape="rect" id="Node000005" href="$tsgLoadNeededValues_8hpp.html" title="Templates for non&#45;adaptive sampling from lambda models." alt="" coords="5,387,183,412"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="177,267,110,376,106,374,173,264"/>
+<area shape="rect" id="Node000006" href="$tsgAddonsCommon_8hpp.html" title="Common includes and methods for all addons." alt="" coords="310,533,473,559"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="108,410,150,446,207,483,268,509,328,527,327,532,266,514,205,488,147,450,104,414"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="10,607,79,632"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="330,561,94,609,92,604,329,556"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="103,607,162,632"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="350,561,176,609,175,604,349,556"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="186,607,245,632"/>
+<area shape="poly" id="edge8_Node000006_Node000009" title=" " alt="" coords="364,561,258,604,256,599,362,556"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="269,607,396,632"/>
+<area shape="poly" id="edge9_Node000006_Node000010" title=" " alt="" coords="384,561,353,598,349,595,380,557"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="421,607,482,632"/>
+<area shape="poly" id="edge10_Node000006_Node000011" title=" " alt="" coords="403,557,435,594,431,598,399,561"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="507,607,572,632"/>
+<area shape="poly" id="edge11_Node000006_Node000012" title=" " alt="" coords="416,556,504,598,502,603,414,561"/>
+<area shape="rect" id="Node000013" href="$TasmanianOptimization_8hpp.html" title="Optimization states and methods." alt="" coords="596,607,779,632"/>
+<area shape="poly" id="edge12_Node000006_Node000013" title=" " alt="" coords="440,556,627,601,626,606,438,561"/>
+<area shape="rect" id="Node000072" title=" " alt="" coords="803,607,857,632"/>
+<area shape="poly" id="edge50_Node000006_Node000072" title=" " alt="" coords="473,553,617,573,790,604,789,609,616,578,472,559"/>
+<area shape="rect" id="Node000014" href="$tsgParticleSwarm_8hpp.html" title="Particle swarm state and algorithm." alt="" coords="521,680,672,705"/>
+<area shape="poly" id="edge13_Node000013_Node000014" title=" " alt="" coords="674,634,624,673,621,669,671,630"/>
+<area shape="rect" id="Node000071" href="$tsgGradientDescent_8hpp.html" title="Gradient descent state and algorithm." alt="" coords="697,680,859,705"/>
+<area shape="poly" id="edge48_Node000013_Node000071" title=" " alt="" coords="704,630,754,669,751,673,700,634"/>
+<area shape="rect" id="Node000015" href="$tsgOptimizationUtils_8hpp.html" title="Utility functions and aliases in the optimization module." alt="" coords="605,753,770,779"/>
+<area shape="poly" id="edge14_Node000014_Node000015" title=" " alt="" coords="613,703,663,742,660,747,610,707"/>
+<area shape="rect" id="Node000016" href="$TasmanianDREAM_8hpp.html" title="DiffeRential Evolution Adaptive Metropolis methods." alt="" coords="608,827,767,852"/>
+<area shape="poly" id="edge15_Node000015_Node000016" title=" " alt="" coords="690,779,690,813,685,813,685,779"/>
+<area shape="rect" id="Node000017" href="$tsgDreamSample_8hpp.html" title="Core sampling templates." alt="" coords="516,900,664,925"/>
+<area shape="poly" id="edge16_Node000016_Node000017" title=" " alt="" coords="673,854,619,894,616,889,670,850"/>
+<area shape="rect" id="Node000069" href="$tsgDreamLikelyGaussian_8hpp.html" title="Several likelihood implementations based on Gaussian noise." alt="" coords="732,900,925,925"/>
+<area shape="poly" id="edge45_Node000016_Node000069" title=" " alt="" coords="711,850,795,891,792,896,709,854"/>
+<area shape="rect" id="Node000018" href="$tsgDreamState_8hpp.html" title="The container class holding the DREAM history." alt="" coords="437,973,572,999"/>
+<area shape="poly" id="edge17_Node000017_Node000018" title=" " alt="" coords="578,927,531,967,527,962,575,923"/>
+<area shape="rect" id="Node000067" href="$tsgDreamCoreRandom_8hpp.html" title="Core random sampling methods." alt="" coords="231,973,413,999"/>
+<area shape="poly" id="edge42_Node000017_Node000067" title=" " alt="" coords="548,928,379,972,378,967,546,923"/>
+<area shape="rect" id="Node000068" href="$tsgDreamCorePDF_8hpp.html" title="Gives the unscaled formulas for several probability distributions." alt="" coords="597,973,754,999"/>
+<area shape="poly" id="edge43_Node000017_Node000068" title=" " alt="" coords="605,923,653,962,649,967,602,927"/>
+<area shape="rect" id="Node000019" href="$tsgDreamEnumerates_8hpp.html" title="The enumerated types used in the DREAM module." alt="" coords="588,1047,763,1072"/>
+<area shape="poly" id="edge18_Node000018_Node000019" title=" " alt="" coords="533,996,636,1039,634,1044,531,1001"/>
+<area shape="rect" id="Node000020" title=" " alt="" coords="571,1120,636,1145"/>
+<area shape="poly" id="edge19_Node000019_Node000020" title=" " alt="" coords="665,1074,627,1112,623,1108,662,1070"/>
+<area shape="rect" id="Node000021" href="$TasmanianSparseGrid_8hpp.html" title="Main header for the Sparse Grid module." alt="" coords="660,1120,835,1145"/>
+<area shape="poly" id="edge20_Node000019_Node000021" title=" " alt="" coords="689,1070,728,1108,724,1112,685,1074"/>
+<area shape="rect" id="Node000022" href="$tsgGridGlobal_8hpp_source.html" title=" " alt="" coords="431,1193,557,1219"/>
+<area shape="poly" id="edge21_Node000021_Node000022" title=" " alt="" coords="707,1148,549,1192,548,1187,706,1143"/>
+<area shape="rect" id="Node000063" href="$tsgGridLocalPolynomial_8hpp_source.html" title=" " alt="" coords="591,1267,775,1292"/>
+<area shape="poly" id="edge35_Node000021_Node000063" title=" " alt="" coords="745,1147,696,1255,691,1253,740,1145"/>
+<area shape="rect" id="Node000064" href="$tsgGridWavelet_8hpp_source.html" title=" " alt="" coords="739,1193,875,1219"/>
+<area shape="poly" id="edge37_Node000021_Node000064" title=" " alt="" coords="759,1144,791,1181,787,1185,755,1147"/>
+<area shape="rect" id="Node000066" href="$tsgGridFourier_8hpp_source.html" title=" " alt="" coords="907,1193,1035,1219"/>
+<area shape="poly" id="edge40_Node000021_Node000066" title=" " alt="" coords="784,1143,923,1187,921,1192,783,1148"/>
+<area shape="rect" id="Node000023" href="$tsgGridSequence_8hpp_source.html" title=" " alt="" coords="421,1267,567,1292"/>
+<area shape="poly" id="edge22_Node000022_Node000023" title=" " alt="" coords="497,1219,497,1253,491,1253,491,1219"/>
+<area shape="rect" id="Node000062" href="$tsgCacheLagrange_8hpp.html" title="Cache data structure for evaluate with Global grids." alt="" coords="240,1267,396,1292"/>
+<area shape="poly" id="edge33_Node000022_Node000062" title=" " alt="" coords="467,1221,361,1264,359,1259,465,1216"/>
+<area shape="rect" id="Node000024" href="$tsgGridCore_8hpp.html" title="Definition for the base grid class." alt="" coords="625,1340,742,1365"/>
+<area shape="poly" id="edge23_Node000023_Node000024" title=" " alt="" coords="525,1290,640,1332,639,1337,523,1295"/>
+<area shape="rect" id="Node000025" href="$tsgDConstructGridGlobal_8hpp.html" title="Class and data types used for dynamic construction of Global grids." alt="" coords="372,1413,565,1439"/>
+<area shape="poly" id="edge24_Node000024_Node000025" title=" " alt="" coords="650,1368,517,1411,516,1406,648,1363"/>
+<area shape="rect" id="Node000059" href="$tsgCudaLoadStructures_8hpp_source.html" title=" " alt="" coords="810,1413,994,1439"/>
+<area shape="poly" id="edge28_Node000024_Node000059" title=" " alt="" coords="719,1363,854,1406,853,1412,718,1368"/>
+<area shape="rect" id="Node000060" href="$tsgHierarchyManipulator_8hpp.html" title="Algorithms for manipulating multi&#45;indexes defined by hierarchy rules." alt="" coords="590,1413,777,1439"/>
+<area shape="poly" id="edge30_Node000024_Node000060" title=" " alt="" coords="686,1366,686,1400,681,1400,681,1366"/>
+<area shape="rect" id="Node000026" title=" " alt="" coords="289,1487,379,1512"/>
+<area shape="poly" id="edge25_Node000025_Node000026" title=" " alt="" coords="448,1441,369,1482,367,1478,446,1436"/>
+<area shape="rect" id="Node000027" href="$tsgIndexManipulator_8hpp.html" title="Algorithms for manipulating sets of multi&#45;indexes." alt="" coords="403,1487,566,1512"/>
+<area shape="poly" id="edge26_Node000025_Node000027" title=" " alt="" coords="474,1438,482,1473,477,1474,469,1440"/>
+<area shape="rect" id="Node000028" href="$tsgIndexSets_8hpp.html" title="Data structures for storing multi&#45;indexes and floating point values." alt="" coords="423,1560,547,1585"/>
+<area shape="poly" id="edge27_Node000027_Node000028" title=" " alt="" coords="487,1512,487,1546,482,1546,482,1512"/>
+<area shape="rect" id="Node000056" href="$tsgAcceleratedDataStructures_8hpp.html" title="Data structures for interacting with CUDA and MAGMA environments." alt="" coords="801,1487,1024,1512"/>
+<area shape="poly" id="edge29_Node000059_Node000056" title=" " alt="" coords="906,1439,912,1473,906,1474,901,1439"/>
+<area shape="poly" id="edge32_Node000060_Node000027" title=" " alt="" coords="652,1441,531,1484,529,1479,651,1436"/>
+<area shape="rect" id="Node000061" href="$tsgRuleLocalPolynomial_8hpp_source.html" title=" " alt="" coords="590,1487,777,1512"/>
+<area shape="poly" id="edge31_Node000060_Node000061" title=" " alt="" coords="686,1439,686,1473,681,1473,681,1439"/>
+<area shape="poly" id="edge34_Node000062_Node000024" title=" " alt="" coords="377,1289,611,1335,610,1340,376,1295"/>
+<area shape="poly" id="edge36_Node000063_Node000024" title=" " alt="" coords="686,1292,686,1326,681,1326,681,1292"/>
+<area shape="rect" id="Node000065" href="$tsgRuleWavelet_8hpp_source.html" title=" " alt="" coords="799,1267,938,1292"/>
+<area shape="poly" id="edge38_Node000064_Node000065" title=" " alt="" coords="819,1217,852,1254,848,1258,815,1221"/>
+<area shape="poly" id="edge39_Node000065_Node000024" title=" " alt="" coords="840,1295,727,1337,725,1333,838,1290"/>
+<area shape="poly" id="edge41_Node000066_Node000024" title=" " alt="" coords="975,1219,971,1256,964,1276,952,1294,919,1313,869,1327,756,1346,755,1341,868,1322,917,1308,948,1290,960,1274,966,1255,969,1219"/>
+<area shape="poly" id="edge44_Node000068_Node000019" title=" " alt="" coords="678,999,678,1033,673,1033,673,999"/>
+<area shape="rect" id="Node000070" href="$tsgDreamLikelihoodCore_8hpp.html" title="The interface mother&#45;class for the likelihood classes." alt="" coords="779,973,969,999"/>
+<area shape="poly" id="edge46_Node000069_Node000070" title=" " alt="" coords="838,924,862,960,857,963,834,927"/>
+<area shape="poly" id="edge47_Node000070_Node000019" title=" " alt="" coords="843,1001,722,1044,720,1039,841,996"/>
+<area shape="poly" id="edge49_Node000071_Node000015" title=" " alt="" coords="765,707,715,747,711,742,762,703"/>
+<area shape="rect" id="Node000074" href="$tsgMPIConstructGrid_8hpp.html" title="Sparse Grids construction through sampling and MPI." alt="" coords="325,313,495,339"/>
+<area shape="poly" id="edge52_Node000073_Node000074" title=" " alt="" coords="413,266,413,300,407,300,407,266"/>
+<area shape="rect" id="Node000075" href="$tsgMPIScatterDream_8hpp.html" title="DREAM objects send/receive through MPI." alt="" coords="207,387,378,412"/>
+<area shape="poly" id="edge53_Node000074_Node000075" title=" " alt="" coords="393,341,325,382,322,377,390,336"/>
+<area shape="rect" id="Node000077" href="$tsgConstructSurrogate_8hpp.html" title="Automated parallel construction procedure." alt="" coords="402,387,581,412"/>
+<area shape="poly" id="edge56_Node000074_Node000077" title=" " alt="" coords="425,337,470,376,466,380,421,341"/>
+<area shape="rect" id="Node000076" href="$tsgMPIScatterGrid_8hpp.html" title="Sparse Grids send/receive through MPI." alt="" coords="218,460,373,485"/>
+<area shape="poly" id="edge54_Node000075_Node000076" title=" " alt="" coords="296,412,297,446,292,447,290,412"/>
+<area shape="poly" id="edge55_Node000076_Node000006" title=" " alt="" coords="312,483,366,523,363,527,309,488"/>
+<area shape="rect" id="Node000078" href="$tsgCandidateManager_8hpp.html" title="Manager for manipulations of candidate construction points." alt="" coords="399,460,573,485"/>
+<area shape="poly" id="edge57_Node000077_Node000078" title=" " alt="" coords="493,413,491,447,485,446,488,412"/>
+<area shape="poly" id="edge58_Node000078_Node000006" title=" " alt="" coords="472,487,419,527,416,523,469,483"/>
+<area shape="poly" id="edge60_Node000079_Node000006" title=" " alt="" coords="615,339,617,368,616,407,608,449,599,469,587,487,566,506,541,521,488,539,486,534,539,516,562,502,583,484,594,467,603,448,611,407,612,368,609,339"/>
+</map>

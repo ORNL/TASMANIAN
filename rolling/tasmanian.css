@@ -1,0 +1,364 @@
+/******************************************************************************
+TABLE OF CONTENTS
+1 - IMPORTS
+2 - GLOBAL
+3 - DOXYGEN OVERRIDES
+******************************************************************************/
+
+
+/******************************************************************************
+1 - IMPORTS
+******************************************************************************/
+
+@import url('https://fonts.googleapis.com/css?family=Merriweather+Sans|Source+Sans+Pro');
+
+
+
+/******************************************************************************
+2 - GLOBAL
+******************************************************************************/
+
+html, body {
+        height: 100% !important;
+}
+
+#doc-content {
+        height: calc(100% - 112px);
+        background: #F5F5F5;
+}
+
+html {
+        font-size: 100%;
+}
+
+div.headertitle, div.contents, #main-nav, #projectname {
+        width: 95%;
+        margin: 1em auto;
+        display: block;
+        clear: both;
+}
+
+div.contents {
+        max-width: 60em;
+        text-align: justify;
+        text-justify: inter-word;
+}
+
+#side-nav {
+        background: #F5F5F5;
+        width: 21em;
+        height: calc(100% - 112px);
+}
+
+#nav-tree {
+        background: #F5F5F5;
+        height: 100%;
+}
+
+
+/******************************************************************************
+3 - DOXYGEN OVERRIDES
+******************************************************************************/
+
+body, table, div, p, dl {
+        font-family: 'Source Sans Pro', sans-serif !important;
+        font-size: 1em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+        font-family: 'Merriweather Sans', sans-serif !important;
+}
+
+h2 {
+        font-size: 110%;
+}
+
+/******************************************************************************
+3.1 - PAGE TITLE
+******************************************************************************/
+
+#titlearea {
+        border-bottom: none;
+        background: #404040
+}
+
+#titlearea table {
+        width: 100%;
+        text-align: center;
+        background: url('https://tasmanian.ornl.gov/assets/webtreatsetc-starfield-patterns/JPGS/backgrounsetc-starfield-4.jpg') fixed repeat;
+}
+
+#projectname {
+        font-size: 1.25em;
+        color: #fff;
+        text-shadow: #000 6px 4px 50px;
+}
+
+.doxygen {
+        position: absolute;
+        color: #fff;
+        background: rgba(255, 255, 255, .5);
+        padding: 5px;
+        border-radius: 10px;
+        font-size: .75em;
+        right: 10px;
+        top: 10px;
+}
+
+.doxygen img {
+        width: 60px;
+}
+
+/******************************************************************************
+3.2 - Search
+******************************************************************************/
+
+#MSearchField, #MSearchBox .right, #MSearchBox .left {
+        background: #fff;
+}
+
+#MSearchField {
+        font: 1em 'Source Sans Pro', sans-serif !important;
+        border-bottom: 2px solid #000;
+        padding-bottom: .5em;
+}
+
+#MSearchBox {
+        width: 50%;
+        position: relative;
+        background: #fff;
+        margin: 10px auto 0;
+        height: 30px;
+        border-radius: 10px;
+        overflow: hidden;
+}
+
+#MSearchBox .left{
+        position: relative;
+        top: 5px;
+}
+
+#MSearchBox .left,
+#MSearchBox .left #MSearchField {
+        width:100%
+}
+
+#MSearchResultsWindow {
+        left: 50% !important;
+        transform: translate(-50%, 4%);
+}
+
+
+
+
+
+/******************************************************************************
+3.3 - MAIN MENU (TOP)
+******************************************************************************/
+
+#main-nav {
+        padding: 0;
+        margin: 0;
+        display: none;
+}
+
+.sm-dox {
+        background-image: none;
+        background-color: #fff;
+}
+
+.sm-dox a, .sm-dox a:focus, .sm-dox a:active, .sm-dox a:hover, .sm-dox a.highlighted {
+        background-image: none;
+        font-size: .85em;
+}
+
+.sm-dox a, .sm-dox a:focus, .sm-dox a:hover, .sm-dox a:active {
+        color: #444;
+        text-shadow: none;
+}
+
+.sm-dox a span.sub-arrow {
+        border-color: #517875 transparent transparent transparent;
+}
+
+.sm-dox a:hover span.sub-arrow {
+        border-color: #517875 transparent transparent transparent;
+}
+
+.sm-dox ul a:hover {
+        background-image: none;
+        background-color: #517875;
+}
+
+#top {
+        border-bottom: 1px solid rgba(126, 88, 38, .75);
+        background: url('https://tasmanian.ornl.gov/assets/webtreatsetc-starfield-patterns/JPGS/backgrounsetc-starfield-4.jpg') fixed repeat;
+}
+
+
+
+
+/******************************************************************************
+3.4 - MAIN MENU (SIDE)
+******************************************************************************/
+
+/*
+div#side-nav {
+    width: 0;
+}
+
+div#side-nav:not([style*="width"]):hover {
+        transition: width .25s;
+        width: 3px;
+}
+*/
+
+#nav-sync {
+        display: none;
+
+}
+
+div#nav-tree {
+        background-image: none;
+}
+
+.ui-resizable-handle.ui-resizable-e {
+        border-right: 1px solid rgba(126, 88, 38, .75);
+        background: none;
+
+}
+
+/******************************************************************************
+3.5 - NAV PATH
+******************************************************************************/
+
+div.navpath {
+        display:none
+}
+
+
+/******************************************************************************
+3.6 - PAGE HEADER
+******************************************************************************/
+
+div.header{
+        background-image: none;
+        background: #dcdcdc;
+        border-bottom: none;
+        margin-bottom: 1em;
+}
+
+div.summary {
+        width: 100%;
+        text-align: center;
+        background: rgba(126, 88, 38, .45);
+}
+
+div.summary a {
+        color: #fff;
+        font-weight: bold;
+}
+
+.headertitle {
+        background-image: none;
+        background: #dcdcdc;
+        max-width: 60em;
+}
+
+.title {
+        font: 2.0em 'Source Sans Pro', sans-serif;
+}
+
+
+/******************************************************************************
+4 - CONTENT
+******************************************************************************/
+.PageDoc {
+        position: relative;
+        top: -16px;
+}
+
+
+/******************************************************************************
+4.1 - GROUP HEADER
+******************************************************************************/
+
+h2.groupheader {
+        border-bottom: 1px solid #517875;
+}
+
+
+/******************************************************************************
+4.2 - MEMBER TABLE
+******************************************************************************/
+
+table.memberdecls {
+        width: 100%;
+}
+
+tr.heading h2 {
+        margin-top: .5em;
+}
+
+tr[class^="memitem:"] td {
+        padding: .5em;
+}
+
+tr[class^="memitem:"] td.memTemplItemLeft,
+tr[class^="memitem:"] td.memItemLeft {
+        background: rgba(126, 88, 38, .45);
+        color: #fff;
+}
+
+tr[class^="memdesc:"] td {
+        padding: .5em;
+        border-bottom: 1px solid rgba(0, 0, 0, .10);
+}
+
+
+tr[class^="separator:"] {
+        height: 1em;
+}
+
+
+/******************************************************************************
+4.3 - CODE FRAGMENT
+******************************************************************************/
+
+div.fragment {
+        border-radius: 5px;
+        padding: 0.5em;
+}
+
+div.line {
+        font-family: 'Courier New', Courier, monospace !important;
+        font-size: 95%;
+        margin: .5em auto;
+}
+
+
+/******************************************************************************
+4.4 - MARKDOWN TABLE
+******************************************************************************/
+
+table.markdownTable {
+        width: 100%;
+}
+
+
+/******************************************************************************
+5 - FOOTER
+******************************************************************************/
+
+hr.footer {
+        border-color: transparent;
+}
+
+address.footer {
+        margin-top: 1.5em;
+        padding: 3em 0;
+        text-align: center;
+        background: #fff;
+        color: #fff;
+        font-size: 1em;
+}
