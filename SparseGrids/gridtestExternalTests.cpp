@@ -1805,7 +1805,7 @@ bool ExternalTester::testAllDomain() const{
                 pass3 = false;
             }
             if (R1.error < R2.error){
-                cout << "Failed in error for conformal mapping and clenshaw-curtis rule" << endl;
+                cout << "Failed in error for conformal mapping and clenshaw-curtis rule I" << endl;
                 cout << "  standard error = " << R1.error << endl;
                 cout << " conformal error = " << R2.error << endl;
                 pass3 = false;
@@ -1824,7 +1824,7 @@ bool ExternalTester::testAllDomain() const{
             for(int j=0; j<num_needed * f->getNumInputs(); j++){
                 if (std::abs(needed_points[j] - loaded_points[j]) > Maths::num_tol){
                     cout << "Mismatch between needed and loaded points" << endl;
-                    pass2 = false;
+                    pass3 = false;
                 }
             }
         }

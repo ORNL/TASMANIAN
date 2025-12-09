@@ -687,7 +687,7 @@ void GridGlobal::clearGpuNodes() const{
 void GridGlobal::integrate(double q[], double *conformal_correction) const{
     std::vector<double> w(getNumPoints());
     getQuadratureWeights(w.data());
-    if (conformal_correction != 0) for(int i=0; i<points.getNumIndexes(); i++) w[i] *= conformal_correction[i];
+    if (conformal_correction) for(int i=0; i<points.getNumIndexes(); i++) w[i] *= conformal_correction[i];
     std::fill(q, q+num_outputs, 0.0);
     #pragma omp parallel for schedule(static)
     for(int k=0; k<num_outputs; k++){

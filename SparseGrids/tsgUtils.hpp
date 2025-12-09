@@ -148,6 +148,15 @@ std::unique_ptr<T> make_unique(Args&&... args){
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
+/*!
+ * \ingroup TasmanianUtils
+ * \brief Equivalent to C++14 make_unique.
+ */
+template<typename T>
+constexpr bool has_grid(T &&g) {
+    return not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>;
+}
+
 }
 
 }

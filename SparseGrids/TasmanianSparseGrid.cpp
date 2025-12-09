@@ -85,7 +85,7 @@ TasmanianSparseGrid& TasmanianSparseGrid::operator=(TasmanianSparseGrid const &s
 }
 
 void TasmanianSparseGrid::clear(){
-    base = std::unique_ptr<BaseCanonicalGrid>();
+    base = std::monostate{};
     domain_transform_a = std::vector<double>();
     domain_transform_b = std::vector<double>();
     conformal_asin_power = std::vector<int>();
@@ -159,7 +159,8 @@ void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth,
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeGlobalGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
-    base = Utils::make_unique<GridGlobal>(acceleration.get(), dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename, llimits);
+    base = GridGlobal(acceleration.get(), dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename, llimits);
+    //base = Utils::make_unique<GridGlobal>(acceleration.get(), dimensions, outputs, depth, type, rule, anisotropic_weights, alpha, beta, custom_filename, llimits);
 }
 void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth, TypeDepth type, CustomTabulated &&crule,
                                          const int *anisotropic_weights, const int *level_limits){
@@ -176,7 +177,7 @@ void TasmanianSparseGrid::makeGlobalGrid(int dimensions, int outputs, int depth,
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeGlobalGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
-    base = Utils::make_unique<GridGlobal>(acceleration.get(), dimensions, outputs, depth, type, std::move(rule), anisotropic_weights, llimits);
+    base = GridGlobal(acceleration.get(), dimensions, outputs, depth, type, std::move(rule), anisotropic_weights, llimits);
 }
 
 
@@ -198,8 +199,10 @@ void TasmanianSparseGrid::makeSequenceGrid(int dimensions, int outputs, int dept
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeSequenceGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
-    base = (outputs == 0) ? Utils::make_unique<GridSequence>(acceleration.get(), dimensions, depth, type, rule, anisotropic_weights, llimits) :
-                            Utils::make_unique<GridSequence>(acceleration.get(), dimensions, outputs, depth, type, rule, anisotropic_weights, llimits);
+    if (outputs == 0)
+        base.emplace<GridSequence>(acceleration.get(), dimensions, depth, type, rule, anisotropic_weights, llimits);
+    else
+        base.emplace<GridSequence>(acceleration.get(), dimensions, outputs, depth, type, rule, anisotropic_weights, llimits);
 }
 
 void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, int depth, int order, TypeOneDRule rule, const int *level_limits){
@@ -220,7 +223,7 @@ void TasmanianSparseGrid::makeLocalPolynomialGrid(int dimensions, int outputs, i
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeLocalPolynomialGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
-    base = Utils::make_unique<GridLocalPolynomial>(acceleration.get(), dimensions, outputs, depth, order, rule, llimits);
+    base.emplace<GridLocalPolynomial>(acceleration.get(), dimensions, outputs, depth, order, rule, llimits);
 }
 
 void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth, int order, const int *level_limits){
@@ -237,7 +240,7 @@ void TasmanianSparseGrid::makeWaveletGrid(int dimensions, int outputs, int depth
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeWaveletGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
-    base = Utils::make_unique<GridWavelet>(acceleration.get(), dimensions, outputs, depth, order, llimits);
+    base.emplace<GridWavelet>(acceleration.get(), dimensions, outputs, depth, order, llimits);
 }
 
 void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type, const int* anisotropic_weights, const int* level_limits){
@@ -253,25 +256,21 @@ void TasmanianSparseGrid::makeFourierGrid(int dimensions, int outputs, int depth
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dimensions)) throw std::invalid_argument("ERROR: makeFourierGrid() requires level_limits with either 0 or dimensions entries");
     clear();
     llimits = level_limits;
-    base = Utils::make_unique<GridFourier>(acceleration.get(), dimensions, outputs, depth, type, anisotropic_weights, llimits);
+    base.emplace<GridFourier>(acceleration.get(), dimensions, outputs, depth, type, anisotropic_weights, llimits);
 }
 
 void TasmanianSparseGrid::copyGrid(const TasmanianSparseGrid *source, int outputs_begin, int outputs_end){
     if (outputs_end == -1) outputs_end = source->getNumOutputs();
     clear();
-    if (!source->empty()){
-        if (source->isGlobal()){
-            base = Utils::make_unique<GridGlobal>(acceleration.get(), source->get<GridGlobal>(), outputs_begin, outputs_end);
-        }else if (source->isLocalPolynomial()){
-            base = Utils::make_unique<GridLocalPolynomial>(acceleration.get(), source->get<GridLocalPolynomial>(), outputs_begin, outputs_end);
-        }else if (source->isSequence()){
-            base = Utils::make_unique<GridSequence>(acceleration.get(), source->get<GridSequence>(), outputs_begin, outputs_end);
-        }else if (source->isFourier()){
-            base = Utils::make_unique<GridFourier>(acceleration.get(), source->get<GridFourier>(), outputs_begin, outputs_end);
-        }else if (source->isWavelet()){
-            base = Utils::make_unique<GridWavelet>(acceleration.get(), source->get<GridWavelet>(), outputs_begin, outputs_end);
-        }
-    }
+
+    std::visit([&](auto const &g) -> void {
+        using T = std::decay_t<decltype(g)>;
+        if constexpr (std::is_same_v<T, std::monostate>)
+            base.emplace<std::monostate>();
+        else
+            base.emplace<T>(acceleration.get(), std::addressof(g), outputs_begin, outputs_end);
+    }, source->base);
+
     if (source->domain_transform_a.size() > 0){
         setDomainTransform(source->domain_transform_a, source->domain_transform_b);
     }
@@ -313,7 +312,7 @@ void TasmanianSparseGrid::updateGrid(int depth, TypeDepth type, const int *aniso
 }
 void TasmanianSparseGrid::updateGrid(int depth, TypeDepth type, std::vector<int> const &anisotropic_weights, std::vector<int> const &level_limits){
     if (empty()) throw std::runtime_error("ERROR: updateGrid() called, but the grid is empty");
-    int dims = base->getNumDimensions();
+    int dims = getNumDimensions();
     if (depth < 0) throw std::invalid_argument("ERROR: cannot update with a negative depth");
     size_t expected_aw_size = (OneDimensionalMeta::isTypeCurved(type)) ? 2*dims : dims;
     if (not anisotropic_weights.empty() and anisotropic_weights.size() != expected_aw_size) throw std::invalid_argument("ERROR: in updateGrid() anisotropic_weights must be either empty or has size equal to dimenions or twice dimenions based on the type of the update.");
@@ -330,29 +329,60 @@ void TasmanianSparseGrid::updateGrid(int depth, TypeDepth type, std::vector<int>
     }
 }
 
-TypeOneDRule TasmanianSparseGrid::getRule() const{ return (base) ? base->getRule() : rule_none; }
+TypeOneDRule TasmanianSparseGrid::getRule() const{
+    return std::visit([](auto const &g) -> TypeOneDRule{
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>) {
+            return g.getRule();
+        } else
+            return rule_none;
+    }, base);
+}
+
 const char* TasmanianSparseGrid::getCustomRuleDescription() const{ return (isGlobal()) ? get<GridGlobal>()->getCustomRuleDescription() : ""; }
 
 void TasmanianSparseGrid::getLoadedPoints(double *x) const{
-    base->getLoadedPoints(x);
-    formTransformedPoints(base->getNumLoaded(), x);
+    int const num = std::visit([&](auto const &g) -> int{
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>) {
+            g.getLoadedPoints(x);
+            return g.getNumLoaded();
+        } else
+            return 0;
+    }, base);
+    formTransformedPoints(num, x);
 }
 void TasmanianSparseGrid::getNeededPoints(double *x) const{
-    base->getNeededPoints(x);
-    formTransformedPoints(base->getNumNeeded(), x);
+    int const num = std::visit([&](auto const &g) -> int{
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>) {
+            g.getNeededPoints(x);
+            return g.getNumNeeded();
+        } else
+            return 0;
+    }, base);
+    formTransformedPoints(num, x);
 }
 void TasmanianSparseGrid::getPoints(double *x) const{
-    base->getPoints(x);
-    formTransformedPoints(base->getNumPoints(), x);
+    int const num = std::visit([&](auto const &g) -> int{
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>) {
+            g.getPoints(x);
+            return g.getNumPoints();
+        } else
+            return 0;
+    }, base);
+    formTransformedPoints(num, x);
 }
 
 void TasmanianSparseGrid::getQuadratureWeights(double *weights) const{
-    base->getQuadratureWeights(weights);
-    mapConformalWeights(base->getNumDimensions(), base->getNumPoints(), weights);
+    std::visit([&](auto const &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.getQuadratureWeights(weights);
+    }, base);
+    int const num_dimensions = getNumDimensions();
+    int const num_points     = getNumPoints();
+    mapConformalWeights(num_dimensions, num_points, weights);
     if (domain_transform_a.size() != 0){
-        double scale = getQuadratureScale(base->getNumDimensions(), base->getRule());
+        double scale = getQuadratureScale(num_dimensions, getRule());
         #pragma omp parallel for schedule(static)
-        for(int i=0; i<getNumPoints(); i++) weights[i] *= scale;
+        for(int i=0; i<num_points; i++) weights[i] *= scale;
     }
 }
 std::vector<double> TasmanianSparseGrid::getInterpolationWeights(std::vector<double> const &x) const{
@@ -361,13 +391,18 @@ std::vector<double> TasmanianSparseGrid::getInterpolationWeights(std::vector<dou
     return w;
 }
 void TasmanianSparseGrid::getInterpolationWeights(const std::vector<double> &x, std::vector<double> &weights) const{
-    if (x.size() != (size_t) base->getNumDimensions()) throw std::runtime_error("ERROR: getInterpolationWeights() incorrect size of x, must be same as getNumDimensions()");
+    int const num_dimensions = getNumDimensions();
+    if (x.size() != (size_t) num_dimensions) throw std::runtime_error("ERROR: getInterpolationWeights() incorrect size of x, must be same as getNumDimensions()");
     weights.resize((size_t) getNumPoints());
     getInterpolationWeights(x.data(), weights.data());
 }
 void TasmanianSparseGrid::getInterpolationWeights(const double x[], double weights[]) const{
     Data2D<double> x_tmp;
-    base->getInterpolationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
+    auto const &pnts = formCanonicalPoints(x, x_tmp, 1);
+    std::visit([&](auto const &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.getInterpolationWeights(pnts, weights);
+    }, base);
 }
 
 std::vector<double> TasmanianSparseGrid::getDifferentiationWeights(std::vector<double> const &x) const{
@@ -376,7 +411,8 @@ std::vector<double> TasmanianSparseGrid::getDifferentiationWeights(std::vector<d
     return w;
 }
 void TasmanianSparseGrid::getDifferentiationWeights(const std::vector<double> &x, std::vector<double> &weights) const{
-    if (x.size() != (size_t) base->getNumDimensions())
+    int const num_dimensions = getNumDimensions();
+    if (x.size() != (size_t) num_dimensions)
         throw std::runtime_error("ERROR: getDifferentiationWeights() incorrect size of x, must be same as getNumDimensions()");
     weights.resize((size_t) getNumPoints() * (size_t) getNumDimensions());
     getDifferentiationWeights(x.data(), weights.data());
@@ -384,13 +420,18 @@ void TasmanianSparseGrid::getDifferentiationWeights(const std::vector<double> &x
 void TasmanianSparseGrid::getDifferentiationWeights(const double x[], double weights[]) const{
     // See differentiate() for how the domain transforms are taken into consideration.
     Data2D<double> x_tmp;
+    auto const &pnts = formCanonicalPoints(x, x_tmp, 1);
     // Jacobian of f(.) at g(x).
-    base->getDifferentiationWeights(formCanonicalPoints(x, x_tmp, 1), weights);
+    std::visit([&](auto const &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.getDifferentiationWeights(pnts, weights);
+    }, base);
     // Jacobian of f(g(.)) at x.
     if (not domain_transform_a.empty()) {
         int num_dimensions = getNumDimensions();
         int num_points = getNumPoints();
         std::vector<double> jacobian_g_diag = diffCanonicalTransform<double>();
+        #pragma omp parallel for
         for(int i=0; i<num_points; i++)
             for(int j=0; j<num_dimensions; j++)
                 weights[i * num_dimensions + j] = weights[i * num_dimensions + j] * jacobian_g_diag[j];
@@ -399,19 +440,26 @@ void TasmanianSparseGrid::getDifferentiationWeights(const double x[], double wei
 
 void TasmanianSparseGrid::loadNeededValues(const double *vals){
     if (empty()) throw std::runtime_error("Cannot load model values into an empty grid!");
-    base->loadNeededValues(vals);
+    std::visit([&](auto &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.loadNeededValues(vals);
+    }, base);
 }
 void TasmanianSparseGrid::loadNeededValues(const std::vector<double> &vals){
-    size_t nump = (size_t) base->getNumNeeded();
-    if (nump == 0) nump = (size_t) base->getNumPoints();
-    nump *= (size_t) base->getNumOutputs();
+    size_t nump = (size_t) getNumNeeded();
+    if (nump == 0) nump = (size_t) getNumPoints();
+    nump *= (size_t) getNumOutputs();
     if (vals.size() != nump) throw std::runtime_error("ERROR: loadNeededPoints() given the wrong number of inputs, should be getNumNeeded() * getNumOutputs() or (if getNumNeeded() == 0) getNumPoints() * getNumOutputs()");
     loadNeededValues(vals.data());
 }
 
 void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
     Data2D<double> x_tmp;
-    base->evaluate(formCanonicalPoints(x, x_tmp, 1), y);
+    auto const &pnts = formCanonicalPoints(x, x_tmp, 1);
+    std::visit([&](auto const &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.evaluate(pnts, y);
+    }, base);
 }
 
 template<typename FloatType> void TasmanianSparseGrid::evaluateBatch(const std::vector<FloatType> &x, std::vector<FloatType> &y) const{
@@ -425,7 +473,11 @@ template void TasmanianSparseGrid::evaluateBatch<float>(const std::vector<float>
 template void TasmanianSparseGrid::evaluateBatch<double>(const std::vector<double> &x, std::vector<double> &y) const;
 void TasmanianSparseGrid::evaluateBatch(const double x[], int num_x, double y[]) const{
     Data2D<double> x_tmp;
-    base->evaluateBatch(formCanonicalPoints(x, x_tmp, num_x), num_x, y);
+    auto const &pnts = formCanonicalPoints(x, x_tmp, num_x);
+    std::visit([&](auto const &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.evaluateBatch(pnts, num_x, y);
+    }, base);
 }
 
 #ifdef Tasmanian_ENABLE_GPU
@@ -437,14 +489,21 @@ void TasmanianSparseGrid::evaluateBatch(const float x[], int num_x, float y[]) c
     acceleration->setDevice();
     GpuVector<float> gpu_x(acceleration.get(), getNumDimensions(), num_x, x_canonical),
                      gpu_result(acceleration.get(), num_x, getNumOutputs());
-    base->evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
+    std::visit([&](auto const &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.evaluateBatchGPU(gpu_x.data(), num_x, gpu_result.data());
+    }, base);
     gpu_result.unload(acceleration.get(), y);
 }
 template<typename FloatType> void TasmanianSparseGrid::evaluateBatchGPU(const FloatType gpu_x[], int cpu_num_x, FloatType gpu_y[]) const{
     if (not acceleration->on_gpu()) throw std::runtime_error("ERROR: evaluateBatchGPU() requires that a cuda gpu acceleration is enabled.");
     acceleration->setDevice();
     GpuVector<FloatType> gpu_temp_x;
-    base->evaluateBatchGPU(formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x), cpu_num_x, gpu_y);
+    auto const &pnts = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
+    std::visit([&](auto const &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.evaluateBatchGPU(pnts, cpu_num_x, gpu_y);
+    }, base);
 }
 #else
 template<typename FloatType> void TasmanianSparseGrid::evaluateBatchGPU(const FloatType[], int, FloatType[]) const{
@@ -459,15 +518,21 @@ template void TasmanianSparseGrid::evaluateBatchGPU<double>(const double[], int,
 
 void TasmanianSparseGrid::integrate(double q[]) const{
     if (conformal_asin_power.size() != 0){
-        int num_points = base->getNumPoints();
+        int num_points = getNumPoints();
         std::vector<double> correction(num_points, 1.0);
-        mapConformalWeights(base->getNumDimensions(), num_points, correction.data());
-        base->integrate(q, correction.data());
+        mapConformalWeights(getNumDimensions(), num_points, correction.data());
+        std::visit([&](auto const &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.integrate(q, correction.data());
+        }, base);
     }else{
-        base->integrate(q, 0);
+        std::visit([&](auto const &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.integrate(q, nullptr);
+        }, base);
     }
     if (domain_transform_a.size() != 0){
-        double scale = getQuadratureScale(base->getNumDimensions(), base->getRule());
+        double scale = getQuadratureScale(getNumDimensions(), getRule());
         for(int k=0; k<getNumOutputs(); k++) q[k] *= scale;
     }
 }
@@ -477,7 +542,11 @@ void TasmanianSparseGrid::differentiate(const double x[], double jacobian[]) con
     // Jacobian of f(g(x)), i.e., [Jacobian of f(.) at g(x)] * [Jacobian of g(.) at x].
     Data2D<double> x_tmp;
     // Jacobian of f(.) at g(x).
-    base->differentiate(formCanonicalPoints(x, x_tmp, 1), jacobian);
+    auto const &pnts = formCanonicalPoints(x, x_tmp, 1);
+    std::visit([&](auto const &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.differentiate(pnts, jacobian);
+    }, base);
     // Jacobian of f(g(.)) at x.
     if (not domain_transform_a.empty()) {
         int num_dimensions = getNumDimensions();
@@ -509,7 +578,7 @@ void TasmanianSparseGrid::differentiate(std::vector<double> const &x, std::vecto
 void TasmanianSparseGrid::setDomainTransform(const double a[], const double b[]){
     if (empty())
         throw std::runtime_error("ERROR: cannot call setDomainTransform on uninitialized grid!");
-    int num_dimensions = base->getNumDimensions();
+    int num_dimensions = getNumDimensions();
     domain_transform_a.resize(num_dimensions); std::copy(a, a + num_dimensions, domain_transform_a.data());
     domain_transform_b.resize(num_dimensions); std::copy(b, b + num_dimensions, domain_transform_b.data());
     #ifdef Tasmanian_ENABLE_GPU
@@ -534,7 +603,7 @@ void TasmanianSparseGrid::getDomainTransform(double a[], double b[]) const{
 }
 void TasmanianSparseGrid::setDomainTransform(const std::vector<double> &a, const std::vector<double> &b){
     if (empty()) throw std::runtime_error("ERROR: cannot call setDomainTransform on uninitialized grid!");
-    size_t num_dimensions = (size_t) base->getNumDimensions();
+    size_t num_dimensions = (size_t) getNumDimensions();
     if ((a.size() != num_dimensions) || (b.size() != num_dimensions)){
         std::string message = "ERROR: setDomainTransform() is called with a.size() = " + std::to_string(a.size()) + " and b.size() = " + std::to_string(b.size()) + ", but both should have length equal to getNumDimensions(), which is: " + std::to_string(num_dimensions);
         throw std::invalid_argument(message);
@@ -753,7 +822,7 @@ template<typename FloatType> void TasmanianSparseGrid::mapConformalTransformedTo
                        }
                         r /= cm[j];
                         r -= b;
-                   }
+                    }
                     this_x[j] *= (FloatType) sign;
                 }
             }
@@ -767,7 +836,10 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
     if (conformal_asin_power.size() != 0){
         // precompute constants, transform is sum exp(c_k + p_k * log(x))
         Data2D<double> x(num_dimensions, num_points);
-        base->getPoints(x.getStrip(0));
+        std::visit([&](auto const &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.getPoints(x.getStrip(0));
+        }, base);
         std::vector<std::vector<double>> c(num_dimensions), p(num_dimensions);
         for(int j=0; j<num_dimensions; j++){
             c[j].resize(conformal_asin_power[j] + 1);
@@ -795,7 +867,7 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
                         trans += std::exp(c[j][k] + p[j][k] * logx);
                    }
                     weights[i] *= trans / cm[j];
-               }else{
+                }else{
                     weights[i] /= cm[j];
                 }
             }
@@ -805,10 +877,10 @@ void TasmanianSparseGrid::mapConformalWeights(int num_dimensions, int num_points
 
 template<typename FloatType> const FloatType* TasmanianSparseGrid::formCanonicalPoints(const FloatType *x, Data2D<FloatType> &x_temp, int num_x) const{
     if ((domain_transform_a.size() != 0) || (conformal_asin_power.size() != 0)){
-        int num_dimensions = base->getNumDimensions();
+        int num_dimensions = getNumDimensions();
         x_temp = Data2D<FloatType>(num_dimensions, num_x, std::vector<FloatType>(x, x + Utils::size_mult(num_dimensions, num_x)));
         mapConformalTransformedToCanonical(num_dimensions, num_x, x_temp);
-        if (domain_transform_a.size() != 0) mapTransformedToCanonical(num_dimensions, num_x, base->getRule(), x_temp.getStrip(0));
+        if (domain_transform_a.size() != 0) mapTransformedToCanonical(num_dimensions, num_x, getRule(), x_temp.getStrip(0));
         return x_temp.getStrip(0);
     }else{
         return x;
@@ -818,14 +890,14 @@ template const float* TasmanianSparseGrid::formCanonicalPoints(const float *x, D
 template const double* TasmanianSparseGrid::formCanonicalPoints<double>(const double *x, Data2D<double> &x_temp, int num_x) const;
 
 template<typename FloatType> std::vector<double> TasmanianSparseGrid::diffCanonicalTransform() const {
-    int num_dimensions = base->getNumDimensions();
+    int num_dimensions = getNumDimensions();
     std::vector<double> jacobian_diag(num_dimensions, 1.0);
     if (conformal_asin_power.size() != 0) {
         throw std::runtime_error("ERROR: in diffCanonicalTransform() derivatives/Jacobians are not available for conformal mappings");
     }
     if (domain_transform_a.size() != 0) {
         // Based on the logic in mapTransformedToCanonical(). These are all affine transforms.
-        TypeOneDRule rule = base->getRule();
+        TypeOneDRule rule = getRule();
         if (rule == rule_gausslaguerre or rule == rule_gausslaguerreodd)
             for(int j=0; j<num_dimensions; j++)
                 jacobian_diag[j] = (FloatType) domain_transform_b[j];
@@ -843,9 +915,9 @@ template<typename FloatType> std::vector<double> TasmanianSparseGrid::diffCanoni
 }
 
 void TasmanianSparseGrid::formTransformedPoints(int num_points, double x[]) const{
-    mapConformalCanonicalToTransformed(base->getNumDimensions(), num_points, x); // internally switch based on the conformal transform
+    mapConformalCanonicalToTransformed(getNumDimensions(), num_points, x); // internally switch based on the conformal transform
     if (domain_transform_a.size() != 0){ // check the basic domain
-        mapCanonicalToTransformed(base->getNumDimensions(), num_points, base->getRule(), x);
+        mapCanonicalToTransformed(getNumDimensions(), num_points, getRule(), x);
     }
 }
 
@@ -870,10 +942,10 @@ void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growt
     if (using_dynamic_construction) throw std::runtime_error("ERROR: setAnisotropicRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has not been initialized");
     if (min_growth < 1) throw std::invalid_argument("ERROR: setAnisotropicRefinement() requires positive min_growth");
-    int dims = base->getNumDimensions();
-    int outs = base->getNumOutputs();
+    int dims = getNumDimensions();
+    int outs = getNumOutputs();
     if (outs == 0) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid that has no outputs");
-    if (base->getNumLoaded() == 0) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid with no loaded values");
+    if (getNumLoaded() == 0) throw std::runtime_error("ERROR: calling setAnisotropicRefinement() for a grid with no loaded values");
     if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling setAnisotropicRefinement() with invalid output");
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: setAnisotropicRefinement() requires level_limits with either 0 or dimenions entries");
 
@@ -895,9 +967,9 @@ void TasmanianSparseGrid::setAnisotropicRefinement(TypeDepth type, int min_growt
 
 void TasmanianSparseGrid::estimateAnisotropicCoefficients(TypeDepth type, int output, std::vector<int> &weights) const{
     if (empty()) throw std::runtime_error("ERROR: calling estimateAnisotropicCoefficients() for a grid that has not been initialized");
-    int outs = base->getNumOutputs();
+    int outs = getNumOutputs();
     if (outs == 0) throw std::runtime_error("ERROR: calling estimateAnisotropicCoefficients() for a grid that has no outputs");
-    if (base->getNumLoaded() == 0) throw std::runtime_error("ERROR: calling estimateAnisotropicCoefficients() for a grid with no loaded values");
+    if (getNumLoaded() == 0) throw std::runtime_error("ERROR: calling estimateAnisotropicCoefficients() for a grid with no loaded values");
     if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling estimateAnisotropicCoefficients() with invalid output");
 
     if (isSequence()){
@@ -922,10 +994,10 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, con
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, const std::vector<int> &level_limits){
     if (using_dynamic_construction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
-    int dims = base->getNumDimensions();
-    int outs = base->getNumOutputs();
+    int dims = getNumDimensions();
+    int outs = getNumOutputs();
     if (outs == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has no outputs");
-    if (base->getNumLoaded() == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid with no loaded values");
+    if (getNumLoaded() == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid with no loaded values");
     if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling setSurplusRefinement() with invalid output");
     if (tolerance < 0.0) throw std::invalid_argument("ERROR: calling setSurplusRefinement() with invalid tolerance (must be non-negative)");
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: setSurplusRefinement() requires level_limits with either 0 or dimenions entries");
@@ -947,10 +1019,10 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, int output, con
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const int *level_limits, const double *scale_correction){
     if (using_dynamic_construction) throw std::runtime_error("ERROR: setSurplusRefinement() called before finishConstruction()");
     if (empty()) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
-    int dims = base->getNumDimensions();
-    int outs = base->getNumOutputs();
+    int dims = getNumDimensions();
+    int outs = getNumOutputs();
     if (outs == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has no outputs");
-    if (base->getNumLoaded() == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid with no loaded values");
+    if (getNumLoaded() == 0) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid with no loaded values");
     if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling setSurplusRefinement() with invalid output");
     if (isFourier())
         throw std::runtime_error("ERROR: setSurplusRefinement(double, TypeRefinement) called for a Fourier grid.");
@@ -969,9 +1041,9 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
 }
 void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement criteria, int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction){
     if (empty()) throw std::runtime_error("ERROR: calling setSurplusRefinement() for a grid that has not been initialized");
-    int dims = base->getNumDimensions();
-    size_t nscale = (size_t) base->getNumNeeded();
-    if (output != -1) nscale *= (size_t) base->getNumOutputs();
+    int dims = getNumDimensions();
+    size_t nscale = (size_t) getNumNeeded();
+    if (output != -1) nscale *= (size_t) getNumOutputs();
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: setSurplusRefinement() requires level_limits with either 0 or dimenions entries");
     if ((!scale_correction.empty()) && (scale_correction.size() != nscale)) throw std::invalid_argument("ERROR: setSurplusRefinement() incorrect size for scale_correction");
 
@@ -980,10 +1052,16 @@ void TasmanianSparseGrid::setSurplusRefinement(double tolerance, TypeRefinement 
 }
 
 void TasmanianSparseGrid::clearRefinement(){
-    if (!empty()) base->clearRefinement();
+    std::visit([](auto &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.clearRefinement();
+    }, base);
 }
 void TasmanianSparseGrid::mergeRefinement(){
-    if (!empty()) base->mergeRefinement();
+    std::visit([](auto &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.mergeRefinement();
+    }, base);
 }
 
 void TasmanianSparseGrid::beginConstruction(){
@@ -991,13 +1069,16 @@ void TasmanianSparseGrid::beginConstruction(){
     if (not using_dynamic_construction){
         if (getNumLoaded() > 0) clearRefinement();
         using_dynamic_construction = true;
-        base->beginConstruction();
+        std::visit([](auto &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.beginConstruction();
+        }, base);
     }
 }
 std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits){
     if (not using_dynamic_construction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
     if (isLocalPolynomial() || isWavelet()) throw std::runtime_error("ERROR: getCandidateConstructionPoints() anisotropic version called for local polynomial grid");
-    size_t dims = (size_t) base->getNumDimensions();
+    size_t dims = (size_t) getNumDimensions();
     if ((!level_limits.empty()) && (level_limits.size() != (size_t) dims)) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() requires level_limits with either 0 or num-dimensions entries");
     if ((type == type_curved) || (type == type_ipcurved) || (type == type_qpcurved)){
         if (anisotropic_weights.size() != 2 * dims) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() called with curved type and incorrect size for anisotropic_weights (must be twice the number of dimensions)");
@@ -1020,9 +1101,9 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDept
 std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(TypeDepth type, int output, const std::vector<int> &level_limits){
     if (not using_dynamic_construction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
     if (isLocalPolynomial() || isWavelet()) throw std::runtime_error("ERROR: getCandidateConstructionPoints() anisotropic version called for local polynomial grid");
-    size_t dims = (size_t) base->getNumDimensions();
+    size_t dims = (size_t) getNumDimensions();
     if ((!level_limits.empty()) && (level_limits.size() != dims)) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() requires level_limits with either 0 or num-dimensions entries");
-    int outs = base->getNumOutputs();
+    int outs = getNumOutputs();
     if (outs == 0) throw std::runtime_error("ERROR: calling getCandidateConstructionPoints() for a grid that has no outputs");
     if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling getCandidateConstructionPoints() with invalid output");
 
@@ -1042,9 +1123,9 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(double t
                                                                         int output, const std::vector<int> &level_limits, const std::vector<double> &scale_correction){
     if (not using_dynamic_construction) throw std::runtime_error("ERROR: getCandidateConstructionPoints() called before beginConstruction()");
     if (!isLocalPolynomial() && !isWavelet()) throw std::runtime_error("ERROR: getCandidateConstructionPoints() surplus version called for non-local polynomial or wavelet grid");
-    size_t dims = (size_t) base->getNumDimensions();
+    size_t dims = (size_t) getNumDimensions();
     if ((!level_limits.empty()) && (level_limits.size() != dims)) throw std::invalid_argument("ERROR: getCandidateConstructionPoints() requires level_limits with either 0 or num-dimensions entries");
-    int outs = base->getNumOutputs();
+    int outs = getNumOutputs();
     if (outs == 0) throw std::runtime_error("ERROR: calling getCandidateConstructionPoints() for a grid that has no outputs");
     if ((output < -1) || (output >= outs)) throw std::invalid_argument("ERROR: calling getCandidateConstructionPoints() with invalid output");
 
@@ -1055,8 +1136,8 @@ std::vector<double> TasmanianSparseGrid::getCandidateConstructionPoints(double t
     return x;
 }
 void TasmanianSparseGrid::loadConstructedPoints(const std::vector<double> &x, const std::vector<double> &y){
-    int numx = (int) x.size() / base->getNumDimensions();
-    if (y.size() < Utils::size_mult(numx, base->getNumOutputs())) throw std::runtime_error("ERROR: loadConstructedPoint() called with incorrect size for y");
+    int numx = (int) x.size() / getNumDimensions();
+    if (y.size() < Utils::size_mult(numx, getNumOutputs())) throw std::runtime_error("ERROR: loadConstructedPoint() called with incorrect size for y");
     loadConstructedPoints(x.data(), numx, y.data());
 }
 void TasmanianSparseGrid::loadConstructedPoints(const double x[], int numx, const double y[]){
@@ -1064,12 +1145,23 @@ void TasmanianSparseGrid::loadConstructedPoints(const double x[], int numx, cons
     Data2D<double> x_tmp;
     const double *x_canonical = formCanonicalPoints(x, x_tmp, numx);
     if (numx == 1)
-        base->loadConstructedPoint(x_canonical, Utils::copyArray(y, getNumOutputs()));
+        std::visit([&](auto &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.loadConstructedPoint(x_canonical, Utils::copyArray(y, getNumOutputs()));
+        }, base);
+
     else
-        base->loadConstructedPoint(x_canonical, numx, y);
+        std::visit([&](auto &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.loadConstructedPoint(x_canonical, numx, y);
+        }, base);
 }
 void TasmanianSparseGrid::finishConstruction(){
-    if (using_dynamic_construction) base->finishConstruction();
+    if (using_dynamic_construction)
+        std::visit([](auto &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.finishConstruction();
+        }, base);
     using_dynamic_construction = false;
 }
 
@@ -1093,7 +1185,11 @@ void TasmanianSparseGrid::removePointsByHierarchicalCoefficient(int num_new_poin
 
 void TasmanianSparseGrid::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
     Data2D<double> x_tmp;
-    base->evaluateHierarchicalFunctions(formCanonicalPoints(x, x_tmp, num_x), num_x, y);
+    auto const &pnts = formCanonicalPoints(x, x_tmp, num_x);
+    std::visit([&](auto const &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.evaluateHierarchicalFunctions(pnts, num_x, y);
+    }, base);
 }
 void TasmanianSparseGrid::evaluateHierarchicalFunctions(const std::vector<double> &x, std::vector<double> &y) const{
     if (empty()) throw std::runtime_error("ERROR: cannot call evaluateHierarchicalFunctions() on an empty grid");
@@ -1111,7 +1207,11 @@ void TasmanianSparseGrid::evaluateHierarchicalFunctionsGPU(const T gpu_x[], int 
     if (not acceleration->on_gpu()) throw std::runtime_error("ERROR: evaluateHierarchicalFunctionsGPU() requires that a cuda gpu acceleration is enabled.");
     acceleration->setDevice();
     GpuVector<T> gpu_temp_x;
-    base->evaluateHierarchicalFunctionsGPU(formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x), cpu_num_x, gpu_y);
+    auto const &pnts = formCanonicalPointsGPU(gpu_x, cpu_num_x, gpu_temp_x);
+    std::visit([&](auto const &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.evaluateHierarchicalFunctionsGPU(pnts, cpu_num_x, gpu_y);
+    }, base);
 }
 template<typename T>
 void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGPU(const T gpu_x[], int cpu_num_x, int* &gpu_pntr, int* &gpu_indx, T* &gpu_vals, int &num_nz) const{
@@ -1144,9 +1244,12 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctions(const std::vector<
     if (isLocalPolynomial()){
         get<GridLocalPolynomial>()->buildSpareBasisMatrix(x_canonical, num_x, 32, pntr, indx, vals);
     }else{
-        int num_points = base->getNumPoints();
+        int num_points = getNumPoints();
         std::vector<double> dense_vals(((size_t) num_points) * ((size_t) num_x));
-        base->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.data());
+        std::visit([&](auto const &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.data());
+        }, base);
         int num_nz = 0;
         for(int i=0; i<num_points * num_x; i++) if (dense_vals[i] != 0.0) num_nz++;
         pntr.resize(num_x+1);
@@ -1171,7 +1274,7 @@ int TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsGetNZ(const double x
     if (isLocalPolynomial()){
         return get<GridLocalPolynomial>()->getSpareBasisMatrixNZ(x_canonical, num_x);
     }else if (isWavelet()){
-        int num_points = base->getNumPoints();
+        int num_points = getNumPoints();
         Data2D<double> dense_vals(num_points, num_x);
         get<GridWavelet>()->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.data());
         return static_cast<int>(dense_vals.getTotalEntries() - std::count(dense_vals.begin(), dense_vals.end(), 0.0));
@@ -1188,9 +1291,12 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
     if (isLocalPolynomial()){
         get<GridLocalPolynomial>()->buildSpareBasisMatrixStatic(x_canonical, num_x, 32, pntr, indx, vals);
     }else if (isWavelet()){
-        int num_points = base->getNumPoints();
+        int num_points = getNumPoints();
         Data2D<double> dense_vals(num_points, num_x);
-        base->evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
+        std::visit([&](auto const &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.evaluateHierarchicalFunctions(x_canonical, num_x, dense_vals.getStrip(0));
+        }, base);
         int num_nz = 0;
         for(int i=0; i<num_x; i++){
             pntr[i] = num_nz;
@@ -1210,7 +1316,12 @@ void TasmanianSparseGrid::evaluateSparseHierarchicalFunctionsStatic(const double
 }
 
 std::vector<double> TasmanianSparseGrid::getHierarchicalSupport() const{
-    std::vector<double> support = (empty()) ? std::vector<double>() : base->getSupport();
+    std::vector<double> support = std::visit([&](auto const &g) -> std::vector<double>{
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            return g.getSupport();
+        else
+            return {};
+    }, base);
 
     if (!domain_transform_a.empty()){
         std::vector<double> correction(domain_transform_a.size());
@@ -1232,9 +1343,12 @@ void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> 
 }
 void TasmanianSparseGrid::integrateHierarchicalFunctions(double integrals[]) const{
     if (empty()) throw std::runtime_error("ERROR: cannot compute the integrals for a basis in an empty grid.");
-    base->integrateHierarchicalFunctions(integrals);
+    std::visit([&](auto const &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.integrateHierarchicalFunctions(integrals);
+    }, base);
     if (domain_transform_a.size() != 0){
-        double scale = getQuadratureScale(base->getNumDimensions(), base->getRule());
+        double scale = getQuadratureScale(getNumDimensions(), getRule());
         for(int i=0; i<getNumPoints(); i++) integrals[i] *= scale;
     }
 }
@@ -1249,26 +1363,28 @@ std::vector<int> TasmanianSparseGrid::getGlobalPolynomialSpace(bool interpolatio
     }
 }
 const double* TasmanianSparseGrid::getHierarchicalCoefficients() const{
-    if (isLocalPolynomial()){
-        return get<GridLocalPolynomial>()->getSurpluses();
-    }else if (isWavelet()){
-        return get<GridWavelet>()->getSurpluses();
-    }else if (isSequence()){
-        return get<GridSequence>()->getSurpluses();
-    }else if (isGlobal()){
-        return get<GridGlobal>()->getLoadedValues();
-    }else if (isFourier()){
-        return get<GridFourier>()->getFourierCoefs();
-    }else{
-        return nullptr;
-    }
+    return std::visit([](auto const &g) -> const double * {
+        using T = std::decay_t<decltype(g)>;
+        if constexpr (std::is_same_v<T, std::monostate>) {
+            return nullptr;
+        } else if constexpr (std::is_same_v<T, GridGlobal>) {
+            return g.getLoadedValues();
+        } else if constexpr (std::is_same_v<T, GridFourier>) {
+            return g.getFourierCoefs();
+        } else {
+            return g.getSurpluses();
+        }
+    }, base);
 }
 const int* TasmanianSparseGrid::getPointsIndexes() const{
-    if (empty()){
+    if (empty())
         throw std::runtime_error("ERROR: getPointIndexes() called for a grid that has not been initialized");
-    }else{
-        return base->getPointIndexes();
-    }
+    return std::visit([](auto const &g) -> const int* {
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            return g.getPointIndexes();
+        else
+            return nullptr;
+    }, base);
 }
 const int* TasmanianSparseGrid::getNeededIndexes() const{
     if (isLocalPolynomial()){
@@ -1358,11 +1474,14 @@ void TasmanianSparseGrid::writeAscii(std::ostream &ofs) const{
     }else{
         ofs << "empty\n";
     }
-    if (!empty()) base->write(ofs, mode_ascii);
+    std::visit([&](auto const &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.write(ofs, mode_ascii);
+    }, base);
     if (domain_transform_a.size() != 0){
         ofs << "custom\n";
         ofs << std::scientific; ofs.precision(17);
-        for(int j=0; j<base->getNumDimensions(); j++){
+        for(int j=0; j<getNumDimensions(); j++){
             ofs << domain_transform_a[j] << " " << domain_transform_b[j] << '\n';
        }
     }else{
@@ -1382,7 +1501,10 @@ void TasmanianSparseGrid::writeAscii(std::ostream &ofs) const{
     }
     if (using_dynamic_construction){
         ofs << "constructing\n";
-        base->writeConstructionData(ofs, mode_ascii);
+        std::visit([&](auto const &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.writeConstructionData(ofs, mode_ascii);
+        }, base);
     }else{
         ofs << "static\n";
     }
@@ -1405,7 +1527,10 @@ void TasmanianSparseGrid::writeBinary(std::ostream &ofs) const{
     }else{
         IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'e');
     }
-    if (!empty()) base->write(ofs, mode_binary);
+    std::visit([&](auto const &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.write(ofs, mode_binary);
+    }, base);
     // domain transform: custom 'y', canonical: 'n'
     if (domain_transform_a.size() != 0){
         IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'y');
@@ -1429,14 +1554,16 @@ void TasmanianSparseGrid::writeBinary(std::ostream &ofs) const{
     }
     if (using_dynamic_construction){
         IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'c');
-        base->writeConstructionData(ofs, mode_binary);
+        std::visit([&](auto const &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.writeConstructionData(ofs, mode_binary);
+        }, base);
     }else{
         IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 's');
     }
     IO::writeNumbers<mode_binary, IO::pad_none>(ofs, 'e'); // E stands for END
 }
 void TasmanianSparseGrid::readAscii(std::istream &ifs){
-    std::unique_ptr<BaseCanonicalGrid> new_base;
     std::vector<double> new_domain_transform_a, new_domain_transform_b;
     std::vector<int> new_conformal_asin_power;
     std::vector<int> new_llimits;
@@ -1463,28 +1590,43 @@ void TasmanianSparseGrid::readAscii(std::istream &ifs){
     getline(ifs, T); if (!(T.compare("WARNING: do not edit this manually") == 0)){ throw std::runtime_error("ERROR: wrong file format, missing warning message"); }
     ifs >> T;
     clear();
+    grid_variant new_base = std::monostate{};
     if (T.compare("global") == 0){
-        new_base = readGridVersion5<GridGlobal>(acceleration.get(), ifs, IO::mode_ascii_type());
+        new_base.emplace<GridGlobal>(acceleration.get());
+        readGridVersion5<IO::mode_ascii_type>(ifs, std::get_if<GridGlobal>(&new_base));
     }else if (T.compare("sequence") == 0){
-        new_base = readGridVersion5<GridSequence>(acceleration.get(), ifs, IO::mode_ascii_type());
+        new_base.emplace<GridSequence>(acceleration.get());
+        readGridVersion5<IO::mode_ascii_type>(ifs, std::get_if<GridSequence>(&new_base));
     }else if (T.compare("localpolynomial") == 0){
-        new_base = readGridVersion5<GridLocalPolynomial>(acceleration.get(), ifs, IO::mode_ascii_type());
+        new_base.emplace<GridLocalPolynomial>(acceleration.get());
+        readGridVersion5<IO::mode_ascii_type>(ifs, std::get_if<GridLocalPolynomial>(&new_base));
     }else if (T.compare("wavelet") == 0){
-        new_base = readGridVersion5<GridWavelet>(acceleration.get(), ifs, IO::mode_ascii_type());
+        new_base.emplace<GridWavelet>(acceleration.get());
+        readGridVersion5<IO::mode_ascii_type>(ifs, std::get_if<GridWavelet>(&new_base));
     }else if (T.compare("fourier") == 0){
-        new_base = readGridVersion5<GridFourier>(acceleration.get(), ifs, IO::mode_ascii_type());
+        new_base.emplace<GridFourier>(acceleration.get());
+        readGridVersion5<IO::mode_ascii_type>(ifs, std::get_if<GridFourier>(&new_base));
     }else if (T.compare("empty") != 0){
         throw std::runtime_error("ERROR: wrong file format, unknown grid type (or corrupt file)");
     }
     getline(ifs, T); // read an empty line
     getline(ifs, T);
+
+    int const num_dimensions = std::visit([](auto const &g) -> int {
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>) {
+                return g.getNumDimensions();
+            } else {
+                return int{0};
+            }
+        }, new_base);
+
     bool reached_eof = false;
     if (T.compare("TASMANIAN SG end") == 0){ // version 3.0 did not include domain transform
         reached_eof = true;
     }else if (T.compare("custom") == 0){ // handle domain transform
-        new_domain_transform_a.resize(new_base->getNumDimensions());
-        new_domain_transform_b.resize(new_base->getNumDimensions());
-        for(int j=0; j<new_base->getNumDimensions(); j++){
+        new_domain_transform_a.resize(num_dimensions);
+        new_domain_transform_b.resize(num_dimensions);
+        for(int j=0; j<num_dimensions; j++){
             ifs >> new_domain_transform_a[j] >> new_domain_transform_b[j];
         }
         getline(ifs, T);
@@ -1494,7 +1636,7 @@ void TasmanianSparseGrid::readAscii(std::istream &ifs){
     if (!reached_eof){ // handle conformal maps, added in version 5.0
         getline(ifs, T);
         if (T.compare("asinconformal") == 0){
-            new_conformal_asin_power = IO::readVector<IO::mode_ascii_type, int>(ifs, new_base->getNumDimensions());
+            new_conformal_asin_power = IO::readVector<IO::mode_ascii_type, int>(ifs, num_dimensions);
             getline(ifs, T);
         }else if (T.compare("TASMANIAN SG end") == 0){
             // for compatibility with version 4.0/4.1 and the missing conformal maps
@@ -1506,7 +1648,7 @@ void TasmanianSparseGrid::readAscii(std::istream &ifs){
     if (!reached_eof){ // handle level limits, added in version 5.1
         getline(ifs, T);
         if (T.compare("limited") == 0){
-            new_llimits = IO::readVector<IO::mode_ascii_type, int>(ifs, new_base->getNumDimensions());
+            new_llimits = IO::readVector<IO::mode_ascii_type, int>(ifs, num_dimensions);
             getline(ifs, T);
         }else if (T.compare("unlimited") == 0){
             new_llimits = std::vector<int>();
@@ -1520,7 +1662,10 @@ void TasmanianSparseGrid::readAscii(std::istream &ifs){
         getline(ifs, T);
         if (T.compare("constructing") == 0){
             new_using_dynamic_construction = true;
-            new_base->readConstructionData(ifs, mode_ascii);
+            std::visit([&](auto &g){
+                if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                    g.readConstructionData(ifs, mode_ascii);
+            }, new_base);
             getline(ifs, T); // clear the final std::endl after reading the block
         }else if (T.compare("TASMANIAN SG end") == 0){
             reached_eof = true;
@@ -1557,37 +1702,63 @@ void TasmanianSparseGrid::readBinary(std::istream &ifs){
         throw std::runtime_error("ERROR: wrong binary file format, version number is not '5'");
     }
     clear();
-    std::unique_ptr<BaseCanonicalGrid> new_base = [&](char grid_type)->std::unique_ptr<BaseCanonicalGrid>{
-        switch (grid_type){
-            case 'g': return readGridVersion5<GridGlobal>(acceleration.get(), ifs, IO::mode_binary_type());
-            case 's': return readGridVersion5<GridSequence>(acceleration.get(), ifs, IO::mode_binary_type());
-            case 'p': return readGridVersion5<GridLocalPolynomial>(acceleration.get(), ifs, IO::mode_binary_type());
-            case 'w': return readGridVersion5<GridWavelet>(acceleration.get(), ifs, IO::mode_binary_type());
-            case 'f': return readGridVersion5<GridFourier>(acceleration.get(), ifs, IO::mode_binary_type());
-            case 'e': return std::unique_ptr<BaseCanonicalGrid>();
-            default:
-                throw std::runtime_error("ERROR: wrong binary file format, unknown grid type");
-        };
-    }(IO::readNumber<IO::mode_binary_type, char>(ifs));
+
+    grid_variant new_base = std::monostate{};
+
+    switch (IO::readNumber<IO::mode_binary_type, char>(ifs)){
+        case 'g':
+            new_base.emplace<GridGlobal>(acceleration.get());
+            readGridVersion5<IO::mode_binary_type>(ifs, std::get_if<GridGlobal>(&new_base));
+            break;
+        case 's':
+            new_base.emplace<GridSequence>(acceleration.get());
+            readGridVersion5<IO::mode_binary_type>(ifs, std::get_if<GridSequence>(&new_base));
+            break;
+        case 'p':
+            new_base.emplace<GridLocalPolynomial>(acceleration.get());
+            readGridVersion5<IO::mode_binary_type>(ifs, std::get_if<GridLocalPolynomial>(&new_base));
+            break;
+        case 'w':
+            new_base.emplace<GridWavelet>(acceleration.get());
+            readGridVersion5<IO::mode_binary_type>(ifs, std::get_if<GridWavelet>(&new_base));
+            break;
+        case 'f':
+            new_base.emplace<GridFourier>(acceleration.get());
+            readGridVersion5<IO::mode_binary_type>(ifs, std::get_if<GridFourier>(&new_base));
+            break;
+        case 'e':
+            // monostate already set above
+            break;
+        default:
+            throw std::runtime_error("ERROR: wrong binary file format, unknown grid type");
+    };
+
+    int const num_dimensions = std::visit([](auto const &g) -> int {
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>) {
+                return g.getNumDimensions();
+            } else {
+                return int{0};
+            }
+        }, new_base);
 
     char flag = IO::readNumber<IO::mode_binary_type, char>(ifs);
     if (flag == 'y'){
-        new_domain_transform_a = IO::readVector<IO::mode_binary_type, double>(ifs, new_base->getNumDimensions());
-        new_domain_transform_b = IO::readVector<IO::mode_binary_type, double>(ifs, new_base->getNumDimensions());
+        new_domain_transform_a = IO::readVector<IO::mode_binary_type, double>(ifs, num_dimensions);
+        new_domain_transform_b = IO::readVector<IO::mode_binary_type, double>(ifs, num_dimensions);
     }else if (flag != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong domain type");
     }
 
     flag = IO::readNumber<IO::mode_binary_type, char>(ifs); // conformal domain transform?
     if (flag == 'a'){
-        new_conformal_asin_power = IO::readVector<IO::mode_binary_type, int>(ifs, new_base->getNumDimensions());
+        new_conformal_asin_power = IO::readVector<IO::mode_binary_type, int>(ifs, num_dimensions);
     }else if (flag != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong conformal transform type");
     }
 
     flag = IO::readNumber<IO::mode_binary_type, char>(ifs); // limits
     if (flag == 'y'){
-        new_llimits = IO::readVector<IO::mode_binary_type, int>(ifs, new_base->getNumDimensions());
+        new_llimits = IO::readVector<IO::mode_binary_type, int>(ifs, num_dimensions);
     }else if (flag != 'n'){
         throw std::runtime_error("ERROR: wrong binary file format, wrong level limits");
     }
@@ -1596,7 +1767,10 @@ void TasmanianSparseGrid::readBinary(std::istream &ifs){
     flag = IO::readNumber<IO::mode_binary_type, char>(ifs); // construction data
     if (flag == 'c'){ // handles additional data for dynamic construction, added in version 7.0 (development 6.1)
         new_using_dynamic_construction = true;
-        new_base->readConstructionData(ifs, mode_binary);
+        std::visit([&](auto &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.readConstructionData(ifs, mode_binary);
+        }, new_base);
     }else if (flag == 'e'){
         reached_eof = true;
     }else if (flag != 's'){
@@ -1622,7 +1796,10 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
     // note that this method cannot possibly change the gpu ID and switching
     // between variations of GPU accelerations on the same device will keep the same cache
     AccelerationContext::ChangeType change = acceleration->testEnable(acc, acceleration->device);
-    if (not empty()) base->updateAccelerationData(change);
+    std::visit([&](auto &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.updateAccelerationData(change);
+    }, base);
     if (change == AccelerationContext::change_gpu_device)
         acc_domain.clear();
     acceleration->enable(acc, acceleration->device);
@@ -1630,14 +1807,20 @@ void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc){
 
 void TasmanianSparseGrid::enableAcceleration(TypeAcceleration acc, int new_gpu_id){
     AccelerationContext::ChangeType change = acceleration->testEnable(acc, new_gpu_id);
-    if (not empty()) base->updateAccelerationData(change);
+    std::visit([&](auto &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.updateAccelerationData(change);
+    }, base);
     if (change == AccelerationContext::change_gpu_device)
         acc_domain.clear();
     acceleration->enable(acc, new_gpu_id);
 }
 void TasmanianSparseGrid::favorSparseAcceleration(bool favor){
     AccelerationContext::ChangeType change = acceleration->favorSparse(favor);
-    if (not empty()) base->updateAccelerationData(change);
+    std::visit([&](auto &g){
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+            g.updateAccelerationData(change);
+    }, base);
 }
 
 #ifdef Tasmanian_ENABLE_CUDA
@@ -1722,7 +1905,10 @@ bool TasmanianSparseGrid::isAccelerationAvailable(TypeAcceleration acc){
 void TasmanianSparseGrid::setGPUID(int new_gpu_id){
     if (new_gpu_id != acceleration->device){
         AccelerationContext::ChangeType change = acceleration->testEnable(acceleration->mode, new_gpu_id);
-        if (not empty()) base->updateAccelerationData(change);
+        std::visit([&](auto &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.updateAccelerationData(change);
+        }, base);
         #ifdef Tasmanian_ENABLE_GPU
         if (change == AccelerationContext::change_gpu_device)
             acc_domain.clear();

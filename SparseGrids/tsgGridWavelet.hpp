@@ -45,6 +45,9 @@ public:
     GridWavelet(AccelerationContext const *acc, MultiIndexSet &&pset, int cnum_outputs, int corder, Data2D<double> &&vals);
     ~GridWavelet() = default;
 
+    GridWavelet(GridWavelet &&) = default;
+    GridWavelet &operator = (GridWavelet &&) = default;
+
     bool isWavelet() const override{ return true; }
 
     void write(std::ostream &os, bool iomode) const override{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
@@ -146,6 +149,11 @@ private:
 template<> struct GridReaderVersion5<GridWavelet>{
     template<typename iomode> static std::unique_ptr<GridWavelet> read(AccelerationContext const *acc, std::istream &is){
         std::unique_ptr<GridWavelet> grid = Utils::make_unique<GridWavelet>(acc);
+        read<iomode>(is, grid.get());
+        return grid;
+    }
+
+    template<typename iomode> static void read(std::istream &is, GridWavelet *grid) {
 
         grid->num_dimensions = IO::readNumber<iomode, int>(is);
         grid->num_outputs = IO::readNumber<iomode, int>(is);
@@ -165,8 +173,6 @@ template<> struct GridReaderVersion5<GridWavelet>{
 
         if (grid->num_outputs > 0) grid->values = StorageSet(is, iomode());
         grid->buildInterpolationMatrix();
-
-        return grid;
     }
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP

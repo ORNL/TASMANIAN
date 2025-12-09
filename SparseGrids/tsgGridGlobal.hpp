@@ -53,6 +53,9 @@ public:
                    cnum_outputs, rule_customtabulated, 0.0, 0.0);
     }
 
+    GridGlobal(GridGlobal &&) = default;
+    GridGlobal &operator = (GridGlobal &&) = default;
+
     bool isGlobal() const override{ return true; }
 
     void write(std::ostream &os, bool iomode) const override{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
@@ -176,6 +179,11 @@ private:
 template<> struct GridReaderVersion5<GridGlobal>{
     template<typename iomode> static std::unique_ptr<GridGlobal> read(AccelerationContext const *acc, std::istream &is){
         std::unique_ptr<GridGlobal> grid = Utils::make_unique<GridGlobal>(acc);
+        read<iomode>(is, grid.get());
+        return grid;
+    }
+
+    template<typename iomode> static void read(std::istream &is, GridGlobal *grid) {
 
         grid->num_dimensions = IO::readNumber<iomode, int>(is);
         grid->num_outputs = IO::readNumber<iomode, int>(is);
@@ -209,8 +217,6 @@ template<> struct GridReaderVersion5<GridGlobal>{
         grid->wrapper = OneDimensionalWrapper(grid->custom, oned_max_level, grid->rule, grid->alpha, grid->beta);
 
         grid->recomputeTensorRefs((grid->points.empty()) ? grid->needed : grid->points);
-
-        return grid;
     }
 };
 

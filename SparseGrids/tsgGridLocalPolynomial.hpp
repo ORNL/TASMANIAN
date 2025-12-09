@@ -44,6 +44,9 @@ public:
     GridLocalPolynomial(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits);
     ~GridLocalPolynomial() = default;
 
+    GridLocalPolynomial(GridLocalPolynomial &&) = default;
+    GridLocalPolynomial &operator = (GridLocalPolynomial &&) = default;
+
     bool isLocalPolynomial() const override{ return true; }
 
     void write(std::ostream &os, bool iomode) const override{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
@@ -444,6 +447,11 @@ private:
 template<> struct GridReaderVersion5<GridLocalPolynomial>{
     template<typename iomode> static std::unique_ptr<GridLocalPolynomial> read(AccelerationContext const *acc, std::istream &is){
         std::unique_ptr<GridLocalPolynomial> grid = Utils::make_unique<GridLocalPolynomial>(acc);
+        read<iomode>(is, grid.get());
+        return grid;
+    }
+
+    template<typename iomode> static void read(std::istream &is, GridLocalPolynomial *grid) {
 
             grid->num_dimensions = IO::readNumber<iomode, int>(is);
             grid->num_outputs = IO::readNumber<iomode, int>(is);
@@ -489,8 +497,6 @@ template<> struct GridReaderVersion5<GridLocalPolynomial>{
             }
 
             if (grid->num_outputs > 0) grid->values = StorageSet(is, iomode());
-
-        return grid;
     }
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP
