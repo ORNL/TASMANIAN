@@ -896,15 +896,7 @@ public:
      * e.g., mergeRefinement() or loadNeededValues().
      * The model values will follow the internal Tasmanian order, identical to getLoadedPoints().
      */
-    const double* getLoadedValues() const{
-        return std::visit([](auto const &g) -> double const * {
-            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>) {
-                return g.getLoadedValues();
-            } else {
-                return nullptr;
-            }
-        }, base);
-    }
+    const double* getLoadedValues() const;
 
     /*!
      * \brief Computes the value of the interpolant (or point-wise approximation) at the given point \b x.
@@ -1574,13 +1566,7 @@ public:
      *
      * Identical to setHierarchicalCoefficients() but does not check for the size of the array.
      */
-    void setHierarchicalCoefficients(const double c[]){
-        std::visit([&](auto &g) -> void {
-            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>) {
-                g.setHierarchicalCoefficients(c);
-            }
-        }, base);
-    }
+    void setHierarchicalCoefficients(const double c[]);
 
     /*!
      * \brief Computes the values of the hierarchical function basis at the specified points.

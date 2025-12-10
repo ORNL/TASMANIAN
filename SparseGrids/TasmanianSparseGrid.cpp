@@ -452,6 +452,15 @@ void TasmanianSparseGrid::loadNeededValues(const std::vector<double> &vals){
     if (vals.size() != nump) throw std::runtime_error("ERROR: loadNeededPoints() given the wrong number of inputs, should be getNumNeeded() * getNumOutputs() or (if getNumNeeded() == 0) getNumPoints() * getNumOutputs()");
     loadNeededValues(vals.data());
 }
+const double* TasmanianSparseGrid::getLoadedValues() const{
+    return std::visit([](auto const &g) -> double const * {
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>) {
+            return g.getLoadedValues();
+        } else {
+            return nullptr;
+        }
+    }, base);
+}
 
 void TasmanianSparseGrid::evaluate(const double x[], double y[]) const{
     Data2D<double> x_tmp;
@@ -1340,6 +1349,13 @@ void TasmanianSparseGrid::setHierarchicalCoefficients(const std::vector<double> 
     size_t num_coeffs = Utils::size_mult(getNumOutputs(), getNumPoints()) * ((isFourier()) ? 2 : 1);
     if (c.size() != num_coeffs) throw std::runtime_error("ERROR: setHierarchicalCoefficients() called with wrong size of the coefficients.");
     setHierarchicalCoefficients(c.data());
+}
+void TasmanianSparseGrid::setHierarchicalCoefficients(const double c[]){
+    std::visit([&](auto &g) -> void {
+        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>) {
+            g.setHierarchicalCoefficients(c);
+        }
+    }, base);
 }
 void TasmanianSparseGrid::integrateHierarchicalFunctions(double integrals[]) const{
     if (empty()) throw std::runtime_error("ERROR: cannot compute the integrals for a basis in an empty grid.");
