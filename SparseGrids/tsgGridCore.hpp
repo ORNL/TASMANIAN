@@ -135,11 +135,16 @@ struct GridReaderVersion5{ // 5 refers to the file format version, not the Tasma
     template<typename iomode> static std::unique_ptr<BaseCanonicalGrid> read(AccelerationContext const*, std::istream &){
         return std::unique_ptr<BaseCanonicalGrid>();
     }
+    template<typename iomode> static void read(std::istream &, GridType *) {}
 };
 
 // Factory reader method that instantiates the GridReaderVersion5 class
 template<class GridType, typename iomode> std::unique_ptr<GridType> readGridVersion5(AccelerationContext const *acc, std::istream &is, iomode){
     return GridReaderVersion5<GridType>::template read<iomode>(acc, is);
+}
+
+template<typename iomode, class GridType> void readGridVersion5(std::istream &is, GridType *grid) {
+    GridReaderVersion5<GridType>::template read<iomode>(is, grid);
 }
 
 }

@@ -623,7 +623,7 @@ void GridGlobal::evaluateHierarchicalFunctionsGPU(const float gpu_x[], int cpu_n
 template<typename T> void GridGlobal::loadGpuValues() const{
     auto& ccache = getGpuCache<T>();
     if (!ccache) ccache = Utils::make_unique<CudaGlobalData<T>>();
-    if (ccache->values.empty()) ccache->values.load(acceleration, values.begin(), values.end());
+    if (ccache->values.empty()) ccache->values.load(acceleration, values.totalSize(), values.data());
 }
 void GridGlobal::clearGpuValues() const{ if (gpu_cache) gpu_cache->values.clear(); }
 template<typename T> void GridGlobal::loadGpuNodes() const{
@@ -654,7 +654,7 @@ template<typename T> void GridGlobal::loadGpuNodes() const{
     std::transform(active_w.begin(), active_w.end(), tweights.begin(), [](int i)->double{ return static_cast<double>(i); });
     ccache->tensor_weights.load(acceleration, tweights);
 
-    ccache->active_tensors.load(acceleration, active_tensors.begin(), active_tensors.end());
+    ccache->active_tensors.load(acceleration, active_tensors.totalSize(), active_tensors.data());
 
     std::vector<int> active_num_points(active_tensors.totalSize());
     std::transform(active_tensors.begin(), active_tensors.end(), active_num_points.begin(), [&](int i)->int{ return wrapper.getNumPoints(i); });
@@ -687,7 +687,7 @@ void GridGlobal::clearGpuNodes() const{
 void GridGlobal::integrate(double q[], double *conformal_correction) const{
     std::vector<double> w(getNumPoints());
     getQuadratureWeights(w.data());
-    if (conformal_correction != 0) for(int i=0; i<points.getNumIndexes(); i++) w[i] *= conformal_correction[i];
+    if (conformal_correction) for(int i=0; i<points.getNumIndexes(); i++) w[i] *= conformal_correction[i];
     std::fill(q, q+num_outputs, 0.0);
     #pragma omp parallel for schedule(static)
     for(int k=0; k<num_outputs; k++){

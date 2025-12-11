@@ -639,9 +639,9 @@ public:
 
 
     //! \brief Return the \b dimensions of the grid, i.e., number of model inputs.
-    int getNumDimensions() const{ return (base) ? base->getNumDimensions() : 0; }
+    int getNumDimensions() const{ return makeCall<BaseMethod::getNumDimensions>(); }
     //! \brief Return the \b outputs of the grid, i.e., number of model outputs.
-    int getNumOutputs() const{ return (base) ? base->getNumOutputs() : 0; }
+    int getNumOutputs() const{ return makeCall<BaseMethod::getNumOutputs>(); }
     //! \brief Return the underlying TasGrid::TypeOneDRule that gives the points and basis functions.
     TypeOneDRule getRule() const;
     /*!
@@ -654,11 +654,11 @@ public:
     const char* getCustomRuleDescription() const; // used only for Global Grids with rule_customtabulated
 
     //! \brief Return the number of points already associated with model values via loadNeededValues().
-    int getNumLoaded() const{ return (base) ? base->getNumLoaded() : 0; }
+    int getNumLoaded() const{ return makeCall<BaseMethod::getNumLoaded>(); }
     //! \brief Return the number of points that should be provided to the next call of loadNeededValues().
-    int getNumNeeded() const{ return (base) ? base->getNumNeeded() : 0; }
+    int getNumNeeded() const{ return makeCall<BaseMethod::getNumNeeded>(); }
     //! \brief Returns getNumLoaded() if positive, otherwise returns getNumNeeded(), see getPoints().
-    int getNumPoints() const{ return (base) ? base->getNumPoints() : 0; }
+    int getNumPoints() const{ return makeCall<BaseMethod::getNumPoints>(); }
 
     /*!
      * \brief Return the points already associated with model values.
@@ -896,7 +896,7 @@ public:
      * e.g., mergeRefinement() or loadNeededValues().
      * The model values will follow the internal Tasmanian order, identical to getLoadedPoints().
      */
-    const double* getLoadedValues() const{ return (empty()) ? nullptr : base->getLoadedValues(); }
+    const double* getLoadedValues() const;
 
     /*!
      * \brief Computes the value of the interpolant (or point-wise approximation) at the given point \b x.
@@ -1077,20 +1077,20 @@ public:
      */
     void differentiate(const double x[], double jacobian[]) const;
 
+    //! \brief Returns \b true if the grid is empty (no type), \b false otherwise.
+    bool isEmpty() const{ return std::holds_alternative<std::monostate>(base); }
+    //! \brief Returns \b true if the grid is empty (no type), \b false otherwise.
+    bool empty() const{ return std::holds_alternative<std::monostate>(base); }
     //! \brief Returns \b true if the grid is of type global, \b false otherwise.
-    bool isGlobal() const{ return base && base->isGlobal(); }
+    bool isGlobal() const{ return std::holds_alternative<GridGlobal>(base); }
     //! \brief Returns \b true if the grid is of type sequence, \b false otherwise.
-    bool isSequence() const{ return base && base->isSequence(); }
-    //! \brief Returns \b true if the grid is of type local polynomial, \b false otherwise.
-    bool isLocalPolynomial() const{ return base && base->isLocalPolynomial(); }
-    //! \brief Returns \b true if the grid is of type wavelet, \b false otherwise.
-    bool isWavelet() const{ return base && base->isWavelet(); }
+    bool isSequence() const{ return std::holds_alternative<GridSequence>(base); }
     //! \brief Returns \b true if the grid is of type Fourier, \b false otherwise.
-    bool isFourier() const{ return base && base->isFourier(); }
-    //! \brief Returns \b true if the grid is empty (no type), \b false otherwise.
-    bool isEmpty() const{ return !base; }
-    //! \brief Returns \b true if the grid is empty (no type), \b false otherwise.
-    bool empty() const{ return !base; }
+    bool isFourier() const{ return std::holds_alternative<GridFourier>(base); }
+    //! \brief Returns \b true if the grid is of type local polynomial, \b false otherwise.
+    bool isLocalPolynomial() const{ return std::holds_alternative<GridLocalPolynomial>(base); }
+    //! \brief Returns \b true if the grid is of type wavelet, \b false otherwise.
+    bool isWavelet() const{ return std::holds_alternative<GridWavelet>(base); }
 
     /*!
      * \brief Set a linear domain transformation.
@@ -1566,7 +1566,7 @@ public:
      *
      * Identical to setHierarchicalCoefficients() but does not check for the size of the array.
      */
-    void setHierarchicalCoefficients(const double c[]){ base->setHierarchicalCoefficients(c); }
+    void setHierarchicalCoefficients(const double c[]);
 
     /*!
      * \brief Computes the values of the hierarchical function basis at the specified points.
@@ -1968,17 +1968,10 @@ public:
                 };
             }else{
                 size_t dims = (size_t) getNumDimensions();
-                #if __cplusplus > 201103L
                 return [dta=domain_transform_a, dims](std::vector<double> const &x)->bool{
                     for(size_t i=0; i<dims; i++) if (x[i] < dta[i]) return false;
                     return true;
                 };
-                #else
-                return [=](std::vector<double> const &x)->bool{
-                    for(size_t i=0; i<dims; i++) if (x[i] < domain_transform_a[i]) return false;
-                    return true;
-                };
-                #endif
             }
         }else{
             if (domain_transform_a.empty()){
@@ -1995,19 +1988,11 @@ public:
                 }
             }else{
                 size_t dims = (size_t) getNumDimensions();
-                #if __cplusplus > 201103L
                 return [dta=domain_transform_a, dtb=domain_transform_b, dims](std::vector<double> const &x)->bool{
                     for(size_t i=0; i<dims; i++)
                         if (x[i] < dta[i] or x[i] > dtb[i]) return false;
                     return true;
                 };
-                #else
-                return [=](std::vector<double> const &x)->bool{
-                    for(size_t i=0; i<dims; i++)
-                        if (x[i] < domain_transform_a[i] or x[i] > domain_transform_b[i]) return false;
-                    return true;
-                };
-                #endif
             }
         }
     }
@@ -2085,7 +2070,9 @@ public:
      * Casts the internal unique_ptr to \b T and returns the result.
      * \endinternal
      */
-    template<class T> inline T* get(){ return dynamic_cast<T*>(base.get()); }
+    template<class T> inline T* get(){
+        return std::get_if<T>(std::addressof(base));
+    }
     /*!
      * \internal
      * \brief Overload using const.
@@ -2093,7 +2080,9 @@ public:
      * Same as get(), but the method is const and returns a const reference.
      * \endinternal
      */
-    template<class T> inline T const* get() const{ return dynamic_cast<T const*>(base.get()); }
+    template<class T> inline T const* get() const{
+        return std::get_if<T>(std::addressof(base));
+    }
     /*!
      * \internal
      * \brief Allows the addon methods to use the acceleration context.
@@ -2105,6 +2094,40 @@ public:
 
 protected:
     #ifndef __TASMANIAN_DOXYGEN_SKIP_INTERNAL
+    /*!
+     * \internal
+     * \brief Enumeration of Tasmanian methods that return int with no inputs
+     *
+     * \endinternal
+     */
+    enum class BaseMethod {
+        getNumDimensions,
+        getNumOutputs,
+        getNumLoaded,
+        getNumNeeded,
+        getNumPoints
+    };
+    //! Call the respective method using a std::visit
+    template<BaseMethod method>
+    int makeCall() const{
+        return std::visit([](auto const &g) -> int {
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>) {
+                if constexpr (method == BaseMethod::getNumDimensions)
+                    return g.getNumDimensions();
+                else if constexpr (method == BaseMethod::getNumOutputs)
+                    return g.getNumOutputs();
+                else if constexpr (method == BaseMethod::getNumLoaded)
+                    return g.getNumLoaded();
+                else if constexpr (method == BaseMethod::getNumNeeded)
+                    return g.getNumNeeded();
+                else if constexpr (method == BaseMethod::getNumPoints)
+                    return g.getNumPoints();
+            } else {
+                return int{0};
+            }
+        }, base);
+    }
+
     /*!
      * \internal
      * \brief Reset the grid to empty.
@@ -2243,9 +2266,18 @@ protected:
     #endif // __TASMANIAN_DOXYGEN_SKIP_INTERNAL
 
 private:
-    std::unique_ptr<AccelerationContext> acceleration; // must be destroyed last for sycl
+    // must not invalidate aliases when the grid is moved, must be destroyed last for sycl
+    std::unique_ptr<AccelerationContext> acceleration;
 
-    std::unique_ptr<BaseCanonicalGrid> base;
+    // contains all possible sparse grids with a null-grid (int) as the default
+    using grid_variant = std::variant<std::monostate,
+                                      GridGlobal,           // index 1
+                                      GridSequence,         // index 2
+                                      GridFourier,          // index 3
+                                      GridLocalPolynomial,  // index 4
+                                      GridWavelet           // index 5
+                                      >;
+    grid_variant base;
 
     std::vector<double> domain_transform_a, domain_transform_b;
     std::vector<int> conformal_asin_power;
@@ -2253,7 +2285,7 @@ private:
 
     bool using_dynamic_construction;
 
-    mutable std::unique_ptr<AccelerationDomainTransform> acc_domain;
+    mutable AccelerationDomainTransform acc_domain;
 };
 
 /*!

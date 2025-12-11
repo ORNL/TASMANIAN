@@ -397,7 +397,7 @@ template<typename T> void GridLocalPolynomial::loadGpuBasis() const{
 
     Data2D<double> cpu_nodes(num_dimensions, getNumPoints());
     getPoints(cpu_nodes.getStrip(0));
-    ccache->nodes.load(acceleration, cpu_nodes.begin(), cpu_nodes.end());
+    ccache->nodes.load(acceleration, cpu_nodes.totalSize(), cpu_nodes.data());
 
     Data2D<T> cpu_support = [&](void)->Data2D<T>{
             const MultiIndexSet &work = (points.empty()) ? needed : points;
@@ -418,7 +418,7 @@ template<typename T> void GridLocalPolynomial::loadGpuBasis() const{
                                         : encodeSupportForGPU<2, rule_localpb, T>(work);
             };
         }();
-    ccache->support.load(acceleration, cpu_support.begin(), cpu_support.end());
+    ccache->support.load(acceleration, cpu_support.totalSize(), cpu_support.data());
 }
 void GridLocalPolynomial::clearGpuBasisHierarchy(){
     if (gpu_cache) gpu_cache->clearBasisHierarchy();
@@ -437,7 +437,7 @@ template<typename T> void GridLocalPolynomial::loadGpuSurpluses() const{
     auto& ccache = getGpuCache<T>();
     if (!ccache) ccache = Utils::make_unique<CudaLocalPolynomialData<T>>();
     if (ccache->surpluses.size() != 0) return;
-    ccache->surpluses.load(acceleration, surpluses.begin(), surpluses.end());
+    ccache->surpluses.load(acceleration, surpluses.totalSize(), surpluses.data());
 }
 void GridLocalPolynomial::clearGpuSurpluses(){
     if (gpu_cache) gpu_cache->surpluses.clear();

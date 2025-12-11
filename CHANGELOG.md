@@ -1,3 +1,8 @@
+Changelog for version 8.3
+--------------
+
+* C++-17 is now required
+
 Changelog for version 8.2
 --------------
 

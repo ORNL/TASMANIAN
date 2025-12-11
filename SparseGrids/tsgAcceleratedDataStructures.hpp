@@ -100,7 +100,7 @@ public:
     GpuVector<T>& operator =(GpuVector<T> const &) = delete;
 
     //! \brief Allow for move-construction.
-    GpuVector(GpuVector<T> &&other) : num_entries(Utils::exchange(other.num_entries, 0)), gpu_data(Utils::exchange(other.gpu_data, nullptr))
+    GpuVector(GpuVector<T> &&other) : num_entries(std::exchange(other.num_entries, 0)), gpu_data(std::exchange(other.gpu_data, nullptr))
     #ifdef Tasmanian_ENABLE_DPCPP
         , sycl_queue(other.sycl_queue)
     #endif
@@ -135,7 +135,10 @@ public:
     //! \brief Construct a vector and load with date provided on to the cpu.
     GpuVector(AccelerationContext const *acc, int dim1, int dim2, T const *cpu_data) : num_entries(0), gpu_data(nullptr){ load(acc, Utils::size_mult(dim1, dim2), cpu_data); }
     //! \brief Construct a vector by loading from a given range.
-    template<typename IteratorLike> GpuVector(AccelerationContext const *acc, IteratorLike ibegin, IteratorLike iend) : GpuVector(){ load(acc, ibegin, iend); }
+    template<typename IteratorLike>
+    GpuVector(AccelerationContext const *acc, IteratorLike ibegin, IteratorLike iend) : GpuVector(){
+        load(acc, std::distance(ibegin, iend), std::addressof(*ibegin));
+    }
     //! \brief Destructor, release all allocated memory.
     ~GpuVector(){ clear(); }
 
@@ -153,45 +156,34 @@ public:
     //! \brief Return \b true if the \b size() is zero.
     bool empty() const{ return (num_entries == 0); }
 
-    //! \brief Copy the content of \b cpu_data to the GPU device, all pre-existing data is deleted and the vector is resized to match \b cpu_data.
-    void load(AccelerationContext const *acc, const std::vector<T> &cpu_data){ load(acc, cpu_data.size(), cpu_data.data()); }
-
-    //! \brief Load from a range defined by the begin and end, converts if necessary.
-    template<typename IteratorLike>
-    void load(AccelerationContext const *acc, IteratorLike ibegin, IteratorLike iend){
-        load(acc, std::distance(ibegin, iend), &*ibegin);
-    }
-
     /*!
-     * \brief Takes a vector with entries of different precision, converts and loads.
-     *
-     * Used when the CPU vectors are stored in double-precision format while the GPU entries are prepared to work with single-precision.
+     * \brief Takes a vector with entries of possibly different precision, maybe converts and loads.
      */
     template<typename U>
-    Utils::use_if<!std::is_same<U, T>::value> load(AccelerationContext const *acc, const std::vector<U> &cpu_data){
+    void load(AccelerationContext const *acc, const std::vector<U> &cpu_data){
         load(acc, cpu_data.size(), cpu_data.data());
     }
 
     /*!
-     * \brief Copy the first \b count entries of \b cpu_data to the GPU device.
+     * \brief Takes a vector with entries of possibly different precision, maybe converts and always loads.
      *
      * If \b count does not match the current size, the current array will be deleted and new array will be allocated
      * (even if \b size() exceeds \b count).
      * The final vector size will match \b count.
      * However, if \b count matches \b size(), the data is overwritten but no arrays will be allocated, deleted, or de-aliased.
      */
-    void load(AccelerationContext const *acc, size_t count, const T* cpu_data);
-    /*!
-     * \brief Takes a vector with entries of different precision, converts and loads.
-     *
-     * Used when the CPU data is stored in double-precision format while the GPU entries are prepared to work with single-precision.
-     */
     template<typename U>
-    Utils::use_if<!std::is_same<U, T>::value> load(AccelerationContext const *acc, size_t count, const U* cpu_data){
-        std::vector<T> converted(count);
-        std::transform(cpu_data, cpu_data + count, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
-        load(acc, converted);
+    void load(AccelerationContext const *acc, size_t count, const U* cpu_data) {
+        if constexpr (std::is_same_v<U, T>) {
+            load_internal(acc, count, cpu_data);
+        } else {
+            // need to convert the array
+            std::vector<T> converted(count);
+            std::transform(cpu_data, cpu_data + count, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
+            load_internal(acc, count, converted.data());
+        }
     }
+
     //! \brief Copy the data from the GPU array to \b cpu_data, the \b cpu_data will be resized and overwritten.
     void unload(AccelerationContext const *acc, std::vector<T> &cpu_data) const{
         cpu_data.resize(num_entries);
@@ -220,6 +212,16 @@ public:
     using value_type = T;
 
 private:
+    /*!
+     * \brief Copy the first \b count entries of \b cpu_data to the GPU device.
+     *
+     * If \b count does not match the current size, the current array will be deleted and new array will be allocated
+     * (even if \b size() exceeds \b count).
+     * The final vector size will match \b count.
+     * However, if \b count matches \b size(), the data is overwritten but no arrays will be allocated, deleted, or de-aliased.
+     */
+    void load_internal(AccelerationContext const *acc, size_t count, const T* cpu_data);
+
     size_t num_entries; // keep track of the size, update on every call that changes the gpu_data
     T *gpu_data; // the GPU array
     #ifdef Tasmanian_ENABLE_DPCPP
@@ -234,6 +236,17 @@ private:
  * The class also manages the required handles and queues and holds the context of the active GPU device.
  */
 struct GpuEngine{
+    //! Default construction, does not use any GPU acceleration, will set handles on-the-fly
+    GpuEngine() = default;
+    //! Do not copy, even if no GPU backend is enabled
+    GpuEngine(GpuEngine const &) = delete;
+    //! Do not copy, even if no GPU backend is enabled
+    GpuEngine &operator = (GpuEngine const &) = delete;
+    //! Moving the engine is allowed, unique pointers will be moved
+    GpuEngine(GpuEngine &&) = default;
+    //! Moving the engine is allowed, unique pointers will be moved
+    GpuEngine &operator = (GpuEngine &&) = default;
+
     #ifdef Tasmanian_ENABLE_CUDA
     //! \brief Manually sets the cuBlas handle, handle must be a valid cublasHandle_t associated with this CUDA device.
     void setCuBlasHandle(void *handle);
@@ -270,7 +283,7 @@ struct GpuEngine{
     #endif
 
     //! \brief Avoids an empty engine when no acceleration is enabled, allows for default constructor/move/copy, skips extraneous calls to MAGMA init.
-    std::unique_ptr<int> called_magma_init;
+    bool called_magma_init = false;
 };
 
 //! \internal
@@ -283,8 +296,12 @@ struct GpuEngine{
 //! \b Note: Conformal mapping and the non-linear Gauss-Hermite and Gauss-Laguerre transforms are not supported.
 class AccelerationDomainTransform{
 public:
+    //! construct an empty acceleration transform
+    AccelerationDomainTransform() = default;
     //! \brief Constructor, load the transform data to the GPU, the vectors are the same as used in the \b TasmanianSparseGrid class.
-    AccelerationDomainTransform(AccelerationContext const *, std::vector<double> const &transform_a, std::vector<double> const &transform_b);
+    AccelerationDomainTransform(AccelerationContext const *acc, std::vector<double> const &transform_a, std::vector<double> const &transform_b){
+        set(acc, transform_a, transform_b);
+    }
 
     /*!
      * \brief Transform a set of points, used in the calls to \b evaluateHierarchicalFunctionsGPU()
@@ -295,12 +312,24 @@ public:
      */
     template<typename T>
     void getCanonicalPoints(bool use01, T const gpu_transformed_x[], int num_x, GpuVector<T> &gpu_canonical_x);
+    //! check if the transform has been set
+    operator bool () const { return (acceleration != nullptr); }
+    //! set the domain transform
+    void set(AccelerationContext const *, std::vector<double> const &transform_a, std::vector<double> const &transform_b);
+    //! resets the transform, used when changing the compute device
+    void clear() {
+        gpu_trans_a.clear();
+        gpu_trans_b.clear();
+        num_dimensions = 0;
+        padded_size = 0;
+        acceleration = nullptr;
+    }
 
 private:
     // these actually store the rate and shift and not the hard upper/lower limits
     GpuVector<double> gpu_trans_a, gpu_trans_b;
-    int num_dimensions, padded_size;
-    AccelerationContext const *acceleration;
+    int num_dimensions = 0, padded_size = 0;
+    AccelerationContext const *acceleration = nullptr;
 };
 
 //! \internal
@@ -412,17 +441,21 @@ namespace TasGpu{
      * \ingroup TasmanianAcceleration
      * \brief Similar to copy_n, copies the data from the CPU to the GPU.
      */
-    template<typename T> void load_n(AccelerationContext const *acc, T const *cpu_data, size_t num_entries, T *gpu_data);
+    template<typename T> void load_n_internal(AccelerationContext const *acc, T const *cpu_data, size_t num_entries, T *gpu_data);
 
     /*!
      * \ingroup TasmanianAcceleration
      * \brief Similar to copy_n, copies the data from the CPU to the GPU.
      */
     template<typename T, typename U>
-    Utils::use_if<!std::is_same<U, T>::value> load_n(AccelerationContext const *acc, U const *cpu_data, size_t num_entries, T *gpu_data){
-        std::vector<T> converted(num_entries);
-        std::transform(cpu_data, cpu_data + num_entries, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
-        load_n(acc, converted.data(), num_entries, gpu_data);
+    void load_n(AccelerationContext const *acc, U const *cpu_data, size_t num_entries, T *gpu_data){
+        if constexpr (std::is_same_v<U, T>) {
+            load_n_internal(acc, cpu_data, num_entries, gpu_data);
+        } else {
+            std::vector<T> converted(num_entries);
+            std::transform(cpu_data, cpu_data + num_entries, converted.begin(), [](U const &x)->T{ return static_cast<T>(x); });
+            load_n_internal(acc, converted.data(), num_entries, gpu_data);
+        }
     }
 
     // #define __TASMANIAN_COMPILE_FALLBACK_CUDA_KERNELS__ // uncomment to compile a bunch of custom CUDA kernels that provide some functionality similar to cuBlas
@@ -574,6 +607,15 @@ namespace AccelerationMeta{
  * \endinternal
  */
 struct AccelerationContext{
+    //! Cannot copy the context
+    AccelerationContext(AccelerationContext const &) = delete;
+    //! Cannot copy the context
+    AccelerationContext &operator = (AccelerationContext const &) = delete;
+    //! Can move the context
+    AccelerationContext(AccelerationContext &&) = default;
+    //! Can move the context
+    AccelerationContext &operator = (AccelerationContext &&) = default;
+
     //! \brief Defines the sparse-dense algorithm flavors, whenever applicable.
     enum AlgorithmPreference{
         //! \brief Use dense algorithm.
@@ -611,7 +653,7 @@ struct AccelerationContext{
     int device;
 
     //! \brief Holds the context to the GPU TPL handles, e.g., MAGMA queue.
-    mutable std::unique_ptr<GpuEngine> engine;
+    mutable std::optional<GpuEngine> engine;
 
     //! \brief Returns the default acceleration mode, cpu_blas if BLAS is enabled and none otherwise.
     inline static constexpr TypeAcceleration getDefaultAccMode() {
@@ -635,7 +677,6 @@ struct AccelerationContext{
 
     //! \brief Sets algorithm affinity in the direction of sparse.
     ChangeType favorSparse(bool favor){
-        #if __cplusplus > 201103L
         AlgorithmPreference new_preference = [as=algorithm_select, favor]()->AlgorithmPreference{
             if (favor){
                 return (as == algorithm_dense) ? algorithm_autoselect : algorithm_sparse;
@@ -643,15 +684,6 @@ struct AccelerationContext{
                 return (as == algorithm_sparse) ? algorithm_autoselect : algorithm_dense;
             }
         }();
-        #else
-        AlgorithmPreference new_preference = [&]()->AlgorithmPreference{
-            if (favor){
-                return (algorithm_select == algorithm_dense) ? algorithm_autoselect : algorithm_sparse;
-            }else{
-                return (algorithm_select == algorithm_sparse) ? algorithm_autoselect : algorithm_dense;
-            }
-        }();
-        #endif
         if (new_preference != algorithm_select){
             algorithm_select = new_preference;
             return change_sparse_dense;
@@ -714,7 +746,7 @@ struct AccelerationContext{
             // if the new mode is GPU-based, make an engine or reset the engine if the device has changed
             // if the engine exists and the device is not changed, then keep the existing engine
             if (!engine or new_gpu_id != device)
-                engine = Utils::make_unique<GpuEngine>();
+                engine.emplace();
         }else{
             engine.reset();
         }
@@ -726,7 +758,7 @@ struct AccelerationContext{
     //! \brief Set default device.
     void setDevice() const{ AccelerationMeta::setDefaultGpuDevice(device); }
     //! \brief Custom convert to \b GpuEngine
-    operator GpuEngine* () const{ return engine.get(); }
+    operator GpuEngine* () const{ return std::addressof(engine.value()); }
     //! \brief Returns true if any of the GPU-based acceleration modes have been enabled.
     bool on_gpu() const{ return !!engine; }
 };

@@ -46,6 +46,9 @@ public:
     }
     ~GridFourier() = default;
 
+    GridFourier(GridFourier &&) = default;
+    GridFourier &operator = (GridFourier &&) = default;
+
     bool isFourier() const override{ return true; }
 
     void write(std::ostream &os, bool iomode) const override{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
@@ -195,7 +198,11 @@ private:
 template<> struct GridReaderVersion5<GridFourier>{
     template<typename iomode> static std::unique_ptr<GridFourier> read(AccelerationContext const *acc, std::istream &is){
         std::unique_ptr<GridFourier> grid = Utils::make_unique<GridFourier>(acc);
+        read<iomode>(is, grid.get());
+        return grid;
+    }
 
+    template<typename iomode> static void read(std::istream &is, GridFourier *grid) {
         grid->num_dimensions = IO::readNumber<iomode, int>(is);
         grid->num_outputs = IO::readNumber<iomode, int>(is);
 
@@ -229,8 +236,6 @@ template<> struct GridReaderVersion5<GridFourier>{
         grid->wrapper = OneDimensionalWrapper(oned_max_level, rule_fourier, 0.0, 0.0);
 
         grid->max_power = MultiIndexManipulations::getMaxIndexes(((grid->points.empty()) ? grid->needed : grid->points));
-
-        return grid;
     }
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP

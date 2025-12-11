@@ -46,6 +46,9 @@ public:
     GridSequence(AccelerationContext const *acc, MultiIndexSet &&pset, int cnum_outputs, TypeOneDRule crule);
     ~GridSequence() = default;
 
+    GridSequence(GridSequence &&) = default;
+    GridSequence &operator = (GridSequence &&) = default;
+
     bool isSequence() const override{ return true; }
 
     void write(std::ostream &os, bool iomode) const override{ if (iomode == mode_ascii) write<mode_ascii>(os); else write<mode_binary>(os); }
@@ -202,12 +205,12 @@ private:
                 transpoints.getStrip(j)[i] = work->getIndex(i)[j];
             }
         }
-        ccache->points.load(acceleration, transpoints.begin(), transpoints.end());
+        ccache->points.load(acceleration, transpoints.totalSize(), transpoints.data());
     }
     template<typename T> void loadGpuSurpluses() const{
         auto& ccache = getGpuCache<T>();
         if (!ccache) ccache = Utils::make_unique<CudaSequenceData<T>>();
-        if (ccache->surpluses.empty()) ccache->surpluses.load(acceleration, surpluses.begin(), surpluses.end());
+        if (ccache->surpluses.empty()) ccache->surpluses.load(acceleration, surpluses.totalSize(), surpluses.data());
     }
     mutable std::unique_ptr<CudaSequenceData<double>> gpu_cache;
     mutable std::unique_ptr<CudaSequenceData<float>> gpu_cachef;
@@ -217,6 +220,11 @@ private:
 template<> struct GridReaderVersion5<GridSequence>{
     template<typename iomode> static std::unique_ptr<GridSequence> read(AccelerationContext const *acc, std::istream &is){
         std::unique_ptr<GridSequence> grid = Utils::make_unique<GridSequence>(acc);
+        read<iomode>(is, grid.get());
+        return grid;
+    }
+
+    template<typename iomode> static void read(std::istream &is, GridSequence *grid) {
 
         grid->num_dimensions = IO::readNumber<iomode, int>(is);
         grid->num_outputs = IO::readNumber<iomode, int>(is);
@@ -231,8 +239,6 @@ template<> struct GridReaderVersion5<GridSequence>{
         if (grid->num_outputs > 0) grid->values = StorageSet(is, iomode());
 
         grid->prepareSequence(0);
-
-        return grid;
     }
 };
 #endif // __TASMANIAN_DOXYGEN_SKIP
