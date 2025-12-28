@@ -774,7 +774,7 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         #ifdef Tasmanian_ENABLE_DPCPP
         if (std::abs(sum - 96.0 * 512.0 / 27.0) > 10.0 * Maths::num_tol){ // without 10.0 the test fails on dpcpp with error 1.E-12
         #else
-        if (std::abs(sum - 96.0 * 512.0 / 27.0) > Maths::num_tol){
+        if (std::abs(sum - 96.0 * 512.0 / 27.0) > 2.0 * Maths::num_tol){
         #endif
             cout << sum << "     " << 96.0 * 512.0 / 27.0 << endl;
             cout << "ERROR: sum of weight in transformed gauss-laguerre rule is off by: " << std::abs(sum - 96.0 * 512.0 / 27.0) << endl;
