@@ -117,9 +117,9 @@ public:
     }
 
     //! \brief Default constructor, creates an empty (null) array.
-    GpuVector() : num_entries(0), gpu_data(nullptr){}
+    GpuVector() = default;
     //! \brief Construct a vector with \b count number of entries.
-    GpuVector(AccelerationContext const *acc, size_t count) : num_entries(0), gpu_data(nullptr){ resize(acc, count); }
+    GpuVector(AccelerationContext const *acc, size_t count){ resize(acc, count); }
 
     /*!
      * \brief Same as \b GpuVector(dim1 * dim2), but guards against overflow.
@@ -129,11 +129,11 @@ public:
      * and both integers are converted to size_t before multiplication which prevents overflow.
      * Note: the dimensions \b will \b not be stored, the underlying data is still one dimensional.
      */
-    GpuVector(AccelerationContext const *acc, int dim1, int dim2) : num_entries(0), gpu_data(nullptr){ resize(acc, Utils::size_mult(dim1, dim2)); }
+    GpuVector(AccelerationContext const *acc, int dim1, int dim2){ resize(acc, Utils::size_mult(dim1, dim2)); }
     //! \brief Create a vector with size that matches \b cpu_data and copy the data to the GPU device.
-    GpuVector(AccelerationContext const *acc, const std::vector<T> &cpu_data) : num_entries(0), gpu_data(nullptr){ load(acc, cpu_data); }
+    GpuVector(AccelerationContext const *acc, const std::vector<T> &cpu_data){ load(acc, cpu_data); }
     //! \brief Construct a vector and load with date provided on to the cpu.
-    GpuVector(AccelerationContext const *acc, int dim1, int dim2, T const *cpu_data) : num_entries(0), gpu_data(nullptr){ load(acc, Utils::size_mult(dim1, dim2), cpu_data); }
+    GpuVector(AccelerationContext const *acc, int dim1, int dim2, T const *cpu_data){ load(acc, Utils::size_mult(dim1, dim2), cpu_data); }
     //! \brief Construct a vector by loading from a given range.
     template<typename IteratorLike>
     GpuVector(AccelerationContext const *acc, IteratorLike ibegin, IteratorLike iend) : GpuVector(){
@@ -222,10 +222,10 @@ private:
      */
     void load_internal(AccelerationContext const *acc, size_t count, const T* cpu_data);
 
-    size_t num_entries; // keep track of the size, update on every call that changes the gpu_data
-    T *gpu_data; // the GPU array
+    size_t num_entries = 0; // keep track of the size, update on every call that changes the gpu_data
+    T *gpu_data = nullptr; // the GPU array
     #ifdef Tasmanian_ENABLE_DPCPP
-    void* sycl_queue;
+    void* sycl_queue = nullptr;
     #endif
 };
 
@@ -779,7 +779,7 @@ struct AccelerationContext{
  */
 struct InternalSyclQueue{
     //! \brief Default constructor, assume we are not in a testing mode.
-    InternalSyclQueue() : use_testing(false){}
+    InternalSyclQueue() = default;
     //! \brief Initialize the testing, in which case the internal queue would be used in place of a new queue.
     void init_testing(int gpuid);
     //! \brief Auto-converts to a non-owning std::unique_ptr.
@@ -788,7 +788,7 @@ struct InternalSyclQueue{
                                                                          HandleDeleter<AccHandle::Syclqueue>(false));
     }
     //! \brief Indicates whether this is a testing run.
-    bool use_testing;
+    bool use_testing = false;
     //! \brief Holds the internal sycl::queue for testing.
     std::unique_ptr<int, HandleDeleter<AccHandle::Syclqueue>> test_queue;
 };

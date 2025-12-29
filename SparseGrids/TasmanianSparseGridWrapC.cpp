@@ -31,6 +31,8 @@
 #ifndef __TASMANIAN_SPARSE_GRID_WRAPC_CPP
 #define __TASMANIAN_SPARSE_GRID_WRAPC_CPP
 
+#include <cstdlib>
+
 #include "TasmanianSparseGrid.hpp"
 
 // ------------ C Interface for use with Python ctypes and potentially other C codes -------------- //
@@ -149,18 +151,22 @@ int tsgGetOrder(void *grid){ return ((TasmanianSparseGrid*) grid)->getOrder(); }
 int tsgGetNumDimensions(void *grid){ return ((TasmanianSparseGrid*) grid)->getNumDimensions(); }
 int tsgGetNumOutputs(void *grid){ return ((TasmanianSparseGrid*) grid)->getNumOutputs(); }
 char* tsgGetRule(void *grid){
-    std::string cppstring = IO::getRuleString( ((TasmanianSparseGrid*) grid)->getRule() );
-    char *cstring = new char[cppstring.size() + 1];
-    for(size_t i=0; i<cppstring.size(); i++) cstring[i] = cppstring[i];
+    std::string_view cppstring = IO::getRuleString( ((TasmanianSparseGrid*) grid)->getRule() );
+    char *cstring = (char*) malloc((cppstring.size() + 1) * sizeof(char));
+    std::copy_n(cppstring.begin(), cppstring.size(), cstring);
     cstring[cppstring.size()] = '\0';
     return cstring;
 }
-void tsgCopyRuleChars(void *grid, int buffer_size, char *name, int *num_actual){
-    std::string cppstring = IO::getRuleString( ((TasmanianSparseGrid*) grid)->getRule() );
-    size_t max_num = std::min((size_t) buffer_size - 1, cppstring.size());
+void tsgCopyRuleChars(void *grid, size_t buffer_size, char *name, size_t *num_actual){
+    if (buffer_size == 0) {
+        *num_actual = 0;
+        return;
+    }
+    std::string_view cppstring = IO::getRuleString( ((TasmanianSparseGrid*) grid)->getRule() );
+    size_t max_num = std::min(buffer_size - 1, cppstring.size());
     std::copy_n(cppstring.begin(), max_num, name);
     name[max_num] = '\0';
-    *num_actual = (int) max_num;
+    *num_actual = max_num;
 }
 const char* tsgGetCustomRuleDescription(void *grid){ return ((TasmanianSparseGrid*) grid)->getCustomRuleDescription(); }
 
