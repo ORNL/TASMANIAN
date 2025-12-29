@@ -2269,7 +2269,7 @@ private:
     // must not invalidate aliases when the grid is moved, must be destroyed last for sycl
     std::unique_ptr<AccelerationContext> acceleration;
 
-    // contains all possible sparse grids with a null-grid (int) as the default
+    // contains all possible sparse grids with a null-grid std::monostate as the default
     using grid_variant = std::variant<std::monostate,
                                       GridGlobal,           // index 1
                                       GridSequence,         // index 2
@@ -2283,7 +2283,7 @@ private:
     std::vector<int> conformal_asin_power;
     std::vector<int> llimits;
 
-    bool using_dynamic_construction;
+    bool using_dynamic_construction = false;
 
     mutable AccelerationDomainTransform acc_domain;
 };

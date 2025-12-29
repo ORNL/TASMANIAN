@@ -72,10 +72,10 @@ bool TasmanianSparseGrid::isDpcppEnabled(){
     #endif
 }
 
-TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(std::make_unique<AccelerationContext>()), using_dynamic_construction(false){}
+TasmanianSparseGrid::TasmanianSparseGrid() : acceleration(std::make_unique<AccelerationContext>()){}
 
 TasmanianSparseGrid::TasmanianSparseGrid(const TasmanianSparseGrid &source) :
-        acceleration(std::make_unique<AccelerationContext>()), using_dynamic_construction(false){
+        acceleration(std::make_unique<AccelerationContext>()){
     copyGrid(&source);
 }
 
