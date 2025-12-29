@@ -111,7 +111,7 @@ add_custom_target(Tasmanian_python_testing ALL DEPENDS "${Tasmanian_python_testi
 ########################################################################
 # Stage 2: Install folder paths
 ########################################################################
-set(Tasmanian_shared_lib_destination "lib")
+set(Tasmanian_shared_lib_destination "${CMAKE_INSTALL_LIBDIR}")
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows") # windows puts the .dll files in bin, as opposed to lib
     set(Tasmanian_shared_lib_destination "bin")
 endif()
