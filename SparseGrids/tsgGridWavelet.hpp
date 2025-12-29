@@ -36,7 +36,7 @@
 namespace TasGrid{
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
-class GridWavelet : public BaseCanonicalGrid{
+class GridWavelet final : public BaseCanonicalGrid{
 public:
     GridWavelet(AccelerationContext const *acc) : BaseCanonicalGrid(acc), rule1D(1, 10), order(1){}
     friend struct GridReaderVersion5<GridWavelet>;

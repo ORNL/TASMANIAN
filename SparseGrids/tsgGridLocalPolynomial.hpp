@@ -36,7 +36,7 @@
 namespace TasGrid{
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
-class GridLocalPolynomial : public BaseCanonicalGrid{
+class GridLocalPolynomial final : public BaseCanonicalGrid{
 public:
     GridLocalPolynomial(AccelerationContext const *acc) : BaseCanonicalGrid(acc), order(1), top_level(0){}
     friend struct GridReaderVersion5<GridLocalPolynomial>;

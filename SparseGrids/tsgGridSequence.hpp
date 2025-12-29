@@ -36,7 +36,7 @@
 namespace TasGrid{
 
 #ifndef __TASMANIAN_DOXYGEN_SKIP
-class GridSequence : public BaseCanonicalGrid{
+class GridSequence final : public BaseCanonicalGrid{
 public:
     GridSequence(AccelerationContext const *acc) : BaseCanonicalGrid(acc), rule(rule_none){}
     friend struct GridReaderVersion5<GridSequence>;
