@@ -164,12 +164,10 @@ inline std::map<std::string_view, TypeOneDRule> getStringRuleMap(){
  * \ingroup TasmanianIO
  * \brief Map the string rule name to the enumerate, used in ASCII I/O, command line and Python.
  */
-inline TypeOneDRule getRuleString(std::string const &name){
-    try{
-        return getStringRuleMap().at(name);
-    }catch(std::out_of_range &){
-        return rule_none;
-    }
+inline TypeOneDRule getRuleString(std::string_view const &name){
+    auto const &name_map = getStringRuleMap();
+    auto rule = name_map.find(name);
+    return (rule == name_map.end()) ? rule_none : rule->second;
 }
 
 /*!
@@ -245,11 +243,9 @@ inline std::map<std::string_view, TypeDepth> getStringToDepthMap(){
  * \brief Map the string to the enumerate multi-index selection strategy, used in command line and Python.
  */
 inline TypeDepth getDepthTypeString(std::string_view const &name){
-    try{
-        return getStringToDepthMap().at(name);
-    }catch(std::out_of_range &){
-        return type_none;
-    }
+    auto const &name_map = getStringToDepthMap();
+    auto depth = name_map.find(name);
+    return (depth == name_map.end()) ? type_none : depth->second;
 }
 
 /*!
@@ -280,11 +276,9 @@ inline std::map<std::string_view, TypeRefinement> getStringToRefinementMap(){
  * \brief Map the string to the enumerate hierarchical refinement strategy, used in command line and Python.
  */
 inline TypeRefinement getTypeRefinementString(std::string_view const &name){
-    try{
-        return getStringToRefinementMap().at(name);
-    }catch(std::out_of_range &){
-        return refine_none;
-    }
+    auto const &name_map = getStringToRefinementMap();
+    auto const ref = name_map.find(name);
+    return (ref == name_map.end()) ? refine_none : ref->second;
 }
 /*!
  * \ingroup TasmanianIO
