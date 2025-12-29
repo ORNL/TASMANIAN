@@ -771,11 +771,9 @@ bool ExternalTester::performGaussTransfromTest(TasGrid::TypeOneDRule oned) const
         auto p = grid.getNeededPoints();
         int num_p = grid.getNumNeeded();
         double sum = 0.0; for(int i=0; i<num_p; i++) sum += w[i];
-        #ifdef Tasmanian_ENABLE_DPCPP
-        if (std::abs(sum - 96.0 * 512.0 / 27.0) > 10.0 * Maths::num_tol){ // without 10.0 the test fails on dpcpp with error 1.E-12
-        #else
-        if (std::abs(sum - 96.0 * 512.0 / 27.0) > Maths::num_tol){
-        #endif
+        if (std::abs(sum - 96.0 * 512.0 / 27.0) > 10.0 * Maths::num_tol){
+            // working on an unbounded domain, it is natural to see higher rounding error
+            // this is most notable when using highly parallel scenarios, e.g., OneAPI
             cout << sum << "     " << 96.0 * 512.0 / 27.0 << endl;
             cout << "ERROR: sum of weight in transformed gauss-laguerre rule is off by: " << std::abs(sum - 96.0 * 512.0 / 27.0) << endl;
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
