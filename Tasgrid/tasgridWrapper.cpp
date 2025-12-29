@@ -154,14 +154,24 @@ struct command_tester{
 struct test_result_wrapper{
     bool pass = true;
     operator bool() const{ return pass; }
-    void fail_if(bool condition, const char *text){
+    void fail_if(bool condition, std::string_view text){
         if (condition){
             cerr << "ERROR: " << text << "\n";
             pass = false;
         }
     }
+    void fail_if(bool condition, const char *text1, TypeOneDRule rule, const char *text2){
+        if (condition){
+            cerr << "ERROR: " << text1 << IO::getRuleString(rule) << text2 << '\n';
+            pass = false;
+        }
+    }
     void worry_if(bool condition, const char *text){
         if (condition) cerr << "WARNING: " << text << "\n";
+    }
+    void worry_if(bool condition, const char *text1, TypeOneDRule rule, const char *text2){
+        if (condition)
+            cerr << "WARNING: " << text1 << IO::getRuleString(rule) << text2 << '\n';
     }
 };
 
@@ -203,15 +213,13 @@ bool TasgridWrapper::checkSane() const{
                             rule == rule_gaussgegenbauerodd or rule == rule_gausshermiteodd or rule == rule_gaussjacobi);
         bool needs_beta = (rule == rule_gaussjacobi);
 
-        test.fail_if(not set_alpha and needs_alpha,
-                     (std::string("one dimensional rule ") + IO::getRuleString(rule) + " requires alpha parameter").c_str());
-        test.fail_if(not set_beta and needs_beta,
-                     (std::string("one dimensional rule ") + IO::getRuleString(rule) + " requires alpha parameter").c_str());
+        test.fail_if(not set_alpha and needs_alpha, "one dimensional rule ", rule, " requires alpha parameter");
+        test.fail_if(not set_beta and needs_beta, "one dimensional rule ", rule, " requires alpha parameter");
 
         test.worry_if(set_alpha and not needs_alpha,
-                      (std::string("alpha parameter set, but one dimensional rule ") + IO::getRuleString(rule) + " doesn't depend on alpha").c_str());
+                      "alpha parameter set, but one dimensional rule ", rule, " doesn't depend on alpha");
         test.worry_if(set_beta and not needs_beta,
-                      (std::string("beta parameter set, but one dimensional rule ") + IO::getRuleString(rule) + " doesn't depend on beta").c_str());
+                      "beta parameter set, but one dimensional rule ", rule, " doesn't depend on beta");
 
         test.fail_if(customfilename.empty() and rule == rule_customtabulated,
                      "ustom-tabulated rule specified, but no -customflile given");
@@ -252,16 +260,14 @@ bool TasgridWrapper::checkSane() const{
     // handle special cases per command
     switch(command){
         case command_makeglobal:
-            test.fail_if(not OneDimensionalMeta::isGlobal(rule),
-                         (std::string("cannot use global grids with rule: ") + IO::getRuleString(rule)).c_str());
+            test.fail_if(not OneDimensionalMeta::isGlobal(rule), "cannot use global grids with rule: ", rule, " ");
             break;
         case command_makesequence:
             test.fail_if(not OneDimensionalMeta::isSequence(rule),
-                         (std::string("rule is set to ") + IO::getRuleString(rule) + " which is not a sequence rule (e.g., leja, rleja, min/max-lebesgue)").c_str());
+                         "rule is set to ", rule, " which is not a sequence rule (e.g., leja, rleja, min/max-lebesgue)");
             break;
         case command_makelocalp:
-            test.fail_if(not OneDimensionalMeta::isLocalPolynomial(rule),
-                         (std::string("cannot use local polynomial grids with rule: ") + IO::getRuleString(rule)).c_str());
+            test.fail_if(not OneDimensionalMeta::isLocalPolynomial(rule), "cannot use local polynomial grids with rule: ", rule, " ");
             break;
         case command_makeexoquad:
             test.fail_if(not set_shift, "must specify shift parameter");

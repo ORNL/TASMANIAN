@@ -113,8 +113,8 @@ enum IOPad{
  * \ingroup TasmanianIO
  * \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeOneDRule enums.
  */
-inline std::map<std::string, TypeOneDRule> getStringRuleMap(){
-    return std::initializer_list<std::pair<std::string const, TypeOneDRule>>{
+inline std::map<std::string_view, TypeOneDRule> getStringRuleMap(){
+    return std::initializer_list<std::pair<std::string_view const, TypeOneDRule>>{
         {"none",                 rule_none},
         {"clenshaw-curtis",      rule_clenshawcurtis},
         {"clenshaw-curtis-zero", rule_clenshawcurtis0},
@@ -176,10 +176,10 @@ inline TypeOneDRule getRuleString(std::string const &name){
  * \ingroup TasmanianIO
  * \brief Map the enumerate to a string, used in ASCII I/O, command line and Python.
  */
-inline std::string getRuleString(TypeOneDRule rule){
+inline std::string_view getRuleString(TypeOneDRule rule){
     auto smap = getStringRuleMap();
     return std::find_if(smap.begin(), smap.end(),
-                        [&](std::pair<std::string, TypeOneDRule> r)->bool{ return (r.second == rule); })->first;
+                        [&](std::pair<std::string_view const, TypeOneDRule> r)->bool{ return (r.second == rule); })->first;
 }
 
 /*!
@@ -225,8 +225,8 @@ inline int getRuleInt(TypeOneDRule rule){
  * \ingroup TasmanianIO
  * \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeDepth enums.
  */
-inline std::map<std::string, TypeDepth> getStringToDepthMap(){
-    return std::initializer_list<std::pair<std::string const, TypeDepth>>{
+inline std::map<std::string_view, TypeDepth> getStringToDepthMap(){
+    return std::initializer_list<std::pair<std::string_view const, TypeDepth>>{
         {"level",        type_level},
         {"curved",       type_curved},
         {"iptotal",      type_iptotal},
@@ -244,7 +244,7 @@ inline std::map<std::string, TypeDepth> getStringToDepthMap(){
  * \ingroup TasmanianIO
  * \brief Map the string to the enumerate multi-index selection strategy, used in command line and Python.
  */
-inline TypeDepth getDepthTypeString(std::string const &name){
+inline TypeDepth getDepthTypeString(std::string_view const &name){
     try{
         return getStringToDepthMap().at(name);
     }catch(std::out_of_range &){
@@ -267,8 +267,8 @@ inline TypeDepth getDepthTypeInt(int t){
  * \ingroup TasmanianIO
  * \brief Creates a map with \b std::string rule names (used by C/Python/CLI) mapped to \b TypeRefinement enums.
  */
-inline std::map<std::string, TypeRefinement> getStringToRefinementMap(){
-    return std::initializer_list<std::pair<std::string const, TypeRefinement>>{
+inline std::map<std::string_view, TypeRefinement> getStringToRefinementMap(){
+    return std::initializer_list<std::pair<std::string_view const, TypeRefinement>>{
         {"classic",   refine_classic},
         {"parents",   refine_parents_first},
         {"direction", refine_direction_selective},
@@ -279,7 +279,7 @@ inline std::map<std::string, TypeRefinement> getStringToRefinementMap(){
  * \ingroup TasmanianIO
  * \brief Map the string to the enumerate hierarchical refinement strategy, used in command line and Python.
  */
-inline TypeRefinement getTypeRefinementString(std::string const &name){
+inline TypeRefinement getTypeRefinementString(std::string_view const &name){
     try{
         return getStringToRefinementMap().at(name);
     }catch(std::out_of_range &){
