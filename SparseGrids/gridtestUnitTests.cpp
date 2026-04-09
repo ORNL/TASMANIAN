@@ -87,10 +87,10 @@ UnitTests GridUnitTester::hasTest(std::string const &s){
 }
 
 bool GridUnitTester::Test(UnitTests test){
-    cout << endl << endl;
-    cout << "---------------------------------------------------------------------" << endl;
-    cout << "       Tasmanian Sparse Grids Module: Unit Tests" << endl;
-    cout << "---------------------------------------------------------------------" << endl << endl;
+    cout << "\n\n";
+    cout << "---------------------------------------------------------------------\n";
+    cout << "       Tasmanian Sparse Grids Module: Unit Tests\n";
+    cout << "---------------------------------------------------------------------\n\n";
 
     bool testCover = true;
     bool testExceptions = true;
@@ -109,13 +109,13 @@ bool GridUnitTester::Test(UnitTests test){
 
     cout << endl;
     if (pass){
-        cout << "---------------------------------------------------------------------" << endl;
-        cout << "           All Unit Tests Completed Successfully" << endl;
-        cout << "---------------------------------------------------------------------" << endl << endl;
+        cout << "---------------------------------------------------------------------\n";
+        cout << "           All Unit Tests Completed Successfully\n";
+        cout << "---------------------------------------------------------------------\n\n";
     }else{
-        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl;
-        cout << "         Some Unit Tests Have Failed" << endl;
-        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL" << endl << endl;
+        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL\n";
+        cout << "         Some Unit Tests Have Failed\n";
+        cout << "FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL FAIL\n\n";
     }
     return pass;
 }
