@@ -27,9 +27,10 @@ BenchFuction getTest(std::string const &s){
         {"refine", bench_refine}
     };
 
-    try{
-        return str_to_test.at(s);
-    }catch(std::out_of_range &){
+    auto const iter = str_to_test.find(s);
+    if (iter != str_to_test.end()) {
+        return iter->second;
+    } else {
         cout << "ERROR: Unknown test: " << s << endl;
         return bench_none;
     }
@@ -48,14 +49,13 @@ GridFamily getGridFamily(std::string const &s){
         {"wavelet",  GridFamily::wavelet},
     };
 
-    GridFamily grid_family = GridFamily::none;
-    try{
-        grid_family = str_to_rule.at(s);
-    }catch(std::out_of_range &){
+    auto const iter = str_to_rule.find(s);
+    if (iter != str_to_rule.end()) {
+        return iter->second;
+    } else {
         cout << "ERROR: Unknown grid type: " << s << endl;
-
+        return GridFamily::none;
     }
-    return grid_family;
 }
 
 //! \brief Convert \b s.front() to a grid type indicated by the canonical rules, then \b s.pop_front() the processed string.
