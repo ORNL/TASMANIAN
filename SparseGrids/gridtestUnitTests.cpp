@@ -82,11 +82,8 @@ UnitTests GridUnitTester::hasTest(std::string const &s){
         {"lapack", unit_lapack}
     };
 
-    try{
-        return string_to_test.at(s);
-    }catch(std::out_of_range &){
-        return unit_none;
-    }
+    auto const iter = string_to_test.find(s);
+    return (iter != string_to_test.end()) ? iter->second : unit_none;
 }
 
 bool GridUnitTester::Test(UnitTests test){
