@@ -104,7 +104,7 @@ template<typename T>
 class Data2D{
 public:
     //! \brief Default constructor makes an empty data-structure.
-    Data2D() : stride(0), num_strips(0){}
+    Data2D() = default;
     //! \brief Create data-structure with given \b stride and number of \b strips.
     template<typename IntTypeA, typename IntTypeB>
     Data2D(IntTypeA new_stride, IntTypeB new_num_strips) : stride(static_cast<size_t>(new_stride)), num_strips(static_cast<size_t>(new_num_strips)),
@@ -118,8 +118,6 @@ public:
     template<typename IntTypeA, typename IntTypeB>
     Data2D(IntTypeA new_stride, IntTypeB new_num_strips, std::vector<T> &&data) : stride(static_cast<size_t>(new_stride)), num_strips(static_cast<size_t>(new_num_strips)),
         vec(std::forward<std::vector<T>>(data)){}
-    //! \brief Default destructor.
-    ~Data2D() = default;
 
     //! \brief Write the internal vector to a stream.
     template<bool iomode, IO::IOPad pad>
@@ -201,7 +199,7 @@ public:
     }
 
 private:
-    size_t stride, num_strips;
+    size_t stride = 0, num_strips = 0;
     std::vector<T> vec;
 };
 
@@ -236,7 +234,7 @@ namespace IO{
 class MultiIndexSet{
 public:
     //! \brief Default constructor, makes an empty set.
-    MultiIndexSet() : num_dimensions(0), cache_num_indexes(0){}
+    MultiIndexSet() = default;
     //! \brief Constructor, makes a set by \b moving out of the vector, the vector must be already sorted.
     MultiIndexSet(size_t cnum_dimensions, std::vector<int> &&new_indexes) :
         num_dimensions(cnum_dimensions), cache_num_indexes((int)(new_indexes.size() / cnum_dimensions)),
@@ -249,8 +247,6 @@ public:
         cache_num_indexes(IO::readNumber<iomode, int>(is)),
         indexes(IO::readVector<iomode, int>(is, Utils::size_mult(num_dimensions, cache_num_indexes)))
         {}
-    //! \brief Default destructor.
-    ~MultiIndexSet() = default;
 
     //! \brief Write the set to ASCII or binary stream, use with std::ofstream and std::ifstream.
 
@@ -319,8 +315,8 @@ public:
     int getMaxIndex() const{ return (empty()) ? 0 : *std::max_element(indexes.begin(), indexes.end()); }
 
 private:
-    size_t num_dimensions;
-    int cache_num_indexes;
+    size_t num_dimensions = 0;
+    int cache_num_indexes = 0;
     std::vector<int> indexes;
 };
 
@@ -340,7 +336,7 @@ private:
 class StorageSet{
 public:
     //! \brief Default constructor, makes an empty set.
-    StorageSet() : num_outputs(0), num_values(0){}
+    StorageSet() = default;
     //! \brief Move constructor from a known vector.
     StorageSet(int cnum_outputs, int cnum_values, std::vector<double> &&vals) :
         num_outputs(cnum_outputs), num_values(cnum_values), values(std::move(vals)){}
@@ -350,8 +346,6 @@ public:
         num_values((size_t) IO::readNumber<iomode, int>(is)),
         values((IO::readFlag<iomode>(is)) ? IO::readVector<iomode, double>(is, Utils::size_mult(num_outputs, num_values)) : std::vector<double>())
     {}
-    //! \brief Default destructor.
-    ~StorageSet() = default;
 
     /*!
      * \brief Write the set to ASCII or binary stream, use with std::ofstream and std::ifstream.
@@ -417,7 +411,7 @@ public:
     size_t totalSize() const{ return values.size(); }
 
 private:
-    size_t num_outputs, num_values; // kept as size_t to avoid conversions in products, but each one is small individually
+    size_t num_outputs = 0, num_values = 0; // kept as size_t to avoid conversions in products, but each one is small individually
     std::vector<double> values;
 };
 
