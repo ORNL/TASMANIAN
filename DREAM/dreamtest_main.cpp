@@ -32,7 +32,11 @@
 
 #include "tasdreamExternalTests.hpp"
 
+// this is generally a bad idea, but this tests for possible conflicts
 using namespace std;
+using namespace TasGrid;
+using namespace TasDREAM;
+using namespace TasOptimization;
 
 void printHelp();
 

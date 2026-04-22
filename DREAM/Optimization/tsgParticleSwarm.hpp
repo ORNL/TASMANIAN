@@ -50,6 +50,18 @@
 namespace TasOptimization {
 
 /*!
+ * \brief Strong type for number of chains in TasDREAM::TasmanianDREAM
+ * \ingroup DREAMState
+ */
+enum class NumParticles : int {};
+
+/*!
+ * \brief Strong type for number of dimensions in TasDREAM::TasmanianDREAM
+ * \ingroup OptimizationState
+ */
+using ::TasGrid::NumDimensions;
+
+/*!
  * \ingroup OptimizationState
  * \brief Stores the information about a particle swarm.
  *
@@ -117,6 +129,9 @@ public:
     ParticleSwarmState() = delete;
     //! \brief Constructor for a particle swarm state with the number of particles and dimensions.
     ParticleSwarmState(const int num_dimensions, const int num_particles);
+    //! \brief Constructor for a particle swarm state with the number of particles and dimensions.
+    ParticleSwarmState(NumDimensions dims, NumParticles particles)
+        : ParticleSwarmState(static_cast<int>(dims), static_cast<int>(particles)) {}
     //! \brief Constructor for a particle swarm state with the number of dimensions and the number of particles inferred from
     //! a set of input particle positions \b pp and a set of input particle velocities \b pv.
     ParticleSwarmState(const int num_dimensions, std::vector<double> &&pp, std::vector<double> &&pv);

@@ -98,7 +98,7 @@ bool testParticleSwarmState(bool verbose) {
     test.tassert(init_vector[0] and init_vector[1]);
 
     // Check the nontrivial setters.
-    ParticleSwarmState state(num_dimensions, num_particles);
+    ParticleSwarmState state(NumDimensions{num_dimensions}, NumParticles{num_particles});
     std::vector<double> ones1(num_dimensions * num_particles, 1);
     std::vector<double> ones2(num_dimensions * (num_particles + 1), 1);
     state.setParticlePositions(ones1);

@@ -2386,6 +2386,11 @@ bool ExternalTester::testAllAcceleration() const{
 void ExternalTester::debugTest(){
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
+
+    auto grid = makeGlobalGrid(NumDimensions{2}, NumOutputs{1}, DepthLevel{3}, type_level, rule_clenshawcurtis,
+                               AnsitropicWeights{1, 2});
+    grid = makeGlobalGrid(NumDimensions{2}, NumOutputs{1}, DepthLevel{3}, type_level, rule_clenshawcurtis,
+                          IsotropicWeights{});
 }
 
 void ExternalTester::debugTestII(){

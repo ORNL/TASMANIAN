@@ -153,7 +153,7 @@ bool DreamExternalTester::testGaussian3D(){
     passAll = passAll && pass;
     if (verbose || !pass) reportPassFail(pass, "Gaussian 3D", "with independent chains");
 
-    state = TasmanianDREAM(num_chains, num_dimensions); // reinitialize
+    state = TasmanianDREAM(NumChains{num_chains}, NumDimensions{num_dimensions}); // reinitialize
     state.setState(initial_state);
 
     SampleDREAM(num_burnup, 2*num_iterations,
@@ -252,7 +252,7 @@ bool DreamExternalTester::testGaussian2D(){
     grid.loadNeededPoints(values);
 
     // initialize the DREAM state
-    TasmanianDREAM state(num_chains, num_dimensions);
+    TasmanianDREAM state(NumChains{num_chains}, ::TasGrid::NumDimensions{num_dimensions});
     std::vector<double> initial_set(num_chains * num_dimensions, 0.0); // initialize with uniform samples
     applyUniformUpdate(initial_set, 1.0, get_rand);
     state.setState(initial_set);

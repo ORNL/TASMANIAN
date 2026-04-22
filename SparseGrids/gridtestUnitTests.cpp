@@ -344,6 +344,51 @@ bool GridUnitTester::testAPIconsistency(){
     dummy_grid.enableAcceleration(TasGrid::accel_gpu_cuda); // makes an acceleration engine
     // the engine is never used and the handles are null, should still destroy properly
 
+    {
+        auto test_assert = [&](bool result, std::string_view message) -> void {
+                if (not result) {
+                    cout << "ERROR in strong type checks: " << message << '\n';
+                    passAll = false;
+                }
+            };
+        auto g = makeGlobalGrid(NumDimensions{2}, NumOutputs{3}, DepthLevel{1}, type_level, rule_clenshawcurtis);
+        test_assert(g.isGlobal(), "grid global type");
+        test_assert(g.getNumDimensions() == 2, "number of dimensions");
+        test_assert(g.getNumOutputs() == 3, "number of outputs");
+        test_assert(g.getNumPoints() == 5, "number of points (grid depth)");
+
+        g = makeGlobalGrid(NumDimensions{2}, NumOutputs{3}, DepthLevel{1}, type_level, rule_clenshawcurtis, AnsitropicWeights{5, 1});
+        test_assert(g.isGlobal(), "grid basic type");
+        test_assert(g.getNumPoints() == 3, "isotropic construction");
+
+        g = makeSequenceGrid(NumDimensions{3}, NumOutputs{1}, DepthLevel{7}, type_level, rule_leja);
+        test_assert(g.isSequence(), "grid sequence type");
+        test_assert(g.getNumDimensions() == 3, "number of dimensions");
+        test_assert(g.getNumOutputs() == 1, "number of outputs");
+        test_assert(g.getNumPoints() == 120, "number of points (grid depth)");
+
+        g = makeLocalPolynomialGrid(NumDimensions{1}, NumOutputs{5}, DepthLevel{2}, BasisOrder{2}, rule_semilocalp);
+        test_assert(g.isLocalPolynomial(), "grid local type");
+        test_assert(g.getNumDimensions() == 1, "number of dimensions");
+        test_assert(g.getNumOutputs() == 5, "number of outputs");
+        test_assert(g.getRule() == rule_semilocalp, "grid rule");
+        test_assert(g.getNumPoints() == 5, "number of points (grid depth)");
+        test_assert(g.getOrder() == 2, "basis order");
+
+        g = makeWaveletGrid(NumDimensions{3}, NumOutputs{1}, DepthLevel{1}, BasisOrder{3});
+        test_assert(g.isWavelet(), "grid wavelet type");
+        test_assert(g.getNumDimensions() == 3, "number of dimensions");
+        test_assert(g.getNumOutputs() == 1, "number of outputs");
+        test_assert(g.getNumPoints() == 425, "number of points (grid depth)");
+        test_assert(g.getOrder() == 3, "basis order");
+
+        g = makeFourierGrid(NumDimensions{2}, NumOutputs{10}, DepthLevel{4}, type_level, AnsitropicWeights{2, 2}, LevelLimits{2, 2});
+        test_assert(g.isFourier(), "grid Fourier type");
+        test_assert(g.getNumDimensions() == 2, "number of dimensions");
+        test_assert(g.getNumOutputs() == 10, "number of outputs");
+        test_assert(g.getNumPoints() == 81, "number of points (grid depth)");
+    }
+
     cout << setw(wfirst+1) << "API variations" << setw(wsecond-1) << "" << setw(wthird) << ((passAll) ? "Pass" : "FAIL") << endl;
     return passAll;
 }

@@ -2435,6 +2435,274 @@ inline TasmanianSparseGrid copyGrid(TasmanianSparseGrid const &source, int outpu
     return grid;
 }
 
+/*!
+ * \ingroup TasmanianSG
+ * \addtogroup TasmanianSGStrong Strong Typed Factories
+ *
+ * The sparse grid capabilities of Tasmanian are encapsulated in a single master class
+ * TasGrid::TasmanianSparseGrid.
+ */
+
+/*!
+ * \brief Strong type for the number of dimensions
+ * \ingroup TasmanianSGStrong
+ */
+enum class NumDimensions : int {};
+
+/*!
+ * \brief Strong type for the number of outputs
+ * \ingroup TasmanianSGStrong
+ */
+enum class NumOutputs : int {};
+
+/*!
+ * \brief Strong type for the depth (e.g., level/polynomial-order) of the grid
+ * \ingroup TasmanianSGStrong
+ */
+enum class DepthLevel : int {};
+
+/*!
+ * \brief Strong type for the maximum polynomial order of the grid
+ * \ingroup TasmanianSGStrong
+ */
+enum class BasisOrder : int {};
+
+/*!
+ * \brief Strong type for creating isotropic weights
+ * \ingroup TasmanianSGStrong
+ */
+struct IsotropicWeights {};
+
+/*!
+ * \brief Strong type for the vector of integers representing the anisotropic weighs
+ * \ingroup TasmanianSGStrong
+ *
+ * Example usage:
+ * \code
+ * std::vector<int> w = {2, 3};
+ * auto grid = TasGrid::makeGlobalGrid(
+ *                  TasGrid::NumDimensions{2},
+ *                  TasGrid::NumOutputs{1},
+ *                  TasGrid::DepthLevel{5},
+ *                  type_level,
+ *                  rule_clenshawcurtis,
+ *                  AnsitropicWeights{w} // also accepts AnsitropicWeights{2, 3}
+ *              );
+ * \endcode
+ */
+struct AnsitropicWeights {
+    //! Creates a vector of no weights, results in isotropic grid
+    AnsitropicWeights() = default;
+    //! Creates a vector of no weights, results in isotropic grid
+    AnsitropicWeights(IsotropicWeights) {};
+    //! Create weights from an initializer list
+    AnsitropicWeights(std::initializer_list<int> list) : weights(list) {}
+    //! Creates weighs from a vector
+    explicit AnsitropicWeights(std::vector<int> const &w) : weights(w) {}
+    //! The created weights
+    std::vector<int> weights;
+};
+
+/*!
+ * \brief Strong type for the alpha parameter used by some rules and distributions
+ * \ingroup TasmanianSGStrong
+ *
+ * Some rules use alpha parameters, see TasGrid::TypeOneDRule
+ */
+struct AlphaValue {
+    //! Creates a zero alpha, probably will never use the value
+    AlphaValue() = default;
+    //! Creates an alpha parameter
+    explicit AlphaValue(double a) : alpha(a) {}
+    //! The value for the parameter
+    double alpha = 0;
+};
+
+/*!
+ * \brief Strong type for the beta parameter used by some rules and distributions
+ * \ingroup TasmanianSGStrong
+ *
+ * Some rules use alpha parameters, see TasGrid::TypeOneDRule
+ */
+struct BetaValue {
+    //! Creates a zero alpha, probably will never use the value
+    BetaValue() = default;
+    //! Creates an alpha parameter
+    explicit BetaValue(double b) : beta(b) {}
+    //! The value for the parameter
+    double beta = 0;
+};
+
+/*!
+ * \brief Strong type for the custom filename
+ * \ingroup TasmanianSGStrong
+ */
+struct CustomRuleFilename {
+    //! Creates an empty filename
+    CustomRuleFilename() = default;
+    //! Creates a custom filename from a string view
+    explicit CustomRuleFilename(std::string_view str) : name(str) {}
+    //! Returns null-terminated string
+    const char *cname() const { return name.c_str(); }
+    //! The created weights
+    std::string name;
+};
+
+/*!
+ * \brief Strong type for creating a grid with no level limits
+ * \ingroup TasmanianSGStrong
+ */
+struct NoLevelLimits {};
+
+/*!
+ * \brief Strong type for the vector of integers representing the anisotropic weighs
+ * \ingroup TasmanianSGStrong
+ *
+ * Usage is the same as in AnsitropicWeights
+ */
+struct LevelLimits {
+    //! Creates a vector of no weights, results in isotropic grid
+    LevelLimits() = default;
+    //! Creates a vector of no weights, results in isotropic grid
+    LevelLimits(NoLevelLimits) {};
+    //! Create weights from an initializer list
+    LevelLimits(std::initializer_list<int> list) : limits(list) {}
+    //! Creates weighs from a vector
+    explicit LevelLimits(std::vector<int> const &ll) : limits(ll) {}
+    //! The created weights
+    std::vector<int> limits;
+};
+
+/*!
+ * \ingroup TasmanianSGStrong
+ * \brief Factory method for Global Grid using strong types
+ *
+ * Allows for expressive initializations, e.g.,
+ * \code
+ * auto grid = TasGrid::makeGlobalGrid(
+ *                  TasGrid::NumDimensions{2},
+ *                  TasGrid::NumOutputs{1},
+ *                  TasGrid::DepthLevel{5},
+ *                  type_level,
+ *                  rule_gaussjacobi,
+ *                  AnsitropicWeights{2, 3},
+ *                  AlphaValue{4},
+ *                  BetaValue{5},
+ *                  CustomRuleFilename{}, // works only with rule_customtabulated
+ *                  NoLevelLimits{}
+ *              );
+ * \endcode
+ */
+inline TasmanianSparseGrid
+makeGlobalGrid(NumDimensions dims, NumOutputs outs, DepthLevel depth, TypeDepth type, TypeOneDRule rule,
+               AnsitropicWeights const &anisotropic_weights = IsotropicWeights{},
+               AlphaValue alpha = AlphaValue{}, BetaValue beta = BetaValue{},
+               CustomRuleFilename const &custom_filename = CustomRuleFilename{},
+               LevelLimits const &level_limits = NoLevelLimits{}){
+    TasmanianSparseGrid grid;
+    grid.makeGlobalGrid(static_cast<int>(dims), static_cast<int>(outs), static_cast<int>(depth), type, rule, anisotropic_weights.weights, alpha.alpha, beta.beta, custom_filename.cname(), level_limits.limits);
+    return grid;
+}
+
+/*!
+ * \ingroup TasmanianSGStrong
+ * \brief Factory method for Sequence Grid using strong types
+ *
+ * Allows for expressive initializations, e.g.,
+ * \code
+ * auto grid = TasGrid::makeSequenceGrid(
+ *                  TasGrid::NumDimensions{2},
+ *                  TasGrid::NumOutputs{1},
+ *                  TasGrid::DepthLevel{5},
+ *                  type_level,
+ *                  rule_gaussjacobi,
+ *                  AnsitropicWeights{2, 3},
+ *                  NoLevelLimits{}
+ *              );
+ * \endcode
+ */
+inline TasmanianSparseGrid
+makeSequenceGrid(NumDimensions dims, NumOutputs outs, DepthLevel depth, TypeDepth type, TypeOneDRule rule,
+                 AnsitropicWeights const &anisotropic_weights = IsotropicWeights{},
+                 LevelLimits const &level_limits = NoLevelLimits{}){
+    TasmanianSparseGrid grid;
+    grid.makeSequenceGrid(static_cast<int>(dims), static_cast<int>(outs), static_cast<int>(depth), type, rule, anisotropic_weights.weights, level_limits.limits);
+    return grid;
+}
+
+/*!
+ * \ingroup TasmanianSGStrong
+ * \brief Factory method for Local Polynomial Grid using strong types
+ *
+ * Allows for expressive initializations, e.g.,
+ * \code
+ * auto grid = TasGrid::makeLocalPolynomialGrid(
+ *                  TasGrid::NumDimensions{2},
+ *                  TasGrid::NumOutputs{1},
+ *                  TasGrid::DepthLevel{5},
+ *                  TasGrid::BasisOrder{2},
+ *                  rule_localp,
+ *                  LevelLimits{2, 5}
+ *              );
+ * \endcode
+ */
+inline TasmanianSparseGrid
+makeLocalPolynomialGrid(NumDimensions dims, NumOutputs outs, DepthLevel depth,
+                        BasisOrder order = BasisOrder{1}, TypeOneDRule rule = rule_localp,
+                        LevelLimits const &level_limits = NoLevelLimits{}){
+    TasmanianSparseGrid grid;
+    grid.makeLocalPolynomialGrid(static_cast<int>(dims), static_cast<int>(outs), static_cast<int>(depth), static_cast<int>(order), rule, level_limits.limits);
+    return grid;
+}
+
+/*!
+ * \ingroup TasmanianSGStrong
+ * \brief Factory method for Wavelet Grid using strong types
+ *
+ * Allows for expressive initializations, e.g.,
+ * \code
+ * auto grid = TasGrid::makeWaveletGrid(
+ *                  TasGrid::NumDimensions{2},
+ *                  TasGrid::NumOutputs{1},
+ *                  TasGrid::DepthLevel{5},
+ *                  TasGrid::BasisOrder{2}
+ *                  // no level limits
+ *              );
+ * \endcode
+ */
+inline TasmanianSparseGrid
+makeWaveletGrid(NumDimensions dims, NumOutputs outs, DepthLevel depth,
+                BasisOrder order = BasisOrder{1},
+                LevelLimits const &level_limits = NoLevelLimits{}){
+    TasmanianSparseGrid grid;
+    grid.makeWaveletGrid(static_cast<int>(dims), static_cast<int>(outs), static_cast<int>(depth), static_cast<int>(order), level_limits.limits);
+    return grid;
+}
+
+/*!
+ * \ingroup TasmanianSGStrong
+ * \brief Factory method for Wavelet Grid using strong types
+ *
+ * Allows for expressive initializations, e.g.,
+ * \code
+ * auto grid = TasGrid::makeWaveletGrid(
+ *                  TasGrid::NumDimensions{2},
+ *                  TasGrid::NumOutputs{1},
+ *                  TasGrid::DepthLevel{5},
+ *                  TasGrid::BasisOrder{2}
+ *                  // no level limits
+ *              );
+ * \endcode
+ */
+inline TasmanianSparseGrid
+makeFourierGrid(NumDimensions dims, NumOutputs outs, DepthLevel depth, TypeDepth type,
+                AnsitropicWeights const &anisotropic_weights = IsotropicWeights{},
+                LevelLimits const &level_limits = NoLevelLimits{}){
+    TasmanianSparseGrid grid;
+    grid.makeFourierGrid(static_cast<int>(dims), static_cast<int>(outs), static_cast<int>(depth), type, anisotropic_weights.weights, level_limits.limits);
+    return grid;
+}
+
 }
 
 #endif
