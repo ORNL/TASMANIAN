@@ -1234,6 +1234,50 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
     }
 }
 
+void GridLocalPolynomial::validateTree(int num_points){
+    auto reject = [](const char *reason){
+        throw std::runtime_error(std::string("ERROR: the evaluation tree in the grid file is corrupt, ") + reason);
+    };
+
+    // walkTree() reads the tree without checking it, so everything it relies on has to hold here
+    if (num_points <= 0) reject("the grid has no points but the tree is not empty");
+    if (pntr.size() != static_cast<size_t>(num_points) + 1) reject("the list of offsets has the wrong length");
+    if (pntr.front() != 0) reject("the list of offsets does not start at zero");
+    for(int i=0; i<num_points; i++)
+        if (pntr[i] > pntr[i+1]) reject("the list of offsets is not sorted");
+    if (pntr[num_points] > static_cast<int>(indx.size())) reject("the offsets run past the end of the child list");
+
+    for(auto r : roots)
+        if (r < 0 or r >= num_points) reject("a root is not a point of the grid");
+    for(int i=0; i<pntr[num_points]; i++)
+        if (indx[i] < 0 or indx[i] >= num_points) reject("a child is not a point of the grid");
+
+    // the stacks in walkTree() are sized with top_level, and a node reached twice means a cycle
+    std::vector<bool> reached(num_points, false);
+    std::vector<std::pair<int, int>> pending; // node and its depth
+    int max_depth = 0;
+
+    for(auto r : roots){
+        if (reached[r]) reject("a point appears more than once in the tree");
+        reached[r] = true;
+        pending.push_back(std::make_pair(r, 0));
+
+        while(!pending.empty()){
+            std::pair<int, int> node = pending.back();
+            pending.pop_back();
+            if (node.second > max_depth) max_depth = node.second;
+
+            for(int j=pntr[node.first]; j<pntr[node.first + 1]; j++){
+                if (reached[indx[j]]) reject("a point appears more than once in the tree");
+                reached[indx[j]] = true;
+                pending.push_back(std::make_pair(indx[j], node.second + 1));
+            }
+        }
+    }
+
+    if (max_depth > top_level) reject("the tree is deeper than the level reported in the header");
+}
+
 void GridLocalPolynomial::buildTree(){
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();

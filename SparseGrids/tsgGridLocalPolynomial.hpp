@@ -143,6 +143,9 @@ protected:
 
     void buildTree();
 
+    //! \brief Checks that a tree read from a file is a forest of valid, in-range indexes no deeper than \b top_level.
+    void validateTree(int num_points);
+
     //! \brief Returns a list of indexes of the nodes in \b points that are descendants of the \b point.
     template<RuleLocal::erule effrule>
     std::vector<int> getSubGraph(std::vector<int> const &point) const;
@@ -477,6 +480,12 @@ template<> struct GridReaderVersion5<GridLocalPolynomial>{
             if (IO::readFlag<iomode>(is))
                 grid->parents = IO::readData2D<iomode, int>(is, max_parents * grid->num_dimensions, grid->points.getNumIndexes());
 
+            // the header dimension and the one stored with the index sets are written separately
+            if (!grid->points.empty() and grid->points.getNumDimensions() != (size_t) grid->num_dimensions)
+                throw std::runtime_error("ERROR: the points in the grid file do not have the number of dimensions given in the header");
+            if (!grid->needed.empty() and grid->needed.getNumDimensions() != (size_t) grid->num_dimensions)
+                throw std::runtime_error("ERROR: the needed points in the grid file do not have the number of dimensions given in the header");
+
             size_t num_points = (size_t) ((grid->points.empty()) ? grid->needed.getNumIndexes() : grid->points.getNumIndexes());
             grid->roots = std::vector<int>((size_t) IO::readNumber<iomode, int>(is));
             if (grid->roots.size() > 0){
@@ -487,6 +496,7 @@ template<> struct GridReaderVersion5<GridLocalPolynomial>{
                 }else{
                     grid->indx = IO::readVector<iomode, int>(is, 1);
                 }
+                grid->validateTree(static_cast<int>(num_points));
             }
 
             if (grid->num_outputs > 0) grid->values = StorageSet(is, iomode());

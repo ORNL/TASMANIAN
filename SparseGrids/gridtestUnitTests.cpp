@@ -565,8 +565,48 @@ std::vector<std::function<void(void)>> GridUnitTester::getInvalidArgumentCalls()
     };
 }
 
+//! \brief Writes a small local polynomial grid in ascii, then replaces one line with \b replacement.
+//! Negative \b line counts back from the end of the file. The grid has no outputs, so the last
+//! three lines are the roots, the offsets and the children of the evaluation tree.
+static std::string corruptGridFile(int line, std::string const &replacement){
+    auto grid = makeLocalPolynomialGrid(2, 0, 3, 1, rule_localp);
+
+    std::ostringstream os;
+    grid.write(os, mode_ascii);
+
+    std::vector<std::string> lines;
+    std::istringstream is(os.str());
+    for(std::string l; std::getline(is, l); ) lines.push_back(l);
+
+    lines[(line < 0) ? lines.size() + line : line] = replacement;
+
+    std::string text;
+    for(auto const &l : lines) text += l + "\n";
+    return text;
+}
+
 std::vector<std::function<void(void)>> GridUnitTester::getRuntimeErrorCalls() const{
     return std::vector<std::function<void(void)>>{
+        [](void)->void{
+            std::istringstream is(corruptGridFile(3, "2 0 1 0"));
+            TasmanianSparseGrid grid;
+            grid.read(is, mode_ascii);  // top level too small for the stored tree
+        },
+        [](void)->void{
+            std::istringstream is(corruptGridFile(3, "5 0 1 3"));
+            TasmanianSparseGrid grid;
+            grid.read(is, mode_ascii);  // header dimensions do not match the stored points
+        },
+        [](void)->void{
+            std::istringstream is(corruptGridFile(-3, "9999"));
+            TasmanianSparseGrid grid;
+            grid.read(is, mode_ascii);  // root outside of the grid
+        },
+        [](void)->void{
+            std::istringstream is(corruptGridFile(-1, "99999 14 1 2 3 4 5 6 7 8 19 10 11 12 13 22 15 16 17 18 25 26 20 21 27 28 23 24"));
+            TasmanianSparseGrid grid;
+            grid.read(is, mode_ascii);  // child outside of the grid
+        },
         [](void)->void{
             TasmanianSparseGrid grid;
             grid.updateGlobalGrid(2, type_level);  // grid not initialized
