@@ -329,17 +329,31 @@ public:
 
     //! \brief Write the grid to the given \b filename using either \b binary or ASCII format.
     void write(const char *filename, bool binary = mode_binary) const;
-    //! \brief Read the grid from the given \b filename, automatically detect the format.
+    /*!
+     * \brief Read the grid from the given \b filename, automatically detect the format.
+     *
+     * \b Note: Tasmanian assumes that the file exists and it is a valid grid file.
+     * Some very basic sanity check is performed on the format and runtime error is raised,
+     * but there is no comprehensive check guarding against data corruption or malicious modifications.
+     * If deployed on a system where file integrity is of consideration
+     * alternative methods should be used along side Tasmanian,
+     * e.g., a checksum strategy or redundancy.
+     */
     void read(const char *filename); // auto-check if format is binary or ascii
 
     //! \brief Write the grid to the given stream \b ofs using either \b binary or ASCII format.
     void write(std::ostream &ofs, bool binary = mode_binary) const;
-    //! \brief Read the grid from the given stream \b ifs using either \b binary or ASCII format.
+    /*!
+     * \brief Read the grid from the given stream \b ifs using either \b binary or ASCII format.
+     *
+     * Similar to reading from a file, only very basic sanity check is performed.
+     * Tasmanian has no builtin guards against a corrupted or malicious stream data.
+     */
     void read(std::istream &ifs, bool binary = mode_binary);
 
     //! \brief Overload that works directly with std::string
     void write(std::string const& fname, bool binary = mode_binary) const{ write(fname.c_str(), binary); }
-    //! \brief Overload that works directly with std::string
+    //! \brief Overload that works directly with std::string, see note on the file integrity
     void read(std::string const& fname){ read(fname.c_str()); }
 
     /*!
@@ -2385,6 +2399,8 @@ makeFourierGrid(int dimensions, int outputs, int depth, TypeDepth type,
  * Allows for one-line initialization, makes a new grid and reads from a file.
  * \param filename same as TasmanianSparseGrid::read().
  * \returns a new grid that is read from the file.
+ *
+ * See the note in  TasmanianSparseGrid::read() about file integrity.
  */
 inline TasmanianSparseGrid readGrid(const char *filename){
     TasmanianSparseGrid grid;
@@ -2397,6 +2413,8 @@ inline TasmanianSparseGrid readGrid(const char *filename){
  * \brief Overload using std::string.
  *
  * Same as readGrid() but the filename is given as a string.
+ *
+ * See the note in  TasmanianSparseGrid::read() about file integrity.
  */
 inline TasmanianSparseGrid readGrid(std::string const &filename){ return readGrid(filename.c_str()); }
 
