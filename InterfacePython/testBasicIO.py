@@ -342,7 +342,7 @@ class TestTasClass(unittest.TestCase):
                 gridRef4Values.append(lModel[5:6])
 
             for sGrid in lGrids:
-                exec(sGrid + ".loadNeededPoints(np.row_stack(" + sGrid + "Values))")
+                exec(sGrid + ".loadNeededPoints(np.vstack(" + sGrid + "Values))")
 
             grid.copyGrid(gridTotal)
             ttc.compareGrids(grid, gridTotal)

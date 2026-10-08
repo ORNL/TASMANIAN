@@ -58,7 +58,7 @@ class TestTasCommon(unittest.TestCase):
             mX4 = np.array([1.0/7.0, 1.0/5.0, 2.0/3.0])
             mX5 = np.array([-1.0/7.0, -1.0/13.0, -2.0/3.0])
 
-        aBatchPoints = np.row_stack([mX1, mX2, mX3, mX4, mX5])
+        aBatchPoints = np.vstack([mX1, mX2, mX3, mX4, mX5])
 
         pA = gridA.getPoints()
         pB = gridB.getPoints()
