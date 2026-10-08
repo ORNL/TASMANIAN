@@ -9,7 +9,7 @@ endif()
 # https://cmake.org/cmake/help/v3.5/module/CMakePackageConfigHelpers.html#module:CMakePackageConfigHelpers
 # seems to indicate that I need to pre-pend PACKAGE_ to the variable names after the @PACKAGE_INIT@ macro
 # but this doesn't seem to work, not sure if this is a "relocatable package" (low concern)
-include("@Tasmanian_final_install_path@/lib/@CMAKE_PROJECT_NAME@/@CMAKE_PROJECT_NAME@.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/@CMAKE_PROJECT_NAME@.cmake")
 
 if ("@Tasmanian_ENABLE_MPI@" AND NOT TARGET MPI::MPI_CXX)
     if (NOT MPI_HOME AND NOT DEFINED ENV{MPI_HOME})
