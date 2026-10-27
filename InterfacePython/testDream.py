@@ -58,6 +58,18 @@ class TestTasClass(unittest.TestCase):
         self.assertTrue(np.max(np.abs(aMean - np.array([1.5, 2.0, 2.5]))) < 0.4, "Failed the mean test for anisotropic Gaussian 3D")
         self.assertTrue(np.max(np.abs(aVar - np.array([0.25, 1.0, 4.0]))) < 1.0, "Failed the variance test for anisotropic Gaussian 3D")
 
+        iNumHistory = state.getNumHistory()
+        aHistory = state.getHistory()
+        aHistoryPDF = state.getHistoryPDF()
+        self.assertTrue(aHistory.shape[0] == iNumHistory, "mismatch in history size and number of entries in the PDF, Gaussian 3D");
+
+        self.assertTrue(len(aHistory.shape) == 2 and aHistory.shape[0] == iNumHistory and aHistory.shape[1] == 3, "mismatch in history shape Gaussian 3D")
+
+        aExpectedPDF = likely.getLikelihood(DREAM.typeLogform, aHistory)
+
+        err = np.max(np.abs(aExpectedPDF - aHistoryPDF))
+        self.assertTrue(err < 1.E-12, "mismatch in PDF history values for Gaussian 3D")
+
     def checkGrid(self):
         iNumDimensions = 2
         iNumSamples = 1000
