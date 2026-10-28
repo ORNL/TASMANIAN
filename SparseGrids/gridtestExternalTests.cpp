@@ -54,36 +54,6 @@ std::vector<double> genRandom(int num_samples, int num_dimensions = 1){
     for(auto &v : x) v = unif(park_miller);
     return x;
 }
-double unitDerivativeTests(const BaseFunction *f, TasmanianSparseGrid &grid) {
-    // Test the differentiate method on some common 1D nodes (in the 1st dimension) and return the max relative error.
-    std::vector<double> unique_nodes;
-    if (grid.getRule() == TasGrid::rule_localp0)
-        // Avoid boundary points as not all functions have value zero on these points.
-        unique_nodes = {0.0, -0.5, 0.5, -0.5773502691896257, 0.5773502691896257};
-    else
-        unique_nodes = {0.0, -1.0, 1.0, -0.5, 0.5, -0.5773502691896257, 0.5773502691896257};
-    int num_dimensions = f->getNumInputs();
-    int num_outputs = f->getNumOutputs();
-    std::vector<double> points(Utils::size_mult(num_dimensions, unique_nodes.size()), 0.0);
-    for (size_t i=0; i<unique_nodes.size(); i++) {
-        points[Utils::size_mult(i, num_dimensions)] = unique_nodes[i];
-    }
-    int num_entries = num_outputs * num_dimensions;
-    std::vector<double> r(num_entries), y(num_entries);
-    double rel_err = 0.0;
-    for (size_t k=0; k<unique_nodes.size(); k++) {
-        f->getDerivative(&(points[Utils::size_mult(k, num_dimensions)]), r.data());
-        grid.differentiate(&(points[Utils::size_mult(k, num_dimensions)]), y.data());
-        double nrm = 0.0;
-        double err = 0.0;
-        for (int i=0; i<num_entries; i++) {
-            nrm = std::max(nrm, std::fabs(r[i]));
-            err = std::max(err, std::fabs(r[i] - y[i]));
-        }
-        rel_err = std::max(rel_err, std::fabs(nrm) < Maths::num_tol ? err : err / nrm);
-    }
-    return rel_err;
-}
 
 void loadValues(const BaseFunction *f, TasmanianSparseGrid &grid){
     int num_needed     = grid.getNumNeeded();
@@ -297,6 +267,20 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         loadValues(f, grid);
 
         std::vector<double> test_x = genRandom(num_mc, num_dimensions);
+        if (grid.isSetDomainTransfrom()) {
+            std::vector<double> a, b;
+            grid.getDomainTransform(a, b);
+            std::vector<double> rate(num_dimensions), shift(num_dimensions);
+            for (int j = 0; j < num_dimensions; j++) {
+                rate[j]  = 0.5 * (b[j] - a[j]);
+                shift[j] = 0.5 * (b[j] + a[j]);
+            }
+            for (int i = 0; i < num_mc; i++) {
+                double *p = test_x.data() + i * num_dimensions;
+                for (int j = 0; j < num_dimensions; j++)
+                    p[j] = rate[j] * p[j] + shift[j];
+            }
+        }
         int num_entries = (type == type_internal_interpolation) ? num_outputs : num_outputs * num_dimensions;
         std::vector<double> result_tasm(num_mc * num_entries);
         std::vector<double> result_true(num_mc * num_entries);
@@ -324,9 +308,6 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
             }
             rel_err = std::max(rel_err, std::fabs(nrm) <= Maths::num_tol ? err : err / nrm);
         }
-
-        // if (type == type_internal_differentiation)
-        //     rel_err = std::max(rel_err, unitDerivativeTests(f, grid));
 
         R.error = rel_err;
     }
@@ -1047,6 +1028,49 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
     return true;
 }
 
+TestResults ExternalTester::testEdgeDerivative(const BaseFunction &f, int level, int order, TasGrid::TypeOneDRule rule) const {
+    int num_dimensions = f.getNumInputs();
+    int num_outputs = f.getNumOutputs();
+
+    TasmanianSparseGrid grid = makeLocalPolynomialGrid(num_dimensions, num_outputs, level, order, rule);
+    loadValues(&f, grid);
+
+    std::vector<double> xmin(num_dimensions, -1.0), xmax(num_dimensions, 1.0);
+    if (grid.isSetDomainTransfrom())
+        grid.getDomainTransform(xmin, xmax);
+
+    std::vector<double> x = genRandom(num_dimensions, xmin, xmax);
+
+    std::vector<double> ref(num_dimensions * num_outputs);
+    std::vector<double> jac(num_dimensions * num_outputs);
+
+    double total_err = 0.0;
+    for (int j = 0; j < num_dimensions; j++) {
+        double const tmp = x[j];
+        x[j] = xmin[j] - 1.E-12;
+
+        f.getDerivative(x.data(), ref.data());
+        grid.differentiate(x, jac);
+
+        for (size_t k = 0; k < ref.size(); k++)
+            total_err = std::max(total_err, std::fabs(ref[k] - jac[k]));
+        // std::cout << "  left = " << x[0] << "  " << jac[0] << "  " << ref[0] << '\n';
+
+        x[j] = xmax[j] + 1.E-12;
+
+        f.getDerivative(x.data(), ref.data());
+        grid.differentiate(x, jac);
+
+        for (size_t k = 0; k < ref.size(); k++)
+            total_err = std::max(total_err, std::fabs(ref[k] - jac[k]));
+        // std::cout << "  right = " << x[0] << "  " << jac[0] << "  " << ref[0] << '\n';
+        x[j] = tmp;
+    }
+
+    // std::cout << "  error = " << total_err << "   " << tolerance << '\n';
+    return TestResults{total_err, grid.getNumPoints()};
+}
+
 bool ExternalTester::testAllPWLocal() const{
     bool pass = true;
     int wfirst = 10, wsecond = 35, wthird = 15;
@@ -1131,6 +1155,47 @@ bool ExternalTester::testAllPWLocal() const{
                 pass = false;
             }
         }
+    }
+    {   // test derivatives computed at the edges of the domain
+        struct test_pars {
+            const BaseFunction &f;
+            int level, order;
+            TypeOneDRule rule;
+            double tolerance;
+        };
+        std::vector<test_pars> tests = {
+                test_pars{f11p3,   8, 1, rule_localp, 1.E-1},
+                test_pars{f11p3,  14, 1, rule_localp, 1.E-3},
+                test_pars{f11p3,   8, 2, rule_localp, 1.E-3},
+                test_pars{f11p3,  10, 2, rule_localp, 5.E-5},
+                test_pars{f21nx2,  8, 2, rule_localp, 5.E-4},
+                test_pars{f11p3,   8, 1, rule_localpb, 1.E-1},
+                test_pars{f11p3,  14, 1, rule_localpb, 1.E-3},
+                test_pars{f21nx2,  8, 2, rule_localpb, 5.E-4},
+                test_pars{f21nx2, 10, 2, rule_localpb, 1.E-5},
+                test_pars{f21nx2,  8, 2, rule_semilocalp, 5.E-4},
+                test_pars{f21nx2, 10, 2, rule_semilocalp, 1.E-5},
+                test_pars{f21coscos,  8, 2, rule_localp0, 3.E-5},
+                test_pars{f21coscos, 10, 2, rule_localp0, 1.E-5},
+            };
+        bool all_edge = true;
+        for (size_t i = 0; i < tests.size(); i++) {
+            auto const &test = tests[i];
+            if (testEdgeDerivative(test.f, test.level, test.order, test.rule).error > test.tolerance) {
+                cout << "Error in testEdgeDerivative() test " << i << "  function " << test.f.getDescription() << ", the grid was\n";
+                makeLocalPolynomialGrid(test.f.getNumInputs(), test.f.getNumOutputs(), test.level, test.order, test.rule).printStats();
+                all_edge = false;
+            }
+        }
+
+        if (verbose and all_edge) {
+            cout << "      Rules           domain edge derivatives           Pass\n";
+        } else {
+            if (not all_edge) // always report an error
+                cout << "      All rules       domain edge derivatives           FAIL\n";
+        }
+
+        pass = pass and all_edge;
     }
     wfirst = 11; wsecond = 34;
     if (pass){

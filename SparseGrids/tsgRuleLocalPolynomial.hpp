@@ -616,15 +616,21 @@ namespace RuleLocal {
     }
 
     template<erule effrule>
+    double scaleXclamp(int i, double x) {
+        return std::clamp(scaleX<effrule>(i, x), -1.0, 1.0);
+    }
+
+    template<erule effrule>
     double diffRaw(int max_order, int point, double x) {
         switch(effrule) {
             case erule::pwc: return 0.0;
             case erule::localp: {
-                if (point == 0) return 0.0;
-                double xn = scaleX<effrule>(point, x);
+                if (point < 3)
+                    return std::array<double, 3>{0, -1, 1}[point];
+                double xn = scaleXclamp<effrule>(point, x);
                 double an = scaleDiffX<effrule>(point);
                 switch(max_order) {
-                    case 1: return ((xn >= 0 ? -1.0 : 1.0) * an);
+                    case 1: return (xn >= 0 ? -1.0 : 1.0) * an;
                     case 2: return an * diffPWQuadratic<effrule>(point, xn);
                     case 3: return an * diffPWCubic<effrule>(point, xn);
                     default:
@@ -637,7 +643,7 @@ namespace RuleLocal {
                     case 1: return x - 0.5;
                     case 2: return x + 0.5;
                     default: {
-                        double xn = scaleX<effrule>(point, x);
+                        double xn = scaleXclamp<effrule>(point, x);
                         double an = scaleDiffX<effrule>(point);
                         switch(max_order) {
                             case 2: return an * diffPWQuadratic<effrule>(point, xn);
@@ -648,10 +654,10 @@ namespace RuleLocal {
                     }
                 };
             case erule::localp0: {
-                double xn = scaleX<effrule>(point, x);
+                double xn = scaleXclamp<effrule>(point, x);
                 double an = scaleDiffX<effrule>(point);
                 switch(max_order) {
-                    case 1: return (x == 1.0 and point == 0) ? -1.0 : ((xn >= 0 ? -1.0 : 1.0) * an);
+                    case 1: return (xn >= 0 ? -1.0 : 1.0) * an;
                     case 2: return an * diffPWQuadratic<effrule>(point, xn);
                     case 3: return an * diffPWCubic<effrule>(point, xn);
                     default:
@@ -659,10 +665,12 @@ namespace RuleLocal {
                 };
             }
             default: { // case erule::localpb:
-                double xn = scaleX<effrule>(point, x);
+                if (point < 2)
+                    return std::array<double, 2>{-0.5, 0.5}[point];
+                double xn = scaleXclamp<effrule>(point, x);
                 double an = scaleDiffX<effrule>(point);
                 switch(max_order) {
-                    case 1: return ((xn >= 0 ? -1.0 : 1.0) * an);
+                    case 1: return (xn >= 0 ? -1.0 : 1.0) * an;
                     case 2: return an * diffPWQuadratic<effrule>(point, xn);
                     case 3: return an * diffPWCubic<effrule>(point, xn);
                     default:
@@ -678,11 +686,12 @@ namespace RuleLocal {
             case erule::pwc:
                 return 0.0;
             case erule::localp: {
-                if (point == 0) { return 0.0; }
-                double xn = scaleX<effrule>(point, x);
+                if (point < 3)
+                    return std::array<double, 3>{0, -1, 1}[point];
+                double xn = scaleXclamp<effrule>(point, x);
                 double an = scaleDiffX<effrule>(point);
                 switch(max_order) {
-                    case 1: return (x == 1.0 and point == 2) ? an : (((xn >= 0 ? -1.0 : 1.0) * an));
+                    case 1: return (xn >= 0 ? -1.0 : 1.0) * an;
                     case 2: return an * diffPWQuadratic<effrule>(point, xn);
                     case 3: return an * diffPWCubic<effrule>(point, xn);
                     default:
@@ -691,11 +700,11 @@ namespace RuleLocal {
             }
             case erule::semilocalp:
                 switch(point) {
-                    case 0: { return 0.0; }
-                    case 1: { return x - 0.5; }
-                    case 2: { return x + 0.5; }
+                    case 0: return 0.0;
+                    case 1: return x - 0.5;
+                    case 2: return x + 0.5;
                     default: {
-                        double xn = scaleX<effrule>(point, x);
+                        double xn = scaleXclamp<effrule>(point, x);
                         double an = scaleDiffX<effrule>(point);
                         switch(max_order) {
                             case 2: return an * diffPWQuadratic<effrule>(point, xn);
@@ -706,10 +715,10 @@ namespace RuleLocal {
                     }
                 };
             case erule::localp0: {
-                double xn = scaleX<effrule>(point, x);
+                double xn = scaleXclamp<effrule>(point, x);
                 double an = scaleDiffX<effrule>(point);
                 switch(max_order) {
-                    case 1: return (x == 1.0 and point == 0) ? -1.0 : ((xn >= 0 ? -1.0 : 1.0) * an);
+                    case 1: return ((xn >= 0 ? -1.0 : 1.0) * an);
                     case 2: return an * diffPWQuadratic<effrule>(point, xn);
                     case 3: return an * diffPWCubic<effrule>(point, xn);
                     default:
@@ -717,7 +726,9 @@ namespace RuleLocal {
                 };
             }
             default: { // case erule::localpb:
-                double xn = scaleX<effrule>(point, x);
+                if (point < 2)
+                    return std::array<double, 2>{-0.5, 0.5}[point];
+                double xn = scaleXclamp<effrule>(point, x);
                 double an = scaleDiffX<effrule>(point);
                 switch(max_order) {
                     case 1: return ((xn >= 0 ? -1.0 : 1.0) * an);
