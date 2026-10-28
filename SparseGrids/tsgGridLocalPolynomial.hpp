@@ -184,9 +184,19 @@ protected:
     void updateSurpluses(MultiIndexSet const &work, int max_level, std::vector<int> const &level, Data2D<int> const &dagUp);
 
     // Same idea as in GridSequence::applyTransformationTransposed().
-    template<int mode>
+    /*!
+     * \brief Modes for the transpose map, derivative or values
+     */
+    enum class TranspMode {
+        //! compute the weight for the function values
+        value,
+        //! compute the weight for the derivative
+        derivative
+    };
+
+    template<TranspMode mode>
     void applyTransformationTransposed(double weights[], const MultiIndexSet &work, const std::vector<int> &active_points) const;
-    template<int mode, RuleLocal::erule effrule>
+    template<TranspMode mode, RuleLocal::erule effrule>
     void applyTransformationTransposed(double weights[], const MultiIndexSet &work, const std::vector<int> &active_points) const;
 
     void buildSparseMatrixBlockForm(const double x[], int num_x, int num_chunk, std::vector<int> &numnz,
@@ -220,21 +230,34 @@ protected:
     }
 
     /*!
+     * \brief Enumerates different modes when walking the tree.
+     *
+     * These enums are used only with walkTree().
+     */
+    enum class WalkerMode {
+        //! directly intrements, ignore \b sindx and \b svals
+        increment,
+        //! construct a sparse vector using std::vector::push_back() to the \b sindx and \b svals
+        fill_entries,
+        //! same as fill_entries but also sorts the entreies (requirement of Nvidia cusparseDgemvi)
+        fill_sorted,
+        //! increment for the derivative
+        increment_diff,
+        //! same as fill but uses derivative entries
+        fill_entries_diff
+    };
+
+    /*!
      * \brief Walk through all the nodes of the tree and touches only the nodes supported at \b x.
      *
-     * The template is instantiated in different modes:
-     * - \b mode \b 0, ignore \b sindx and \b svals, find the non-zero basis functions multiply them by the surpluses and add to \b y
-     * - \b mode \b 1, ignore \b y, form a sparse vector by std::vector::push_back() to the \b sindx and \b svals
-     * - \b mode \b 2, same as \b mode \b 1 but it also sorts the entries within the vector (requirement of Nvidia cusparseDgemvi)
-     * - \b mode \b 3, same as \b mode \b 0, but replaces the non-zero basis function values with their gradient vectors
-     * - \b mode \b 4, same as \b mode \b 1, but replaces the non-zero basis function values with their gradient vectors
+     * The template is instantiated in different modes.
      *
-     * For mode 4, the i-th entry of sindx maps to the set of num_dimension values in svals at index (i * num_dimension). Hence,
-     * we have (sindx.size() * num_dimensions == svals.size()).
+     * For mode fill_entries_diff, the i-th entry of sindx maps to the set of num_dimension values in svals at index (i * num_dimension).
+     * Hence, we have (sindx.size() * num_dimensions == svals.size()).
      *
      * In all cases, \b work is the \b points or \b needed set that has been used to construct the tree.
      */
-    template<int mode, RuleLocal::erule effrule>
+    template<WalkerMode mode, RuleLocal::erule effrule>
     void walkTree(const MultiIndexSet &work, const double x[], std::vector<int> &sindx, std::vector<double> &svals, double *y) const{
         std::vector<int> monkey_count(top_level+1); // traverse the tree, counts the branches of the current node
         std::vector<int> monkey_tail(top_level+1); // traverse the tree, keeps track of the previous node (history)
@@ -244,21 +267,21 @@ protected:
         std::vector<double> basis_derivative(num_dimensions);
 
         for(const auto &r : roots){
-            if (mode == 3 or mode == 4) {
+            if constexpr (mode == WalkerMode::increment_diff or mode == WalkerMode::fill_entries_diff) {
                 diffBasisSupported<effrule>(work.getIndex(r), x, basis_derivative.data(), isSupported);
             } else {
                 basis_value = evalBasisSupported<effrule>(work.getIndex(r), x, isSupported);
             }
 
             if (isSupported){
-                if (mode == 0){
+                if constexpr (mode == WalkerMode::increment){
                     double const *s = surpluses.getStrip(r);
                     for(int k=0; k<num_outputs; k++)
                         y[k] += basis_value * s[k];
-                }else if (mode == 1 or mode == 2){
+                }else if constexpr (mode == WalkerMode::fill_entries or mode == WalkerMode::fill_sorted){
                     sindx.push_back(r);
                     svals.push_back(basis_value);
-                }else if (mode == 3){
+                }else if constexpr (mode == WalkerMode::increment_diff){
                     double const *s = surpluses.getStrip(r);
                     for(int k=0; k<num_outputs; k++)
                         for (int d=0; d<num_dimensions; d++)
@@ -276,20 +299,20 @@ protected:
                 while(monkey_count[0] < pntr[monkey_tail[0]+1]){
                     if (monkey_count[current] < pntr[monkey_tail[current]+1]){
                         int p = indx[monkey_count[current]];
-                        if (mode == 3 or mode == 4){
+                        if constexpr (mode == WalkerMode::increment_diff or mode == WalkerMode::fill_entries_diff){
                             diffBasisSupported<effrule>(work.getIndex(p), x, basis_derivative.data(), isSupported);
                         }else{
                             basis_value = evalBasisSupported<effrule>(work.getIndex(p), x, isSupported);
                         }
                         if (isSupported){
-                            if (mode == 0){
+                            if constexpr (mode == WalkerMode::increment){
                                 double const *s = surpluses.getStrip(p);
                                 for(int k=0; k<num_outputs; k++)
                                     y[k] += basis_value * s[k];
-                            }else if (mode == 1 or mode == 2){
+                            }else if constexpr (mode == WalkerMode::fill_entries or mode == WalkerMode::fill_sorted){
                                 sindx.push_back(p);
                                 svals.push_back(basis_value);
-                            }else if (mode == 3){
+                            }else if constexpr (mode == WalkerMode::increment_diff){
                                 double const *s = surpluses.getStrip(p);
                                 for(int k=0; k<num_outputs; k++)
                                     for (int d=0; d<num_dimensions; d++)
@@ -315,7 +338,7 @@ protected:
         // "... it is assumed that the indices are provided in increasing order and that each index appears only once."
         // This may not be a requirement for cusparseDgemvi(), but it may be that I have not tested it sufficiently
         // Also, see AccelerationDataGPUFull::cusparseMatveci() for inaccuracies in Nvidia documentation
-        if (mode == 2){
+        if constexpr (mode == WalkerMode::fill_sorted){
             std::vector<int> map(sindx);
             std::iota(map.begin(), map.end(), 0);
             std::sort(map.begin(), map.end(), [&](int a, int b)->bool{ return (sindx[a] < sindx[b]); });
@@ -327,7 +350,7 @@ protected:
         }
     }
     // Explicitly instantiates based on the effective_rule
-    template<int mode>
+    template<WalkerMode mode>
     void walkTree(const MultiIndexSet &work, const double x[], std::vector<int> &sindx, std::vector<double> &svals, double *y) const{
         switch(effective_rule) {
             case RuleLocal::erule::pwc:

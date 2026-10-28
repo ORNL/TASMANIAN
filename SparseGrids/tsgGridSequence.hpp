@@ -160,7 +160,17 @@ protected:
     void expandGrid(const std::vector<int> &point, const std::vector<double> &values, const std::vector<double> &surplus);
     void loadConstructedPoints();
     void recomputeSurpluses();
-    template<int mode> void applyTransformationTransposed(double weights[]) const;
+
+    /*!
+     * \brief Modes for the transpose map, derivative or values
+     */
+    enum class TranspMode {
+        //! compute the weight for the function values or quadrature
+        value,
+        //! compute the weight for the derivative
+        derivative
+    };
+    template<TranspMode mode> void applyTransformationTransposed(double weights[]) const;
 
     double evalBasis(const int f[], const int p[]) const; // evaluate function corresponding to f at p
 

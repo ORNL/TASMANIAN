@@ -156,7 +156,7 @@ void GridSequence::getQuadratureWeights(double *weights) const{
         }
     }
 
-    applyTransformationTransposed<0>(weights);
+    applyTransformationTransposed<TranspMode::value>(weights);
 }
 
 void GridSequence::getInterpolationWeights(const double x[], double *weights) const{
@@ -171,7 +171,7 @@ void GridSequence::getInterpolationWeights(const double x[], double *weights) co
             weights[i] *= cache[j][p[j]];
         }
     }
-    applyTransformationTransposed<0>(weights);
+    applyTransformationTransposed<TranspMode::value>(weights);
 }
 
 void GridSequence::getDifferentiationWeights(const double x[], double weights[]) const {
@@ -194,7 +194,7 @@ void GridSequence::getDifferentiationWeights(const double x[], double weights[])
 
         for(int j=0; j<num_dimensions; j++) weights[i * num_dimensions + j] +=  diff_values[j];
     }
-    applyTransformationTransposed<1>(weights);
+    applyTransformationTransposed<TranspMode::derivative>(weights);
 }
 
 void GridSequence::loadNeededValues(const double *vals){
@@ -850,10 +850,8 @@ void GridSequence::recomputeSurpluses(){
     }
 }
 
-template <int mode>
+template <GridSequence::TranspMode mode>
 void GridSequence::applyTransformationTransposed(double weights[]) const{
-    // mode 0: applies the transposed linear operator for interpolation and quadrature.
-    // mode 1: applies the transposed linear operator for differentiation.
     const MultiIndexSet& work = (points.empty()) ? needed : points;
     int num_points = work.getNumIndexes();
 
@@ -882,7 +880,7 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
                         if ((branch == -1) || used[branch]){
                             monkey_count[current]++;
                         }else{
-                            if (mode == 0) {
+                            if constexpr (mode == TranspMode::value) {
                                 weights[branch] -= weights[i] * evalBasis(work.getIndex(branch), p);
                             } else {
                                 double weight_mult = evalBasis(work.getIndex(branch), p);
