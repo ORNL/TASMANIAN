@@ -202,7 +202,7 @@ void GridLocalPolynomial::evaluate(const double x[], double y[]) const{
     std::fill_n(y, num_outputs, 0.0);
     std::vector<int> sindx; // dummy variables, never references in mode 0 below
     std::vector<double> svals;
-    walkTree<0>(points, x, sindx, svals, y);
+    walkTree<WalkerMode::increment>(points, x, sindx, svals, y);
 }
 void GridLocalPolynomial::evaluateBatchOpenMP(const double x[], int num_x, double y[]) const{
     if (num_x == 1){ evaluate(x, y); return; }
@@ -335,7 +335,7 @@ void GridLocalPolynomial::evaluateGpuMixed(const double x[], int num_x, double y
     if (num_x > 1){
         buildSpareBasisMatrix(x, num_x, 32, spntr, sindx, svals);
     }else{
-        walkTree<2>(points, x, sindx, svals, nullptr);
+        walkTree<WalkerMode::fill_sorted>(points, x, sindx, svals, nullptr);
         #ifdef Tasmanian_ENABLE_DPCPP
         // CUDA and HIP have methods for sparse-vector times dense matrix or vector
         // therefore, CUDA/HIP do not use spntr when num_x is equal to 1, but DPC++ needs to set it too
@@ -804,10 +804,10 @@ void GridLocalPolynomial::getInterpolationWeights(const double x[], double weigh
     std::fill_n(weights, work.getNumIndexes(), 0.0);
 
     // construct a sparse vector and apply transpose surplus transformation
-    walkTree<1>(work, x, active_points, hbasis_values, nullptr);
+    walkTree<WalkerMode::fill_entries>(work, x, active_points, hbasis_values, nullptr);
     auto ibasis = hbasis_values.begin();
     for(auto i : active_points) weights[i] = *ibasis++;
-    applyTransformationTransposed<0>(weights, work, active_points);
+    applyTransformationTransposed<TranspMode::value>(weights, work, active_points);
 }
 
 void GridLocalPolynomial::getDifferentiationWeights(const double x[], double weights[]) const {
@@ -818,12 +818,12 @@ void GridLocalPolynomial::getDifferentiationWeights(const double x[], double wei
     std::vector<double> diff_hbasis_values;
     std::fill_n(weights, work.getNumIndexes(), 0.0);
 
-    walkTree<4>(work, x, active_points, diff_hbasis_values, nullptr);
+    walkTree<WalkerMode::fill_entries_diff>(work, x, active_points, diff_hbasis_values, nullptr);
     auto ibasis = diff_hbasis_values.begin();
     for(auto i : active_points)
         for (int d=0; d<num_dimensions; d++)
             weights[i * num_dimensions + d] = *ibasis++;
-    applyTransformationTransposed<1>(weights, work, active_points);
+    applyTransformationTransposed<TranspMode::derivative>(weights, work, active_points);
 }
 
 void GridLocalPolynomial::evaluateHierarchicalFunctions(const double x[], int num_x, double y[]) const{
@@ -1058,7 +1058,7 @@ void GridLocalPolynomial::updateSurpluses(MultiIndexSet const &work, int max_lev
     } // level loop
 }
 
-template<int mode, RuleLocal::erule effrule>
+template<GridLocalPolynomial::TranspMode mode, RuleLocal::erule effrule>
 void GridLocalPolynomial::applyTransformationTransposed(double weights[], const MultiIndexSet &work, const std::vector<int> &active_points) const {
     Data2D<int> lparents = (parents.getNumStrips() != work.getNumIndexes()) ? // if the current dag loaded in parents does not reflect the indexes in work
                             HierarchyManipulations::computeDAGup<effrule>(work) :
@@ -1108,7 +1108,7 @@ void GridLocalPolynomial::applyTransformationTransposed(double weights[], const 
                             double basis_value = RuleLocal::evalRaw<effrule>(order, func[0], node[0]);
                             for(int j=1; j<num_dimensions; j++) basis_value *= RuleLocal::evalRaw<effrule>(order, func[j], node[j]);
 
-                            if (mode == 0) {
+                            if constexpr (mode == TranspMode::value) {
                                 weights[branch] -= weights[active_points[i]] * basis_value;
                             } else {
                                 for (int d=0; d<num_dimensions; d++)
@@ -1129,7 +1129,7 @@ void GridLocalPolynomial::applyTransformationTransposed(double weights[], const 
     }
 }
 
-template<int mode>
+template<GridLocalPolynomial::TranspMode mode>
 void GridLocalPolynomial::applyTransformationTransposed(double weights[], const MultiIndexSet &work, const std::vector<int> &active_points) const {
     switch(effective_rule) {
         case RuleLocal::erule::pwc:
@@ -1203,7 +1203,7 @@ int GridLocalPolynomial::getSpareBasisMatrixNZ(const double x[], int num_x) cons
     for(int i=0; i<num_x; i++){
         std::vector<int> sindx;
         std::vector<double> svals;
-        walkTree<1>(work, xwrap.getStrip(i), sindx, svals, nullptr);
+        walkTree<WalkerMode::fill_entries>(work, xwrap.getStrip(i), sindx, svals, nullptr);
         num_nz[i] = (int) sindx.size();
     }
 
@@ -1228,7 +1228,7 @@ void GridLocalPolynomial::buildSparseMatrixBlockForm(const double x[], int num_x
         int chunk_size = (b < num_blocks - 1) ? num_chunk : (num_x - (num_blocks - 1) * num_chunk);
         for(int i = b * num_chunk; i < b * num_chunk + chunk_size; i++){
             numnz[i] = (int) tindx[b].size();
-            walkTree<1>(work, xwrap.getStrip(i), tindx[b], tvals[b], nullptr);
+            walkTree<WalkerMode::fill_entries>(work, xwrap.getStrip(i), tindx[b], tvals[b], nullptr);
             numnz[i] = (int) tindx[b].size() - numnz[i];
         }
     }
@@ -1481,7 +1481,7 @@ void GridLocalPolynomial::differentiate(const double x[], double jacobian[]) con
     // dummy variables, never references in mode 3 below
     std::vector<int> sindx;
     std::vector<double> svals;
-    walkTree<3>(points, x, sindx, svals, jacobian);
+    walkTree<WalkerMode::increment_diff>(points, x, sindx, svals, jacobian);
 }
 
 std::vector<double> GridLocalPolynomial::getNormalization() const{
