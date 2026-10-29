@@ -48,8 +48,8 @@ Optional features:
 | anaconda| 5.3                 | 5.3              |
 | OpenBlas| 0.2.18 - 3.08       | any              |
 | ESSL    | 6.2                 | 6.2              |
-| CUDA    | 11.8 - 12.6         | avoid 12.3-12.4  |
-| ROCm    | 5.7 - 6.2           | any              |
+| CUDA    | 11.8 - 12.9         | avoid 12.3-12.4  |
+| ROCm    | 6.8 - 7.2           | any              |
 | DPC++   | 2024.2              | 2024             |
 | libiomp | 5.0                 | 5.0              |
 | MAGMA   | 2.5.1 - 2.6.1       | 2.6.1            |
@@ -254,9 +254,6 @@ Additional notes:
 * under MS Windows the environment variables can be set from Advanced System Settings,
   but the paths should use Linux style of back-slashes, e.g., `C:/Program Files/CUDA/bin/nvcc.exe`
 * scikit build sometimes lags in support for the latest MS Visual Studio, regular CMake install works fine
-* under OSX some users have reported segfaults when using a pip install, the problem does not
-  appear when using CMake, the issue is under investigation
-
 
 ### Install with Spack
 
@@ -282,7 +279,7 @@ Tasmanian has been tested with MS Visual Studio 2019.
 
 ### Install on Mac platform
 
-As of Tasmanian 8.1, the Mac OSX installation handles the same as Linux regardless for both Intel and M-chips.
+As of Tasmanian v8.1, the Mac OSX installation handles the same as Linux regardless whether using Intel or M-chips.
 
 ### Install folder structure
 
@@ -326,7 +323,7 @@ Additional notes:
 
 Tasmanian will install CMake package-config files in `<install-path>/lib/Tasmanian`, the files will contain all necessary information to import the Tasmanian targets into other CMake projects using the CMake command:
 ```
-  find_package(Tasmanian 8.1 PATHS "<install-path>")
+  find_package(Tasmanian 8.3 PATHS "<install-path>")
 ```
 See the included `CMakeLists.txt` in `<install-path>/share/Tasmanian/examples`.
 
@@ -358,7 +355,7 @@ All available components will be included even if the component is not explicitl
 Requesting components can help catch errors early in the build process
 and/or print useful log messages. For example:
 ```
-  find_package(Tasmanian 8.1 REQUIRED SHARED PYTHON CUDA OPTIONAL_COMPONENTS OPENMP)
+  find_package(Tasmanian 8.3 REQUIRED SHARED PYTHON CUDA OPTIONAL_COMPONENTS OPENMP)
 ```
 In the above example:
 * an error will be generated if Tasmanian was build with static libraries, no CUDA or no Python support
