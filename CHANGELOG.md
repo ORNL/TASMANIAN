@@ -2,6 +2,13 @@ Changelog for version 8.3
 --------------
 
 * C++-17 is now required
+    * enabled multiple C++ quality of life features for the internal API
+    * the external API remains unchanged and stable
+* moved polymorphism from using OOP inheritance to using std::variant
+* bug fixes
+    * differentiation near or at the edge of the domain boundary is more stable now
+    * fixed DREAM sampling bug when getting the PDF history from the state
+* numerous small performance updates
 
 Changelog for version 8.2
 --------------
