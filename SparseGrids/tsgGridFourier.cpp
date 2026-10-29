@@ -441,7 +441,7 @@ void GridFourier::getDifferentiationWeights(const double x[], double weights[]) 
      */
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     std::vector<std::vector<int>> index_map = generateIndexingMap();
-    std::fill_n(weights, work.getNumIndexes(), 0.0);
+    std::fill_n(weights, work.getNumIndexes() * num_dimensions, 0.0);
 
     // Cache exp(-2 * π * I * m / 3^{l}) for every (m, l) where N = 3^l.
     int maxl = active_tensors.getMaxIndex() + 1;
