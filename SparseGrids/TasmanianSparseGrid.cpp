@@ -548,13 +548,33 @@ void TasmanianSparseGrid::integrate(double q[]) const{
 void TasmanianSparseGrid::differentiate(const double x[], double jacobian[]) const {
     // For a grid with a transformed-to-canonical operator g(x) and model f(x) over the canonical domain, this returns the
     // Jacobian of f(g(x)), i.e., [Jacobian of f(.) at g(x)] * [Jacobian of g(.) at x].
-    Data2D<double> x_tmp;
-    // Jacobian of f(.) at g(x).
-    auto const &pnts = formCanonicalPoints(x, x_tmp, 1);
-    std::visit([&](auto const &g){
-        if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
-            g.differentiate(pnts, jacobian);
-    }, base);
+    if (isLocalPolynomial()) {
+        GridLocalPolynomial const &lgrid = std::get<GridLocalPolynomial>(base);
+        int const num_dimensions = lgrid.getNumDimensions();
+        std::vector<double> p(x, x + num_dimensions);
+
+        if (not domain_transform_a.empty() and not domain_transform_b.empty()) {
+            for(int j=0; j<num_dimensions; j++){
+                p[j] *= 2.0 / (domain_transform_b[j] - domain_transform_a[j]);
+                p[j] -= (domain_transform_b[j] + domain_transform_a[j]) / (domain_transform_b[j] - domain_transform_a[j]);
+                p[j] = std::clamp(p[j], -1.0, 1.0);
+            }
+        } else {
+            for(int j=0; j<num_dimensions; j++)
+                p[j] = std::clamp(p[j], -1.0, 1.0);
+        }
+
+        lgrid.differentiate(p.data(), jacobian);
+
+    } else {
+        // Jacobian of f(.) at g(x).
+        Data2D<double> x_tmp;
+        auto const &pnts = formCanonicalPoints(x, x_tmp, 1);
+        std::visit([&](auto const &g){
+            if constexpr (not std::is_same_v<std::decay_t<decltype(g)>, std::monostate>)
+                g.differentiate(pnts, jacobian);
+        }, base);
+    }
     // Jacobian of f(g(.)) at x.
     if (not domain_transform_a.empty()) {
         int num_dimensions = getNumDimensions();

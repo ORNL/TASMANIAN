@@ -816,13 +816,14 @@ void GridLocalPolynomial::getDifferentiationWeights(const double x[], double wei
 
     std::vector<int> active_points;
     std::vector<double> diff_hbasis_values;
-    std::fill_n(weights, work.getNumIndexes(), 0.0);
+    std::fill_n(weights, work.getNumIndexes() * num_dimensions, 0.0);
 
     walkTree<WalkerMode::fill_entries_diff>(work, x, active_points, diff_hbasis_values, nullptr);
     auto ibasis = diff_hbasis_values.begin();
     for(auto i : active_points)
         for (int d=0; d<num_dimensions; d++)
             weights[i * num_dimensions + d] = *ibasis++;
+
     applyTransformationTransposed<TranspMode::derivative>(weights, work, active_points);
 }
 

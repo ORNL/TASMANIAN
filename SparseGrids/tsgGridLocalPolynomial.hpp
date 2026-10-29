@@ -214,19 +214,27 @@ protected:
     }
     template<RuleLocal::erule effrule>
     void diffBasisSupported(const int point[], const double x[], double diff_values[], bool &isSupported) const{
-        isSupported = false;
-        for(int i=0; i<num_dimensions; i++) diff_values[i] = 1.0;
-        bool isDimSupported = false;
+        // The isSupported uses only the logic provided by the evalSupport()
+        // If any 1D function has no support, then the derivative has no support
+        // If all 1D function have support, the derivative could be theoretically 0, but probably not
+        std::fill_n(diff_values, num_dimensions, 1);
         for(int k=0; k<num_dimensions; k++) {
-            double fval = RuleLocal::evalSupport<effrule>(order, point[k], x[k], isDimSupported);
-            isSupported = isDimSupported or isSupported;
+            double fval = RuleLocal::evalSupport<effrule>(order, point[k], x[k], isSupported);
+            if (not isSupported) {
+                std::fill_n(diff_values, num_dimensions, 0);
+                isSupported = false;
+                return;
+            }
+            // when num_dimension == 1, these two loops do nothing
+            // however, the call evalSupport() above is still needed for isSupported
             for(int j=0; j<k; j++) diff_values[j] *= fval;
             for(int j=k+1; j<num_dimensions; j++) diff_values[j] *= fval;
         }
         for (int k=0; k<num_dimensions; k++) {
-            diff_values[k] *= RuleLocal::diffSupport<effrule>(order, point[k], x[k], isDimSupported);
-            isSupported = isDimSupported or isSupported;
+            diff_values[k] *= RuleLocal::diffSupport<effrule>(order, point[k], x[k]);
         }
+        // no early termination in the first for-loop, must be supported
+        isSupported = true;
     }
 
     /*!
