@@ -51,6 +51,18 @@
 
 namespace TasDREAM{
 
+/*!
+ * \brief Strong type for number of chains in TasDREAM::TasmanianDREAM
+ * \ingroup DREAMState
+ */
+enum class NumChains : int {};
+
+/*!
+ * \brief Strong type for number of dimensions in TasDREAM::TasmanianDREAM
+ * \ingroup DREAMState
+ */
+using ::TasGrid::NumDimensions;
+
 //! \brief Contains the current state and the history of the DREAM chains.
 //! \ingroup DREAMState
 
@@ -73,6 +85,9 @@ public:
     TasmanianDREAM();
     //! \brief Constructor for a DREAM state with the number of chains and dimensions.
     TasmanianDREAM(int cnum_chains, int cnum_dimensions);
+    //! \brief Constructor for a DREAM state with the number of chains and dimensions.
+    TasmanianDREAM(NumChains chains, NumDimensions dims)
+        : TasmanianDREAM(static_cast<int>(chains), static_cast<int>(dims)) {}
     //! \brief Constructor for a DREAM state with the number of chains and the dimension of the sparse grid.
     TasmanianDREAM(int cnum_chains, const TasGrid::TasmanianSparseGrid &grid);
     //! \brief Default destructor, release all used memory.
