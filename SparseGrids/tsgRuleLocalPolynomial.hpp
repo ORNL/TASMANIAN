@@ -372,8 +372,33 @@ namespace RuleLocal {
         return value;
     }
 
-    template<erule effective_rule>
+    // The edge test is more complicated but it guards against ambiguity when dealing with derivatives
+    // at the boundary and interior cell edges
+    // The standard interpolation is not affected since the absis smoothly goes to zero around edges,
+    // thus small perturbations do not get magnified.
+    // However, derivatives have jump discontinuities and infinitesimal change can yield O(1) perturbation.
+    template<erule effective_rule, bool use_edge_test = false>
     double evalSupport(int max_order, int point, double x, bool &isSupported) {
+        auto test_support = [&](double xn, int p) -> bool {
+                if constexpr (use_edge_test) {
+                    // the first part of the test (-1 <= xn and xn < 1) restricts the support to [left, rigth)
+                    // where left/right are edges of the cells
+                    // This is OK for the interior, but will fail at the right boundary, thus the second test
+                    // checks if the support of the basis funciton ends at the right-most point of the domain.
+                    // The test ((p & (p - 1)) == 0))) uses bit-patterns to check if p is an exact power of 2.
+                    if constexpr (effective_rule == erule::localp0) {
+                        int const pp = p + 2; // shift by 2 points
+                        return (-1.0 <= xn and (xn < 1.0 or (pp < 3 or ((pp & (pp - 1)) == 0))));
+                    } else if constexpr (effective_rule == erule::localpb) {
+                        return (-1.0 <= xn and (xn < 1.0 or (p < 3 or ((p & (p - 1)) == 0))));
+                    } else {
+                        return (-1.0 <= xn and (xn < 1.0 or (p > 1 and ((p & (p - 1)) == 0))));
+                    }
+                } else {
+                    return (std::abs(xn) <= 1.0);
+                }
+            };
+
         switch(effective_rule) {
             case erule::pwc: {
                     double distance = std::abs(x - getNode<effective_rule>(point));
@@ -386,8 +411,8 @@ namespace RuleLocal {
                 if (point == 0) {
                     return 1.0;
                 } else {
-                    double xn = scaleX<effective_rule>(point, x);
-                    if (std::abs(xn) <= 1.0) {
+                    const double xn = scaleX<effective_rule>(point, x);
+                    if (test_support(xn, point)) {
                         switch(max_order) {
                             case 1: return 1.0 - std::abs(xn);
                             case 2: return evalPWQuadratic<effective_rule>(point, xn);
@@ -407,8 +432,8 @@ namespace RuleLocal {
                     case 1: return 0.5 * x * (x - 1.0);
                     case 2: return 0.5 * x * (x + 1.0);
                     default: {
-                        double xn = scaleX<effective_rule>(point, x);
-                        if (std::abs(xn) <= 1.0) {
+                        const double xn = scaleX<effective_rule>(point, x);
+                        if (test_support(xn, point)) {
                             switch(max_order) {
                                 case 1: return 1.0 - std::abs(xn);
                                 case 2: return evalPWQuadratic<effective_rule>(point, xn);
@@ -424,8 +449,8 @@ namespace RuleLocal {
                 };
             case erule::localp0:
             default: { // case erule::localpb:
-                    double xn = scaleX<effective_rule>(point, x);
-                    if (std::abs(xn) <= 1.0) {
+                    const double xn = scaleX<effective_rule>(point, x);
+                    if (test_support(xn, point)) {
                         isSupported = true;
                         switch(max_order) {
                             case 1: return 1.0 - std::abs(xn);
