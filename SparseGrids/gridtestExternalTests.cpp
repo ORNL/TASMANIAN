@@ -55,13 +55,13 @@ std::vector<double> genRandom(int num_samples, int num_dimensions = 1){
     return x;
 }
 
-void loadValues(const BaseFunction *f, TasmanianSparseGrid &grid){
+void loadValues(const BaseFunction &f, TasmanianSparseGrid &grid){
     int num_needed     = grid.getNumNeeded();
     if (num_needed > 0){
         Data2D<double> points(grid.getNumDimensions(), num_needed, grid.getNeededPoints());
         Data2D<double> values(grid.getNumOutputs(), num_needed);
         for(int i=0; i<num_needed; i++)
-            f->eval(points.getStrip(i), values.getStrip(i));
+            f.eval(points.getStrip(i), values.getStrip(i));
         grid.loadNeededPoints(values.data());
     }
 }
@@ -216,10 +216,10 @@ bool ExternalTester::Test(TestList test) const{
     return pass;
 }
 
-TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSparseGrid &grid, TestType type, std::vector<double> const &x) const{
+TestResults ExternalTester::getError(const BaseFunction &f, TasGrid::TasmanianSparseGrid &grid, TestType type, std::vector<double> const &x) const{
     TestResults R;
-    int num_dimensions = f->getNumInputs();
-    int num_outputs = f->getNumOutputs();
+    int num_dimensions = f.getNumInputs();
+    int num_outputs = f.getNumOutputs();
     int num_points = grid.getNumPoints();
     if (type == type_integration or type == type_nodal_interpolation or type == type_nodal_differentiation){
         int num_entries = (type == type_nodal_differentiation) ? num_dimensions * num_outputs : num_outputs;
@@ -237,14 +237,14 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
         std::vector<double> r(num_entries, 0.0);
         if (type == type_nodal_differentiation){
             for(int i=0; i<num_points; i++){
-                f->eval(&(points[i*num_dimensions]), y.data());
+                f.eval(&(points[i*num_dimensions]), y.data());
                 for (int k=0; k<num_outputs; k++)
                     for(int j=0; j<num_dimensions; j++)
                         r[k * num_dimensions + j] += weights[i * num_dimensions + j] * y[k];
             }
         }else{
             for(int i=0; i<num_points; i++){
-                f->eval(&(points[i*num_dimensions]), y.data());
+                f.eval(&(points[i*num_dimensions]), y.data());
                 for(int k=0; k<num_entries; k++)
                     r[k] += weights[i] * y[k];
             }
@@ -252,11 +252,11 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
 
         double err = 0.0;
         if (type == type_integration){
-            f->getIntegral(y.data());
+            f.getIntegral(y);
         }else if (type == type_nodal_differentiation){
-            f->getDerivative(x.data(), y.data());
+            f.getDerivative(x, y);
         }else{
-            f->eval(x.data(), y.data());
+            f.eval(x, y);
         }
         for(int j=0; j<num_entries; j++){
             err += std::abs(y[j] - r[j]);
@@ -288,13 +288,13 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
             #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
             for(int i=0; i<num_mc; i++){
                 grid.evaluate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_entries]));
-                f->eval(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
+                f.eval(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
             }
         } else {
             #pragma omp parallel for // note that iterators do not work with OpenMP, direct indexing does
             for(int i=0; i<num_mc; i++){
                 grid.differentiate(&(test_x[i * num_dimensions]), &(result_tasm[i * num_entries]));
-                f->getDerivative(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
+                f.getDerivative(&(test_x[i * num_dimensions]), &(result_true[i * num_entries]));
             }
         }
 
@@ -315,36 +315,36 @@ TestResults ExternalTester::getError(const BaseFunction *f, TasGrid::TasmanianSp
     return R;
 }
 
-bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, const std::vector<TestType> &tests, const int depths[], const double tols[]) const{
+bool ExternalTester::testGlobalRule(const BaseFunction &f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, const std::vector<TestType> &tests, const int depths[], const double tols[]) const{
     TasGrid::TasmanianSparseGrid grid;
     TestResults R;
     size_t num_global_tests = tests.size();
     TasGrid::TypeDepth type = (rule == rule_fourier ? TasGrid::type_level : TasGrid::type_iptotal);
-    std::vector<double> x = genRandom(f->getNumInputs());
-    if (rule == rule_fourier){ for(int i=0; i<f->getNumInputs(); i++) x[i] = 0.5*(x[i]+1.0); }    // map to canonical [0,1]^d
+    std::vector<double> x = genRandom(f.getNumInputs());
+    if (rule == rule_fourier){ for(int i=0; i<f.getNumInputs(); i++) x[i] = 0.5*(x[i]+1.0); }    // map to canonical [0,1]^d
     bool bPass = true;
     const char *custom_filename = (rule == rule_customtabulated) ? findGaussPattersonTable() : 0;
-    int num_fn_outputs = (tests == quad_only) ? 0 : f->getNumOutputs();
+    int num_fn_outputs = (tests == quad_only) ? 0 : f.getNumOutputs();
     for(size_t i=0; i<num_global_tests; i++){
         if (rule == rule_fourier){
             if (anisotropic == nullptr){
-                grid = makeFourierGrid(f->getNumInputs(), num_fn_outputs, depths[i], type);
+                grid = makeFourierGrid(f.getNumInputs(), num_fn_outputs, depths[i], type);
             }else{
-                grid.makeFourierGrid(f->getNumInputs(), num_fn_outputs, depths[i], type, anisotropic);
+                grid.makeFourierGrid(f.getNumInputs(), num_fn_outputs, depths[i], type, anisotropic);
             }
             grid.setDomainTransform(std::vector<double>(grid.getNumDimensions(), -1.0), std::vector<double>(grid.getNumDimensions(), 1.0));
         }else{
             if (anisotropic == nullptr){
-                grid = makeGlobalGrid(f->getNumInputs(), num_fn_outputs, depths[i], type, rule, std::vector<int>(), alpha, beta, custom_filename);
+                grid = makeGlobalGrid(f.getNumInputs(), num_fn_outputs, depths[i], type, rule, std::vector<int>(), alpha, beta, custom_filename);
             }else{
-                grid.makeGlobalGrid(f->getNumInputs(), num_fn_outputs, depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+                grid.makeGlobalGrid(f.getNumInputs(), num_fn_outputs, depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
             }
         }
         R = getError(f, grid, tests[i], x);
         if (R.error > tols[i]){
             bPass = false;
             cout << setw(18) << "ERROR: FAILED " << (rule == rule_fourier ? "fourier" : "global") << setw(25) << IO::getRuleString(rule);
-            cout << setw(25) << testName(tests[i]) << "   failed function: " << f->getDescription();
+            cout << setw(25) << testName(tests[i]) << "   failed function: " << f.getDescription();
             cout << setw(10) << "  observed: " << R.error << "  expected: " << tols[i] << endl;
         }
     }
@@ -352,19 +352,19 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
         TasGrid::TasmanianSparseGrid grid_copy;
         for(size_t i=0; i<2*num_global_tests; i++){
             if (i < num_global_tests){
-                grid.makeGlobalGrid(f->getNumInputs(), num_fn_outputs, depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
+                grid.makeGlobalGrid(f.getNumInputs(), num_fn_outputs, depths[i], type, rule, anisotropic, alpha, beta, custom_filename);
             }else{
                 CustomTabulated custom;
                 custom.read(custom_filename);
                 grid = TasmanianSparseGrid();
-                grid.makeGlobalGrid(f->getNumInputs(), num_fn_outputs, depths[i % num_global_tests], type, std::move(custom), anisotropic);
+                grid.makeGlobalGrid(f.getNumInputs(), num_fn_outputs, depths[i % num_global_tests], type, std::move(custom), anisotropic);
             }
             grid_copy = grid;
             R = getError(f, grid_copy, tests[i % num_global_tests], x);
             if (R.error > tols[i % num_global_tests]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED global" << setw(25) << IO::getRuleString(rule);
-                cout << setw(25) << testName(tests[i % num_global_tests]) << "   failed function: " << f->getDescription();
+                cout << setw(25) << testName(tests[i % num_global_tests]) << "   failed function: " << f.getDescription();
                 cout << setw(10) << "observed: " << R.error << "  expected: " << tols[i % num_global_tests] << endl;
             }
         }
@@ -373,17 +373,17 @@ bool ExternalTester::testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule
     if (TasGrid::OneDimensionalMeta::isSequence(rule)){
         for(size_t i=0; i<num_global_tests; i++){
             if (tests[i] == type_integration){
-                grid.makeSequenceGrid(f->getNumInputs(), 0, depths[i], type, rule, anisotropic);
+                grid.makeSequenceGrid(f.getNumInputs(), 0, depths[i], type, rule, anisotropic);
                 R = getError(f, grid, type_integration);
             }else{
-                grid = makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], type, rule,
-                                        (anisotropic != nullptr) ? std::vector<int>(anisotropic, anisotropic + f->getNumInputs()) : std::vector<int>());
+                grid = makeSequenceGrid(f.getNumInputs(), f.getNumOutputs(), depths[i], type, rule,
+                                        (anisotropic != nullptr) ? std::vector<int>(anisotropic, anisotropic + f.getNumInputs()) : std::vector<int>());
                 R = getError(f, grid, tests[i], x);
             }
             if (R.error > tols[i]){
                 bPass = false;
                 cout << setw(18) << "ERROR: FAILED sequence" << setw(25) << IO::getRuleString(rule);
-                cout << setw(25) << testName(tests[i]) << "   failed function: " << f->getDescription();
+                cout << setw(25) << testName(tests[i]) << "   failed function: " << f.getDescription();
                 cout << setw(10) << "  observed: " << R.error << "  expected: " << tols[i] << endl;
             }
         }
@@ -401,8 +401,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[5] = { 1.E-12, 1.E-12, 1.E-11, 1.E-09, 1.E-09 };
         const int depths2[5] = { 25, 27, 27, 27, 27 };
         const double tols2[5] = { 1.E-12, 1.E-10, 1.E-11, 1.E-09, 1.E-09 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
-            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
+        if (testGlobalRule(f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
+            testGlobalRule(f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -411,7 +411,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = TasGrid::rule_clenshawcurtis0;
         const int depths1[5] = { 25, 25, 25, 25, 25 };
         const double tols1[5] = { 1.E-12, 1.E-12, 1.E-11, 1.E-10, 1.E-10 };
-        if (testGlobalRule(&f21sinsin, oned, 0, alpha, beta, all_test_types, depths1, tols1)){
+        if (testGlobalRule(f21sinsin, oned, 0, alpha, beta, all_test_types, depths1, tols1)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -422,8 +422,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[5] = { 1.E-12, 1.E-10, 1.E-10, 1.E-08, 1.E-08 };
         const int depths2[5] = { 22, 22, 22, 22, 22 };
         const double tols2[5] = { 1.E-12, 1.E-09, 1.E-09, 1.E-08, 1.E-08 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
-            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
+        if (testGlobalRule(f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
+            testGlobalRule(f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -434,8 +434,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[5] = { 3.E-10, 5.E-09, 5.E-09, 5.E-07, 5.E-07 };
         const int depths2[5] = { 20, 20, 20, 20, 20 };
         const double tols2[5] = { 3.E-09, 5.E-08, 5.E-08, 5.E-06, 5.E-06 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
-            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
+        if (testGlobalRule(f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
+            testGlobalRule(f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -446,8 +446,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[5] = { 3.E-10, 1.E-08, 1.E-08, 1.E-07, 1.E-07 };
         const int depths2[5] = { 20, 20, 20, 20, 20 };
         const double tols2[5] = { 3.E-09, 5.E-08, 5.E-08, 5.E-06, 5.E-06 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
-            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
+        if (testGlobalRule(f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
+            testGlobalRule(f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -458,8 +458,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[5] = { 1.E-12, 1.E-11, 1.E-11, 1.E-08, 1.E-08 };
         const int depths2[5] = { 25, 27, 27, 27, 27 };
         const double tols2[5] = { 1.E-12, 1.E-10, 1.E-10, 1.E-08, 1.E-08 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
-            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
+        if (testGlobalRule(f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
+            testGlobalRule(f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -470,8 +470,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[5] = { 3.E-10, 5.E-09, 5.E-09, 5.E-08, 5.E-08 };
         const int depths2[5] = { 20, 20, 20, 20, 20 };
         const double tols2[5] = { 3.E-09, 5.E-08, 5.E-08, 5.E-07, 5.E-07 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
-            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
+        if (testGlobalRule(f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
+            testGlobalRule(f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -482,8 +482,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[5] = { 3.E-10, 1.E-08, 1.E-08, 1.E-07, 1.E-07 };
         const int depths2[5] = { 20, 20, 20, 20, 20 };
         const double tols2[5] = { 3.E-09, 5.E-08, 5.E-08, 5.E-07, 5.E-07 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
-            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
+        if (testGlobalRule(f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
+            testGlobalRule(f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -494,8 +494,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[5] = { 3.E-10, 5.E-09, 5.E-09, 5.E-08, 5.E-08 };
         const int depths2[5] = { 20, 20, 20, 20, 20 };
         const double tols2[5] = { 6.E-09, 5.E-08, 5.E-08, 5.E-07, 5.E-07 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
-            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
+        if (testGlobalRule(f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
+            testGlobalRule(f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -506,8 +506,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[5] = { 1.E-12, 1.E-12, 1.E-11, 1.E-08, 1.E-08 };
         const int depths2[5] = { 25, 27, 27, 27, 27 };
         const double tols2[5] = { 1.E-12, 1.E-10, 1.E-11, 1.E-08, 1.E-08 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
-            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
+        if (testGlobalRule(f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
+            testGlobalRule(f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -520,8 +520,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[5] = { 3.E-10, 5.E-09, 5.E-09, 5.E-07, 5.E-07 };
         const int depths2[5] = { 20, 20, 20, 20, 20 };
         const double tols2[5] = { 3.E-09, 5.E-08, 5.E-08, 5.E-07, 5.E-07 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
-            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
+        if (testGlobalRule(f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
+            testGlobalRule(f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -558,8 +558,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[5] = { 1.E-10, 1.E-07, 1.E-07, 1.E-06, 1.E-06 };
         const int depths2[5] = { 24, 36, 36, 36, 36 };
         const double tols2[5] = { 1.E-10, 1.E-07, 1.E-07, 1.E-06, 1.E-06 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
-            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
+        if (testGlobalRule(f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
+            testGlobalRule(f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -570,8 +570,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[5] = { 1.E-10, 1.E-07, 1.E-07, 1.E-06, 1.E-06 };
         const int depths2[5] = { 24, 36, 36, 36, 36 };
         const double tols2[5] = { 1.E-10, 1.E-07, 1.E-07, 1.E-06, 1.E-06 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
-            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
+        if (testGlobalRule(f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
+            testGlobalRule(f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -582,8 +582,8 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         const double tols1[5] = { 1.E-10, 1.E-07, 1.E-07, 1.E-06, 1.E-06 };
         const int depths2[5] = { 24, 36, 36, 36, 36 };
         const double tols2[5] = { 1.E-10, 1.E-07, 1.E-07, 1.E-06, 1.E-06 };
-        if (testGlobalRule(&f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
-            testGlobalRule(&f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
+        if (testGlobalRule(f21nx2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and
+            testGlobalRule(f21cos, oned, 0, alpha, beta, all_test_types, depths2, tols2)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -592,7 +592,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = TasGrid::rule_fejer2;
         const int depths1[5] = { 20, 40, 40, 40, 40 };
         const double tols1[5] = { 1.E-14, 1.E-12, 1.E-12, 1.E-09, 1.E-09 };
-        if (testGlobalRule(&f21coscos, oned, 0, alpha, beta, all_test_types, depths1, tols1)){
+        if (testGlobalRule(f21coscos, oned, 0, alpha, beta, all_test_types, depths1, tols1)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -601,7 +601,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[5] = { 20, 20, 20, 20, 20 };
         const double tols1[5] = { 5.E-14, 1.E-05, 1.E-05, 1.E-04, 1.E-04 };
-        if (testGlobalRule(&f21constGC1, oned, 0, alpha, beta, all_test_types, depths1, tols1) and performGaussTransfromTest(oned)){
+        if (testGlobalRule(f21constGC1, oned, 0, alpha, beta, all_test_types, depths1, tols1) and performGaussTransfromTest(oned)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -610,7 +610,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[5] = { 20, 20, 20, 20, 20 };
         const double tols1[5] = { 1.1E-14, 1.E-05, 1.E-05, 1.E-04, 1.E-04 };
-        if (testGlobalRule(&f21constGC2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and performGaussTransfromTest(oned)){
+        if (testGlobalRule(f21constGC2, oned, 0, alpha, beta, all_test_types, depths1, tols1) and performGaussTransfromTest(oned)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -619,7 +619,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[5] = { 20, 20, 20, 20, 20 };
         const double tols1[5] = { 1.E-11, 1.E-05, 1.E-05, 1.E-04, 1.E-04 };
-        if (testGlobalRule(&f21constGG, oned, 0, alpha, beta, all_test_types, depths1, tols1) and performGaussTransfromTest(oned)){
+        if (testGlobalRule(f21constGG, oned, 0, alpha, beta, all_test_types, depths1, tols1) and performGaussTransfromTest(oned)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -628,7 +628,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[5] = { 20, 20, 20, 20, 20 };
         const double tols1[5] = { 1.E-08, 1.E-05, 1.E-05, 1.E-04, 1.E-04 };
-        if (testGlobalRule(&f21constGJ, oned, 0, alpha, beta, all_test_types, depths1, tols1) and performGaussTransfromTest(oned)){
+        if (testGlobalRule(f21constGJ, oned, 0, alpha, beta, all_test_types, depths1, tols1) and performGaussTransfromTest(oned)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -637,7 +637,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[1] = { 20 };
         const double tols1[1] = { 1.E-08 };
-        if (testGlobalRule(&f21constGGL, oned, 0, alpha, beta, quad_only, depths1, tols1) and performGaussTransfromTest(oned)){
+        if (testGlobalRule(f21constGGL, oned, 0, alpha, beta, quad_only, depths1, tols1) and performGaussTransfromTest(oned)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -646,7 +646,7 @@ bool ExternalTester::performGlobalTest(TasGrid::TypeOneDRule rule) const{
         { TasGrid::TypeOneDRule oned = rule;
         const int depths1[1] = { 20 };
         const double tols1[1] = { 1.E-09 };
-        if (testGlobalRule(&f21constGH, oned, 0, alpha, beta, quad_only, depths1, tols1) and performGaussTransfromTest(oned)){
+        if (testGlobalRule(f21constGH, oned, 0, alpha, beta, quad_only, depths1, tols1) and performGaussTransfromTest(oned)){
             if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
         }else{
             cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl;  pass = false;
@@ -856,32 +856,31 @@ bool ExternalTester::testAllGlobal() const{
     return pass;
 }
 
-bool ExternalTester::testLocalPolynomialRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int depths[], const double tols[]) const{
+bool ExternalTester::testLocalPolynomialRule(const BaseFunction &f, TasGrid::TypeOneDRule rule, const int depths[], const double tols[]) const{
     TasGrid::TasmanianSparseGrid grid;
     TestResults R;
     std::vector<int> orders = { 0, 1, 2, 3, 4, -1 };
     std::vector<double> test_x;
-    const BaseFunction* test_fn;
     bool bPass = true;
     for(int i=0; i<30; i++) {
         bool zero_order_diff_test = (orders[i / 5] == 0 and (all_test_types[i % 5] == type_nodal_differentiation or
                                                              all_test_types[i % 5] == type_internal_differentiation));
-        test_fn = zero_order_diff_test ? &f11p0 : f;
-        test_x = genRandom(test_fn->getNumInputs());
-        grid = makeLocalPolynomialGrid(test_fn->getNumInputs(), test_fn->getNumOutputs(), depths[i], orders[i / 5], rule);
+        const BaseFunction &test_fn = zero_order_diff_test ? f11p0 : f;
+        test_x = genRandom(test_fn.getNumInputs());
+        grid = makeLocalPolynomialGrid(test_fn.getNumInputs(), test_fn.getNumOutputs(), depths[i], orders[i / 5], rule);
         R = getError(test_fn, grid, all_test_types[i % 5], test_x);
         if (R.error > tols[i]) {
             bPass = false;
             cout << setw(18) << "ERROR: FAILED ";
             cout << setw(6) << IO::getRuleString(rule) << " order: " << orders[i / 5];
-            cout << setw(25) << testName(all_test_types[i % 5]) << "   failed function: " << test_fn->getDescription();
+            cout << setw(25) << testName(all_test_types[i % 5]) << "   failed function: " << test_fn.getDescription();
             cout << setw(10) << "  observed: " << R.error << "  expected: " << tols[i] << endl;
         }
     }
     return bPass;
 }
 
-bool ExternalTester::testSurplusRefinement(const BaseFunction *f, TasmanianSparseGrid &grid, double tol, TypeRefinement rtype, const int np[], const double errs[], int max_iter ) const{
+bool ExternalTester::testSurplusRefinement(const BaseFunction &f, TasmanianSparseGrid &grid, double tol, TypeRefinement rtype, const int np[], const double errs[], int max_iter ) const{
     for(int itr=0; itr<max_iter; itr++){
         TestResults R = getError(f, grid, type_internal_interpolation);
         if ( (R.num_points != np[itr]) || (R.error > errs[itr]) ){
@@ -906,7 +905,7 @@ bool ExternalTester::testSurplusRefinement(const BaseFunction *f, TasmanianSpars
     }
     return true;
 }
-bool ExternalTester::testAnisotropicRefinement(const BaseFunction *f, TasmanianSparseGrid &grid, TypeDepth type, int min_growth, const int np[], const double errs[], int max_iter ) const{
+bool ExternalTester::testAnisotropicRefinement(const BaseFunction &f, TasmanianSparseGrid &grid, TypeDepth type, int min_growth, const int np[], const double errs[], int max_iter ) const{
     for(int itr=0; itr<max_iter; itr++){
         TestResults R = getError(f, grid, type_internal_interpolation);
         if ( (R.num_points != np[itr]) || (R.error > errs[itr]) ){
@@ -919,7 +918,7 @@ bool ExternalTester::testAnisotropicRefinement(const BaseFunction *f, TasmanianS
     return true;
 }
 
-bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSparseGrid &grid, TypeDepth type, double tolerance, TypeRefinement reftype, const std::vector<int> &np, const std::vector<double> &errs) const{
+bool ExternalTester::testDynamicRefinement(const BaseFunction &f, TasmanianSparseGrid &grid, TypeDepth type, double tolerance, TypeRefinement reftype, const std::vector<int> &np, const std::vector<double> &errs) const{
     if (grid.isUsingConstruction()){ cout << "ERROR: Dynamic construction initialized for no reason." << endl; return false; }
     grid.beginConstruction();
     if (!grid.isUsingConstruction()){ cout << "ERROR: Dynamic construction failed to initialize." << endl; return false; }
@@ -954,7 +953,7 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
         for(auto i : pindex){
             std::vector<double> x(&(points[i * dims]), &(points[i * dims]) + dims);
             std::vector<double> y(outs);
-            f->eval(x.data(), y.data());
+            f.eval(x.data(), y.data());
             if (i % 3 == 0){ // every third point uses the array interface for testing purpose
                 grid.loadConstructedPoints(x.data(), 1, y.data());
             }else{
@@ -977,7 +976,7 @@ bool ExternalTester::testDynamicRefinement(const BaseFunction *f, TasmanianSpars
         for(size_t i = 0; i < np.size(); i++){
             if ((R.num_points >= np[i]) && (R.error > errs[i])){
                 cout << "ERROR: dynamic construction failed at iteration: " << itr << endl;
-                cout << "function: " << f->getDescription() << "  expected = " << np[i] << "  " << errs[i]
+                cout << "function: " << f.getDescription() << "  expected = " << np[i] << "  " << errs[i]
                     << "   observed points = " << R.num_points << "  error = " << R.error << std::endl;
                 break;
                 //return false;
@@ -1033,7 +1032,7 @@ TestResults ExternalTester::testEdgeDerivative(const BaseFunction &f, int level,
     int num_outputs = f.getNumOutputs();
 
     TasmanianSparseGrid grid = makeLocalPolynomialGrid(num_dimensions, num_outputs, level, order, rule);
-    loadValues(&f, grid);
+    loadValues(f, grid);
 
     std::vector<double> xmin(num_dimensions, -1.0), xmax(num_dimensions, 1.0);
     if (grid.isSetDomainTransfrom())
@@ -1046,7 +1045,7 @@ TestResults ExternalTester::testEdgeDerivative(const BaseFunction &f, int level,
 
     auto test_point = [&](int j, double val) -> double {
             x[j] = val;
-            f.getDerivative(x.data(), ref.data());
+            f.getDerivative(x, ref);
             grid.differentiate(x, jac);
             double err = 0.0;
             for (size_t k = 0; k < ref.size(); k++)
@@ -1089,7 +1088,7 @@ bool ExternalTester::testAllPWLocal() const{
                                           1.E-07, 1.E-05, 1.E-05, 1.E-04, 1.E-04, // order 3
                                           1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05, // order 4
                                           1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05 }; // order -1
-      if (testLocalPolynomialRule(&f21nx2, oned, depths1.data(), tols1.data())){
+      if (testLocalPolynomialRule(f21nx2, oned, depths1.data(), tols1.data())){
           if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
       }else{
           cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl; pass = false;
@@ -1104,7 +1103,7 @@ bool ExternalTester::testAllPWLocal() const{
                                           1.E-07, 1.E-05, 1.E-05, 1.E-04, 1.E-04, // order 3
                                           1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05, // order 4
                                           1.E-07, 4.E-06, 4.E-06, 4.E-05, 4.E-05 }; // order -1
-      if (testLocalPolynomialRule(&f21nx2, oned, depths1.data(), tols1.data())){
+      if (testLocalPolynomialRule(f21nx2, oned, depths1.data(), tols1.data())){
           if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
       }else{
           cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl; pass = false;
@@ -1119,7 +1118,7 @@ bool ExternalTester::testAllPWLocal() const{
                                           1.E-07, 1.E-05, 1.E-05, 1.E-03, 1.E-03, // order 3
                                           1.E-07, 9.E-06, 9.E-06, 9.E-05, 9.E-05, // order 4
                                           1.E-06, 2.E-05, 2.E-05, 2.E-04, 2.E-04 }; // order -1
-      if (testLocalPolynomialRule(&f21sincosaxis, oned, depths1.data(), tols1.data())){
+      if (testLocalPolynomialRule(f21sincosaxis, oned, depths1.data(), tols1.data())){
           if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
       }else{
           cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl; pass = false;
@@ -1134,7 +1133,7 @@ bool ExternalTester::testAllPWLocal() const{
                                           1.E-09, 3.E-08, 3.E-08, 3.E-06, 3.E-06, // order 3
                                           1.E-09, 4.E-09, 4.E-09, 4.E-08, 4.E-08, // order 4
                                           1.E-09, 4.E-09, 4.E-09, 4.E-08, 4.E-08}; // order -1
-      if (testLocalPolynomialRule(&f21coscos, oned, depths1.data(), tols1.data())){
+      if (testLocalPolynomialRule(f21coscos, oned, depths1.data(), tols1.data())){
           if (verbose) cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "Pass" << endl;
       }else{
           cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(oned) << setw(wthird) << "FAIL" << endl; pass = false;
@@ -1145,7 +1144,7 @@ bool ExternalTester::testAllPWLocal() const{
         std::vector<double> vals;
         std::vector<double> pnts = genRandom(10, 2);
         grid.evaluateSparseHierarchicalFunctions(pnts, pntr, indx, vals);
-        getError(&f21nx2, grid, type_internal_interpolation); // this is done to load the values
+        getError(f21nx2, grid, type_internal_interpolation); // this is done to load the values
         const double *coeff = grid.getHierarchicalCoefficients();
         std::vector<double> y(10);
         grid.evaluateBatch(pnts.data(), 10, y.data());
@@ -1212,14 +1211,14 @@ bool ExternalTester::testAllPWLocal() const{
     return pass;
 }
 
-bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depths[], const double tols[], bool flavor) const{
+bool ExternalTester::testLocalWaveletRule(const BaseFunction &f, const int depths[], const double tols[], bool flavor) const{
     TestResults R;
     int orders[2] = { 1, 3 };
-    std::vector<double> x = genRandom(f->getNumInputs());
+    std::vector<double> x = genRandom(f.getNumInputs());
     bool bPass = true;
     for(auto acc : available_acc){
         for(int i=0; i<10; i++){
-            auto grid = makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), depths[i], orders[i/5]);
+            auto grid = makeWaveletGrid(f.getNumInputs(), f.getNumOutputs(), depths[i], orders[i/5]);
             grid.enableAcceleration(acc, (gpuid == -1) ? 0 : gpuid);
             grid.favorSparseAcceleration(flavor);
             R = getError(f, grid, all_test_types[i%5], x);
@@ -1228,7 +1227,7 @@ bool ExternalTester::testLocalWaveletRule(const BaseFunction *f, const int depth
                 cout << setw(18) << "ERROR: FAILED ";
                 cout << setw(6) << IO::getRuleString(rule_wavelet);
                 cout << " order: " << orders[i/5];
-                cout << " " << testName(all_test_types[i%5]) << "   failed function: " << f->getDescription();
+                cout << " " << testName(all_test_types[i%5]) << "   failed function: " << f.getDescription();
                 cout << setw(10) << "  observed: " << R.error << "  expected: " << tols[i] << endl;
             }
         }
@@ -1243,7 +1242,7 @@ bool ExternalTester::testAllWavelet() const{
     const double tols1[10] = { 5.E-05, 1.E-04, 1.E-04, 5E-02, 5E-02, // order 1
                                1.E-08, 1.E-07, 1.E-07, 5E-05, 5E-05 }; // order 3
     int wfirst = 11, wsecond = 34, wthird = 15;
-    if (testLocalWaveletRule(&f21nx2, depths1, tols1, true) and testLocalWaveletRule(&f21nx2, depths1, tols1, false)){
+    if (testLocalWaveletRule(f21nx2, depths1, tols1, true) and testLocalWaveletRule(f21nx2, depths1, tols1, false)){
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "wavelet" << setw(wthird) << "Pass" << endl;
     }else{
         cout << setw(wfirst) << "Rule" << setw(wsecond) << IO::getRuleString(rule_wavelet) << setw(wthird) << "FAIL" << endl; pass = false;
@@ -1253,7 +1252,7 @@ bool ExternalTester::testAllWavelet() const{
         std::vector<double> vals;
         std::vector<double> pnts = genRandom(10, 2);
         grid.evaluateSparseHierarchicalFunctions(pnts, pntr, indx, vals);
-        getError(&f21nx2, grid, type_internal_interpolation); // this is done to load the values
+        getError(f21nx2, grid, type_internal_interpolation); // this is done to load the values
         const double *coeff = grid.getHierarchicalCoefficients();
         std::vector<double> y(10);
         grid.evaluateBatch(pnts.data(), 10, y.data());
@@ -1270,7 +1269,7 @@ bool ExternalTester::testAllWavelet() const{
             }
         }
         std::vector<double> v(10 * grid.getNumPoints());
-        getError(&f21nx2, grid, type_internal_interpolation);
+        getError(f21nx2, grid, type_internal_interpolation);
         grid.evaluateHierarchicalFunctions(pnts, v);
         coeff = grid.getHierarchicalCoefficients();
         grid.evaluateBatch(pnts.data(), 10, y.data());
@@ -1297,8 +1296,8 @@ bool ExternalTester::testAllFourier() const{
     const double tols1[5] = { 1.E-11, 1.E-06, 1.E-06, 5.E-04, 1.E-05 };
     const double tols2[5] = { 1.E-11, 1.E-02, 1.E-02, 5.E-01, 1.E-01 };
     int wfirst = 11, wsecond = 34, wthird = 15;
-    if (testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, all_test_types, depths1, tols1) &&
-        testGlobalRule(&f21expsincos, TasGrid::rule_fourier, 0, 0, 0, all_test_types, depths2, tols2)){
+    if (testGlobalRule(f21expsincos, TasGrid::rule_fourier, 0, 0, 0, all_test_types, depths1, tols1) &&
+        testGlobalRule(f21expsincos, TasGrid::rule_fourier, 0, 0, 0, all_test_types, depths2, tols2)){
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "fourier" << setw(wthird) << "Pass" << endl;
     }else{
         cout << setw(wfirst) << "Rules" << setw(wsecond) << "fourier" << setw(wthird) << "FAIL" << endl; pass = false;
@@ -1309,7 +1308,7 @@ bool ExternalTester::testAllFourier() const{
 
         int num_points = grid.getNumPoints();
         std::vector<double> y, v;
-        getError(&f21expsincos, grid, type_internal_interpolation);
+        getError(f21expsincos, grid, type_internal_interpolation);
         const double *coeff = grid.getHierarchicalCoefficients();    // coeff = [fourier_coeff_1.real(), fourier_coeff_1.imag(), fourier_coeff_2.real(), ...]
         grid.evaluateHierarchicalFunctions(pnts, v);
         grid.evaluateBatch(pnts, y);
@@ -1351,189 +1350,189 @@ bool ExternalTester::testAllRefinement() const{
     TasmanianSparseGrid grid;
     bool pass = true;
     {
-        const BaseFunction *f = &f21nx2;
-        grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_iptotal, rule_leja);
+        const BaseFunction &f = f21nx2;
+        grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), 3, type_iptotal, rule_leja);
         int np[13] = { 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105, 118, 130 };
         double err[13] = { 2, 2.E-1, 5.E-1, 2.E-2, 4.E-2, 2.E-3, 4.E-3, 2.E-4, 2.E-4, 2.E-5, 2.E-5, 8.E-7, 8.E-7 };
         if (!testSurplusRefinement(f, grid, 1.E-6, refine_classic, np, err, 13)){
-            cout << "ERROR: failed leja surplus refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed leja surplus refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21coscos;
+        const BaseFunction &f = f21coscos;
         int np[9] = {    21,    24,    30,    39,    49,    60,    72,    79,    85 };
         double err[9] = { 2.E-1, 7.E-3, 2.E-2, 3.E-4, 6.E-4, 4.E-6, 9.E-6, 5.E-7, 5.E-7 };
-        grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 5, type_iptotal, rule_rleja);
+        grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), 5, type_iptotal, rule_rleja);
         if (!testSurplusRefinement(f, grid, 1.E-6, refine_classic, np, err, 9)){
-            cout << "ERROR: failed rleja global surplus refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed rleja global surplus refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21coscos;
+        const BaseFunction &f = f21coscos;
         int np[9] = {    21,    24,    30,    39,    49,    60,    72,    79,    85 };
         double err[9] = { 2.E-1, 7.E-3, 2.E-2, 3.E-4, 6.E-4, 4.E-6, 9.E-6, 5.E-7, 5.E-7 };
-        grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 5, type_iptotal, rule_rleja);
+        grid.makeSequenceGrid(f.getNumInputs(), f.getNumOutputs(), 5, type_iptotal, rule_rleja);
         if (!testSurplusRefinement(f, grid, 1.E-6, refine_classic, np, err, 9)){
-            cout << "ERROR: failed rleja sequence surplus refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed rleja sequence surplus refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21nx2;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 2, rule_semilocalp);
+        const BaseFunction &f = f21nx2;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 3, 2, rule_semilocalp);
         int np[8] = { 29, 65, 145, 321, 705, 1521, 2753, 3569 };
         double err[8] = { 4.E-2, 1.E-2, 1.E-3, 2.E-4, 4.E-5, 5.E-6, 1.E-6, 5.E-7 };
         if (!testSurplusRefinement(f, grid, 1.E-6, refine_classic, np, err, 8)){
-            cout << "ERROR: failed semi-local classic refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed semi-local classic refinement for " << f.getDescription() << endl;  pass = false;
         }
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 2, rule_semilocalp);
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 3, 2, rule_semilocalp);
     }{
-        const BaseFunction *f = &f21nx2;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 2, rule_semilocalp);
+        const BaseFunction &f = f21nx2;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 3, 2, rule_semilocalp);
         int np[8] = { 29, 65, 145, 321, 705, 1521, 2753, 3569 };
         double err[8] = { 4.E-2, 1.E-2, 1.E-3, 2.E-4, 4.E-5, 5.E-6, 1.E-6, 5.E-7 };
         if (!testSurplusRefinement(f, grid, 1.E-6, refine_parents_first, np, err, 8)){
-            cout << "ERROR: failed semi-local parents refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed semi-local parents refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21nx2;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 2, rule_semilocalp);
+        const BaseFunction &f = f21nx2;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 2, 2, rule_semilocalp);
         int np[6] = { 13, 29, 65, 145, 321, 545 };
         double err[6] = { 8.E-02, 5.E-02, 7.E-03, 2.E-03, 3.E-04, 6.E-05 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_direction_selective, np, err, 6)){
-            cout << "ERROR: failed semi-local direction refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed semi-local direction refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21nx2;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 2, rule_semilocalp);
+        const BaseFunction &f = f21nx2;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 2, 2, rule_semilocalp);
         int np[6] = { 13, 29, 65, 145, 321, 545 };
         double err[6] = { 8.E-02, 5.E-02, 7.E-03, 2.E-03, 3.E-04, 6.E-05 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_fds, np, err, 6)){
-            cout << "ERROR: failed semi-local fds refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed semi-local fds refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21nx2;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_localp);
+        const BaseFunction &f = f21nx2;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 3, 1, rule_localp);
         int np[10] = { 29, 65, 145, 321, 705, 1537, 3321, 6981, 13517, 19113 };
         double err[10] = { 4.E-2, 2.E-2, 6.E-3, 2.E-3, 6.E-4, 2.E-4, 6.E-5, 2.E-5, 6.E-6, 2.E-6 };
         if (!testSurplusRefinement(f, grid, 1.E-6, refine_classic, np, err, 10)){
-            cout << "ERROR: failed localp classic refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed localp classic refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21nx2;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_localp);
+        const BaseFunction &f = f21nx2;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 3, 1, rule_localp);
         int np[10] = { 29, 65, 145, 321, 705, 1537, 3321, 6981, 13517, 19113 };
         double err[10] = { 4.E-2, 2.E-2, 6.E-3, 2.E-3, 6.E-4, 2.E-4, 6.E-5, 2.E-5, 6.E-6, 2.E-6 };
         if (!testSurplusRefinement(f, grid, 1.E-6, refine_parents_first, np, err, 10)){
-            cout << "ERROR: failed localp parents refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed localp parents refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21nx2;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1, rule_localp);
+        const BaseFunction &f = f21nx2;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 2, 1, rule_localp);
         int np[8] = { 13, 29, 65, 145, 321, 673, 1233, 1433 };
         double err[8] = { 1.E-01, 5.E-02, 2.E-02, 5.E-03, 2.E-03, 6.E-04, 2.E-04, 1.E-04 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_direction_selective, np, err, 8)){
-            cout << "ERROR: failed localp direction refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed localp direction refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21nx2;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1, rule_localp);
+        const BaseFunction &f = f21nx2;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 2, 1, rule_localp);
         int np[8] = { 13, 29, 65, 145, 321, 673, 1233, 1433 };
         double err[8] = { 1.E-01, 5.E-02, 2.E-02, 5.E-03, 2.E-03, 6.E-04, 2.E-04, 1.E-04 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_fds, np, err, 8)){
-            cout << "ERROR: failed localp fds refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed localp fds refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21sincosaxis;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_localpb);
+        const BaseFunction &f = f21sincosaxis;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 3, 1, rule_localpb);
         int np[7] = { 37, 77, 157, 317, 637, 1277, 2317 };
         double err[7] = { 3.E-01, 5.E-02, 2.E-02, 4.E-03, 7.E-04, 3.E-04, 1.E-04 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_classic, np, err, 7)){
-            cout << "ERROR: failed localp-boundary fds refinement for " << f->getDescription() << endl;
+            cout << "ERROR: failed localp-boundary fds refinement for " << f.getDescription() << endl;
         }
     }{
-        const BaseFunction *f = &f21sharp;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 5, 2, rule_localp);
+        const BaseFunction &f = f21sharp;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 5, 2, rule_localp);
         int np[9] =     {   145,   277,   493,   977,  1813,  2773,  4085,  6013,  8549 };
         double err[9] = { 8.E-1, 7.E-1, 6.E-1, 5.E-1, 2.E-1, 5.E-2, 3.E-2, 5.E-3, 8.E-4 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_stable, np, err, 9)){
-            cout << "ERROR: failed localp stable refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed localp stable refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21coscos;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 2, rule_localp0);
+        const BaseFunction &f = f21coscos;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 3, 2, rule_localp0);
         int np[6] = { 49, 129, 321, 769, 1761, 2209 };
         double err[6] = { 2.E-3, 3.E-4, 5.E-5, 7.E-6, 8.E-7, 5.E-7 };
         if (!testSurplusRefinement(f, grid, 1.E-6, refine_classic, np, err, 6)){
-            cout << "ERROR: failed localp-zero classic refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed localp-zero classic refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21coscos;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 2, rule_localp0);
+        const BaseFunction &f = f21coscos;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 3, 2, rule_localp0);
         int np[6] = { 49, 129, 321, 769, 1761, 2209 };
         double err[6] = { 2.E-3, 3.E-4, 5.E-5, 7.E-6, 8.E-7, 5.E-7 };
         if (!testSurplusRefinement(f, grid, 1.E-6, refine_parents_first, np, err, 6)){
-            cout << "ERROR: failed localp-zero parents refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed localp-zero parents refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21coscos;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 2, rule_localp0);
+        const BaseFunction &f = f21coscos;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 2, 2, rule_localp0);
         int np[4] = { 17, 49, 129, 305 };
         double err[4] = { 7.E-03, 2.E-03, 4.E-04, 4.E-05 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_direction_selective, np, err, 4)){
-            cout << "ERROR: failed localp-zero direction refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed localp-zero direction refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21coscos;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 2, rule_localp0);
+        const BaseFunction &f = f21coscos;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 2, 2, rule_localp0);
         int np[4] = { 17, 49, 129, 305 };
         double err[4] = { 7.E-03, 2.E-03, 4.E-04, 4.E-05 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_fds, np, err, 4)){
-            cout << "ERROR: failed localp-zero fds refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed localp-zero fds refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21nx2;
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 2, 0, rule_localp);
+        const BaseFunction &f = f21nx2;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 2, 0, rule_localp);
         int np[5] =     {    21,    81,   297, 1053,  3637 };
         double err[5] = { 3.E-1, 2.E-1, 6.E-2, 3E-2, 8.5E-3 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_fds, np, err, 5)){
-            cout << "ERROR: failed pwc fds refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed pwc fds refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21coscos;
-        grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1);
+        const BaseFunction &f = f21coscos;
+        grid.makeWaveletGrid(f.getNumInputs(), f.getNumOutputs(), 2, 1);
         int np[7] = { 49, 81, 193, 449, 993, 1921, 1937 };
         double err[7] = { 6.E-02, 3.E-02, 6.E-03, 3.E-03, 6.E-04, 3.E-04, 2.E-04 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_classic, np, err, 7)){
-            cout << "ERROR: failed wavelet classic refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed wavelet classic refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21coscos;
-        grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1);
+        const BaseFunction &f = f21coscos;
+        grid.makeWaveletGrid(f.getNumInputs(), f.getNumOutputs(), 2, 1);
         int np[7] = { 49, 81, 193, 449, 993, 1921, 1937 };
         double err[7] = { 6.E-02, 3.E-02, 6.E-03, 3.E-03, 6.E-04, 3.E-04, 2.E-04 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_parents_first, np, err, 7)){
-            cout << "ERROR: failed wavelet parents refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed wavelet parents refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21nx2;
-        grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1);
+        const BaseFunction &f = f21nx2;
+        grid.makeWaveletGrid(f.getNumInputs(), f.getNumOutputs(), 2, 1);
         int np[6] = { 49, 113, 257, 561, 1113, 1481 };
         double err[6] = { 6.E-02, 1.E-02, 5.E-03, 1.E-03, 5.E-04, 1.E-04 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_direction_selective, np, err, 6)){
-            cout << "ERROR: failed wavelet direction refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed wavelet direction refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21coscos;
-        grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1);
+        const BaseFunction &f = f21coscos;
+        grid.makeWaveletGrid(f.getNumInputs(), f.getNumOutputs(), 2, 1);
         int np[7] = { 49, 81, 161, 385, 889, 1737, 1769 };
         double err[7] = { 6.E-02, 3.E-02, 6.E-03, 3.E-03, 6.E-04, 3.E-04, 2.E-04 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_fds, np, err, 7)){
-            cout << "ERROR: failed wavelet fds refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed wavelet fds refinement for " << f.getDescription() << endl;  pass = false;
         }
     }{
-        const BaseFunction *f = &f21nx2;
-        grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 1, 3);
+        const BaseFunction &f = f21nx2;
+        grid.makeWaveletGrid(f.getNumInputs(), f.getNumOutputs(), 1, 3);
         int np[3] = { 65, 161, 369 };
         double err[3] = { 5.E-03, 5.E-04, 5.E-05 };
         if (!testSurplusRefinement(f, grid, 1.E-4, refine_stable, np, err, 3)){
-            cout << "ERROR: failed wavelet stable refinement for " << f->getDescription() << endl;  pass = false;
+            cout << "ERROR: failed wavelet stable refinement for " << f.getDescription() << endl;  pass = false;
         }
     }
 
@@ -1541,56 +1540,56 @@ bool ExternalTester::testAllRefinement() const{
 
     bool pass2 = true;
     {
-        const BaseFunction *f = &f21aniso;
-        grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_iptotal, rule_leja);
+        const BaseFunction &f = f21aniso;
+        grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), 3, type_iptotal, rule_leja);
         int np[40] = { 10, 15, 21, 28, 29, 30, 31, 32, 34, 35, 37, 40, 41, 45, 49, 54, 59, 64, 70, 77, 84, 92, 100, 108, 117, 126, 135, 145, 155, 165, 176, 187, 198, 210, 212, 224, 237, 248, 251, 263 };
         double errs[40] = { 9.04e-01, 4.24e-01, 5.73e-01, 2.78e-01, 3.15e-01, 2.49e-01, 3.00e-01, 8.85e-02, 9.30e-02, 9.67e-02, 2.06e-01, 3.03e-01, 5.24e-02, 4.63e-02, 5.85e-02, 5.11e-02, 9.80e-03, 2.71e-02, 5.42e-03, 7.85e-03, 6.21e-03, 5.41e-03, 2.56e-03, 3.32e-03, 5.18e-04, 6.14e-04, 3.66e-04, 4.87e-04, 8.19e-05, 2.58e-04, 5.76e-05, 5.54e-05, 5.22e-05, 4.89e-05, 4.68e-05, 8.92e-06, 2.20e-05, 5.56e-06, 5.14e-06, 5.79e-06 };
         if (!testAnisotropicRefinement(f, grid, type_iptotal, 1, np, errs, 40)){
-            cout << "ERROR: failed anisotropic refinement using leja iptotal nodes for " << f->getDescription() << endl;  pass2 = false;
+            cout << "ERROR: failed anisotropic refinement using leja iptotal nodes for " << f.getDescription() << endl;  pass2 = false;
         }
     }{
-        const BaseFunction *f = &f21curved;
-        grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_iptotal, rule_leja);
+        const BaseFunction &f = f21curved;
+        grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), 3, type_iptotal, rule_leja);
         int np[10] = { 10, 12, 17, 24, 32, 34, 41, 42, 57, 59 };
         double errs[10] = { 9.48e-03, 9.50e-03, 6.85e-03, 5.11e-04, 6.26e-05, 7.11e-06, 5.07e-06, 5.19e-06, 1.17e-08, 1.86e-08 };
         if (!testAnisotropicRefinement(f, grid, type_ipcurved, 1, np, errs, 7)){
-            cout << "ERROR: failed anisotropic refinement (global) using leja ipcurved nodes for " << f->getDescription() << endl;  pass2 = false;
+            cout << "ERROR: failed anisotropic refinement (global) using leja ipcurved nodes for " << f.getDescription() << endl;  pass2 = false;
         }
     }{
-        const BaseFunction *f = &f21curved;
-        grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_iptotal, rule_clenshawcurtis);
+        const BaseFunction &f = f21curved;
+        grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), 3, type_iptotal, rule_clenshawcurtis);
         int np[3] = { 13, 21, 29 };
         double errs[3] = { 6.12e-04, 6.05e-04, 1.33e-08 };
         if (!testAnisotropicRefinement(f, grid, type_ipcurved, 1, np, errs, 3)){
-            cout << "ERROR: failed anisotropic refinement using clenshaw-curtis ipcurved nodes for " << f->getDescription() << endl;  pass2 = false;
+            cout << "ERROR: failed anisotropic refinement using clenshaw-curtis ipcurved nodes for " << f.getDescription() << endl;  pass2 = false;
         }
     }{
-        const BaseFunction *f = &f21curved;
-        grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_iptotal, rule_leja);
+        const BaseFunction &f = f21curved;
+        grid.makeSequenceGrid(f.getNumInputs(), f.getNumOutputs(), 3, type_iptotal, rule_leja);
         grid.enableAcceleration(accel_none);
         int np[10] = { 10, 12, 17, 24, 32, 34, 41, 42, 57, 59 };
         double errs[10] = { 9.48e-03, 9.50e-03, 6.85e-03, 5.11e-04, 6.26e-05, 7.11e-06, 5.07e-06, 5.19e-06, 1.17e-08, 1.86e-08 };
         if (!testAnisotropicRefinement(f, grid, type_ipcurved, 1, np, errs, 7)){
-            cout << "ERROR: failed anisotropic refinement (sequence) using leja ipcurved nodes for " << f->getDescription() << endl;  pass2 = false;
+            cout << "ERROR: failed anisotropic refinement (sequence) using leja ipcurved nodes for " << f.getDescription() << endl;  pass2 = false;
         }
     }{
-        const BaseFunction *f = &f21c1c2periodic;
-        grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_hyperbolic);
+        const BaseFunction &f = f21c1c2periodic;
+        grid.makeFourierGrid(f.getNumInputs(), f.getNumOutputs(), 3, type_hyperbolic);
         grid.setDomainTransform({-1.0, -1.0}, {1.0, 1.0});
         int np[5] = { 17, 35, 111, 273, 759 };
         double errs[5] = { 1.28e-2, 2.80e-3, 1.97e-4, 6.78e-5, 5.65e-5 };
         if (!testAnisotropicRefinement(f, grid, type_hyperbolic, 1, np, errs, 5)){
-            cout << "ERROR: failed anisotropic refinement using Fourier hyperbolic nodes for " << f->getDescription() << endl;  pass2 = false;
+            cout << "ERROR: failed anisotropic refinement using Fourier hyperbolic nodes for " << f.getDescription() << endl;  pass2 = false;
         }
     }{
-        const BaseFunction *f = &f21c1c2periodic;
-        grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 3, type_level);
+        const BaseFunction &f = f21c1c2periodic;
+        grid.makeFourierGrid(f.getNumInputs(), f.getNumOutputs(), 3, type_level);
         grid.enableAcceleration(accel_cpu_blas);
         grid.setDomainTransform({-1.0, -1.0}, {1.0, 1.0});
         int np[5] = { 81, 135, 297, 783, 2295 };
         double errs[5] = { 1.32e-3, 1.92e-4, 6.75e-5, 5.67e-5, 2.11e-6 };
         if (!testAnisotropicRefinement(f, grid, type_hyperbolic, 1, np, errs, 5)){
-            cout << "ERROR: failed anisotropic refinement using Fourier level nodes for " << f->getDescription() << endl;  pass2 = false;
+            cout << "ERROR: failed anisotropic refinement using Fourier level nodes for " << f.getDescription() << endl;  pass2 = false;
         }
     }
 
@@ -1598,8 +1597,8 @@ bool ExternalTester::testAllRefinement() const{
 
     bool pass5 = true;
     {
-        const BaseFunction *f = &f21c1c2periodic;
-        grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 8, type_hyperbolic);
+        const BaseFunction &f = f21c1c2periodic;
+        grid.makeFourierGrid(f.getNumInputs(), f.getNumOutputs(), 8, type_hyperbolic);
         double transform_a[2] = {-1.0, -1.0};
         double transform_b[2] = { 1.0,  1.0};
         grid.setDomainTransform(transform_a, transform_b);
@@ -1610,7 +1609,7 @@ bool ExternalTester::testAllRefinement() const{
         double aniso_ratio = ((double) weights[0]) / ((double) weights[1]);
         if (std::abs(aniso_ratio - 0.75) > 0.05){
             pass5 = false;
-            cout << "ERROR: failed estimating anisotropic coefficients for Fourier grid with " << f->getDescription() << endl;
+            cout << "ERROR: failed estimating anisotropic coefficients for Fourier grid with " << f.getDescription() << endl;
             cout << "Anisotropy ratio should be 3/4 but instead is " << aniso_ratio << endl;
         }
     }
@@ -1618,77 +1617,77 @@ bool ExternalTester::testAllRefinement() const{
 
     bool pass3 = true;
     {
-        const BaseFunction *f = &f21aniso;
+        const BaseFunction &f = f21aniso;
         std::vector<int> np     = {  29,   45,    65,   129,    193,    241,   289,   321,    417};
         std::vector<double> err = {0.06, 0.02, 0.008, 0.002, 0.0015, 0.0009, 3.E-4, 5.E-5,  1.E-5};
-        grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 4, type_level, rule_clenshawcurtis);
+        grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), 4, type_level, rule_clenshawcurtis);
         if (!testDynamicRefinement(f, grid, type_iptotal, -1.0, refine_none, np, err)){
-            cout << "ERROR: failed dynamic anisotropic refinement using iptotal and clenshaw-curtis nodes for " << f->getDescription() << endl;  pass3 = false;
+            cout << "ERROR: failed dynamic anisotropic refinement using iptotal and clenshaw-curtis nodes for " << f.getDescription() << endl;  pass3 = false;
         }
     }{
-        const BaseFunction *f = &f21aniso;
+        const BaseFunction &f = f21aniso;
         std::vector<int> np     = {  29,   45,   97,   129,   321,   385,   417,   449};
         std::vector<double> err = {0.06, 0.02, 0.01, 0.001, 3.E-4, 3.E-4, 3.E-5, 3.E-5};
-        grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 4, type_level, rule_clenshawcurtis);
+        grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), 4, type_level, rule_clenshawcurtis);
         if (!testDynamicRefinement(f, grid, type_ipcurved, -1.0, refine_none, np, err)){
-            cout << "ERROR: failed dynamic anisotropic refinement using ipcurved and clenshaw-curtis nodes for " << f->getDescription() << endl;  pass3 = false;
+            cout << "ERROR: failed dynamic anisotropic refinement using ipcurved and clenshaw-curtis nodes for " << f.getDescription() << endl;  pass3 = false;
         }
     }{
-        const BaseFunction *f = &f21aniso;
+        const BaseFunction &f = f21aniso;
         std::vector<int> np     = { 32,    71,   105,   115,   168,   226,   291,   354,   473,   505};
         std::vector<double> err = {0.5, 2.E-2, 1.E-2, 9.E-3, 5.E-3, 2.E-3, 8.E-4, 3.E-4, 1.E-4, 5.E-5};
-        grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 20, type_iphyperbolic, rule_rlejadouble4);
+        grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), 20, type_iphyperbolic, rule_rlejadouble4);
         if (!testDynamicRefinement(f, grid, type_iphyperbolic, -1.0, refine_none, np, err)){
-            cout << "ERROR: failed dynamic anisotropic refinement using iphyperbolic and rule_rlejadouble4 nodes for " << f->getDescription() << endl;
+            cout << "ERROR: failed dynamic anisotropic refinement using iphyperbolic and rule_rlejadouble4 nodes for " << f.getDescription() << endl;
         }
     }{
-        const BaseFunction *f = &f21aniso;
+        const BaseFunction &f = f21aniso;
         std::vector<int> np     = {   27,    35,    39,    47,    55,    71,    87,   137,   162,   204,   228,   297};
         std::vector<double> err = {5.E-1, 3.E-1, 1.E-1, 8.E-2, 4.E-2, 2.E-2, 4.E-3, 5.E-4, 2.E-4, 4.E-5, 1.E-5, 3.E-6};
-        grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 7, type_level, rule_leja);
-        if (!testDynamicRefinement(&f21aniso, grid, type_iptotal, -1.0, refine_none, np, err)){
-            cout << "ERROR: failed dynamic anisotropic refinement using iptotal and leja nodes for " << f->getDescription() << endl;  pass3 = false;
+        grid.makeSequenceGrid(f.getNumInputs(), f.getNumOutputs(), 7, type_level, rule_leja);
+        if (!testDynamicRefinement(f, grid, type_iptotal, -1.0, refine_none, np, err)){
+            cout << "ERROR: failed dynamic anisotropic refinement using iptotal and leja nodes for " << f.getDescription() << endl;  pass3 = false;
         }
     }
     cout << "      Construction             dynamic/global" << setw(15) << ((pass3) ? "Pass" : "FAIL") << endl;
 
     bool pass4 = true;
     {
-        const BaseFunction *f = &f21aniso;
+        const BaseFunction &f = f21aniso;
         std::vector<int> np     = {   23,    38,    62,   104,   171,   280,   403,   645,   685};
         std::vector<double> err = {5.E-1, 3.E-1, 2.E-1, 8.E-2, 4.E-2, 8.E-3, 3.E-3, 1.E-3, 7.E-4};
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_localp);
-        if (!testDynamicRefinement(&f21aniso, grid, type_iptotal, 1.E-3, refine_classic, np, err)){
-            cout << "ERROR: failed dynamic surplus classic refinement using localp linear rule " << f->getDescription() << endl;  pass4 = false;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 3, 1, rule_localp);
+        if (!testDynamicRefinement(f, grid, type_iptotal, 1.E-3, refine_classic, np, err)){
+            cout << "ERROR: failed dynamic surplus classic refinement using localp linear rule " << f.getDescription() << endl;  pass4 = false;
         }
     }{
-        const BaseFunction *f = &f21aniso;
+        const BaseFunction &f = f21aniso;
         std::vector<int> np     = {   23,    38,    62,   104,   171,   280,   403,   506};
         std::vector<double> err = {5.E-1, 3.E-1, 2.E-1, 8.E-2, 4.E-2, 8.E-3, 3.E-3, 1.E-3};
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1, rule_semilocalp);
-        if (!testDynamicRefinement(&f21aniso, grid, type_iptotal, 1.E-3, refine_fds, np, err)){
-            cout << "ERROR: failed dynamic surplus classic refinement using localp linear rule " << f->getDescription() << endl;  pass4 = false;
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 3, 1, rule_semilocalp);
+        if (!testDynamicRefinement(f, grid, type_iptotal, 1.E-3, refine_fds, np, err)){
+            cout << "ERROR: failed dynamic surplus classic refinement using localp linear rule " << f.getDescription() << endl;  pass4 = false;
         }
     }{
-        const BaseFunction *f = &f21aniso;
+        const BaseFunction &f = f21aniso;
         std::vector<int> np     = {   23,    38,    64,   120,   171,   280,   403, 500};
         std::vector<double> err = {5.E-1, 3.E-1, 3.E-1, 2.E-1, 6.E-2, 3.E-2, 2.E-2, 6.E-3};
-        grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 3, 1);
-        if (!testDynamicRefinement(&f21aniso, grid, type_iptotal, 1.E-3, refine_stable, np, err)){
-            cout << "ERROR: failed dynamic surplus classic refinement using wavelet linear rule " << f->getDescription() << endl;  pass4 = false;
+        grid.makeWaveletGrid(f.getNumInputs(), f.getNumOutputs(), 3, 1);
+        if (!testDynamicRefinement(f, grid, type_iptotal, 1.E-3, refine_stable, np, err)){
+            cout << "ERROR: failed dynamic surplus classic refinement using wavelet linear rule " << f.getDescription() << endl;  pass4 = false;
         }
     }
     cout << "      Construction              dynamic/local" << setw(15) << ((pass4) ? "Pass" : "FAIL") << endl;
 
     bool pass6 = true;
     {
-        const BaseFunction *f = &f21c1c2periodic;
+        const BaseFunction &f = f21c1c2periodic;
         std::vector<int> np     = {    5,    21,    51,   189,   297,  1377};
         std::vector<double> err = {5.E-1, 3.E-2, 1.E-2, 3.E-3, 5.E-4, 1.E-4};
-        grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 2, type_level);
+        grid.makeFourierGrid(f.getNumInputs(), f.getNumOutputs(), 2, type_level);
         grid.setDomainTransform({-1.0, -1.0}, {1.0, 1.0});
         if (!testDynamicRefinement(f, grid, type_iphyperbolic, -1.0, refine_none, np, err)){
-            cout << "ERROR: failed dynamic anisotropic refinement using Fourier grid for " << f->getDescription() << endl; pass6 = false;
+            cout << "ERROR: failed dynamic anisotropic refinement using Fourier grid for " << f.getDescription() << endl; pass6 = false;
         }
     }
     cout << "      Construction            dynamic/fourier" << setw(15) << ((pass6) ? "Pass" : "FAIL") << endl;
@@ -1702,46 +1701,46 @@ bool ExternalTester::testAllDomain() const{
 
     cout << std::scientific; cout.precision(16);
     {
-        const BaseFunction *f = &f21nx2aniso;
+        const BaseFunction &f = f21nx2aniso;
         int np[5] = {1, 3, 7, 15, 29};
         double errs[5] = {9.E-1, 9.E-1, 2.E-1, 2.E-1, 2.E-2 };
         int aiso_weights[2] = { 2, 1 };
         for(int i=0; i<5; i++){
-            grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), i, TasGrid::type_level, TasGrid::rule_clenshawcurtis, aiso_weights);
+            grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), i, TasGrid::type_level, TasGrid::rule_clenshawcurtis, aiso_weights);
             TestResults R = getError(f, grid, type_internal_interpolation);
             if ((R.num_points != np[i]) || (R.error>errs[i])){
                 cout << "Using clenshaw-curtis rule" << endl;
-                cout << "Failed anisotropic grid test for " << f->getDescription() << "  number of points = " << R.num_points << "  expacted: " << np[i]
+                cout << "Failed anisotropic grid test for " << f.getDescription() << "  number of points = " << R.num_points << "  expacted: " << np[i]
                      << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass1 = false;
             }
         }
     }{
-        const BaseFunction *f = &f21nx2aniso;
+        const BaseFunction &f = f21nx2aniso;
         int np[5] = {5, 10, 15, 28, 37};
         double errs[5] = {3.E-1, 3.E-1, 5.E-2, 2.E-2, 2.E-3};
         int aiso_weights[2] = {2, 1};
         for(int i=0; i<5; i++){
-            grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), i+2, TasGrid::type_level, TasGrid::rule_gausslegendre, aiso_weights);
+            grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), i+2, TasGrid::type_level, TasGrid::rule_gausslegendre, aiso_weights);
             TestResults R = getError(f, grid, type_integration);
             if ((R.num_points != np[i]) || (R.error>errs[i])){
                 cout << "Using gauss-legendre rule" << endl;
-                cout << "Failed anisotropic grid test for " << f->getDescription() << "  number of points = " << R.num_points << "  expacted: " << np[i]
+                cout << "Failed anisotropic grid test for " << f.getDescription() << "  number of points = " << R.num_points << "  expacted: " << np[i]
                      << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass1 = false;
             }
         }
     }{
-        const BaseFunction *f = &f21nx2aniso;
+        const BaseFunction &f = f21nx2aniso;
         int np[5] = {36, 42, 49, 56, 64};
         double errs[5] = {5.E-2, 5.E-2, 5.E-3, 5.E-3, 3.E-3 };
         int aiso_weights[2] = { 2, 1 };
         for(int i=0; i<5; i++){
-            grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), i+10, TasGrid::type_level, TasGrid::rule_leja, aiso_weights);
+            grid.makeSequenceGrid(f.getNumInputs(), f.getNumOutputs(), i+10, TasGrid::type_level, TasGrid::rule_leja, aiso_weights);
             TestResults R = getError(f, grid, type_internal_interpolation);
             if ((R.num_points != np[i]) || (R.error>errs[i])){
                 cout << "Using leja rule" << endl;
-                cout << "Failed anisotropic grid test for " << f->getDescription() << "  number of points = " << R.num_points << "  expacted: " << np[i]
+                cout << "Failed anisotropic grid test for " << f.getDescription() << "  number of points = " << R.num_points << "  expacted: " << np[i]
                      << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass1 = false;
             }
@@ -1753,38 +1752,38 @@ bool ExternalTester::testAllDomain() const{
     bool pass2 = true;
 
     {
-        const BaseFunction *f = &f21expDomain;
+        const BaseFunction &f = f21expDomain;
         double errs[5] = {3.E-5, 2.E-7, 2.E-8, 6.E-10, 4.E-11 };
         double errs2[5] = {1.E-5, 2.E-6, 6.E-8, 6.E-9, 8.E-11 };
         double errs3[5] = {6.E-2, 1.E-2, 5.E-3, 6.E-4, 6.E-5 };
         double transform_a[2] = { 3.0, -3.0 };
         double transform_b[2] = { 4.0,  2.0 };
         for(int i=0; i<5; i++){
-            grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), i+5, TasGrid::type_level, TasGrid::rule_leja);
+            grid.makeSequenceGrid(f.getNumInputs(), f.getNumOutputs(), i+5, TasGrid::type_level, TasGrid::rule_leja);
             grid.setDomainTransform(transform_a, transform_b);
             auto needed_points = grid.getNeededPoints();
             int num_needed = grid.getNumNeeded();
             TestResults R = getError(f, grid, type_integration);
             if (R.error > errs[i]){
                 cout << "Using leja rule" << endl;
-                cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
+                cout << "Failed domain transform test for " << f.getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }
             std::vector<double> test_x = {3.314, -1.71732};
             R = getError(f, grid, type_nodal_interpolation, test_x);
             if (R.error > errs2[i]){
                 cout << "Using leja rule" << endl;
-                cout << "Failed domain transform test interpolation for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
+                cout << "Failed domain transform test interpolation for " << f.getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }
             R = getError(f, grid, type_internal_interpolation, test_x);
             if (R.error > errs3[i]){
                 cout << "Using leja rule" << endl;
-                cout << "Failed domain transform test interpolation for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
+                cout << "Failed domain transform test interpolation for " << f.getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }
             auto loaded_points = grid.getLoadedPoints();
-            for(int j=0; j<num_needed * f->getNumInputs(); j++){
+            for(int j=0; j<num_needed * f.getNumInputs(); j++){
                 if (std::abs(needed_points[j] - loaded_points[j]) > Maths::num_tol){
                     cout << "Mismatch between needed and loaded points" << endl;
                     pass2 = false;
@@ -1792,62 +1791,62 @@ bool ExternalTester::testAllDomain() const{
             }
         }
     }{
-        const BaseFunction *f = &f21expDomain;
+        const BaseFunction &f = f21expDomain;
         double errs[5] = {7.E-1, 3.E-3, 6.E-3, 4.E-5, 4.E-6 };
         double transform_a[2] = { 3.0, -3.0 };
         double transform_b[2] = { 4.0,  2.0 };
         for(int i=0; i<5; i++){
-            grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), i, TasGrid::type_iptotal, TasGrid::rule_clenshawcurtis);
+            grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), i, TasGrid::type_iptotal, TasGrid::rule_clenshawcurtis);
             grid.setDomainTransform(transform_a, transform_b);
             TestResults R = getError(f, grid, type_integration);
             if (R.error>errs[i]){
                 cout << "Using clenshaw-curtis rule" << endl;
-                cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
+                cout << "Failed domain transform test for " << f.getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }
         }
     }{
-        const BaseFunction *f = &f21expDomain;
+        const BaseFunction &f = f21expDomain;
         double errs[5] = {7.E-1, 7.E-3, 3.E-5, 6.E-8, 7.E-11 };
         double transform_a[2] = { 3.0, -3.0 };
         double transform_b[2] = { 4.0,  2.0 };
         for(int i=0; i<5; i++){
-            grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), i, TasGrid::type_iptotal, TasGrid::rule_gausslegendre);
+            grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), i, TasGrid::type_iptotal, TasGrid::rule_gausslegendre);
             grid.setDomainTransform(transform_a, transform_b);
             TestResults R = getError(f, grid, type_integration);
             if (R.error>errs[i]){
                 cout << "Using gauss-legendre rule" << endl;
-                cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
+                cout << "Failed domain transform test for " << f.getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }
         }
     }{
-        const BaseFunction *f = &f21expDomain;
+        const BaseFunction &f = f21expDomain;
         double errs[5] = {7.E-1, 4.E-1, 4.E-3, 8.E-4, 7.E-7 };
         double transform_a[2] = { 3.0, -3.0 };
         double transform_b[2] = { 4.0,  2.0 };
         for(int i=0; i<5; i++){
-            grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), i, 2, TasGrid::rule_localp);
+            grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), i, 2, TasGrid::rule_localp);
             grid.setDomainTransform(transform_a, transform_b);
             TestResults R = getError(f, grid, type_integration);
             if (R.error>errs[i]){
                 cout << "Using localp rule" << endl;
-                cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
+                cout << "Failed domain transform test for " << f.getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }
         }
     }{
-        const BaseFunction *f = &f21coscos;
+        const BaseFunction &f = f21coscos;
         double errs[5] = { 5.E-2, 7.E-3, 9.E-4, 1.E-13 };
         double transform_a[2] = { -1.0, -1.0 };     // canonical domain of Fourier grid is [0,1]
         double transform_b[2] = { 1.0,  1.0 };
         for(int i=0; i<3; i++){     // keeping depth low until we implement an FFT algorithm
-            grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), i+3, TasGrid::type_level);
+            grid.makeFourierGrid(f.getNumInputs(), f.getNumOutputs(), i+3, TasGrid::type_level);
             grid.setDomainTransform(transform_a, transform_b);
             TestResults R = getError(f, grid, type_integration);
             if (R.error>errs[i]){
                 cout << "Using fourier rule" << endl;
-                cout << "Failed domain transform test for " << f->getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
+                cout << "Failed domain transform test for " << f.getDescription() << "   error = " << R.error << "  expected: " << errs[i] << endl;
                      pass2 = false;
             }
         }
@@ -1859,11 +1858,11 @@ bool ExternalTester::testAllDomain() const{
 
     {
         TasmanianSparseGrid gridc;
-        const BaseFunction *f = &f21conformal;
+        const BaseFunction &f = f21conformal;
         std::vector<int> asin_conformal = {4, 4};
         for(int l=0; l<6; l++){
-            grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+2, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
-            gridc.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+2, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
+            grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), l+2, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
+            gridc.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), l+2, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
             gridc.setConformalTransformASIN(asin_conformal);
             auto needed_points = grid.getNeededPoints();
             int num_needed = grid.getNumNeeded();
@@ -1882,7 +1881,7 @@ bool ExternalTester::testAllDomain() const{
             double y1, y2, y_true;
             grid.integrate(&y1);
             gridc.integrate(&y2);
-            f->getIntegral(&y_true);
+            f.getIntegral(&y_true);
             if (std::abs(y1 - y_true) < std::abs(y2 - y_true)){
                 cout << "Failed in error for conformal mapping and clenshaw-curtis rule" << endl;
                 cout << "  standard error = " << std::abs(y1 - y_true) << endl;
@@ -1890,7 +1889,7 @@ bool ExternalTester::testAllDomain() const{
                 pass3 = false;
             }
             auto loaded_points = grid.getLoadedPoints();
-            for(int j=0; j<num_needed * f->getNumInputs(); j++){
+            for(int j=0; j<num_needed * f.getNumInputs(); j++){
                 if (std::abs(needed_points[j] - loaded_points[j]) > Maths::num_tol){
                     cout << "Mismatch between needed and loaded points" << endl;
                     pass3 = false;
@@ -1899,11 +1898,11 @@ bool ExternalTester::testAllDomain() const{
         }
     }{
         TasmanianSparseGrid gridc;
-        const BaseFunction *f = &f21conformal;
+        const BaseFunction &f = f21conformal;
         std::vector<int> asin_conformal = { 4, 4 };
         for(int l=0; l<1; l++){
-            grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+5, TasGrid::type_iptotal, TasGrid::rule_gausspatterson);
-            gridc.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), l+5, TasGrid::type_iptotal, TasGrid::rule_gausspatterson);
+            grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), l+5, TasGrid::type_iptotal, TasGrid::rule_gausspatterson);
+            gridc.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), l+5, TasGrid::type_iptotal, TasGrid::rule_gausspatterson);
             gridc.setConformalTransformASIN(asin_conformal);
             TestResults R1 = getError(f, grid, type_integration);
             TestResults R2 = getError(f, gridc, type_integration);
@@ -1928,11 +1927,11 @@ bool ExternalTester::testAllDomain() const{
         }
     }{
         TasmanianSparseGrid gridc;
-        const BaseFunction *f = &f21conformal;
+        const BaseFunction &f = f21conformal;
         std::vector<int> asin_conformal = { 4, 4 };
         for(int l=0; l<5; l++){
-            grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), l+4, 3, TasGrid::rule_localp);
-            gridc.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), l+4, 3, TasGrid::rule_localp);
+            grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), l+4, 3, TasGrid::rule_localp);
+            gridc.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), l+4, 3, TasGrid::rule_localp);
             gridc.setConformalTransformASIN(asin_conformal);
             TestResults R1 = getError(f, grid, type_internal_interpolation);
             TestResults R2 = getError(f, gridc, type_internal_interpolation);
@@ -2006,9 +2005,9 @@ bool ExternalTester::testAllDomain() const{
     return (pass1 && pass2 && pass3 && pass4);
 }
 
-bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid &grid) const{
-    int dims = f->getNumInputs();
-    int outs = f->getNumOutputs();
+bool ExternalTester::testAcceleration(const BaseFunction &f, TasmanianSparseGrid &grid) const{
+    int dims = f.getNumInputs();
+    int outs = f.getNumOutputs();
     loadValues(f, grid);
 
     int num_x = 256; // for batched evaluations
@@ -2063,7 +2062,7 @@ bool ExternalTester::testAcceleration(const BaseFunction *f, TasmanianSparseGrid
 
         if (!pass){
             cout << "Failed Batch/Fast evaluation for acceleration c = " << c << " gpuID = " << testGpuID << endl;
-            cout << " -- for function: " << f->getDescription() << endl;
+            cout << " -- for function: " << f.getDescription() << endl;
         }
 
         if (c > 1){ // gpu test
@@ -2107,7 +2106,7 @@ bool ExternalTester::testGpuCaching() const{
             TasGrid::AccelerationMeta::setDefaultGpuDevice(gpu);
 
             for(int run : std::vector<int>{0, 1}){ // do two runs switching devices and grids in-between
-                loadValues(&f21nx2, grid);
+                loadValues(f21nx2, grid);
                 grid.enableAcceleration(accel_none);
                 std::vector<double> refy;
                 grid.evaluateBatch(refx, refy);
@@ -2242,27 +2241,27 @@ bool ExternalTester::testGPU2GPUevaluations() const{
 }
 
 bool ExternalTester::testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const{
-    const BaseFunction *f = &f21expsincos;
+    const BaseFunction &f = f21expsincos;
     TasmanianSparseGrid grid_acc, grid_ref;
     bool pass = true;
     int gstart = beginTestGPUID();
     int gend   = endTestGPUID();
     for(int g = gstart; g < gend; g++){
         if (rule == rule_wavelet){
-            grid_acc.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1);
-            grid_ref.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 1);
+            grid_acc.makeWaveletGrid(f.getNumInputs(), f.getNumOutputs(), 2, 1);
+            grid_ref.makeWaveletGrid(f.getNumInputs(), f.getNumOutputs(), 2, 1);
         }else if (rule == rule_fourier){
-            grid_acc.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 4, type_iptotal, {2, 1});
-            grid_ref.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 4, type_iptotal, {2, 1});
+            grid_acc.makeFourierGrid(f.getNumInputs(), f.getNumOutputs(), 4, type_iptotal, {2, 1});
+            grid_ref.makeFourierGrid(f.getNumInputs(), f.getNumOutputs(), 4, type_iptotal, {2, 1});
         }else if (OneDimensionalMeta::isLocalPolynomial(rule)){
-            grid_acc.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 4, 1, rule);
-            grid_ref.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), 4, 1, rule);
+            grid_acc.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 4, 1, rule);
+            grid_ref.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), 4, 1, rule);
         }else if (OneDimensionalMeta::isSequence(rule)){
-            grid_acc.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 6, type_iptotal, rule, {2, 1});
-            grid_ref.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 6, type_iptotal, rule, {2, 1});
+            grid_acc.makeSequenceGrid(f.getNumInputs(), f.getNumOutputs(), 6, type_iptotal, rule, {2, 1});
+            grid_ref.makeSequenceGrid(f.getNumInputs(), f.getNumOutputs(), 6, type_iptotal, rule, {2, 1});
         }else{
-            grid_acc.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 6, type_iptotal, rule, {2, 1});
-            grid_ref.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 6, type_iptotal, rule, {2, 1});
+            grid_acc.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), 6, type_iptotal, rule, {2, 1});
+            grid_ref.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), 6, type_iptotal, rule, {2, 1});
         }
         grid_acc.enableAcceleration(accel_gpu_cublas);
         grid_acc.setGPUID(g);
@@ -2287,16 +2286,16 @@ bool ExternalTester::testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const
 }
 
 bool ExternalTester::testAllAcceleration() const{
-    const BaseFunction *f = &f23Kexpsincos;
-    const BaseFunction *f1out = &f21expsincos;
+    const BaseFunction &f = f23Kexpsincos;
+    const BaseFunction &f1out = f21expsincos;
     TasmanianSparseGrid grid;
     bool pass = true;
 
     int wsecond = 28, wthird = 15;
 
-    grid.makeGlobalGrid(f->getNumInputs(), f->getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
+    grid.makeGlobalGrid(f.getNumInputs(), f.getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
     pass = pass && testAcceleration(f, grid);
-    grid.makeGlobalGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
+    grid.makeGlobalGrid(f1out.getNumInputs(), f1out.getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_clenshawcurtis);
     pass = pass && testAcceleration(f1out, grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "global" << setw(wthird) << "Pass" << endl;
@@ -2304,9 +2303,9 @@ bool ExternalTester::testAllAcceleration() const{
         cout << "      Accelerated" << setw(wsecond) << "global" << setw(wthird) << "FAIL" << endl;
     }
 
-    grid.makeSequenceGrid(f->getNumInputs(), f->getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_leja);
+    grid.makeSequenceGrid(f.getNumInputs(), f.getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_leja);
     pass = pass && testAcceleration(f, grid);
-    grid.makeSequenceGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_leja);
+    grid.makeSequenceGrid(f1out.getNumInputs(), f1out.getNumOutputs(), 5, TasGrid::type_level, TasGrid::rule_leja);
     pass = pass && testAcceleration(f1out, grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "sequence" << setw(wthird) << "Pass" << endl;
@@ -2318,14 +2317,14 @@ bool ExternalTester::testAllAcceleration() const{
     // for order 0, regardless of the selected rule, thegrid should switch to localp
     TasGrid::TypeOneDRule pwp_rule[4] = {TasGrid::rule_localp, TasGrid::rule_localp0, TasGrid::rule_semilocalp, TasGrid::rule_localpb};
     for(int t=0; t<12; t++){
-        grid.makeLocalPolynomialGrid(f->getNumInputs(), f->getNumOutputs(), ((t / 4 == 0) ? 5 : 6), (t / 4), pwp_rule[t % 4]);
+        grid.makeLocalPolynomialGrid(f.getNumInputs(), f.getNumOutputs(), ((t / 4 == 0) ? 5 : 6), (t / 4), pwp_rule[t % 4]);
         pass = pass && testAcceleration(f, grid);
     }
     // test cusparse sparse mat times dense vec used in accel_type cuda, also try both sparse and dense flavors
     grid.makeLocalPolynomialGrid(f21nx2.getNumInputs(), f21nx2.getNumOutputs(), 5, 1, TasGrid::rule_localp);
     grid.favorSparseAcceleration(true);
-    pass = pass && testAcceleration(&f21nx2, grid);
-    grid.makeLocalPolynomialGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 5, 2, TasGrid::rule_semilocalp);
+    pass = pass && testAcceleration(f21nx2, grid);
+    grid.makeLocalPolynomialGrid(f1out.getNumInputs(), f1out.getNumOutputs(), 5, 2, TasGrid::rule_semilocalp);
     grid.favorSparseAcceleration(false);
     pass = pass && testAcceleration(f1out, grid);
     if (pass){
@@ -2334,9 +2333,9 @@ bool ExternalTester::testAllAcceleration() const{
         cout << "      Accelerated" << setw(wsecond) << "local polynomial" << setw(wthird) << "FAIL" << endl;
     }
 
-    grid.makeFourierGrid(f->getNumInputs(), f->getNumOutputs(), 4, TasGrid::type_level);
+    grid.makeFourierGrid(f.getNumInputs(), f.getNumOutputs(), 4, TasGrid::type_level);
     pass = pass && testAcceleration(f, grid);
-    grid.makeFourierGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 4, TasGrid::type_level);
+    grid.makeFourierGrid(f1out.getNumInputs(), f1out.getNumOutputs(), 4, TasGrid::type_level);
     pass = pass && testAcceleration(f1out, grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "fourier" << setw(wthird) << "Pass" << endl;
@@ -2344,9 +2343,9 @@ bool ExternalTester::testAllAcceleration() const{
         cout << "      Accelerated" << setw(wsecond) << "fourier" << setw(wthird) << "FAIL" << endl;
     }
 
-    grid.makeWaveletGrid(f->getNumInputs(), f->getNumOutputs(), 2, 3);
+    grid.makeWaveletGrid(f.getNumInputs(), f.getNumOutputs(), 2, 3);
     pass = pass && testAcceleration(f, grid);
-    grid.makeWaveletGrid(f1out->getNumInputs(), f1out->getNumOutputs(), 4, 1);
+    grid.makeWaveletGrid(f1out.getNumInputs(), f1out.getNumOutputs(), 4, 1);
     pass = pass && testAcceleration(f1out, grid);
     if (pass){
         if (verbose) cout << "      Accelerated" << setw(wsecond) << "wavelet" << setw(wthird) << "Pass" << endl;
