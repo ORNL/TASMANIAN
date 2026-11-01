@@ -1044,30 +1044,35 @@ TestResults ExternalTester::testEdgeDerivative(const BaseFunction &f, int level,
     std::vector<double> ref(num_dimensions * num_outputs);
     std::vector<double> jac(num_dimensions * num_outputs);
 
+    auto test_point = [&](int j, double val) -> double {
+            x[j] = val;
+            f.getDerivative(x.data(), ref.data());
+            grid.differentiate(x, jac);
+            double err = 0.0;
+            for (size_t k = 0; k < ref.size(); k++)
+                err = std::max(err, std::fabs(ref[k] - jac[k]));
+            // std::cout << "  pnt = " << x[0] << "  " << jac[0] << "  " << ref[0] << "  " << val << '\n';
+            return err;
+        };
+
     double total_err = 0.0;
     for (int j = 0; j < num_dimensions; j++) {
         double const tmp = x[j];
-        x[j] = xmin[j] - 1.E-12;
 
-        f.getDerivative(x.data(), ref.data());
-        grid.differentiate(x, jac);
+        total_err = std::max(total_err, test_point(j, xmin[j] - 1.E-12));
+        total_err = std::max(total_err, test_point(j, xmax[j] + 1.E-12));
 
-        for (size_t k = 0; k < ref.size(); k++)
-            total_err = std::max(total_err, std::fabs(ref[k] - jac[k]));
-        // std::cout << "  left = " << x[0] << "  " << jac[0] << "  " << ref[0] << '\n';
+        for (auto v : {0.0, -0.5, 0.5, -0.75, -0.25, 0.25, 0.75, 0.125, -0.875, 0.046875}) {
+            total_err = std::max(total_err, test_point(j, v - 1.E-12));
+            total_err = std::max(total_err, test_point(j, v));
+            total_err = std::max(total_err, test_point(j, v + 1.E-12));
+        }
+        // std::cout << total_err << '\n';
 
-        x[j] = xmax[j] + 1.E-12;
-
-        f.getDerivative(x.data(), ref.data());
-        grid.differentiate(x, jac);
-
-        for (size_t k = 0; k < ref.size(); k++)
-            total_err = std::max(total_err, std::fabs(ref[k] - jac[k]));
-        // std::cout << "  right = " << x[0] << "  " << jac[0] << "  " << ref[0] << '\n';
         x[j] = tmp;
     }
 
-    // std::cout << "  error = " << total_err << "   " << tolerance << '\n';
+    // std::cout << "  error = " << total_err << '\n';
     return TestResults{total_err, grid.getNumPoints()};
 }
 
@@ -1172,9 +1177,9 @@ bool ExternalTester::testAllPWLocal() const{
                 test_pars{f11p3,   8, 1, rule_localpb, 1.E-1},
                 test_pars{f11p3,  14, 1, rule_localpb, 1.E-3},
                 test_pars{f21nx2,  8, 2, rule_localpb, 5.E-4},
-                test_pars{f21nx2, 10, 2, rule_localpb, 1.E-5},
+                test_pars{f21nx2, 10, 2, rule_localpb, 5.E-5},
                 test_pars{f21nx2,  8, 2, rule_semilocalp, 5.E-4},
-                test_pars{f21nx2, 10, 2, rule_semilocalp, 1.E-5},
+                test_pars{f21nx2, 10, 2, rule_semilocalp, 5.E-5},
                 test_pars{f21coscos,  8, 2, rule_localp0, 3.E-5},
                 test_pars{f21coscos, 10, 2, rule_localp0, 1.E-5},
             };
@@ -1184,6 +1189,7 @@ bool ExternalTester::testAllPWLocal() const{
             if (testEdgeDerivative(test.f, test.level, test.order, test.rule).error > test.tolerance) {
                 cout << "Error in testEdgeDerivative() test " << i << "  function " << test.f.getDescription() << ", the grid was\n";
                 makeLocalPolynomialGrid(test.f.getNumInputs(), test.f.getNumOutputs(), test.level, test.order, test.rule).printStats();
+                cout << " tolerance was: " << test.tolerance << '\n';
                 all_edge = false;
             }
         }
@@ -2386,11 +2392,6 @@ bool ExternalTester::testAllAcceleration() const{
 void ExternalTester::debugTest(){
     cout << "Debug Test (callable from the CMake build folder)" << endl;
     cout << "Put testing code here and call with ./SparseGrids/gridtester debug" << endl;
-
-    auto grid = makeGlobalGrid(NumDimensions{2}, NumOutputs{1}, DepthLevel{3}, type_level, rule_clenshawcurtis,
-                               AnsitropicWeights{1, 2});
-    grid = makeGlobalGrid(NumDimensions{2}, NumOutputs{1}, DepthLevel{3}, type_level, rule_clenshawcurtis,
-                          IsotropicWeights{});
 }
 
 void ExternalTester::debugTestII(){

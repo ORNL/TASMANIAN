@@ -219,7 +219,8 @@ protected:
         // If all 1D function have support, the derivative could be theoretically 0, but probably not
         std::fill_n(diff_values, num_dimensions, 1);
         for(int k=0; k<num_dimensions; k++) {
-            double fval = RuleLocal::evalSupport<effrule>(order, point[k], x[k], isSupported);
+            bool constexpr use_edge_support = true;
+            double fval = RuleLocal::evalSupport<effrule, use_edge_support>(order, point[k], x[k], isSupported);
             if (not isSupported) {
                 std::fill_n(diff_values, num_dimensions, 0);
                 isSupported = false;
