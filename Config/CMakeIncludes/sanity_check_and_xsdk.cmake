@@ -215,7 +215,6 @@ else()
     set(Tasmanian_final_install_path "${CMAKE_INSTALL_PREFIX}")
 endif()
 
-
 ########################################################################
 # Recommended compiler flags: Intel hasn't been tested in a while
 ########################################################################

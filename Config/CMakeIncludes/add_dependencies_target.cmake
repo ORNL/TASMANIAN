@@ -6,19 +6,12 @@ add_library(Tasmanian_dependencies INTERFACE)
 
 target_compile_features(Tasmanian_dependencies INTERFACE cxx_std_17)
 
-
-list(APPEND Tasmanian_rpath "${Tasmanian_final_install_path}/lib")
+list(APPEND CMAKE_INSTALL_RPATH "${Tasmanian_final_install_path}/${CMAKE_INSTALL_LIBDIR}")
 
 if (Tasmanian_ENABLE_OPENMP)
     target_link_libraries(Tasmanian_dependencies INTERFACE ${OpenMP_CXX_LIBRARIES})
-    Tasmanian_find_rpath(LIBRARIES ${OpenMP_CXX_LIBRARIES} LIST rpath)
-    if (Tasmanian_ENABLE_HIP)
-        # needs to be added to the ENV script for the post-install testing
-        Tasmanian_find_rpath(LIBRARIES ${OpenMP_CXX_LIBRARIES} LIST hipomp_rpath)
-    endif()
 else()
     target_link_libraries(Tasmanian_dependencies INTERFACE ${CMAKE_THREAD_LIBS_INIT})
-    Tasmanian_find_rpath(LIBRARIES ${CMAKE_THREAD_LIBS_INIT} LIST rpath)
 endif()
 
 if (Tasmanian_ENABLE_DPCPP)  # must come before BLAS to pick MKL libraries
@@ -32,13 +25,10 @@ endif()
 if (Tasmanian_ENABLE_BLAS)
     target_link_libraries(Tasmanian_dependencies INTERFACE ${BLAS_LIBRARIES})
     target_link_libraries(Tasmanian_dependencies INTERFACE ${LAPACK_LIBRARIES})
-    Tasmanian_find_rpath(LIBRARIES ${BLAS_LIBRARIES}   LIST rpath)
-    Tasmanian_find_rpath(LIBRARIES ${LAPACK_LIBRARIES} LIST rpath)
 endif()
 
 if (Tasmanian_ENABLE_CUDA)
     target_link_libraries(Tasmanian_dependencies INTERFACE CUDA::cublas CUDA::cusparse CUDA::cusolver CUDA::cudart)
-    Tasmanian_find_rpath(TARGETS CUDA::cublas CUDA::cusparse CUDA::cusolver CUDA::cudart LIST rpath)
 endif()
 
 if (Tasmanian_ENABLE_HIP)
@@ -47,14 +37,12 @@ if (Tasmanian_ENABLE_HIP)
     endif()
     foreach(_tsg_rocm_dep ${Tasmanian_rocm_dependencies})
         target_link_libraries(Tasmanian_dependencies INTERFACE roc::${_tsg_rocm_dep})
-        Tasmanian_find_rpath(INCLUDES ${_tsg_rocm_dep}_INCLUDE_DIR LIST rpath)
     endforeach()
 endif()
 
 if (Tasmanian_ENABLE_MAGMA)
     target_link_libraries(Tasmanian_dependencies INTERFACE Tasmanian::MAGMA)
     if (NOT Tasmanian_MAGMA_DOWNLOAD)
-        Tasmanian_find_rpath(LIBRARIES ${Tasmanian_magma} LIST rpath)
         target_include_directories(Tasmanian_dependencies INTERFACE $<BUILD_INTERFACE:${Tasmanian_magma_h}/>)
     endif()
 endif()
@@ -86,6 +74,3 @@ if (Tasmanian_EXTRA_CXX_FLAGS)
 endif()
 
 install(TARGETS Tasmanian_dependencies EXPORT "${Tasmanian_export_name}")
-
-list(REMOVE_DUPLICATES Tasmanian_rpath)
-#message(STATUS "Tasmanian RPATH: ${Tasmanian_rpath}")

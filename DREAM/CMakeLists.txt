@@ -21,13 +21,14 @@ add_library(Tasmanian_libdream  TasmanianDREAM.hpp
                                 ${CMAKE_CURRENT_SOURCE_DIR}/Optimization/tsgGradientDescent.cpp
                                 ${CMAKE_CURRENT_SOURCE_DIR}/Optimization/tsgOptimizationUtils.hpp)
 
+set_target_properties(Tasmanian_libdream PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
+
 target_include_directories(Tasmanian_libdream PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/>)
 target_link_libraries(Tasmanian_libdream  Tasmanian_libsparsegrid)
 
 set_target_properties(Tasmanian_libdream PROPERTIES OUTPUT_NAME "tasmaniandream"
                                                     SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                     VERSION   ${PROJECT_VERSION})
-Tasmanian_rpath_target(TARGET Tasmanian_libdream COMPONENTS SparseGrids)
 
 if (Tasmanian_ENABLE_OPENMP)
     target_compile_options(Tasmanian_libdream PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${OpenMP_CXX_FLAGS}>)
@@ -46,7 +47,7 @@ add_executable(Tasmanian_dreamtest dreamtest_main.cpp
 
 set_target_properties(Tasmanian_dreamtest  PROPERTIES OUTPUT_NAME "dreamtest"
                                                       CXX_EXTENSIONS OFF)
-Tasmanian_rpath_target(TARGET Tasmanian_dreamtest USE_CURRENT COMPONENTS SparseGrids)
+
 target_link_libraries(Tasmanian_dreamtest  Tasmanian_libdream)
 
 

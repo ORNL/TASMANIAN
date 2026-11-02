@@ -28,10 +28,11 @@ if (Tasmanian_ENABLE_PYTHON) # the C addons are used by Python
                                          tsgCConstructSurrogate.cpp
                                          tsgCLoadUnstructuredPoints.cpp)
 
+    set_target_properties(Tasmanian_caddons PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
+
     target_link_libraries(Tasmanian_caddons Tasmanian_addons)
 
     set_target_properties(Tasmanian_caddons PROPERTIES OUTPUT_NAME "tasmaniancaddons"
-                                                       INSTALL_RPATH "${Tasmanian_rpath}"
                                                        SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                        VERSION   ${PROJECT_VERSION})
 
@@ -59,7 +60,6 @@ list(APPEND Tasmanian_addons_tests "AddonTests")
 # set properties for all executable targets
 foreach(_tsg_exec ${Tasmanian_addons_executables})
     set_target_properties(Tasmanian_${_tsg_exec} PROPERTIES OUTPUT_NAME "${_tsg_exec}" CXX_EXTENSIONS OFF)
-    Tasmanian_rpath_target(TARGET Tasmanian_${_tsg_exec} USE_CURRENT COMPONENTS SparseGrids DREAM)
     target_link_libraries(Tasmanian_${_tsg_exec} Tasmanian_addons Tasmanian_libdream)
 endforeach()
 unset(_tsg_exec)
