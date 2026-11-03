@@ -13,7 +13,6 @@ cp ./InterfacePython/PipInstaller/pyproject.toml .
 python3 setup.py sdist
 
 rm MANIFEST.in
-rm MANIFEST
 rm pyproject.toml
 rm setup.py
 

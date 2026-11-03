@@ -61,7 +61,6 @@ setup(
     name='Tasmanian',
     version='8.3rc1',
     author='Miroslav Stoyanov',
-    author_email='stoyanovmk@ornl.gov',
     description='UQ library for sparse grids, optimization and Bayesian inference',
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -69,11 +68,9 @@ setup(
     classifiers=[
         'Programming Language :: Python :: 3',
         'Programming Language :: C++',
-        'Operating System :: OS Independent',
     ],
     install_requires=['numpy>=1.10'],
     ### cmake portion of the setup, specific to skbuild ###
-    setup_requires=['numpy>=1.10', ],
     cmake_args=cmake_args,
     py_modules=[]
 )

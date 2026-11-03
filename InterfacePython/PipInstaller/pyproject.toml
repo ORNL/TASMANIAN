@@ -1,2 +1,14 @@
+[project]
+name = "Tasmanian"
+license = "BSD-3-Clause"
+classifiers = ["Programming Language :: Python :: 3",
+               "Programming Language :: C++",
+               "Development Status :: 6 - Mature",
+               "Operating System :: OS Independent",
+               "Operating System :: MacOS",
+               "Operating System :: POSIX :: Linux",
+               "Topic :: Scientific/Engineering :: Mathematics" ]
+dynamic = ["authors", "description", "readme", "dependencies", "version", "urls", ]
+
 [build-system]
-requires = ["setuptools", "wheel", "scikit-build>=0.10.0", "packaging"]
+requires = ["setuptools", "wheel", "scikit-build>=0.10.0", "cmake>=3.19", "numpy>=1.10"]
