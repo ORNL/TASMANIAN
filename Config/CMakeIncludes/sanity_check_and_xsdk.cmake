@@ -63,7 +63,8 @@ if (Tasmanian_ENABLE_FORTRAN90 AND NOT Tasmanian_ENABLE_FORTRAN)
 endif()
 
 # OpenMP setup
-if ((Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED) AND NOT Tasmanian_ENABLE_DPCPP)
+# if ((Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED) AND NOT Tasmanian_ENABLE_DPCPP)
+if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
     if (Tasmanian_ENABLE_OPENMP)
         find_package(OpenMP REQUIRED) # OpenMP requested explicitly, require regardless of ENABLE_RECOMMENDED
     else()

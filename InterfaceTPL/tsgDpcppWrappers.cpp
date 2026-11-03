@@ -197,22 +197,22 @@ void dump_data(sycl::queue *q, size_t m, size_t n, scalar_type *data){
 }
 
 template<typename scalar_type>
-std::int64_t gemqr_workspace(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::int64_t lda, std::int64_t ldc){
+std::int64_t gemqr_workspace(sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::int64_t lda, std::int64_t ldc){
     return oneapi::mkl::lapack::ormqr_scratchpad_size<scalar_type>(*q, side, trans, m, n, k, lda, ldc);
 }
 
 template<>
-std::int64_t gemqr_workspace<std::complex<double>>(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::int64_t lda, std::int64_t ldc){
+std::int64_t gemqr_workspace<std::complex<double>>(sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::int64_t lda, std::int64_t ldc){
     return oneapi::mkl::lapack::unmqr_scratchpad_size<std::complex<double>>(*q, side, trans, m, n, k, lda, ldc);
 }
 
 template<typename scalar_type>
-inline void gemqr(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, scalar_type* A, std::int64_t lda, scalar_type *T, scalar_type* C, std::int64_t ldc, scalar_type* workspace, std::int64_t worksize){
+inline void gemqr(sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, scalar_type* A, std::int64_t lda, scalar_type *T, scalar_type* C, std::int64_t ldc, scalar_type* workspace, std::int64_t worksize){
     oneapi::mkl::lapack::ormqr(*q, side, trans, m, n, k, A, lda, T, C, ldc, workspace, worksize).wait();
 }
 
 template<>
-void gemqr<std::complex<double>>(cl::sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::complex<double>* A, std::int64_t lda, std::complex<double> *T, std::complex<double>* C, std::int64_t ldc, std::complex<double>* workspace, std::int64_t worksize){
+void gemqr<std::complex<double>>(sycl::queue *q, oneapi::mkl::side side, oneapi::mkl::transpose trans, std::int64_t m, std::int64_t n, std::int64_t k, std::complex<double>* A, std::int64_t lda, std::complex<double> *T, std::complex<double>* C, std::int64_t ldc, std::complex<double>* workspace, std::int64_t worksize){
     oneapi::mkl::lapack::unmqr(*q, side, trans, m, n, k, A, lda, T, C, ldc, workspace, worksize).wait();
 }
 
@@ -301,7 +301,7 @@ void sparseMultiply(AccelerationContext const *acceleration, int M, int N, int K
     oneapi::mkl::sparse::matrix_handle_t mat = nullptr;
     oneapi::mkl::sparse::init_matrix_handle(&mat);
 
-    oneapi::mkl::sparse::set_csr_data(*q, mat, N, K, oneapi::mkl::index_base::zero,
+    oneapi::mkl::sparse::set_csr_data(*q, mat, N, K, indx.size(), oneapi::mkl::index_base::zero,
                                       const_cast<int*>(pntr.data()), const_cast<int*>(indx.data()), const_cast<scalar_type*>(vals.data())).wait();
 
     if (M == 1){ // using sparse-blas level 2

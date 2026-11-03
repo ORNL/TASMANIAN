@@ -45,7 +45,7 @@
 #endif
 
 #ifdef Tasmanian_ENABLE_DPCPP
-#include <CL/sycl.hpp>
+#include <sycl/sycl.hpp>
 #endif
 
 void gridLoadEN2(TasmanianSparseGrid *grid){ // load points using model exp( - \| x \|^2 )
