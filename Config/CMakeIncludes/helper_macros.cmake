@@ -97,71 +97,7 @@ macro(Tasmanian_find_header)
     unset(_tsg_opts)
 endmacro()
 
-# usage: Tasmanian_find_rpath(LIBRARIES ${BLAS_LIBRARIES} LIST rpath)
-# will find the rpaths for each library in the BLAS_LIBRARIES list
-# and will append the rpath to a list called Tasmanian_rpath
-macro(Tasmanian_find_rpath)
-    cmake_parse_arguments(Tasmanian_findrpath "" "LIST" "LIBRARIES;TARGETS;INCLUDES" ${ARGN})
-
-    foreach(_tsg_lib ${Tasmanian_findrpath_LIBRARIES})
-        get_filename_component(_tsg_libpath ${_tsg_lib} DIRECTORY)
-        list(APPEND Tasmanian_${Tasmanian_findrpath_LIST} ${_tsg_libpath})
-        #message(STATUS "rpath for ${_tsg_lib} => ${_tsg_libpath}")
-    endforeach()
-
-    foreach(_tsg_lib ${Tasmanian_findrpath_TARGETS})
-        get_property(_tsg_locatoin TARGET ${_tsg_lib} PROPERTY IMPORTED_LOCATION)
-        if (_tsg_locatoin)
-            get_filename_component(_tsg_libpath ${_tsg_locatoin} DIRECTORY)
-            list(APPEND Tasmanian_${Tasmanian_findrpath_LIST} ${_tsg_libpath})
-        endif()
-        unset(_tsg_locatoin)
-        #message(STATUS "rpath for ${_tsg_lib} => ${_tsg_libpath}")
-    endforeach()
-
-    foreach(_tsg_lib ${Tasmanian_findrpath_INCLUDES})
-        get_filename_component(_tsg_libpath ${${_tsg_lib}} DIRECTORY)
-        if (EXISTS "${_tsg_libpath}/lib")
-            list(APPEND Tasmanian_${Tasmanian_findrpath_LIST} "${_tsg_libpath}/lib")
-        endif()
-        unset(_tsg_locatoin)
-        #message(STATUS "rpath for ${_tsg_lib} => ${_tsg_libpath}/lib")
-    endforeach()
-
-    foreach(_tsg_lib LIST LIBRARIES TARGETS) # cleanup
-        unset(Tasmanian_${_tsg_lib})
-    endforeach()
-    unset(_tsg_lib)
-    unset(_tsg_libpath)
-endmacro()
-
-# usage: Tasmanian_rpath_target(TARGET Tasmanian_libdream USE_CURRENT COMPONENTS SparseGrid)
-# will set the rpath for the given target and will handle the work-around for the missing libomp.so under HIP
-# the USE_CURRENT adds the current folder, use for executable targets
-# COMPONENTS lists the additional folders, e.g., DREAM needs SparseGrid and Addons needs both DREAM and SparseGrid
-macro(Tasmanian_rpath_target)
-    cmake_parse_arguments(Tasmanian_rpt "USE_CURRENT" "TARGET" "COMPONENTS" ${ARGN})
-    if (Tasmanian_ENABLE_HIP)
-        set(_rpt_rpath "${Tasmanian_rpath}")
-        if (Tasmanian_rpt_USE_CURRENT)
-            list(APPEND _rpt_rpath "${CMAKE_CURRENT_BINARY_DIR}")
-        endif()
-        foreach(_rpt_comp ${Tasmanian_rpt_COMPONENTS})
-            list(APPEND _rpt_rpath "${CMAKE_CURRENT_BINARY_DIR}/../${_rpt_comp}")
-        endforeach()
-        set_target_properties(${Tasmanian_rpt_TARGET} PROPERTIES
-                              BUILD_RPATH "${_rpt_rpath}")
-        unset(_rpt_rpath)
-        unset(_rpt_comp)
-    endif()
-    set_target_properties(${Tasmanian_rpt_TARGET} PROPERTIES
-                          INSTALL_RPATH "${Tasmanian_rpath}")
-    unset(Tasmanian_rpt_TARGET)
-    unset(Tasmanian_rpt_USE_CURRENT)
-    unset(Tasmanian_rpt_COMPONENTS)
-endmacro()
-
-# usage: Tasmanian_rpath_target(TARGET Tasmanian_libdream)
+# usage: Tasmanian_set_fortran_linker(TARGET Tasmanian_fortran_swig_tester)
 # must be called for every Fortran executable target to account for the missing main() when using ifort
 macro(Tasmanian_set_fortran_linker)
     cmake_parse_arguments(Tasmanian_flink "" "TARGET" "" ${ARGN})

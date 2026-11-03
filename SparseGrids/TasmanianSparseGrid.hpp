@@ -2688,8 +2688,8 @@ makeWaveletGrid(NumDimensions dims, NumOutputs outs, DepthLevel depth,
  * auto grid = TasGrid::makeWaveletGrid(
  *                  TasGrid::NumDimensions{2},
  *                  TasGrid::NumOutputs{1},
- *                  TasGrid::DepthLevel{5},
- *                  TasGrid::BasisOrder{2}
+ *                  TasGrid::DepthLevel{5}
+ *                  // no anisotropic weights
  *                  // no level limits
  *              );
  * \endcode

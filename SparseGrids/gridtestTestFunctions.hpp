@@ -31,6 +31,8 @@
 #ifndef __TASMANIAN_TASGRID_FUNCTIONS_HPP
 #define __TASMANIAN_TASGRID_FUNCTIONS_HPP
 
+#include <vector>
+
 class BaseFunction{
 public:
     BaseFunction();
@@ -42,6 +44,16 @@ public:
     virtual void eval(const double x[], double y[]) const = 0;
     virtual void getIntegral(double y[]) const = 0;
     virtual void getDerivative (const double x[], double y[]) const = 0;
+
+    void eval(std::vector<double> const &x, std::vector<double> &y) const {
+        eval(x.data(), y.data());
+    }
+    void getIntegral(std::vector<double> &y) const {
+        getIntegral(y.data());
+    }
+    void getDerivative(std::vector<double> const &x, std::vector<double> &y) const {
+        getDerivative(x.data(), y.data());
+    }
 };
 
 class OneOneP0: public BaseFunction{

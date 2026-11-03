@@ -100,24 +100,24 @@ public:
 
     bool Test(TestList test) const;
 
-    bool testGlobalRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, const std::vector<TestType> &tests, const int depths[], const double tols[]) const;
+    bool testGlobalRule(const BaseFunction &f, TasGrid::TypeOneDRule rule, const int *anisotropic, double alpha, double beta, const std::vector<TestType> &tests, const int depths[], const double tols[]) const;
     bool performGlobalTest(TasGrid::TypeOneDRule rule) const;
     bool performGaussTransfromTest(TasGrid::TypeOneDRule rule) const;
 
-    bool testLocalPolynomialRule(const BaseFunction *f, TasGrid::TypeOneDRule rule, const int depths[], const double tols[]) const;
-    bool testLocalWaveletRule(const BaseFunction *f, const int depths[], const double tols[], bool flavor) const;
-    bool testSurplusRefinement(const BaseFunction *f, TasmanianSparseGrid &grid, double tol, TypeRefinement rtype, const int np[], const double errs[], int max_iter ) const;
-    bool testAnisotropicRefinement(const BaseFunction *f, TasmanianSparseGrid &grid, TypeDepth type, int min_growth, const int np[], const double errs[], int max_iter ) const;
-    bool testDynamicRefinement(const BaseFunction *f, TasmanianSparseGrid &grid, TypeDepth type, double tolerance, TypeRefinement reftype,
+    bool testLocalPolynomialRule(const BaseFunction &f, TasGrid::TypeOneDRule rule, const int depths[], const double tols[]) const;
+    bool testLocalWaveletRule(const BaseFunction &f, const int depths[], const double tols[], bool flavor) const;
+    bool testSurplusRefinement(const BaseFunction &f, TasmanianSparseGrid &grid, double tol, TypeRefinement rtype, const int np[], const double errs[], int max_iter ) const;
+    bool testAnisotropicRefinement(const BaseFunction &f, TasmanianSparseGrid &grid, TypeDepth type, int min_growth, const int np[], const double errs[], int max_iter ) const;
+    bool testDynamicRefinement(const BaseFunction &f, TasmanianSparseGrid &grid, TypeDepth type, double tolerance, TypeRefinement reftype,
                                const std::vector<int> &np, const std::vector<double> &errs) const;
     TestResults testEdgeDerivative(const BaseFunction &f, int level, int order, TasGrid::TypeOneDRule rule) const;
 
-    bool testAcceleration(const BaseFunction *f, TasmanianSparseGrid &grid) const;
+    bool testAcceleration(const BaseFunction &f, TasmanianSparseGrid &grid) const;
     bool testGpuCaching() const;
     bool testGPU2GPUevaluations() const;
     bool testAcceleratedLoadValues(TasGrid::TypeOneDRule rule) const;
 
-    TestResults getError(const BaseFunction *f, TasGrid::TasmanianSparseGrid &grid, TestType type, std::vector<double> const &x = std::vector<double>()) const;
+    TestResults getError(const BaseFunction &f, TasGrid::TasmanianSparseGrid &grid, TestType type, std::vector<double> const &x = std::vector<double>()) const;
 
     bool testAllGlobal() const;
     bool testAllPWLocal() const;

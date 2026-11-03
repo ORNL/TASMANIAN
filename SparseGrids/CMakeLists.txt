@@ -69,6 +69,8 @@ add_library(Tasmanian_libsparsegrid
         $<$<BOOL:${Tasmanian_ENABLE_DPCPP}>:${CMAKE_CURRENT_SOURCE_DIR}/../InterfaceTPL/tsgDpcppWrappers.cpp>
         $<$<BOOL:${Tasmanian_ENABLE_DPCPP}>:${CMAKE_CURRENT_SOURCE_DIR}/tsgDpcppKernels.cpp>
         )
+set_target_properties(Tasmanian_libsparsegrid PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
+
 
 ########################################################################
 # add the gridtest and examples executables
@@ -116,7 +118,6 @@ target_include_directories(Tasmanian_libsparsegrid PUBLIC $<BUILD_INTERFACE:${CM
 set_target_properties(Tasmanian_libsparsegrid PROPERTIES OUTPUT_NAME "tasmaniansparsegrid"
                                                          SOVERSION ${Tasmanian_VERSION_MAJOR}
                                                          VERSION   ${PROJECT_VERSION})
-Tasmanian_rpath_target(TARGET Tasmanian_libsparsegrid)
 
 if (Tasmanian_ENABLE_OPENMP)
     # the nvcc compiler does nor recognize OpenMP, add the flag only to non-CUDA source files
@@ -128,7 +129,6 @@ install(TARGETS Tasmanian_libsparsegrid EXPORT "${Tasmanian_export_name}")
 foreach(_tsgtarget gridtest benchmarksgrid)
     target_link_libraries(Tasmanian_${_tsgtarget} Tasmanian_libsparsegrid)
     set_target_properties(Tasmanian_${_tsgtarget} PROPERTIES OUTPUT_NAME "${_tsgtarget}" CXX_EXTENSIONS OFF)
-    Tasmanian_rpath_target(TARGET Tasmanian_${_tsgtarget} USE_CURRENT)
     if (Tasmanian_ENABLE_OPENMP)
         # the OpenMP libraries are carried transitively from sparse grids library
         target_compile_options(Tasmanian_${_tsgtarget} PRIVATE ${OpenMP_CXX_FLAGS})
