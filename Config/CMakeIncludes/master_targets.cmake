@@ -28,6 +28,11 @@ if (Tasmanian_ENABLE_FORTRAN)
     endif()
 endif()
 
+if (Tasmanian_ENABLE_DPCPP)
+    target_compile_options(Tasmanian_master INTERFACE -fsycl)
+    target_link_options(Tasmanian_master INTERFACE -fsycl)
+endif()
+
 # add executable that has the sole purpose of testing the master target
 add_executable(tasmanian_version "${CMAKE_CURRENT_SOURCE_DIR}/Testing/tasmanian_version.cpp")
 target_link_libraries(tasmanian_version Tasmanian::Tasmanian)

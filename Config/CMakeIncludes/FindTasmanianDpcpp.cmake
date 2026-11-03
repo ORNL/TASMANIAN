@@ -15,9 +15,6 @@
 Tasmanian_compiler_type(COMPILER ${CMAKE_CXX_COMPILER} SWITCH "--version" TYPE "DPC++" RESULT Tasmanian_dpcpp_compiler)
 Tasmanian_compiler_type(COMPILER ${CMAKE_CXX_COMPILER} SWITCH "--help"    TYPE "sycl"  RESULT Tasmanian_sycl_compiler)
 
-get_filename_component(Tasmanian_dpcpproot ${CMAKE_CXX_COMPILER} DIRECTORY)  # convert <path>/bin/dpcpp to <path>/bin
-get_filename_component(Tasmanian_dpcpproot ${Tasmanian_dpcpproot} DIRECTORY)  # convert <path>/bin to <path>
-
 if (NOT Tasmanian_dpcpp_compiler AND NOT Tasmanian_sycl_compiler)
     message(FATAL_ERROR "Tasmanian_ENABLE_DPCPP requires that the CMAKE_CXX_COMPILER is set to the Intel dpcpp compiler or a compatible sycl compiler.")
 endif()
@@ -32,13 +29,6 @@ Tasmanian_find_libraries(REQUIRED mkl_sycl
                          OPTIONAL mkl_intel_lp64 mkl_intel_thread mkl_core
                          PREFIX ${Tasmanian_MKL_SYCL_ROOT}
                          LIST mklsycl)
-
-if (Tasmanian_ENABLE_OPENMP OR Tasmanian_ENABLE_RECOMMENDED)
-    set(OpenMP_CXX_FLAGS "-qopenmp")
-    set(OpenMP_CXX_LIBRARY "${Tasmanian_syclomp};-pthread")
-    set(OpenMP_CXX_LIB_NAMES "CXX")
-    set(Tasmanian_ENABLE_OPENMP ON)
-endif()
 
 foreach(_tsg_intellib ${Tasmanian_mklsycl})
     if (NOT _tsg_intellib)
