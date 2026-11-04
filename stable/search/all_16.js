@@ -1,0 +1,25 @@
+var searchData=
+[
+  ['objectivefunction_0',['ObjectiveFunction',['../group__OptimizationUtil.html#gaec31d033396fbbfdce0b5c54950b0074',1,'TasOptimization']]],
+  ['objectivefunctionsingle_1',['ObjectiveFunctionSingle',['../group__OptimizationUtil.html#ga0242b256b00693a9af5f86d420e8f833',1,'TasOptimization']]],
+  ['octave_20interface_2',['MATLAB/Octave Interface',['../md_Doxygen_2InterfaceMATLAB.html',1,'']]],
+  ['of_20matlab_20functions_20and_20corresponding_20c_20api_3',['List of Matlab functions and corresponding C++ API',['../md_Doxygen_2InterfaceMATLAB.html#autotoc_md42',1,'']]],
+  ['of_20tasmanian_4',['Basic Usage of Tasmanian',['../index.html#autotoc_md6',1,'']]],
+  ['on_20mac_20platform_5',['Install on Mac platform',['../md_Doxygen_2Installation.html#autotoc_md18',1,'']]],
+  ['on_20ms_20windows_20platform_6',['Install on MS Windows platform',['../md_Doxygen_2Installation.html#autotoc_md17',1,'']]],
+  ['operator_20dreampdf_7',['operator DreamPDF',['../classTasDREAM_1_1DistributedPosterior.html#acd876247dad6e1e4776867d4d0fec410',1,'TasDREAM::DistributedPosterior']]],
+  ['operator_20evaluatecallable_8',['operator EvaluateCallable',['../classTasGrid_1_1TasmanianSparseGrid.html#aee9f656b9220bd652e73930ace2694b6',1,'TasGrid::TasmanianSparseGrid']]],
+  ['operator_20std_3a_3afunction_3c_20void_9',['function&lt; void',['../classTasDREAM_1_1TasmanianLikelihood.html#a8879f63eb92c3dff39a4dca2b17b5fe9',1,'TasDREAM::TasmanianLikelihood']]],
+  ['operator_20std_3a_3avector_3c_20double_20_3e_20_26_10',['vector&lt; double &gt; &amp;',['../classTasOptimization_1_1GradientDescentState.html#add65a3813a0b3f7edfc04af6800d64d3',1,'TasOptimization::GradientDescentState']]],
+  ['operator_3d_11',['operator=',['../classTasOptimization_1_1GradientDescentState.html#af74e83699e30adcf59857dfde05024b2',1,'TasOptimization::GradientDescentState::operator=()'],['../classTasOptimization_1_1ParticleSwarmState.html#a688673ebc2df15ba0a235a6c867d5a5c',1,'TasOptimization::ParticleSwarmState::operator=()'],['../classTasGrid_1_1TasmanianSparseGrid.html#aa89d3aecd02df8719dcb2f3ddadc675e',1,'TasGrid::TasmanianSparseGrid::operator=()'],['../classTasOptimization_1_1GradientDescentState.html#a9387ba1890bf45f83dd2392a89e549d9',1,'TasOptimization::GradientDescentState::operator=()'],['../classTasGrid_1_1TasmanianSparseGrid.html#a3f9c61e2659b2d67194cf200214a84cf',1,'TasGrid::TasmanianSparseGrid::operator=()']]],
+  ['optimizaiton_5fexample_5f01_12',['optimizaiton_example_01',['../group__TasmanianOPTExamples1.html#gaa0dc5702f9087ce6dfbc63c5fc0bb1cb',1,'example_optimization_01.cpp']]],
+  ['optimizaiton_5fexample_5f02_13',['optimizaiton_example_02',['../group__TasmanianOPTExamples2.html#ga7990a200d6f65ca7736e1899489cbdfd',1,'example_optimization_02.cpp']]],
+  ['optimization_14',['Optimization',['../group__TasmanianOptimization.html',1,'']]],
+  ['optimization_20algorithms_15',['Optimization Algorithms',['../group__OptimizationAlgorithm.html',1,'']]],
+  ['optimization_20module_16',['Examples for the Tasmanian Optimization module',['../group__TasmanianOPTExamples.html',1,'']]],
+  ['optimization_20module_20example_201_17',['Tasmanian Optimization module, example 1',['../group__TasmanianOPTExamples1.html',1,'']]],
+  ['optimization_20module_20example_202_18',['Tasmanian Optimization module, example 2',['../group__TasmanianOPTExamples2.html',1,'']]],
+  ['optimization_20states_19',['Optimization States',['../group__OptimizationState.html',1,'']]],
+  ['optimizationstatus_20',['OptimizationStatus',['../structTasOptimization_1_1OptimizationStatus.html',1,'TasOptimization']]],
+  ['or_20info_21',['Command: -version or -info',['../md_Doxygen_2InterfaceCLI.html#autotoc_md38',1,'']]]
+];
