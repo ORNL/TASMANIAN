@@ -82,7 +82,7 @@ class TestTasClass(unittest.TestCase):
         Tasmanian.loadNeededPoints(lambda x, tid : np.ones((1,)) * np.exp( -0.5 * np.sum((x - 0.3)**2) / 0.01 ), grid, 1)
 
         state = DREAM.State(iNumChains, grid)
-        state.setState(DREAM.genGaussianSamples([0.3, 0.3], [0.1, 0.1], iNumChains, DREAM.RandomGenerator("minstd_rand", 55)))
+        state.setState(DREAM.genGaussianSamples([0.3, 0.3], [0.1, 0.1], iNumChains, DREAM.RandomGenerator("minstd_rand", 54)))
 
         DREAM.Sample(iNumBurnup, iNumSamples,
                      DREAM.PosteriorEmbeddedLikelihood(grid, "uniform"),

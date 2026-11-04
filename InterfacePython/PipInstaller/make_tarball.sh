@@ -7,12 +7,10 @@ if [ ! -d "$this_folder/SparseGrids/" ] || [ ! -d "$this_folder/InterfacePython/
 fi
 
 cp ./InterfacePython/PipInstaller/setup.py .
-cp ./InterfacePython/PipInstaller/MANIFEST.in .
 cp ./InterfacePython/PipInstaller/pyproject.toml .
 
 python3 setup.py sdist
 
-rm MANIFEST.in
 rm pyproject.toml
 rm setup.py
 
