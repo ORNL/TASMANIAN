@@ -41,16 +41,16 @@ Optional features:
 
 | Feature | Tested versions     | Recommended      |
 |----|----|----|
-| gcc     | 11 - 13             | any              |
-| clang   | 14 - 18             | any              |
+| gcc     | 11 - 16             | any              |
+| clang   | 18 - 23             | any              |
 | cmake   | 3.19 - 3.25         | 3.22             |
 | python  | 3.10 - 3.12         | any              |
 | anaconda| 5.3                 | 5.3              |
 | OpenBlas| 0.2.18 - 3.08       | any              |
 | ESSL    | 6.2                 | 6.2              |
-| CUDA    | 11.8 - 12.9         | avoid 12.3-12.4  |
+| CUDA    | 11.8 - 13.4         | avoid 12.3-12.4  |
 | ROCm    | 6.8 - 7.2           | any              |
-| DPC++   | 2024.2              | 2024             |
+| DPC++   | 2026.1              | 2026             |
 | libiomp | 5.0                 | 5.0              |
 | MAGMA   | 2.5.1 - 2.6.1       | 2.6.1            |
 | Doxygen | 1.8.13              | 1.8.13           |
@@ -377,7 +377,5 @@ Several known issues and work-around fixes:
     * Rerun the tests and/or installation to see if the problem is persistent
 * Mixing the GCC and Clang compilers and linkers sometimes fails with an error about the architecture
     * use shared libraries only, i.e., `-D BUILD_SHARED_LIBS=ON` in CMake
-* Some older versions of the PGI compiler fails when using optimization `-O2`
-    * use the `-O1` instead, or the newest version of the compiler
 * CUDA 12.3 and 12.4 seem to have a bug in cuSparse
     * whenever possible, avoid those versions of CUDA
