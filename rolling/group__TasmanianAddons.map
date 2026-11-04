@@ -1,0 +1,12 @@
+<map id="Additional Capabilities" name="Additional Capabilities">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,227,156,252"/>
+<area shape="rect" id="Node000010" href="$group__TasmanianAddonsCommon.html" title=" " alt="" coords="238,5,361,31"/>
+<area shape="rect" id="Node000003" href="$group__TasmanianAddonsConstruct.html" title=" " alt="" coords="218,55,381,95"/>
+<area shape="rect" id="Node000002" href="$group__TasmanianAddonsExoticQuad.html" title=" " alt="" coords="236,120,363,145"/>
+<area shape="rect" id="Node000009" href="$group__TasmanianAddonsLoadNeededVals.html" title=" " alt="" coords="214,169,385,195"/>
+<area shape="rect" id="Node000004" href="$group__TasmanianAddonsLoadUnstructured.html" title=" " alt="" coords="220,219,379,259"/>
+<area shape="rect" id="Node000005" href="$group__TasmanianAddonsMPIConstruct.html" title=" " alt="" coords="213,283,385,323"/>
+<area shape="rect" id="Node000007" href="$group__TasmanianAddonsMPIDREAMSend.html" title=" " alt="" coords="210,347,389,387"/>
+<area shape="rect" id="Node000006" href="$group__TasmanianAddonsMPIDream.html" title=" " alt="" coords="204,412,395,437"/>
+<area shape="rect" id="Node000008" href="$group__TasmanianAddonsMPIGridSend.html" title=" " alt="" coords="214,462,385,502"/>
+</map>
