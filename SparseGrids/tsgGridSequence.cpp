@@ -860,8 +860,8 @@ void GridSequence::applyTransformationTransposed(double weights[]) const{
 
     Data2D<int> parents = MultiIndexManipulations::computeDAGup(work);
 
-    std::vector<int> monkey_count(top_level + 1);
-    std::vector<int> monkey_tail(top_level + 1);
+    std::array<int, 32> monkey_count;
+    std::array<int, 32> monkey_tail;
     std::vector<bool> used(num_points);
 
     for(int l=top_level; l>0; l--){
