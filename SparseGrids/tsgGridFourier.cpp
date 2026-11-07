@@ -174,7 +174,7 @@ void GridFourier::acceptUpdatedTensors(){
         updated_active_tensors = MultiIndexSet();
 
         active_w = std::move(updated_active_w);
-        updated_active_w = std::vector<int>();
+        updated_active_w = std::vector<int>{};
 
         max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
     }
@@ -836,10 +836,10 @@ void GridFourier::setAnisotropicRefinement(TypeDepth type, int min_growth, int o
 }
 
 void GridFourier::clearRefinement(){
-    needed = MultiIndexSet();
-    updated_tensors = MultiIndexSet();
-    updated_active_tensors = MultiIndexSet();
-    updated_active_w = std::vector<int>();
+    needed = MultiIndexSet{};
+    updated_tensors = MultiIndexSet{};
+    updated_active_tensors = MultiIndexSet{};
+    updated_active_w = std::vector<int>{};
 }
 
 void GridFourier::mergeRefinement(){
@@ -857,10 +857,10 @@ void GridFourier::beginConstruction(){
             double weight = -1.0 / (1.0 + (double) std::accumulate(t, t + num_dimensions, 0));
             dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, weight);
         }
-        tensors = MultiIndexSet();
-        active_tensors = MultiIndexSet();
-        active_w = std::vector<int>();
-        needed = MultiIndexSet();
+        tensors = MultiIndexSet{};
+        active_tensors = MultiIndexSet{};
+        active_w = std::vector<int>{};
+        needed = MultiIndexSet{};
         values.resize(num_outputs, 0);
     }
 }
@@ -869,9 +869,9 @@ void GridFourier::writeConstructionData(std::ostream &os, bool iomode) const{
 }
 void GridFourier::readConstructionData(std::istream &is, bool iomode){
     if (iomode == mode_ascii)
-        dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(is, num_dimensions, num_outputs, IO::mode_ascii_type());
+        dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(is, num_dimensions, num_outputs, IO::mode_ascii_type{});
     else
-        dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(is, num_dimensions, num_outputs, IO::mode_binary_type());
+        dynamic_values = std::make_unique<DynamicConstructorDataGlobal>(is, num_dimensions, num_outputs, IO::mode_binary_type{});
     int max_level = dynamic_values->getMaxTensor();
     if (max_level + 1 > wrapper.getNumLevels())
         wrapper = OneDimensionalWrapper(max_level, rule_fourier, 0.0, 0.0);

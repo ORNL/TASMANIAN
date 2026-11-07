@@ -70,12 +70,12 @@ template void GridLocalPolynomial::write<mode_ascii>(std::ostream &) const;
 template void GridLocalPolynomial::write<mode_binary>(std::ostream &) const;
 
 GridLocalPolynomial::GridLocalPolynomial(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int depth, int corder, TypeOneDRule crule, const std::vector<int> &level_limits)
-    : BaseCanonicalGrid(acc, cnum_dimensions, cnum_outputs, MultiIndexSet(), MultiIndexSet(), StorageSet()),
+    : BaseCanonicalGrid(acc, cnum_dimensions, cnum_outputs, MultiIndexSet{}, MultiIndexSet{}, StorageSet{}),
       order(corder),
       effective_rule(RuleLocal::getEffectiveRule(order, (crule == rule_semilocalp and order < 2) ? rule_localp : crule))
     {
 
-    MultiIndexSet tensors = MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type_level, [&](int i) -> int{ return i; }, std::vector<int>(), level_limits);
+    MultiIndexSet tensors = MultiIndexManipulations::selectTensors((size_t) num_dimensions, depth, type_level, [&](int i) -> int{ return i; }, std::vector<int>{}, level_limits);
 
     switch(effective_rule) {
         case RuleLocal::erule::pwc:
@@ -104,7 +104,7 @@ GridLocalPolynomial::GridLocalPolynomial(AccelerationContext const *acc, int cnu
 
     if (num_outputs == 0){
         points = std::move(needed);
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
         parents = HierarchyManipulations::computeDAGup(points, effective_rule);
     }else{
         values.resize(num_outputs, needed.getNumIndexes());
@@ -453,11 +453,11 @@ void GridLocalPolynomial::updateValues(double const *vals){
         if (points.empty()){ // initial grid, just relabel needed as points (loaded)
             values.setValues(vals);
             points = std::move(needed);
-            needed = MultiIndexSet();
+            needed = MultiIndexSet{};
         }else{ // merge needed and points
             values.addValues(points, needed, vals);
             points += needed;
-            needed = MultiIndexSet();
+            needed = MultiIndexSet{};
             buildTree();
         }
     }
@@ -480,10 +480,10 @@ void GridLocalPolynomial::mergeRefinement(){
     values.setValues(std::vector<double>(Utils::size_mult(num_all_points, num_outputs), 0.0));
     if (points.empty()){
         points = std::move(needed);
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
     }else{
         points += needed;
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
         buildTree();
     }
     surpluses = Data2D<double>(num_outputs, num_all_points);
@@ -493,7 +493,7 @@ void GridLocalPolynomial::beginConstruction(){
     dynamic_values = std::make_unique<SimpleConstructData>();
     if (points.empty()){
         dynamic_values->initial_points = std::move(needed);
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
         roots.clear();
         pntr.clear();
         indx.clear();
@@ -504,9 +504,9 @@ void GridLocalPolynomial::writeConstructionData(std::ostream &os, bool iomode) c
 }
 void GridLocalPolynomial::readConstructionData(std::istream &is, bool iomode){
     if (iomode == mode_ascii)
-        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_ascii_type());
+        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_ascii_type{});
     else
-        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_binary_type());
+        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_binary_type{});
 }
 template<RuleLocal::erule effrule>
 std::vector<double> GridLocalPolynomial::getCandidateConstructionPoints(double tolerance, TypeRefinement criteria, int output,
@@ -1063,7 +1063,7 @@ template<GridLocalPolynomial::TranspMode mode, RuleLocal::erule effrule>
 void GridLocalPolynomial::applyTransformationTransposed(double weights[], const MultiIndexSet &work, const std::vector<int> &active_points) const {
     Data2D<int> lparents = (parents.getNumStrips() != work.getNumIndexes()) ? // if the current dag loaded in parents does not reflect the indexes in work
                             HierarchyManipulations::computeDAGup<effrule>(work) :
-                            Data2D<int>();
+                            Data2D<int>{};
 
     const Data2D<int> &dagUp = (parents.getNumStrips() != work.getNumIndexes()) ? lparents : parents;
 
@@ -1281,7 +1281,7 @@ void GridLocalPolynomial::buildTree(){
     std::array<int, 32> monkey_count;
     std::array<int, 32> monkey_tail;
 
-    roots = std::vector<int>();
+    roots = std::vector<int>{};
     int next_root = 0; // zero is always a root and is included at index 0
 
     while(next_root != -1){
@@ -1941,12 +1941,12 @@ int GridLocalPolynomial::removeMappedPoints(std::vector<bool> const &pmap){
     }
 
     // reset the grid
-    needed = MultiIndexSet();
+    needed = MultiIndexSet{};
 
     if (num_kept == 0){ // trivial case, remove all
-        points = MultiIndexSet();
-        values = StorageSet();
-        parents = Data2D<int>();
+        points = MultiIndexSet{};
+        values = StorageSet{};
+        parents = Data2D<int>{};
         surpluses.clear();
         return 0;
     }
@@ -1966,7 +1966,7 @@ void GridLocalPolynomial::setHierarchicalCoefficients(const double c[]){
     clearGpuSurpluses();
     if (points.empty()){
         points = std::move(needed);
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
     }else{
         clearRefinement();
     }

@@ -60,22 +60,22 @@ template void GridWavelet::write<mode_ascii>(std::ostream &) const;
 template void GridWavelet::write<mode_binary>(std::ostream &) const;
 
 GridWavelet::GridWavelet(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int depth, int corder, const std::vector<int> &level_limits) :
-    BaseCanonicalGrid(acc, cnum_dimensions, cnum_outputs, MultiIndexSet(),
+    BaseCanonicalGrid(acc, cnum_dimensions, cnum_outputs, MultiIndexSet{},
                       (corder == 1) ? MultiIndexManipulations::generateNestedPoints(
                           MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type_level,
-                                                                 [](int i) -> int{ return i; }, std::vector<int>(), level_limits),
+                                                                 [](int i) -> int{ return i; }, std::vector<int>{}, level_limits),
                           [](int l)->int{ return (1 << (l + 1)) + 1; })
                       : MultiIndexManipulations::generateNestedPoints(
                           MultiIndexManipulations::selectTensors((size_t) cnum_dimensions, depth, type_level,
-                                                                 [](int i) -> int{ return i; }, std::vector<int>(), level_limits),
+                                                                 [](int i) -> int{ return i; }, std::vector<int>{}, level_limits),
                           [](int l)->int{ return (1 << (l + 2)) + 1; }),
-                      StorageSet()),
+                      StorageSet{}),
     rule1D(corder, 10),
     order(corder){
 
     if (num_outputs == 0){
         points = std::move(needed);
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
     }else{
         values.resize(num_outputs, needed.getNumIndexes());
     }
@@ -95,7 +95,7 @@ GridWavelet::GridWavelet(AccelerationContext const *acc, GridWavelet const *wav,
 
 GridWavelet::GridWavelet(AccelerationContext const *acc, MultiIndexSet &&pset, int cnum_outputs, int corder, Data2D<double> &&vals) :
     BaseCanonicalGrid(acc, static_cast<int>(pset.getNumDimensions()), cnum_outputs, std::forward<MultiIndexSet>(pset),
-                      MultiIndexSet(), StorageSet()),
+                      MultiIndexSet{}, StorageSet{}),
     rule1D(corder, 10),
     order(corder)
 {
@@ -168,14 +168,14 @@ void GridWavelet::loadNeededValues(const double *vals){
         clearGpuBasis();
         values.setValues(vals);
         points = std::move(needed);
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
     }else if (needed.empty()){
         values.setValues(vals);
     }else{
         clearGpuBasis();
         values.addValues(points, needed, vals);
         points += needed;
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
     }
     recomputeCoefficients();
 }
@@ -190,7 +190,7 @@ void GridWavelet::mergeRefinement(){
     }else{
         points += needed;
     }
-    needed = MultiIndexSet();
+    needed = MultiIndexSet{};
     coefficients = Data2D<double>(num_outputs, num_all_points);
 }
 void GridWavelet::evaluate(const double x[], double y[]) const{
@@ -454,7 +454,7 @@ void GridWavelet::recomputeCoefficients(){
     inter_matrix.invert(acceleration, num_outputs, coefficients.data());
 
     // do not keep the matrix if working with internal interpolation, don't want to hog GPU RAM
-    if (num_outputs > 0) inter_matrix = TasSparse::WaveletBasisMatrix();
+    if (num_outputs > 0) inter_matrix = TasSparse::WaveletBasisMatrix{};
 }
 
 std::vector<double> GridWavelet::getNormalization() const{
@@ -624,7 +624,7 @@ void GridWavelet::beginConstruction(){
     dynamic_values = std::make_unique<SimpleConstructData>();
     if (points.empty()){
         dynamic_values->initial_points = std::move(needed);
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
     }
 }
 void GridWavelet::writeConstructionData(std::ostream &os, bool iomode) const{
@@ -632,9 +632,9 @@ void GridWavelet::writeConstructionData(std::ostream &os, bool iomode) const{
 }
 void GridWavelet::readConstructionData(std::istream &is, bool iomode){
     if (iomode == mode_ascii)
-        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_ascii_type());
+        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_ascii_type{});
     else
-        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_binary_type());
+        dynamic_values = std::make_unique<SimpleConstructData>(is, num_dimensions, num_outputs, IO::mode_binary_type{});
 }
 
 namespace WaveManipulations{
@@ -689,7 +689,7 @@ std::vector<int> computeLevels(MultiIndexSet const &mset, RuleWavelet const &rul
 }
 
 inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiIndexSet const &candidates, RuleWavelet const &rule){
-    if (candidates.empty()) return MultiIndexSet();
+    if (candidates.empty()) return MultiIndexSet{};
     auto num_dimensions = candidates.getNumDimensions();
 
     // always consider the points without parents
@@ -713,7 +713,7 @@ inline MultiIndexSet getLargestConnected(MultiIndexSet const &current, MultiInde
         total += result;
     }
 
-    if (total.empty()) return MultiIndexSet(); // current was empty and no roots could be added
+    if (total.empty()) return MultiIndexSet{}; // current was empty and no roots could be added
 
     Data2D<int> update;
     do{
@@ -931,7 +931,7 @@ void GridWavelet::setHierarchicalCoefficients(const double c[]){
         clearRefinement();
     }else{
         points = std::move(needed);
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
     }
     auto num_points = points.getNumIndexes();
     coefficients = Data2D<double>(num_outputs, num_points, std::vector<double>(c, c + Utils::size_mult(num_outputs, num_points)));
@@ -1023,7 +1023,7 @@ MultiIndexSet GridWavelet::getRefinementCanidates(double tolerance, TypeRefineme
     }
     #endif
 
-    MultiIndexSet result = (refined.getNumStrips() > 0) ? MultiIndexSet(refined) : MultiIndexSet();
+    MultiIndexSet result = (refined.getNumStrips() > 0) ? MultiIndexSet(refined) : MultiIndexSet{};
 
     if (criteria == refine_stable){ // complete needed to a lower set
         size_t num_added = 1; // set to 1 to start the loop
@@ -1069,12 +1069,12 @@ void GridWavelet::updateAccelerationData(AccelerationContext::ChangeType change)
             gpu_cache.reset();
             gpu_cachef.reset();
             if (inter_matrix.getNumRows() > 0)
-                inter_matrix = TasSparse::WaveletBasisMatrix();
+                inter_matrix = TasSparse::WaveletBasisMatrix{};
             break;
         case AccelerationContext::change_sparse_dense:
             if ((acceleration->algorithm_select == AccelerationContext::algorithm_dense and inter_matrix.isSparse())
                 or (acceleration->algorithm_select == AccelerationContext::algorithm_sparse and inter_matrix.isDense()))
-                inter_matrix = TasSparse::WaveletBasisMatrix();
+                inter_matrix = TasSparse::WaveletBasisMatrix{};
             break;
         default:
             break;

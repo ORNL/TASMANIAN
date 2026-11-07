@@ -69,9 +69,9 @@ inline MultiIndexSet makeSequenceSet(int cnum_dimensions, int depth, TypeDepth t
 
 GridSequence::GridSequence(AccelerationContext const *acc, int cnum_dimensions, int cnum_outputs, int depth, TypeDepth type, TypeOneDRule crule,
                             const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits)
-    : BaseCanonicalGrid(acc, cnum_dimensions, cnum_outputs, MultiIndexSet(),
+    : BaseCanonicalGrid(acc, cnum_dimensions, cnum_outputs, MultiIndexSet{},
                         makeSequenceSet(cnum_dimensions, depth, type, crule, anisotropic_weights, level_limits),
-                        StorageSet()),
+                        StorageSet{}),
       rule(crule){
     values.resize(num_outputs, needed.getNumIndexes());
     prepareSequence(0);
@@ -79,15 +79,15 @@ GridSequence::GridSequence(AccelerationContext const *acc, int cnum_dimensions, 
 GridSequence::GridSequence(AccelerationContext const *acc, int cnum_dimensions, int depth, TypeDepth type, TypeOneDRule crule,
                             const std::vector<int> &anisotropic_weights, const std::vector<int> &level_limits)
     : BaseCanonicalGrid(acc, cnum_dimensions, 0, makeSequenceSet(cnum_dimensions, depth, type, crule, anisotropic_weights, level_limits),
-                        MultiIndexSet(), StorageSet()),
+                        MultiIndexSet{}, StorageSet{}),
       rule(crule){
     prepareSequence(0);
 }
 GridSequence::GridSequence(AccelerationContext const *acc, MultiIndexSet &&pset, int cnum_outputs, TypeOneDRule crule)
     : BaseCanonicalGrid(acc, static_cast<int>(pset.getNumDimensions()), cnum_outputs,
-                        (cnum_outputs == 0) ? std::move(pset) : MultiIndexSet(),
-                        (cnum_outputs == 0) ? MultiIndexSet() : std::move(pset),
-                        StorageSet()),
+                        (cnum_outputs == 0) ? std::move(pset) : MultiIndexSet{},
+                        (cnum_outputs == 0) ? MultiIndexSet{} : std::move(pset),
+                        StorageSet{}),
     rule(crule)
 {
     if (num_outputs > 0) values.resize(num_outputs, needed.getNumIndexes());
@@ -122,9 +122,9 @@ void GridSequence::updateGrid(int depth, TypeDepth type, const std::vector<int> 
             needed = std::move(pset);
             values.resize(num_outputs, needed.getNumIndexes());
         }
-        nodes = std::vector<double>();
-        coeff = std::vector<double>();
-        surpluses = Data2D<double>();
+        nodes = std::vector<double>{};
+        coeff = std::vector<double>{};
+        surpluses = Data2D<double>{};
         prepareSequence(0);
     }else{
         pset += points;
@@ -224,11 +224,11 @@ void GridSequence::mergeRefinement(){
     values.setValues(std::vector<double>(num_vals, 0.0));
     if (points.empty()){ // relabel needed as points (loaded)
         points = std::move(needed);
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
     }else{
         clearGpuNodes(); // the points will change, clear cache
         points += needed;
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
         prepareSequence(0);
     }
     surpluses = Data2D<double>(num_outputs, num_all_points);
@@ -238,7 +238,7 @@ void GridSequence::beginConstruction(){
     dynamic_values = std::make_unique<SimpleConstructData>();
     if (points.empty()){
         dynamic_values->initial_points = std::move(needed);
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
     }
 }
 void GridSequence::writeConstructionData(std::ostream &os, bool iomode) const{

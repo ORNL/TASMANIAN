@@ -70,10 +70,10 @@ template void GridGlobal::write<mode_ascii>(std::ostream &) const;
 template void GridGlobal::write<mode_binary>(std::ostream &) const;
 
 void GridGlobal::clearRefinement(){
-    needed = MultiIndexSet();
-    updated_tensors = MultiIndexSet();
-    updated_active_tensors = MultiIndexSet();
-    updated_active_w = std::vector<int>();
+    needed = MultiIndexSet{};
+    updated_tensors = MultiIndexSet{};
+    updated_active_tensors = MultiIndexSet{};
+    updated_active_w = std::vector<int>{};
 }
 
 MultiIndexSet GridGlobal::selectTensors(size_t dims, int depth, TypeDepth type, const std::vector<int> &anisotropic_weights,
@@ -148,12 +148,12 @@ GridGlobal::GridGlobal(AccelerationContext const *acc, GridGlobal const *global,
 void GridGlobal::setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule crule, double calpha, double cbeta){
     clearGpuNodes();
     clearGpuValues();
-    tensor_refs = std::vector<std::vector<int>>();
-    points = MultiIndexSet();
-    values = StorageSet();
-    updated_tensors = MultiIndexSet();
-    updated_active_tensors = MultiIndexSet();
-    updated_active_w = std::vector<int>();
+    tensor_refs = std::vector<std::vector<int>>{};
+    points = MultiIndexSet{};
+    values = StorageSet{};
+    updated_tensors = MultiIndexSet{};
+    updated_active_tensors = MultiIndexSet{};
+    updated_active_w = std::vector<int>{};
 
     tensors = std::move(tset);
 
@@ -176,7 +176,7 @@ void GridGlobal::setTensors(MultiIndexSet &&tset, int cnum_outputs, TypeOneDRule
 
     if (num_outputs == 0){
         points = std::move(needed);
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
     }else{
         values.resize(num_outputs, needed.getNumIndexes());
     }
@@ -314,20 +314,20 @@ void GridGlobal::getDifferentiationWeights(const double x[], double weights[]) c
 void GridGlobal::acceptUpdatedTensors(){
     if (points.empty()){
         points = std::move(needed);
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
     }else if (!needed.empty()){
         clearGpuNodes();
         points += needed;
-        needed = MultiIndexSet();
+        needed = MultiIndexSet{};
 
         tensors = std::move(updated_tensors);
-        updated_tensors = MultiIndexSet();
+        updated_tensors = MultiIndexSet{};
 
         active_tensors = std::move(updated_active_tensors);
-        updated_active_tensors = MultiIndexSet();
+        updated_active_tensors = MultiIndexSet{};
 
         active_w = std::move(updated_active_w);
-        updated_active_w = std::vector<int>();
+        updated_active_w = std::vector<int>{};
 
         max_levels = MultiIndexManipulations::getMaxIndexes(tensors);
 
@@ -360,10 +360,10 @@ void GridGlobal::beginConstruction(){
             double weight = -1.0 / (1.0 + (double) std::accumulate(t, t + num_dimensions, 0));
             dynamic_values->addTensor(t, [&](int l)->int{ return wrapper.getNumPoints(l); }, weight);
         }
-        tensors = MultiIndexSet();
-        active_tensors = MultiIndexSet();
-        active_w = std::vector<int>();
-        needed = MultiIndexSet();
+        tensors = MultiIndexSet{};
+        active_tensors = MultiIndexSet{};
+        active_w = std::vector<int>{};
+        needed = MultiIndexSet{};
         values.resize(num_outputs, 0);
     }
 }
