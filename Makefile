@@ -26,30 +26,38 @@ endif
 
 # object files for each target
 SparseGridsObj = \
-          ./SparseGrids/tsgIndexSets.o ./SparseGrids/tsgCoreOneDimensional.o ./SparseGrids/tsgIndexManipulator.o ./SparseGrids/tsgGridGlobal.o \
-          ./SparseGrids/tsgSequenceOptimizer.o ./SparseGrids/tsgLinearSolvers.o ./SparseGrids/tsgGridSequence.o ./SparseGrids/tsgHardCodedTabulatedRules.o \
-          ./SparseGrids/tsgHierarchyManipulator.o ./SparseGrids/tsgGridLocalPolynomial.o ./SparseGrids/tsgRuleWavelet.o ./SparseGrids/tsgGridWavelet.o \
-          ./SparseGrids/tsgGridFourier.o ./SparseGrids/tsgDConstructGridGlobal.o ./SparseGrids/tsgAcceleratedDataStructures.o \
-          ./SparseGrids/TasmanianSparseGridWrapC.o ./SparseGrids/TasmanianSparseGrid.o ./InterfaceTPL/tsgGpuNull.o
+          ./SparseGrids/tsgIndexSets.o                  ./SparseGrids/tsgCoreOneDimensional.o \
+          ./SparseGrids/tsgIndexManipulator.o           ./SparseGrids/tsgGridGlobal.o    \
+          ./SparseGrids/tsgSequenceOptimizer.o          ./SparseGrids/tsgLinearSolvers.o \
+          ./SparseGrids/tsgGridSequence.o               ./SparseGrids/tsgHardCodedTabulatedRules.o \
+          ./SparseGrids/tsgHierarchyManipulator.o       ./SparseGrids/tsgGridLocalPolynomial.o \
+          ./SparseGrids/tsgRuleWavelet.o                ./SparseGrids/tsgGridWavelet.o \
+          ./SparseGrids/tsgGridFourier.o                ./SparseGrids/tsgDConstructGridGlobal.o \
+          ./SparseGrids/TasmanianSparseGridWrapC.o      ./SparseGrids/TasmanianSparseGrid.o \
+          ./SparseGrids/tsgAcceleratedDataStructures.o  ./InterfaceTPL/tsgGpuNull.o
 
 DREAMObj = \
-          ./DREAM/tsgDreamState.o ./DREAM/tsgDreamLikelyGaussian.o ./DREAM/tsgDreamSampleWrapC.o \
-          ./DREAM/Optimization/tsgParticleSwarm.o ./DREAM/Optimization/tsgGradientDescent.o \
-          ./DREAM/Optimization/TasmanianOptimizationWrapC.o
+          ./DREAM/tsgDreamState.o                    ./DREAM/tsgDreamLikelyGaussian.o \
+          ./DREAM/tsgDreamSampleWrapC.o              ./DREAM/Optimization/tsgParticleSwarm.o \
+          ./DREAM/Optimization/tsgGradientDescent.o  ./DREAM/Optimization/TasmanianOptimizationWrapC.o
 
 AddonsObj = \
-          ./Addons/tsgCLoadNeededValues.o ./Addons/tsgCConstructSurrogate.o ./Addons/tsgCLoadUnstructuredPoints.o ./Addons/tsgCExoticQuadrature.o
+          ./Addons/tsgCLoadNeededValues.o        ./Addons/tsgCConstructSurrogate.o \
+          ./Addons/tsgCLoadUnstructuredPoints.o  ./Addons/tsgCExoticQuadrature.o
 
 TasgridObj = \
-          ./Tasgrid/tasgrid_main.o ./SparseGrids/gridtestTestFunctions.o ./SparseGrids/gridtestExternalTests.o ./Tasgrid/tasgridWrapper.o
+          ./Tasgrid/tasgrid_main.o    ./SparseGrids/gridtestTestFunctions.o \
+          ./Tasgrid/tasgridWrapper.o  ./SparseGrids/gridtestExternalTests.o
 
 # test objects
 GidtestObj = \
-          ./SparseGrids/gridtest_main.o ./SparseGrids/gridtestTestFunctions.o ./SparseGrids/gridtestExternalTests.o \
-          ./SparseGrids/gridtestUnitTests.o ./SparseGrids/gridtestTestInterfaceC.o
+          ./SparseGrids/gridtest_main.o          ./SparseGrids/gridtestTestFunctions.o \
+          ./SparseGrids/gridtestExternalTests.o  ./SparseGrids/gridtestUnitTests.o \
+          ./SparseGrids/gridtestTestInterfaceC.o
 
 DREAMTestObj = \
-          ./DREAM/dreamtest_main.o ./DREAM/tasdreamExternalTests.o ./DREAM/Optimization/tasdreamOptimizationTests.o
+          ./DREAM/dreamtest_main.o ./DREAM/tasdreamExternalTests.o \
+          ./DREAM/Optimization/tasdreamOptimizationTests.o
 
 AddonTestObj = \
           ./Addons/testAddons.o
@@ -101,7 +109,7 @@ Tasmanian.py: libtasmaniancaddons.so
 	@echo " -- building the Python module"
 	cp ./InterfacePython/TasmanianConfig.in.py TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_VERSION_MAJOR@|'8'|g' ./TasmanianConfig.py
-	sed -i -e 's|@Tasmanian_VERSION_MINOR@|'3'|g' ./TasmanianConfig.py
+	sed -i -e 's|@Tasmanian_VERSION_MINOR@|'4'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_license@|'BSD\ 3-Clause\ with\ UT-Battelle\ disclaimer'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_git_hash@|'Tasmanian\ git\ hash\ is\ not\ available\ here'|g' ./TasmanianConfig.py
 	sed -i -e 's|@Tasmanian_libsparsegrid_path@|'`pwd`/libtasmaniansparsegrid.so'|g' ./TasmanianConfig.py
