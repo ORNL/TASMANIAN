@@ -268,16 +268,26 @@ protected:
      */
     template<WalkerMode mode, RuleLocal::erule effrule>
     void walkTree(const MultiIndexSet &work, const double x[], std::vector<int> &sindx, std::vector<double> &svals, double *y) const{
-        std::vector<int> monkey_count(top_level+1); // traverse the tree, counts the branches of the current node
-        std::vector<int> monkey_tail(top_level+1); // traverse the tree, keeps track of the previous node (history)
+        // at 32, top-level can be up-to 31 and above that we are close to the max value of 32-bit int
+        std::array<int, 32> monkey_count; // traverse the tree, counts the branches of the current node
+        std::array<int, 32> monkey_tail; // traverse the tree, keeps track of the previous node (history)
 
         bool isSupported;
         double basis_value;
-        std::vector<double> basis_derivative(num_dimensions);
+        std::vector<double> vec_basis;
+        std::array<double, 16> arr_basis;
+        double *basis_derivative = [&]() -> double * {
+                if constexpr (mode == WalkerMode::increment_diff or mode == WalkerMode::fill_entries_diff) {
+                    if (num_dimensions > 16) {
+                        vec_basis.resize(num_dimensions);
+                        return vec_basis.data();
+                    } else return arr_basis.data();
+                } else return nullptr;
+            }();
 
         for(const auto &r : roots){
             if constexpr (mode == WalkerMode::increment_diff or mode == WalkerMode::fill_entries_diff) {
-                diffBasisSupported<effrule>(work.getIndex(r), x, basis_derivative.data(), isSupported);
+                diffBasisSupported<effrule>(work.getIndex(r), x, basis_derivative, isSupported);
             } else {
                 basis_value = evalBasisSupported<effrule>(work.getIndex(r), x, isSupported);
             }
@@ -297,8 +307,8 @@ protected:
                             y[k * num_dimensions + d] += basis_derivative[d] * s[k];
                 }else{
                     sindx.push_back(r);
-                    for (auto dx : basis_derivative)
-                        svals.push_back(dx);
+                    for (int j = 0; j < num_dimensions; j++)
+                        svals.push_back(basis_derivative[j]);
                 }
 
                 int current = 0;
@@ -309,7 +319,7 @@ protected:
                     if (monkey_count[current] < pntr[monkey_tail[current]+1]){
                         int p = indx[monkey_count[current]];
                         if constexpr (mode == WalkerMode::increment_diff or mode == WalkerMode::fill_entries_diff){
-                            diffBasisSupported<effrule>(work.getIndex(p), x, basis_derivative.data(), isSupported);
+                            diffBasisSupported<effrule>(work.getIndex(p), x, basis_derivative, isSupported);
                         }else{
                             basis_value = evalBasisSupported<effrule>(work.getIndex(p), x, isSupported);
                         }
@@ -328,8 +338,8 @@ protected:
                                         y[k * num_dimensions + d] += basis_derivative[d] * s[k];
                             }else{
                                 sindx.push_back(p);
-                                for (auto dx : basis_derivative)
-                                    svals.push_back(dx);
+                                for (int j = 0; j < num_dimensions; j++)
+                                    svals.push_back(basis_derivative[j]);
                             }
                             monkey_tail[++current] = p;
                             monkey_count[current] = pntr[p];

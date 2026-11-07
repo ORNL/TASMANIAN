@@ -180,6 +180,11 @@ public:
         vec.insert(vec.end(), x, x + stride);
         num_strips++;
     }
+    //! \brief Uses std::vector::insert to append the data.
+    void appendStrip(T const *x){
+        vec.insert(vec.end(), x, x + stride);
+        num_strips++;
+    }
 
     //! \brief Uses std::vector::insert to append \b x, assumes \b x.size() is one stride.
     void appendStrip(const std::vector<T> &x){
@@ -291,6 +296,8 @@ public:
     inline int getSlot(const std::vector<int> &p) const{ return getSlot(p.data()); }
     //! \brief Returns **true** if **p** is missing from the set, **false** otherwise
     inline bool missing(const std::vector<int> &p) const{ return (getSlot(p.data()) == -1); }
+    //! \brief Returns **true** if **p** is missing from the set, **false** otherwise
+    inline bool missing(const int *p) const{ return (getSlot(p) == -1); }
 
     //! \brief Returns the **i**-th index of the set, useful to loop over all indexes or to cross reference with values
     inline const int *getIndex(int i) const{ return &(indexes[static_cast<size_t>(i) * num_dimensions]); }
