@@ -1014,8 +1014,8 @@ void GridLocalPolynomial::updateSurpluses(MultiIndexSet const &work, int max_lev
         {
             std::vector<double> x(num_dimensions);
 
-            std::vector<int> monkey_count(max_level + 1);
-            std::vector<int> monkey_tail(max_level + 1);
+            std::array<int, 32> monkey_count;
+            std::array<int, 32> monkey_tail;
             std::vector<bool> used(num_points, false);
 
             #pragma omp for schedule(dynamic)
@@ -1079,12 +1079,19 @@ void GridLocalPolynomial::applyTransformationTransposed(double weights[], const 
         level[i] = current_level;
     }
 
-    std::vector<int> monkey_count(top_level+1);
-    std::vector<int> monkey_tail(top_level+1);
+    std::array<int, 32> monkey_count;
+    std::array<int, 32> monkey_tail;
     std::vector<bool> used(work.getNumIndexes());
     int max_parents = RuleLocal::getMaxNumParents<effrule>() * num_dimensions;
 
-    std::vector<double> node(num_dimensions);
+    std::vector<double> vec_node;
+    std::array<double, 16> arr_node;
+    double *node = [&]() -> double * {
+            if (num_dimensions > 16) {
+                vec_node.resize(num_dimensions);
+                return vec_node.data();
+            } else return arr_node.data();
+        }();
 
     for(int l=active_top_level; l>0; l--){
         for(size_t i=0; i<active_points.size(); i++){
@@ -1271,8 +1278,8 @@ void GridLocalPolynomial::buildTree(){
     Data2D<int> tree(max_kids, num_points, -1);
     std::vector<bool> free(num_points, true);
 
-    std::vector<int> monkey_count((size_t) (top_level + 1));
-    std::vector<int> monkey_tail(monkey_count.size());
+    std::array<int, 32> monkey_count;
+    std::array<int, 32> monkey_tail;
 
     roots = std::vector<int>();
     int next_root = 0; // zero is always a root and is included at index 0
@@ -1379,8 +1386,8 @@ void GridLocalPolynomial::getQuadratureWeights(double *weights) const{
     const MultiIndexSet &work = (points.empty()) ? needed : points;
     integrateHierarchicalFunctions(weights);
 
-    std::vector<int> monkey_count(top_level+1);
-    std::vector<int> monkey_tail(top_level+1);
+    std::array<int, 32> monkey_count;
+    std::array<int, 32> monkey_tail;
 
     double basis_value;
 
@@ -1543,14 +1550,11 @@ Data2D<int> GridLocalPolynomial::buildUpdateMap(double tolerance, TypeRefinement
             std::vector<int> global_to_pnts(num_points);
             std::vector<int> levels(max_nump);
 
-            std::vector<int> monkey_count;
-            std::vector<int> monkey_tail;
+            std::array<int, 32> monkey_count;
+            std::array<int, 32> monkey_tail;
             std::vector<bool> used;
-            if (max_1D_parents > 1) {
-                monkey_count.resize(top_level + 1);
-                monkey_tail.resize(top_level + 1);
+            if (max_1D_parents > 1)
                 used.resize(max_nump, false);
-            }
 
             #pragma omp for
             for(int j=0; j<split.getNumJobs(); j++){ // split.getNumJobs() gives the number of 1D interpolants to construct
@@ -1733,7 +1737,16 @@ MultiIndexSet GridLocalPolynomial::getRefinementCanidates(double tolerance, Type
 
 template<RuleLocal::erule effrule>
 bool GridLocalPolynomial::addParent(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const{
-    std::vector<int> dad(point, point + num_dimensions);
+    std::vector<int> vec_dad;
+    std::array<int, 32> arr_dad;
+    int *dad = [&]() -> int *{
+            if (num_dimensions > 32) {
+                vec_dad.resize(num_dimensions);
+                return vec_dad.data();
+            } return arr_dad.data();
+        }();
+    std::copy_n(point, num_dimensions, dad);
+
     bool added = false;
     dad[direction] = RuleLocal::getParent<effrule>(point[direction]);
     if ((dad[direction] != -1) && exclude.missing(dad)){
@@ -1749,7 +1762,16 @@ bool GridLocalPolynomial::addParent(const int point[], int direction, const Mult
 }
 template<RuleLocal::erule effrule>
 void GridLocalPolynomial::addChild(const int point[], int direction, const MultiIndexSet &exclude, Data2D<int> &destination) const{
-    std::vector<int> kid(point, point + num_dimensions);
+    std::vector<int> vec_kid;
+    std::array<int, 32> arr_kid;
+    int *kid = [&]() -> int *{
+        if (num_dimensions > 32) {
+            vec_kid.resize(num_dimensions);
+            return vec_kid.data();
+        } return arr_kid.data();
+    }();
+    std::copy_n(point, num_dimensions, kid);
+
     int max_1d_kids = RuleLocal::getMaxNumKids<effrule>();
     for(int i=0; i<max_1d_kids; i++){
         kid[direction] = RuleLocal::getKid<effrule>(point[direction], i);
@@ -1760,7 +1782,16 @@ void GridLocalPolynomial::addChild(const int point[], int direction, const Multi
 }
 template<RuleLocal::erule effrule>
 void GridLocalPolynomial::addChildLimited(const int point[], int direction, const MultiIndexSet &exclude, const std::vector<int> &level_limits, Data2D<int> &destination) const{
-    std::vector<int> kid(point, point + num_dimensions);
+    std::vector<int> vec_kid;
+    std::array<int, 32> arr_kid;
+    int *kid = [&]() -> int *{
+        if (num_dimensions > 32) {
+            vec_kid.resize(num_dimensions);
+            return vec_kid.data();
+        } return arr_kid.data();
+    }();
+    std::copy_n(point, num_dimensions, kid);
+
     int max_1d_kids = RuleLocal::getMaxNumKids<effrule>();
     for(int i=0; i<max_1d_kids; i++){
         kid[direction] = RuleLocal::getKid<effrule>(point[direction], i);

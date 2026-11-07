@@ -540,7 +540,16 @@ Data2D<int> GridWavelet::buildUpdateMap(double tolerance, TypeRefinement criteri
 }
 
 bool GridWavelet::addParent(const int point[], int direction, Data2D<int> &destination) const{
-    std::vector<int> dad(point, point + num_dimensions);
+    std::vector<int> vec_dad;
+    std::array<int, 32> arr_dad;
+    int *dad = [&]() -> int *{
+        if (num_dimensions > 32) {
+            vec_dad.resize(num_dimensions);
+            return vec_dad.data();
+        } return arr_dad.data();
+    }();
+    std::copy_n(point, num_dimensions, dad);
+
     bool added = false;
     dad[direction] = rule1D.getParent(point[direction]);
     if (dad[direction] == -2){
@@ -560,7 +569,16 @@ bool GridWavelet::addParent(const int point[], int direction, Data2D<int> &desti
     return added;
 }
 void GridWavelet::addChild(const int point[], int direction, Data2D<int> &destination) const{
-    std::vector<int> kid(point, point + num_dimensions);
+    std::vector<int> vec_kid;
+    std::array<int, 32> arr_kid;
+    int *kid = [&]() -> int *{
+        if (num_dimensions > 32) {
+            vec_kid.resize(num_dimensions);
+            return vec_kid.data();
+        } return arr_kid.data();
+    }();
+    std::copy_n(point, num_dimensions, kid);
+
     int L, R; rule1D.getChildren(point[direction], L, R);
     kid[direction] = L;
     if ((kid[direction] != -1) && points.missing(kid)){
@@ -572,7 +590,16 @@ void GridWavelet::addChild(const int point[], int direction, Data2D<int> &destin
 }
 }
 void GridWavelet::addChildLimited(const int point[], int direction, const std::vector<int> &level_limits, Data2D<int> &destination) const{
-    std::vector<int> kid(point, point + num_dimensions);
+    std::vector<int> vec_kid;
+    std::array<int, 32> arr_kid;
+    int *kid = [&]() -> int *{
+        if (num_dimensions > 32) {
+            vec_kid.resize(num_dimensions);
+            return vec_kid.data();
+        } return arr_kid.data();
+    }();
+    std::copy_n(point, num_dimensions, kid);
+
     int L, R; rule1D.getChildren(point[direction], L, R);
     kid[direction] = L;
     if ((kid[direction] != -1)
