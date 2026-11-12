@@ -1,11 +1,12 @@
 name: GPU Simulator
 
 # Optional, non-required check. The hosted runners have no GPU, so this builds
-# Tasmanian with the HIP backend for gfx942 and runs the SparseGrids and Addons
-# tests on a simulated AMD Instinct MI300X
-# (https://github.com/pantheongpu/pantheonsim). A simulator cannot reproduce
-# hardware-specific behavior or timing, so it complements real-GPU testing and
-# does not replace it.
+# Tasmanian with the HIP backend for gfx942 and runs only the acceleration
+# check (gridtest acceleration, which compares the GPU results with the CPU
+# ones) on a simulated AMD Instinct MI300X
+# (https://github.com/pantheongpu/pantheonsim). The rest of the test suite is
+# not run. A simulator cannot reproduce hardware-specific behavior or timing,
+# so it complements real-GPU testing and does not replace it.
 
 on:
   workflow_dispatch:
@@ -74,5 +75,13 @@ jobs:
       - name: Build
         run: cmake --build build -j3
 
+      # Same as the SparseGridsAcceleration ctest case (-gpuid 0) with -v. The
+      # last check fails the step if the GPU-to-GPU part, which is compiled only
+      # with a GPU backend, did not run and pass.
       - name: Test
-        run: vgpu run ctest --test-dir build --output-on-failure --no-tests=error -R "SparseGrids|AddonTests"
+        env:
+          OMP_NUM_THREADS: "4"
+        run: |
+          vgpu run ./build/SparseGrids/gridtest acceleration -v -gpuid 0 | tee acceleration.log
+          grep -q "All Tests Completed Successfully" acceleration.log
+          grep -Eq "Accelerated +gpu-to-gpu +Pass" acceleration.log
