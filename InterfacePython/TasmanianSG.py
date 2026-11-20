@@ -28,7 +28,7 @@
 # IN WHOLE OR IN PART THE USE, STORAGE OR DISPOSAL OF THE SOFTWARE.
 ##############################################################################################################################################################################
 
-from ctypes import c_char_p, c_int, c_double, c_void_p, POINTER, CDLL, create_string_buffer, RTLD_GLOBAL
+from ctypes import c_char_p, c_int, c_size_t, c_double, c_void_p, POINTER, CDLL, create_string_buffer, RTLD_GLOBAL
 import numpy as np
 import sys
 
@@ -96,7 +96,7 @@ pLibTSG.tsgGetBeta.argtypes = [c_void_p]
 pLibTSG.tsgGetOrder.argtypes = [c_void_p]
 pLibTSG.tsgGetNumDimensions.argtypes = [c_void_p]
 pLibTSG.tsgGetNumOutputs.argtypes = [c_void_p]
-pLibTSG.tsgCopyRuleChars.argtypes = [c_void_p, c_int, c_char_p, POINTER(c_int)] # char is not really const
+pLibTSG.tsgCopyRuleChars.argtypes = [c_void_p, c_size_t, c_char_p, POINTER(c_size_t)] # char is not really const
 pLibTSG.tsgGetCustomRuleDescription.argtypes = [c_void_p]
 pLibTSG.tsgGetSubrules.argtypes = [c_void_p, c_int, c_int, c_char_p]
 pLibTSG.tsgGetNumLoaded.argtypes = [c_void_p]
@@ -928,7 +928,7 @@ class TasmanianSparseGrid:
 
         '''
         pName = create_string_buffer(128);
-        iNumChars = np.array([0], np.int32)
+        iNumChars = np.array([0], np.uint64)
         pLibTSG.tsgCopyRuleChars(self.pGrid, 128, pName, np.ctypeslib.as_ctypes(iNumChars))
         return self.stringBufferToString(pName, iNumChars[0])
 
