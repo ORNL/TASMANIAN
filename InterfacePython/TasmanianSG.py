@@ -928,7 +928,7 @@ class TasmanianSparseGrid:
 
         '''
         pName = create_string_buffer(128);
-        iNumChars = np.array([0], np.uint64)
+        iNumChars = np.array([0], np.uintp)
         pLibTSG.tsgCopyRuleChars(self.pGrid, 128, pName, np.ctypeslib.as_ctypes(iNumChars))
         return self.stringBufferToString(pName, iNumChars[0])
 
